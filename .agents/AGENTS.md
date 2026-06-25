@@ -44,7 +44,7 @@ Este archivo contiene instrucciones, restricciones y directrices operativas espe
     *   **Comas:** Las comas van siempre aisladas por espacios a ambos lados: `func( a , b , c )`. No se debe colocar coma final (trailing comma) al último elemento de una lista de propiedades de un objeto literal si no es multilínea o si cierra el bloque del objeto.
     *   **Retornos (`return`):** Siempre se envuelve el retorno como `return( expresion ) ;` (sin espacio antes de `(`, y respetando la regla de espaciado en la expresión interna).
 *   **Alineación Horizontal de Columnas por Contexto (Visual Grid Layout):**
-    *   Si líneas consecutivas vecinas tienen una estructura similar (ej: asignaciones, tipos en interfaces, columnas en esquemas, desestructuraciones, llamadas repetitivas), se alinean verticalmente en bloque sus partes homólogas (los `=`, `:`, `,`, los cierres `)` o los encadenamientos) rellenando con espacios para formar columnas uniformes.
+    *   Si líneas consecutivas vecinas tienen una estructura similar (ej: asignaciones, tipos en interfaces, columnas en esquemas, desestructuraciones, llamadas repetitivas o importaciones simples), se alinea verticalmente en bloque su estructura homóloga (los `=`, `:`, `,`, los cierres `)`, los encadenamientos o el operador `from` de los `import`) rellenando con espacios para formar columnas uniformes (ej: alineando el `from` en `import path   from "path"`).
 *   **Expresiones Lógicas Complejas:**
     *   Al combinar sub-expresiones de comparación con `&&` o `||`, aísla cada comparación entre paréntesis `( ... )`. Al estar anidados, no llevan espacios internos: `(a === b)`.
     *   Ejemplo `return`: `return( (user.role === "admin") || (user.role === "owner") ) ;`
