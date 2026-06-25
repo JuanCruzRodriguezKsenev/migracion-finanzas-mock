@@ -9,11 +9,13 @@ import * as dotenv from "dotenv" ;
 // Carga las variables de entorno de .env.local antes de inicializar la conexión
 dotenv.config( {path: ".env.local"} ) ;
 
-import { organizations , users } from "@/features/auth/schema.db" ;
-import { profiles } from "@/features/profile/schema.db" ;
 import { categories , accounts , ledgerTransactions , ledgerEntries } from "@/features/accounting/schema.db" ;
-import { hashPassword } from "@/features/auth/services/authService" ;
 import { createLedgerTransaction } from "@/features/accounting/services/accountingService" ;
+
+import { hashPassword } from "@/features/auth/services/authService" ;
+import { organizations , users } from "@/features/auth/schema.db" ;
+
+import { profiles } from "@/features/profile/schema.db" ;
 
 async function main() {
   console.log( "Iniciando seed de base de datos..." ) ;
@@ -38,10 +40,10 @@ async function main() {
         .insert( organizations )
         .values( {
           name: "Finanzas Familiares Demo" ,
-          slug: "finanzas-familiares-demo" ,
+          slug: "finanzas-familiares-demo"
         } )
         .returning() ,
-      hashPassword( contraseniaPlana ) ,
+      hashPassword( contraseniaPlana )
     ] ) ;
 
     console.log( `Organización demo creada con ID: ${org.id}` ) ;
@@ -55,7 +57,7 @@ async function main() {
         name:           "Admin Demo" ,
         role:           "owner" ,
         passwordHash:   hash ,
-        salt:           salt ,
+        salt:           salt
       } )
       .returning() ;
 
@@ -81,7 +83,7 @@ async function main() {
         defaultAccount:   "Caja de Ahorro Galicia" ,
         planName:         "Básico" ,
         planBilling:      "Mensual" ,
-        planNextCharge:   "" ,
+        planNextCharge:   ""
       } ) ;
 
     console.log( "Perfil del administrador inicializado con éxito." ) ;
@@ -96,7 +98,7 @@ async function main() {
         organizationId: org.id ,
         name:           "Ingresos" ,
         icon:           "trending-up" ,
-        color:          "#2ecc71" ,
+        color:          "#2ecc71"
       } )
       .returning() ;
 
@@ -106,7 +108,7 @@ async function main() {
         organizationId: org.id ,
         name:           "Gastos" ,
         icon:           "trending-down" ,
-        color:          "#e74c3c" ,
+        color:          "#e74c3c"
       } )
       .returning() ;
 
@@ -118,7 +120,7 @@ async function main() {
         parentId:       catIngresos.id ,
         name:           "Sueldos y Honorarios" ,
         icon:           "briefcase" ,
-        color:          "#27ae60" ,
+        color:          "#27ae60"
       } )
       .returning() ;
 
@@ -129,7 +131,7 @@ async function main() {
         parentId:       catGastos.id ,
         name:           "Supermercado y Alimentos" ,
         icon:           "shopping-cart" ,
-        color:          "#e67e22" ,
+        color:          "#e67e22"
       } )
       .returning() ;
 
@@ -147,7 +149,7 @@ async function main() {
         name:           "Caja de Ahorro Galicia" ,
         type:           "asset" ,
         balance:        50000000 , // $500.000,00 ARS en centavos
-        currency:       "ARS" ,
+        currency:       "ARS"
       } )
       .returning() ;
 
@@ -159,7 +161,7 @@ async function main() {
         name:           "Efectivo en Billetera" ,
         type:           "asset" ,
         balance:        2000000 , // $20.000,00 ARS en centavos
-        currency:       "ARS" ,
+        currency:       "ARS"
       } )
       .returning() ;
 
@@ -172,7 +174,7 @@ async function main() {
         name:           "Tarjeta Visa Galicia" ,
         type:           "liability" ,
         balance:        -4500000 , // -$45.000,00 ARS en centavos (deuda inicial)
-        currency:       "ARS" ,
+        currency:       "ARS"
       } )
       .returning() ;
 
@@ -185,7 +187,7 @@ async function main() {
         name:           "Patrimonio Neto Inicial" ,
         type:           "equity" ,
         balance:        47500000 , // Aportes y capital neto inicial
-        currency:       "ARS" ,
+        currency:       "ARS"
       } ) ;
 
     const [ ctaIngSueldo ] = await db
@@ -196,7 +198,7 @@ async function main() {
         name:           "Ingresos por Sueldos" ,
         type:           "revenue" ,
         balance:        0 ,
-        currency:       "ARS" ,
+        currency:       "ARS"
       } )
       .returning() ;
 
@@ -208,7 +210,7 @@ async function main() {
         name:           "Gastos de Supermercado" ,
         type:           "expense" ,
         balance:        0 ,
-        currency:       "ARS" ,
+        currency:       "ARS"
       } )
       .returning() ;
 
@@ -229,14 +231,14 @@ async function main() {
         {
           accountId: ctaBanco.id ,
           debit:     35000000 ,
-          credit:    0 ,
+          credit:    0
         } ,
         {
           accountId: ctaIngSueldo.id ,
           debit:     0 ,
-          credit:    35000000 ,
+          credit:    35000000
         }
-      ] ,
+      ]
     } ) ;
 
     // Transacción 2: Gasto en Supermercado con Efectivo ($12.500,00 ARS)
@@ -252,14 +254,14 @@ async function main() {
         {
           accountId: ctaGastoSuper.id ,
           debit:     1250000 ,
-          credit:    0 ,
+          credit:    0
         } ,
         {
           accountId: ctaEfectivo.id ,
           debit:     0 ,
-          credit:    1250000 ,
+          credit:    1250000
         }
-      ] ,
+      ]
     } ) ;
 
     // Transacción 3: Pago parcial de la deuda de Tarjeta de Crédito ($15.000,00 ARS)
@@ -272,14 +274,14 @@ async function main() {
         {
           accountId: ctaTarjeta.id ,
           debit:     1500000 ,
-          credit:    0 ,
+          credit:    0
         } ,
         {
           accountId: ctaBanco.id ,
           debit:     0 ,
-          credit:    1500000 ,
+          credit:    1500000
         }
-      ] ,
+      ]
     } ) ;
 
     console.log( "Transacciones contables de partida doble sembradas con éxito." ) ;
