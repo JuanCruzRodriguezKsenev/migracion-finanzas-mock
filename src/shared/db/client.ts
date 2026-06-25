@@ -4,7 +4,7 @@
  */
 import { drizzle } from "drizzle-orm/postgres-js" ;
 import postgres from "postgres" ;
-import dotenv from "dotenv" ;
+import dotenv   from "dotenv" ;
 
 // Cargar variables de entorno locales
 dotenv.config( {path: ".env.local"} ) ;
