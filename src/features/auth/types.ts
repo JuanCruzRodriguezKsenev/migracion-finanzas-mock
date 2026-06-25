@@ -15,7 +15,7 @@ declare module "next-auth" {
       id:             string ; // Identificador único del usuario (UUID)
       organizationId: string ; // ID de la organización (Tenant) activa
       role:           string ; // Rol del usuario en la organización ('owner' | 'admin' | 'member')
-    } & DefaultSession["user"] ;
+    } & DefaultSession[ "user" ] ;
   }
 
   /**

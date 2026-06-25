@@ -21,7 +21,7 @@ Este checklist contiene todos los archivos creados y modificados en el proyecto 
 
 ### Dominio de Autenticación (Feature: Auth)
 *   [x] [ src/features/auth/schema.db.ts                 ]( src/features/auth/schema.db.ts                 ) *( Modificado )* - Esquemas multi-tenant Drizzle de `organizations` y `users`.
-*   [ ] [ src/features/auth/types.ts                     ]( src/features/auth/types.ts                     ) *( Modificado )* - Extensiones de tipo de NextAuth (`Session`, `User`, `JWT`).
+*   [x] [ src/features/auth/types.ts                     ]( src/features/auth/types.ts                     ) *( Modificado )* - Extensiones de tipo de NextAuth (`Session`, `User`, `JWT`).
 *   [ ] [ src/features/auth/services/authService.ts      ]( src/features/auth/services/authService.ts      ) *( Modificado )* - Lógica criptográfica asíncrona de hashing y verificado `scrypt`.
 *   [x] [ src/features/auth/services/authService.test.ts ]( src/features/auth/services/authService.test.ts ) *( Creado )* - Pruebas unitarias de contraseñas seguras y salting.
 
