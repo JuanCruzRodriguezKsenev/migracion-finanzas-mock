@@ -1,6 +1,6 @@
 import { defineConfig } from "vitest/config" ;
-import react from "@vitejs/plugin-react" ;
-import path from "path" ;
+import react  from "@vitejs/plugin-react" ;
+import path   from "path" ;
 import dotenv from "dotenv" ;
 
 // Cargar variables de entorno desde .env.local para los tests
@@ -25,14 +25,14 @@ export default defineConfig( {
       "src/shared/lib/**/*.test.ts" ,
       "src/shared/services/**/*.test.ts" ,
       "src/features/**/*.test.ts" ,
-      "src/features/**/*.test.tsx" ,
-    ] ,
+      "src/features/**/*.test.tsx"
+    ]
   } ,
   resolve: {
     alias: {
       // Configura el alias "@" para apuntar a la carpeta "src" ,
       // resolviendo las rutas absolutas tal como lo hace Next.js
-      "@": path.resolve( __dirname , "./src" ) ,
-    } ,
-  } ,
+      "@": path.resolve( __dirname , "./src" )
+    }
+  }
 } ) ;
