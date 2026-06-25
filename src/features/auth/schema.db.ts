@@ -8,7 +8,7 @@ export const organizations = pgTable( "organizations" , {
   id:        uuid( "id" ).primaryKey().defaultRandom() , // Identificador único (UUID v7 generado por DB)
   name:      varchar( "name" , {length: 255} ).notNull() ,
   slug:      varchar( "slug" , {length: 255} ).notNull().unique() ,
-  createdAt: timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
+  createdAt: timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull()
 } ) ;
 
 /**
@@ -24,5 +24,5 @@ export const users = pgTable( "users" , {
   passwordHash:   text( "password_hash" ).notNull() ,
   salt:           varchar( "salt"  , {length: 64 } ).notNull() ,
   createdAt:      timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
-  updatedAt:      timestamp( "updated_at" , {withTimezone: true} ).defaultNow().notNull() ,
+  updatedAt:      timestamp( "updated_at" , {withTimezone: true} ).defaultNow().notNull()
 } ) ;
