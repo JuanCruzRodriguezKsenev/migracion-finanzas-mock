@@ -36,12 +36,12 @@ Este archivo contiene instrucciones, restricciones y directrices operativas espe
 
 *   Utilizar **TSDoc** para documentar clases, interfaces, tipos y funciones públicas nuevas.
 *   **Reglas de Espaciado Estricto de Delimitadores (`( )`, `{ }`, `[ ]`, `< >`):**
-    *   **Delimitadores Exteriores:** Si un delimitador es el contenedor más externo de una expresión o bloque sintáctico en una línea, debe llevar un espacio en sus extremos internos: `( expr )`, `[ item ]`, `{ key: val }`, `< Type >`.
-    *   **Delimitadores Anidados:** Si un delimitador está físicamente dentro de otro en la misma línea, sus extremos internos no llevan ningún espacio: `(inner)`, `{inner}`, `[inner]`, `<inner>`.
+    *   **Delimitadores Exteriores:** Si un delimitador es el contenedor más externo de una expresión o bloque sintáctico en una línea, debe llevar un espacio en sus extremos internos: `( expr )`, `[ item ]`, `{ key: val }`, `< Type >`. Esto aplica a delimitadores que, aun estando anidados en bloques multilínea, sean el contenedor más externo **en esa línea física en particular** (ej: `dbCredentials: { url: process.env.DATABASE_URL! } ,`).
+    *   **Delimitadores Anidados:** Si un delimitador está físicamente dentro de otro en la misma línea, sus extremos internos no llevan ningún espacio: `(inner)`, `{inner}`, `[inner]`, `<inner>` (ej: `dotenv.config( {path: ".env.local"} ) ;`).
     *   **Multilínea:** Si se desglosa en varias líneas, se usa salto de línea e indentación estándar en lugar de espaciados internos.
     *   **Excepciones de Control:** Las estructuras condicionales `if(condicion)` y bucles `for(iterador)` no llevan espacios internos en sus límites de paréntesis.
     *   **Punto y coma:** Siempre se coloca exactamente un espacio antes de cada punto y coma: `const a = 1 ;`.
-    *   **Comas:** Las comas van siempre aisladas por espacios a ambos lados: `func( a , b , c )`.
+    *   **Comas:** Las comas van siempre aisladas por espacios a ambos lados: `func( a , b , c )`. No se debe colocar coma final (trailing comma) al último elemento de una lista de propiedades de un objeto literal si no es multilínea o si cierra el bloque del objeto.
     *   **Retornos (`return`):** Siempre se envuelve el retorno como `return( expresion ) ;` (sin espacio antes de `(`, y respetando la regla de espaciado en la expresión interna).
 *   **Alineación Horizontal de Columnas por Contexto (Visual Grid Layout):**
     *   Si líneas consecutivas vecinas tienen una estructura similar (ej: asignaciones, tipos en interfaces, columnas en esquemas, desestructuraciones, llamadas repetitivas), se alinean verticalmente en bloque sus partes homólogas (los `=`, `:`, `,`, los cierres `)` o los encadenamientos) rellenando con espacios para formar columnas uniformes.
