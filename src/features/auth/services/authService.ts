@@ -13,13 +13,11 @@ export async function hashPassword( password: string ): Promise< {hash: string ;
     const salt = crypto.randomBytes(16).toString( "hex" ) ;
     
     crypto.scrypt( password , salt , 64 , {N: 16384 , r: 8 , p: 1} , (err , derivedKey) => {
-      if( err ){
-        return( reject(err) ) ;
-      }
+      if( err ){ return( reject(err) ) ; }
       
       resolve( {
         hash: derivedKey.toString("hex") ,
-        salt ,
+        salt
       } ) ;
     } ) ;
   } ) ) ;
@@ -38,9 +36,7 @@ export async function hashPassword( password: string ): Promise< {hash: string ;
 export async function verifyPassword( password: string , hash: string , salt: string ): Promise< boolean > {
   return( new Promise( (resolve , reject) => {
     crypto.scrypt( password , salt , 64 , {N: 16384 , r: 8 , p: 1} , (err , derivedKey) => {
-      if( err ){
-        return( reject(err) ) ;
-      }
+      if( err ){ return( reject(err) ) ; }
 
       resolve( derivedKey.toString("hex") === hash ) ;
     } ) ;
