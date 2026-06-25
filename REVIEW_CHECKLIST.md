@@ -15,9 +15,9 @@ Este checklist contiene todos los archivos creados y modificados en el proyecto 
 *   [x] [ vitest.config.ts  ]( vitest.config.ts  ) *( Modificado )* - Integración de dotenv para cargar .env.local en el entorno de pruebas de Vitest.
 
 ### Capa de Base de Datos Compartida (Shared DB)
-*   [ ] [ src/shared/db/client.ts ]( src/shared/db/client.ts ) *( Modificado )* - Inicialización del cliente global de base de datos (`db`) con carga dinámica de variables locales.
+*   [x] [ src/shared/db/client.ts ]( src/shared/db/client.ts ) *( Modificado )* - Inicialización del cliente global de base de datos (`db`) con carga dinámica de variables locales.
 *   [x] [ src/shared/db/schema.ts ]( src/shared/db/schema.ts ) *( Modificado )* - Re-exportación centralizada del esquema de base de datos (incluye perfil y contabilidad).
-*   [ ] [ src/shared/db/seed.ts   ]( src/shared/db/seed.ts   ) *( Modificado )* - Script de seeding optimizado asíncronamente con datos demo e de partida doble contable.
+*   [x] [ src/shared/db/seed.ts   ]( src/shared/db/seed.ts   ) *( Modificado )* - Script de seeding optimizado asíncronamente con datos demo e de partida doble contable.
 
 ### Dominio de Autenticación (Feature: Auth)
 *   [ ] [ src/features/auth/schema.db.ts                 ]( src/features/auth/schema.db.ts                 ) *( Modificado )* - Esquemas multi-tenant Drizzle de `organizations` y `users`.
