@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ALTER COLUMN "number_format" SET DEFAULT '1.234,56';
