@@ -1,0 +1,90 @@
+.container {
+  display:          flex ;
+  align-items:      center ;
+  justify-content:  center ;
+  min-height:       100vh ;
+  background-color: var(--bg-app) ;
+}
+
+.card {
+  width:            100% ;
+  max-width:        400px ;
+  padding:          40px ;
+  background-color: var(--bg-card) ;
+  border:           1px solid var(--border-card) ;
+  border-radius:    var(--radius-lg) ;
+  box-shadow:       var(--shadow-lg) ;
+}
+
+.header {
+  margin-bottom: 24px ;
+  font-size:     var(--fs-xl) ;
+  font-weight:   700 ;
+  text-align:    center ;
+  color:         var(--text-main) ;
+}
+
+.error {
+  padding:          12px ;
+  margin-bottom:     16px ;
+  font-size:         var(--fs-sm) ;
+  color:            var(--color-danger-text) ;
+  background-color: var(--color-danger-light) ;
+  border:           1px solid var(--color-danger) ;
+  border-radius:    var(--radius-sm) ;
+}
+
+.form {
+  display:        flex ;
+  flex-direction: column ;
+  gap:            16px ;
+}
+
+.fieldGroup {
+  display:        flex ;
+  flex-direction: column ;
+  gap:            6px ;
+}
+
+.label {
+  font-size:   var(--fs-sm) ;
+  font-weight: 600 ;
+  color:       var(--text-muted) ;
+}
+
+.input {
+  padding:          10px ;
+  border:           1px solid var(--border-card) ;
+  border-radius:    var(--radius-sm) ;
+  font-size:        var(--fs-base) ;
+  background-color: var(--bg-app) ;
+  color:            var(--text-main) ;
+  transition:       var(--transition-smooth) ;
+}
+
+.input:focus {
+  outline:      none ;
+  border-color: var(--color-primary) ;
+}
+
+.submitButton {
+  padding:          12px ;
+  margin-top:       8px ;
+  background-color: var(--color-primary) ;
+  color:            #ffffff ;
+  border:           none ;
+  border-radius:    var(--radius-sm) ;
+  font-size:        var(--fs-md) ;
+  font-weight:      600 ;
+  cursor:           pointer ;
+  transition:       var(--transition-smooth) ;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: var(--color-primary-hover) ;
+}
+
+.submitButton:disabled {
+  cursor:  not-allowed ;
+  opacity: 0.6 ;
+}

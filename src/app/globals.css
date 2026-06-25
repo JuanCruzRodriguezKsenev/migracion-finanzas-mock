@@ -1,0 +1,822 @@
+/* ==========================================================================
+   FinanzIA - Core Sistema de Diseño y Componentes Globales (globals.css)
+   ========================================================================== */
+
+/* ==========================================================================
+   1. VARIABLES Y TOKENS DEL SISTEMA (:root)
+   ========================================================================== */
+:root {
+    /* Paleta de Colores de Marca */
+    --color-primary: #0a52f5;
+    --color-primary-light: #edf2ff;
+    --color-primary-hover: #0843c9;
+    --color-primary-text: var(--color-primary);
+
+    /* Estados Semánticos */
+    --color-success: #10b981;
+    --color-success-light: #ecfdf5;
+    --color-success-text: #065f46;
+
+    --color-danger: #f43f5e;
+    --color-danger-light: #fff1f2;
+    --color-danger-text: #9f1239;
+
+    --color-warning: #f59e0b;
+    --color-warning-light: #fffbeb;
+    --color-warning-text: #92400e;
+
+    --color-purple: #8b5cf6;
+    --color-purple-light: #f5f3ff;
+    --color-purple-text: #6d28d9;
+
+    /* Superficies y Fondos */
+    --bg-app: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-sidebar: #ffffff;
+    --bg-card-glass: rgba(255, 255, 255, 0.45);
+    --border-card-glass: rgba(0, 0, 0, 0.06);
+
+    /* Jerarquía del Texto */
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --text-light: #576880; /* Contrast compliant for light mode */
+
+    /* Bordes y Separadores */
+    --border-card: #e2e8f0;
+    --border-subtle: #f1f5f9;
+
+    /* Tipografía y Escala Dinámica */
+    --font-display: var(--font-outfit, sans-serif);
+    --font-sans: var(--font-inter, sans-serif);
+
+    --color-scrollbar: rgba(0, 0, 0, 0.15);
+    --color-scrollbar-hover: rgba(0, 0, 0, 0.3);
+
+    --fs-xs: clamp(0.525rem, 0.4875rem + 0.1125vw, 0.6rem);
+    --fs-sm: clamp(0.6rem, 0.5625rem + 0.135vw, 0.675rem);
+    --fs-base: clamp(0.675rem, 0.6375rem + 0.15vw, 0.735rem);
+    --fs-md: clamp(0.825rem, 0.7875rem + 0.225vw, 0.9375rem);
+    --fs-lg: clamp(0.975rem, 0.9375rem + 0.3vw, 1.125rem);
+    --fs-xl: clamp(1.2rem, 1.125rem + 0.375vw, 1.5rem);
+
+    /* Radios y Sombras */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5625rem;
+    --radius-lg: 0.75rem;
+
+    --shadow-sm: 0 0.75px 1.5px 0 rgba(0,0,0,0.03), 0 0.75px 2.25px 0 rgba(0,0,0,0.02);
+    --shadow-md: 0 3px 4.5px -0.75px rgba(0,0,0,0.05), 0 1.5px 3px -1.5px rgba(0,0,0,0.04);
+    --shadow-lg: 0 7.5px 18px -3px rgba(0,0,0,0.10), 0 3px 6px -1.5px rgba(0,0,0,0.06);
+
+    --sidebar-width: clamp(150px, 10.5vw, 172.5px);
+    --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ── Escala Semántica de Z-Index ────────────────── */
+    --z-under: -1;
+    --z-base: 0;
+    --z-active: 1;
+    --z-hover: 2;
+    --z-sticky-footer: 10;
+    --z-sticky-header: 15;
+    --z-toolbar: 50;
+    --z-navbar: 100;
+    --z-dropdown: 100;
+    --z-toolbar-popup: 200;
+    --z-backdrop: 990;
+    --z-sidebar: 1000;
+    --z-modal: 1000;
+    --z-dialog: 9999;
+    --z-toast: 10000;
+}
+
+[data-theme="dark"] {
+    --bg-app: #090d16;
+    --bg-card: #121824;
+    --bg-sidebar: #0f172a;
+    --bg-card-glass: rgba(18, 24, 36, 0.45);
+    --border-card-glass: rgba(255, 255, 255, 0.08);
+    --text-main: #f8fafc;
+    --text-muted: #cbd5e1;
+    --text-light: #94a3b8; /* Original lighter color for dark mode */
+    --border-card: rgba(255, 255, 255, 0.08);
+    --border-subtle: rgba(255, 255, 255, 0.04);
+
+    /* Textos semánticos adaptados para lectura sobre fondos oscuros */
+    --color-primary-text: #93c5fd;
+    --color-success-text: #34d399;
+    --color-danger-text: #fda4af;
+    --color-warning-text: #fbbf24;
+    --color-purple-text: #c084fc;
+
+    /* Fondos semánticos adaptados para modo oscuro (traslúcidos y menos intensos) */
+    --color-primary-light: rgba(10, 82, 245, 0.18);
+    --color-success-light: rgba(16, 185, 129, 0.18);
+    --color-danger-light: rgba(244, 63, 94, 0.18);
+    --color-warning-light: rgba(245, 158, 11, 0.18);
+    --color-purple-light: rgba(139, 92, 246, 0.18);
+
+    --color-scrollbar: rgba(255, 255, 255, 0.15);
+    --color-scrollbar-hover: rgba(255, 255, 255, 0.3);
+}
+
+/* ==========================================================================
+   2. RESET
+   ========================================================================== */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: var(--fs-base);
+    color: var(--text-main);
+    background-color: var(--bg-app);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6, .widgetTitle, .heroLabel {
+    font-family: var(--font-display);
+    letter-spacing: -0.0075em;
+}
+
+button, input, select {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    outline: none;
+}
+
+button { cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+
+/* ==========================================================================
+   3. LAYOUT ESTRUCTURAL (App Shell)
+   ========================================================================== */
+.app-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.sidebar-wrapper {
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    background-color: var(--bg-sidebar);
+    border-right: 0.75px solid var(--border-card);
+    display: flex;
+    flex-direction: column;
+    padding: 1.3125rem 0.9375rem 1.125rem;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.main-wrapper {
+    flex-grow: 1;
+    background-color: var(--bg-app);
+    padding: clamp(0.75rem, 1.5vw, 1.5rem);
+    max-width: calc(100vw - var(--sidebar-width));
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* ==========================================================================
+   4. SIDEBAR: MARCA
+   ========================================================================== */
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.4875rem;
+    font-size: 0.975rem;
+    font-weight: 800;
+    color: var(--color-primary);
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.015em;
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   4b. SIDEBAR: MENÚ NAV
+   ========================================================================== */
+.sidebar-menu {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.075rem;
+    margin-bottom: auto;
+    flex-shrink: 0;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5625rem;
+    padding: 0.45rem 0.6375rem;
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    transition: var(--transition-smooth);
+    white-space: nowrap;
+}
+
+.sidebar-link svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: var(--transition-smooth);
+}
+
+.sidebar-link:hover {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+.sidebar-link:hover svg {
+    opacity: 1;
+}
+
+.sidebar-link.active {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.sidebar-link.active svg {
+    opacity: 1;
+}
+
+/* ==========================================================================
+   4c. SIDEBAR: PLAN BOX
+   ========================================================================== */
+.sidebar-plan-box {
+    background-color: var(--bg-app);
+    border: 0.75px solid var(--border-card);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 0.825rem;
+    margin-top: 0.9375rem;
+    margin-bottom: 0.9375rem;
+    flex-shrink: 0;
+}
+
+.plan-box-title {
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.2625rem;
+    color: var(--text-main);
+}
+
+.plan-box-text {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    line-height: 1.4;
+    margin-bottom: 0.6375rem;
+}
+
+/* ==========================================================================
+   4d. SIDEBAR: PERFIL + DROPDOWN
+   ========================================================================== */
+.sidebar-profile-wrap {
+    position: relative;
+    flex-shrink: 0;
+    margin-top: auto;
+}
+
+.sidebar-profile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    padding: 0.5625rem 0.375rem;
+    transition: var(--transition-smooth);
+    border-top: 0.75px solid var(--border-card);
+    margin-top: 0;
+}
+
+.sidebar-profile:hover {
+    background-color: var(--border-subtle);
+}
+
+.profile-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4875rem;
+    min-width: 0;
+}
+
+.profile-avatar {
+    width: 27px;
+    height: 27px;
+    border-radius: 50%;
+    background-color: var(--border-subtle);
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+    border: 1.5px solid var(--border-card);
+}
+
+.profile-info {
+    min-width: 0;
+}
+
+.profile-name {
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-email {
+    font-size: 8.25px;
+    color: var(--text-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-chevron {
+    color: var(--text-light);
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.sidebar-profile.open .profile-chevron {
+    transform: rotate(180deg);
+}
+
+/* Dropdown del perfil */
+.profile-dropdown {
+    position: absolute;
+    bottom: calc(100% + 0.375rem);
+    left: 0;
+    right: 0;
+    background-color: var(--bg-card);
+    border: 0.75px solid var(--border-card);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(4.5px);
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    z-index: 100;
+}
+
+.profile-dropdown.open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Cabecera del dropdown */
+.profile-dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5625rem;
+    padding: 0.75rem 0.75rem 0.6375rem;
+    border-bottom: 0.75px solid var(--border-subtle);
+}
+
+.profile-dropdown-avatar {
+    width: 31.5px;
+    height: 31.5px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+    border: 1.5px solid var(--border-card);
+}
+
+.profile-dropdown-name {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.profile-dropdown-email {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    margin-top: 0.75px;
+}
+
+/* Items del dropdown */
+.profile-dropdown-menu {
+    list-style: none;
+    padding: 0.3rem 0;
+}
+
+.profile-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5625rem;
+    padding: 0.4875rem 0.75rem;
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.profile-dropdown-item:hover {
+    background-color: var(--border-subtle);
+    color: var(--text-main);
+}
+
+.profile-dropdown-item.danger {
+    color: var(--color-danger);
+}
+
+.profile-dropdown-item.danger:hover {
+    background-color: var(--color-danger-light);
+    color: var(--color-danger);
+}
+
+.profile-dropdown-item svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.profile-dropdown-divider {
+    height: 0.75px;
+    background-color: var(--border-subtle);
+    margin: 0.225rem 0;
+}
+
+/* ==========================================================================
+   5. HEADER GLOBAL
+   ========================================================================== */
+.global-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.875rem;
+    width: 100%;
+}
+
+.header-greeting {
+    font-size: var(--fs-lg);
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    margin-bottom: 0.1875rem;
+    color: var(--text-main);
+}
+
+.header-subtitle {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-datepicker {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    background-color: var(--bg-card);
+    border: 0.75px solid var(--border-card);
+    padding: 0.45rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+}
+
+.notification-btn {
+    width: 30px;
+    height: 30px;
+    background-color: var(--bg-card);
+    border: 0.75px solid var(--border-card);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    background-color: var(--color-primary);
+    color: white;
+    font-size: 7.5px;
+    font-weight: 700;
+    width: 13.5px;
+    height: 13.5px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ==========================================================================
+   6. BOTONES GLOBALES
+   ========================================================================== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.4875rem 0.9375rem;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    transition: var(--transition-smooth);
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--color-primary-hover);
+}
+
+.btn-secondary {
+    background-color: var(--bg-card);
+    color: var(--text-main);
+    border: 0.75px solid var(--border-card);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover {
+    background-color: var(--border-subtle);
+}
+
+/* ==========================================================================
+   7. RESPONSIVIDAD GLOBAL (App Shell)
+   ========================================================================== */
+@media (max-width: 576px) {
+    .app-container {
+        flex-direction: column;
+        width: 100%;
+        height: auto;
+        overflow: visible;
+    }
+
+    .main-wrapper {
+        max-width: 100%;
+        width: 100%;
+        padding: 0.9375rem 0.75rem;
+        height: auto;
+        overflow: visible;
+    }
+}
+
+/* ==========================================================================
+   8. CORRECCIONES Y PARCHEADO DE LIBRERÍAS DE TERCEROS
+   ========================================================================== */
+/* Corrección Global para Tooltips, Puntos Activos y Líneas Guía de Recharts Atascados (Seguro para Hover y Teclado) */
+.recharts-wrapper:not(:hover):not(:focus-within) .recharts-tooltip-wrapper,
+.recharts-wrapper:not(:hover):not(:focus-within) .recharts-active-dot,
+.recharts-wrapper:not(:hover):not(:focus-within) .recharts-tooltip-cursor {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: visibility 0s, opacity 0.1s linear !important;
+}
+
+/* ==========================================================================
+   9. SCROLLBAR GLOBAL
+   ========================================================================== */
+
+/* Webkit (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--color-scrollbar);
+    border-radius: 100px;
+    transition: background 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--color-scrollbar-hover);
+}
+
+/* Corner piece (cuando hay scroll en ambos ejes) */
+*::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-scrollbar) transparent;
+}
+
+
+/* ==========================================================================
+   10. UTILIDADES GLOBALES DE TEMATIZACIÓN ADAPTATIVA DE MARCA
+   ========================================================================== */
+
+.brand-adaptive-surface {
+  /* Usar el color del usuario si existe, de lo contrario cae al texto principal */
+  --brand-color: var(--user-brand-color, var(--text-main));
+  
+  /* Mezcla para Modo Claro: 12% color de marca + Fondo de Tarjeta */
+  --brand-bg: color-mix(in srgb, var(--brand-color) 12%, var(--bg-card));
+  --brand-border: color-mix(in srgb, var(--brand-color) 15%, transparent);
+  --brand-glow: color-mix(in srgb, var(--brand-color) 10%, transparent);
+
+  background-color: var(--brand-bg) !important;
+  color: var(--brand-color) !important;
+  border-color: var(--brand-border) !important;
+}
+
+.brand-adaptive-surface:hover {
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08), 0 0 16px var(--brand-glow) !important;
+}
+
+/* Redefinición para Modo Oscuro en globals.css */
+[data-theme="dark"] .brand-adaptive-surface {
+  /* Contraste mejorado para el texto oscuro */
+  --brand-color: color-mix(in srgb, var(--user-brand-color, #ffffff) 45%, #ffffff);
+  
+  /* Mezcla para Modo Oscuro: 8% color de marca + Fondo de Aplicación */
+  --brand-bg: color-mix(in srgb, var(--user-brand-color, #ffffff) 8%, var(--bg-app));
+  --brand-border: color-mix(in srgb, var(--user-brand-color, #ffffff) 20%, transparent);
+  --brand-glow: color-mix(in srgb, var(--user-brand-color, #ffffff) 25%, transparent);
+}
+
+/* ==========================================================================
+   11. ESTILOS DE PLAN BADGE Y MENÚ RESPONSIVO (MOBILE)
+   ========================================================================== */
+
+.profile-dropdown-plan-tag {
+    display: inline-block;
+    margin-top: 0.35rem;
+    font-size: 8px;
+    font-weight: 700;
+    color: var(--color-primary);
+    background-color: var(--color-primary-light);
+    padding: 0.125rem 0.375rem;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    width: fit-content;
+}
+
+@media (max-width: 768px) {
+    /* El contenedor principal fluye en columna invertida: sidebar abajo, main arriba */
+    .app-container {
+        flex-direction: column-reverse;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    /* El sidebar se transforma en bottom nav en el flujo natural de flexbox con Glassmorphism */
+    .sidebar-wrapper {
+        position: relative;
+        width: 100% !important;
+        max-width: 100vw !important;
+        height: 72px;
+        min-height: 72px;
+        flex-direction: row !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+        padding: 0 1rem !important;
+        border-top: 0.75px solid var(--border-card);
+        border-right: none !important;
+        overflow: visible !important; /* Permite que el dropdown flote hacia arriba */
+        background: color-mix(in srgb, var(--bg-sidebar) 85%, transparent);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        z-index: var(--z-sidebar);
+    }
+
+    /* Desestructuración del menú para ordenar los elementos libremente */
+    .sidebar-menu {
+        display: contents !important;
+    }
+
+    /* Ocultar marca y cajas secundarias */
+    .sidebar-brand,
+    .sidebar-plan-box,
+    .profile-info,
+    .profile-chevron {
+        display: none !important;
+    }
+
+    /* 1. Botón de Cuentas (Izquierda) */
+    .sidebar-menu li:nth-child(2) {
+        order: 1;
+    }
+
+    .sidebar-menu li:nth-child(2) .sidebar-link {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 0.25rem !important;
+        color: var(--text-muted) !important;
+        font-size: 9px !important;
+        background: transparent !important;
+    }
+
+    /* 2. Botón de Dashboard (Centro - Flotante) */
+    .sidebar-menu li:nth-child(1) {
+        order: 2;
+    }
+
+    .sidebar-menu li:nth-child(1) .sidebar-link {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 56px !important;
+        height: 56px !important;
+        border-radius: 50% !important;
+        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark)) !important;
+        color: #ffffff !important;
+        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4) !important; /* Indigo glow */
+        transform: translateY(-16px) !important;
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+        padding: 0 !important;
+    }
+
+    .sidebar-menu li:nth-child(1) .sidebar-link:active {
+        transform: translateY(-16px) scale(0.92) !important;
+    }
+
+    .sidebar-menu li:nth-child(1) .sidebar-link span {
+        display: none !important;
+    }
+
+    .sidebar-menu li:nth-child(1) .sidebar-link svg {
+        width: 22px !important;
+        height: 22px !important;
+        opacity: 1 !important;
+    }
+
+    /* 3. Perfil de Usuario (Derecha) */
+    .sidebar-profile-wrap {
+        order: 3;
+        margin-top: 0 !important;
+        position: relative;
+    }
+
+    .sidebar-profile {
+        border-top: none !important;
+        padding: 0.25rem !important;
+        margin-top: 0 !important;
+    }
+
+    .profile-avatar {
+        width: 32px !important;
+        height: 32px !important;
+        border: 2px solid var(--border-subtle) !important;
+    }
+
+    /* Alinear y abrir dropdown de perfil hacia arriba y a la derecha */
+    .profile-dropdown {
+        bottom: calc(100% + 0.75rem) !important;
+        left: auto !important;
+        right: 0 !important;
+        width: 220px !important;
+        transform: translateY(-4px) !important;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .profile-dropdown.open {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+        pointer-events: auto !important;
+    }
+
+    /* El contenido del main-wrapper ocupa el alto restante y hace scroll de forma independiente */
+    .main-wrapper {
+        max-width: 100% !important;
+        width: 100% !important;
+        height: calc(100vh - 72px) !important;
+        padding-bottom: 1.5rem !important; /* Padding normal */
+    }
+}
