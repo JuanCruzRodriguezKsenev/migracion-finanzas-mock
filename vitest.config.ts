@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config" ;
 import react  from "@vitejs/plugin-react" ;
-import path   from "path" ;
 import dotenv from "dotenv" ;
+import path   from "path" ;
 
 // Cargar variables de entorno desde .env.local para los tests
 dotenv.config( {path: ".env.local"} ) ;
