@@ -11,8 +11,8 @@ Este checklist contiene todos los archivos creados y modificados en el proyecto 
 *   [x] [ package.json      ]( package.json      ) *( Modificado )* - Dependencias (next-auth, drizzle, vitest, postgres) y scripts.
 *   [x] [ .npmrc            ]( .npmrc            ) *( Creado     )* - Habilita dependencias construidas nativas (`esbuild`) en pnpm.
 *   [x] [ .env.local        ]( .env.local        ) *( Creado     )* - Credenciales de PostgreSQL local (`finanzas_db`).
-*   [ ] [ drizzle.config.ts ]( drizzle.config.ts ) *( Modificado )* - Configuración de Drizzle Kit y carga explícita de variables locales.
-*   [ ] [ vitest.config.ts  ]( vitest.config.ts  ) *( Modificado )* - Integración de dotenv para cargar .env.local en el entorno de pruebas de Vitest.
+*   [x] [ drizzle.config.ts ]( drizzle.config.ts ) *( Modificado )* - Configuración de Drizzle Kit y carga explícita de variables locales.
+*   [x] [ vitest.config.ts  ]( vitest.config.ts  ) *( Modificado )* - Integración de dotenv para cargar .env.local en el entorno de pruebas de Vitest.
 
 ### Capa de Base de Datos Compartida (Shared DB)
 *   [ ] [ src/shared/db/client.ts ]( src/shared/db/client.ts ) *( Modificado )* - Inicialización del cliente global de base de datos (`db`) con carga dinámica de variables locales.
