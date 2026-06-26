@@ -27,7 +27,7 @@ Este checklist contiene todos los archivos creados y modificados en el proyecto 
 
 ### Dominio del Perfil de Usuario (Feature: Profile)
 *   [x] [ src/features/profile/schema.db.ts               ]( src/features/profile/schema.db.ts               ) *( Modificado )* - Tabla `profiles` con preferencias de UI, tema, moneda y planes.
-*   [ ] [ src/features/profile/types.ts                   ]( src/features/profile/types.ts                   ) *( Modificado )* - Inferencias de tipo de Drizzle para el perfil de usuario.
+*   [x] [ src/features/profile/types.ts                   ]( src/features/profile/types.ts                   ) *( Modificado )* - Inferencias de tipo de Drizzle para el perfil de usuario.
 *   [ ] [ src/features/profile/actions/profileActions.ts  ]( src/features/profile/actions/profileActions.ts  ) *( Creado )* - Server Action para actualizar el perfil del usuario autenticado de forma segura.
 *   [ ] [ src/features/profile/context/ProfileContext.tsx ]( src/features/profile/context/ProfileContext.tsx ) *( Modificado )* - Proveedor y contexto de React para el perfil y sincronización del tema en localStorage.
 
