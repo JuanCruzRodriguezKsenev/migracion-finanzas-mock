@@ -1,4 +1,7 @@
+// Librerías externas
 import { describe , it , expect } from "vitest" ;
+
+// Feature: Auth
 import { hashPassword , verifyPassword } from "./authService" ;
 
 /**
@@ -13,6 +16,7 @@ describe( "authService" , () => {
    */
   it( "debería hashear la contraseña de forma correcta con salt aleatorio" , async () => {
     const contrasenia = "PasswordSeguro2026!" ;
+    
     const resultado = await hashPassword( contrasenia ) ;
 
     expect( resultado.hash ).toBeDefined() ;
@@ -27,6 +31,7 @@ describe( "authService" , () => {
    */
   it( "debería generar hashes diferentes para la misma contraseña debido al salt aleatorio" , async () => {
     const contrasenia = "PasswordSeguro2026!" ;
+    
     const resultado1 = await hashPassword( contrasenia ) ;
     const resultado2 = await hashPassword( contrasenia ) ;
 
@@ -40,9 +45,11 @@ describe( "authService" , () => {
    */
   it( "debería verificar la contraseña de forma exitosa con el hash y salt correctos" , async () => {
     const contrasenia = "PasswordSeguro2026!" ;
+    
     const { hash , salt } = await hashPassword( contrasenia ) ;
 
     const esValido = await verifyPassword( contrasenia , hash , salt ) ;
+    
     expect( esValido ).toBe( true ) ;
   } ) ;
 
@@ -51,11 +58,13 @@ describe( "authService" , () => {
    * Valida que verifyPassword retorne false ante un password erróneo.
    */
   it( "debería fallar la verificación si la contraseña ingresada es incorrecta" , async () => {
-    const contraseniaCorrecta = "PasswordSeguro2026!" ;
+    const contraseniaCorrecta   = "PasswordSeguro2026!" ;
     const contraseniaIncorrecta = "PasswordErroneo!" ;
+    
     const { hash , salt } = await hashPassword( contraseniaCorrecta ) ;
 
     const esValido = await verifyPassword( contraseniaIncorrecta , hash , salt ) ;
+    
     expect( esValido ).toBe( false ) ;
   } ) ;
 } ) ;
