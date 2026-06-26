@@ -47,7 +47,7 @@ Este archivo contiene instrucciones, restricciones y directrices operativas espe
     *   Si líneas consecutivas vecinas tienen una estructura similar (ej: asignaciones, tipos en interfaces, columnas en esquemas, desestructuraciones, llamadas repetitivas o importaciones simples), se alinea verticalmente en bloque su estructura homóloga (los `=`, `:`, `,`, los cierres `)`, los encadenamientos o el operador `from` de los `import`) rellenando con espacios para formar columnas uniformes (ej: alineando el `from` en `import path   from "path"`).
 *   **Criterio de Organización y Ordenamiento de Imports:**
     *   **Configuración y Librerías Externas:** Deben ubicarse siempre al inicio del archivo.
-    *   **Importaciones Locales y del Proyecto (`@/...`):** Deben agruparse en bloques coherentes según su dominio de negocio o feature (ej: por módulo o capa) separados por una línea en blanco.
+    *   **Importaciones Locales y del Proyecto (`@/...`):** Deben agruparse en bloques coherentes según su dominio de negocio o feature (ej: por módulo o capa) separados por una línea en blanco. Cada bloque de importaciones (locales o externas) debe ser precedido por un comentario aclaratorio descriptivo (ej: `// Librerías externas`, `// Feature: Auth`).
     *   **Orden por Longitud (Pirámide Invertida):** Dentro de cada bloque de importaciones locales/del proyecto, las líneas deben ordenarse obligatoriamente de mayor a menor longitud física de línea.
     *   **Imports Simples (monoImport):** Si hay importaciones simples consecutivas dentro de un grupo, estas se alinean además por su palabra clave `from`. Las destructuradas (con `{ }`) no se alinean de esta forma pero sí se ordenan por su longitud física.
 *   **Expresiones Lógicas Complejas:**
