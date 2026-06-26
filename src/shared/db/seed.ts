@@ -4,17 +4,21 @@
  * Inserta organizaciones, usuarios, perfiles, categorías contables, cuentas y transacciones.
  * Garantiza idempotencia mediante limpieza previa en desarrollo y valida la partida doble.
  */
+// Librerías externas
 import * as dotenv from "dotenv" ;
 
 // Carga las variables de entorno de .env.local antes de inicializar la conexión
 dotenv.config( {path: ".env.local"} ) ;
 
+// Feature: Accounting
 import { categories , accounts , ledgerTransactions , ledgerEntries } from "@/features/accounting/schema.db" ;
 import { createLedgerTransaction } from "@/features/accounting/services/accountingService" ;
 
+// Feature: Auth
 import { hashPassword } from "@/features/auth/services/authService" ;
 import { organizations , users } from "@/features/auth/schema.db" ;
 
+// Feature: Profile
 import { profiles } from "@/features/profile/schema.db" ;
 
 async function main() {
