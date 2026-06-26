@@ -2,6 +2,7 @@
  * @file client.ts
  * Inicializa el cliente central de conexión a la base de datos PostgreSQL utilizando postgres-js.
  */
+// Librerías externas
 import { drizzle } from "drizzle-orm/postgres-js" ;
 import postgres from "postgres" ;
 import dotenv   from "dotenv" ;
