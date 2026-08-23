@@ -1,4 +1,6 @@
+// Librerías externas
 import { pgTable , uuid , varchar , text , timestamp } from "drizzle-orm/pg-core" ;
+
 
 /**
  * Definición del esquema para la tabla de Organizaciones (Tenants).

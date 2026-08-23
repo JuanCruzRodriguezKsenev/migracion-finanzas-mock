@@ -113,3 +113,14 @@ En el día de vencimiento, el usuario recibe un recordatorio interactivo para au
 > `[ Registrar Pago Ahora ]` `[ Recordar Mañana ]` `[ Omitir este mes ]`
 > 
 > *Si selecciona "Registrar Pago", el sistema le pregunta de qué cuenta bancaria salió el dinero y genera el asiento contable al instante.*
+
+---
+
+## 6. Adenda de Implementación (2026-07-09)
+
+Primera entrega implementada incorporando el dashboard visual de treemap (portado desde el proyecto `finanzasMock` y adaptado a las convenciones de este repositorio). Decisiones registradas:
+
+*   **Campos visuales adicionales** en la tabla `subscriptions` (no contemplados en la propuesta original): `logo_key` (logo de marca o ícono del sistema), `color` (hexadecimal de la tarjeta) y `category` (`design | productivity | entertainment | fitness | security | storage | other`). Alimentan exclusivamente la capa de presentación del dashboard.
+*   **`currency` default `"ARS"`** en lugar de `"USD"`, por coherencia con la tabla `accounts` y el resto del dominio contable de este proyecto.
+*   **Alcance implementado:** esquema (migración `0011`), repositorio multi-tenant, Server Actions con autenticación, dashboard de treemap, modal de alta/edición con búsqueda de marcas (Brandfetch) y totales mensual/anual.
+*   **Pendiente de la propuesta (sin implementar):** motor de automatización en segundo plano (sección 3), asiento contable automatizado en el Libro Mayor (sección 4), notificaciones de vencimiento (sección 5) y gestión de estados `paused`/`cancelled` desde la UI. La columna `next_payment_date` se calcula al crear/editar pero aún no dispara procesos.

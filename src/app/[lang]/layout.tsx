@@ -3,16 +3,27 @@
  * Layout raíz internacionalizado y protegido.
  * Provee la estructura HTML base y el proveedor global de perfiles hidratado en el servidor.
  */
-import type { Metadata } from "next" ;
-import { Inter , Outfit } from "next/font/google" ;
+
+// Librerías externas
+import { Inter , Outfit }   from "next/font/google" ;
 import { getServerSession } from "next-auth" ;
-import { authOptions } from "@/shared/lib/auth" ;
-import { db } from "@/shared/db/client" ;
-import { profiles } from "@/features/profile/schema.db" ;
-import { eq } from "drizzle-orm" ;
-import { ProfileProvider } from "@/features/profile/context/ProfileContext" ;
-import { ProfileData } from "@/features/profile/types" ;
+import type { Metadata }    from "next" ;
+
+// Shared
+import { SessionProvider } from "@/shared/providers/SessionProvider" ;
+import { authOptions }     from "@/shared/lib/auth" ;
+
+// Feature: Profile
+import { profileRepository } from "@/features/profile/repositories/profileRepository" ;
+import { ProfileProvider }   from "@/features/profile/context/ProfileContext" ;
+import { ProfileData }       from "@/features/profile/types" ;
+
+// Feature: Notifications
+import { NotificationsProvider } from "@/features/notifications/context/NotificationsContext" ;
+
+// Estilos
 import "../globals.css" ;
+
 
 const inter = Inter( {
   variable: "--font-inter" ,
@@ -57,17 +68,13 @@ const DEFAULT_PROFILE: ProfileData = {
 
 export default async function RootLayout( {children , params}: RootLayoutProps ) {
   const { lang } = await params ;
-  const session = await getServerSession( authOptions ) ;
+  const session  = await getServerSession( authOptions ) ;
   
   let initialProfile = DEFAULT_PROFILE ;
 
   // Hidratar síncronamente el perfil desde la base de datos en el servidor si hay sesión activa
   if( session?.user?.id ){
-    const [ dbProfile ] = await db
-      .select()
-      .from( profiles )
-      .where( eq(profiles.userId , session.user.id) )
-      .limit( 1 ) ;
+    const dbProfile = await profileRepository.findByUserId( session.user.id ) ;
       
     if( dbProfile ){
       initialProfile = dbProfile ;
@@ -95,9 +102,13 @@ export default async function RootLayout( {children , params}: RootLayoutProps )
         />
       </head>
       <body>
-        <ProfileProvider initialProfile={initialProfile}>
-          {children}
-        </ProfileProvider>
+        <SessionProvider>
+          <ProfileProvider initialProfile={initialProfile}>
+            <NotificationsProvider>
+              {children}
+            </NotificationsProvider>
+          </ProfileProvider>
+        </SessionProvider>
       </body>
     </html>
   ) ;

@@ -2,10 +2,16 @@
  * @file ledgerRepository.ts
  * Repositorio de Libro Mayor y Asientos de Diario (Capa de Acceso a Datos - DAL).
  */
-import { db } from "@/shared/db/client" ;
-import { ledgerTransactions , ledgerEntries } from "../schema.db" ;
-import { eq , and , desc , inArray } from "drizzle-orm" ;
+// Librerías externas
+import { eq , and , desc , inArray , gte , lte } from "drizzle-orm" ;
+
+// Shared
+import { db , DBOrTx } from "@/shared/db/client" ;
+
+// Feature: Accounting
 import { LedgerTransaction , InsertLedgerTransaction , LedgerEntry , InsertLedgerEntry } from "../types" ;
+import { ledgerTransactions , ledgerEntries } from "../schema.db" ;
+
 
 /**
  * Tipo compuesto que representa una transacción junto con todas sus líneas contables asociadas.
@@ -26,7 +32,7 @@ export const ledgerRepository = {
    * @param tx - Instancia de transacción opcional.
    * @returns La cabecera insertada.
    */
-  async createTransaction( data: InsertLedgerTransaction , tx = db ): Promise< LedgerTransaction > {
+  async createTransaction( data: InsertLedgerTransaction , tx: DBOrTx = db ): Promise< LedgerTransaction > {
     const [ inserted ] = await tx
       .insert( ledgerTransactions )
       .values( data )
@@ -41,7 +47,7 @@ export const ledgerRepository = {
    * @param tx - Instancia de transacción opcional.
    * @returns Listado de asientos insertados.
    */
-  async createEntries( data: InsertLedgerEntry[] , tx = db ): Promise< LedgerEntry[] > {
+  async createEntries( data: InsertLedgerEntry[] , tx: DBOrTx = db ): Promise< LedgerEntry[] > {
     return( await tx
       .insert( ledgerEntries )
       .values( data )
@@ -56,19 +62,20 @@ export const ledgerRepository = {
    * @param tx - Instancia de transacción opcional.
    * @returns La transacción o null si no se encuentra.
    */
-  async findById( id: string , organizationId: string , tx = db ): Promise< LedgerTransaction | null > {
+  async findById( id: string , organizationId: string , tx: DBOrTx = db ): Promise< LedgerTransaction | null > {
     const results = await tx
       .select()
       .from( ledgerTransactions )
       .where(
         and(
-          eq(ledgerTransactions.id , id) ,
-          eq(ledgerTransactions.organizationId , organizationId) ,
+          eq( ledgerTransactions.id             , id             ) ,
+          eq( ledgerTransactions.organizationId , organizationId ) ,
         )
       )
       .limit( 1 ) ;
-    return( (results[0]) || null ) ;
+    return( results[0] || null ) ;
   } ,
+
 
   /**
    * Busca todas las entradas individuales de diario asociadas a una transacción.
@@ -77,7 +84,7 @@ export const ledgerRepository = {
    * @param tx - Instancia de transacción opcional.
    * @returns Lista de entradas de diario.
    */
-  async findEntriesByTransactionId( transactionId: string , tx = db ): Promise< LedgerEntry[] > {
+  async findEntriesByTransactionId( transactionId: string , tx: DBOrTx = db ): Promise< LedgerEntry[] > {
     return( await tx
       .select()
       .from( ledgerEntries )
@@ -91,10 +98,9 @@ export const ledgerRepository = {
    * @param tx - Instancia de transacción opcional.
    * @returns Lista de entradas de diario agrupadas.
    */
-  async findEntriesByTransactionIds( transactionIds: string[] , tx = db ): Promise< LedgerEntry[] > {
-    if( transactionIds.length === 0 ){
-      return( [] ) ;
-    }
+  async findEntriesByTransactionIds( transactionIds: string[] , tx: DBOrTx = db ): Promise< LedgerEntry[] > {
+    if( transactionIds.length === 0 ){ return( [] ) ; }
+    
     return( await tx
       .select()
       .from( ledgerEntries )
@@ -108,7 +114,7 @@ export const ledgerRepository = {
    * @param id - ID de la transacción a eliminar.
    * @param tx - Instancia de transacción opcional.
    */
-  async deleteTransaction( id: string , tx = db ): Promise< void > {
+  async deleteTransaction( id: string , tx: DBOrTx = db ): Promise< void > {
     await tx
       .delete( ledgerTransactions )
       .where( eq(ledgerTransactions.id , id) ) ;
@@ -119,26 +125,41 @@ export const ledgerRepository = {
    * Optimiza el consumo evitando N+1 consultas de base de datos agrupando en memoria.
    * 
    * @param organizationId - ID de la organización.
+   * @param fromDate - Opcional. Límite de fecha inferior.
+   * @param toDate - Opcional. Límite de fecha superior.
    * @param tx - Instancia de transacción opcional.
    * @returns Listado de transacciones con sus líneas asociadas ordenadas por fecha descendente.
    */
-  async findTransactionsWithEntries( organizationId: string , tx = db ): Promise< TransactionWithEntries[] > {
+  async findTransactionsWithEntries(
+    organizationId: string ,
+    fromDate?:       Date ,
+    toDate?:         Date ,
+    tx:              DBOrTx = db
+  ): Promise< TransactionWithEntries[] > {
+    const conditions = [ eq(ledgerTransactions.organizationId , organizationId) ] ;
+
+    if( fromDate ){
+      conditions.push( gte(ledgerTransactions.createdAt , fromDate) ) ;
+    }
+    if( toDate ){
+      conditions.push( lte(ledgerTransactions.createdAt , toDate) ) ;
+    }
+
     const transactions = await tx
       .select()
       .from( ledgerTransactions )
-      .where( eq(ledgerTransactions.organizationId , organizationId) )
+      .where( and(...conditions) )
       .orderBy( desc(ledgerTransactions.createdAt) ) ;
 
-    if( transactions.length === 0 ){
-      return( [] ) ;
-    }
+    if( transactions.length === 0 ){ return( [] ) ; }
 
     const txIds = transactions.map( (t) => t.id ) ;
     const entries = await this.findEntriesByTransactionIds( txIds , tx ) ;
 
     return( transactions.map( (tx) => ( {
       ...tx ,
-      entries: entries.filter((e) => e.transactionId === tx.id) ,
+      entries: entries.filter( (e) => e.transactionId === tx.id ) ,
     } ) ) ) ;
   }
 } ;
+

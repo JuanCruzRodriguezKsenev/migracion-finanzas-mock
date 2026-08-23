@@ -1,0 +1,79 @@
+.logoImageWrapper {
+  border-radius:    10px ;
+  overflow:         hidden ;
+  background-color: #ffffff ; /* Fondo blanco intencional en ambos temas: los logos de marcas externas suelen tener fondo transparente */
+  border:           1px solid rgba( 255 , 255 , 255 , 0.08 ) ;
+  display:          flex ;
+  align-items:      center ;
+  justify-content:  center ;
+  padding:          0 ;
+  box-sizing:       border-box ;
+  box-shadow:       0 2px 8px rgba( 0 , 0 , 0 , 0.15 ) ;
+  transition:       border-color 0.2s ease ;
+}
+
+.logoImage {
+  width:      100% ;
+  height:     100% ;
+  object-fit: cover ;
+  display:    block ;
+}
+
+.logoGalicia {
+  background-color: #e85a1d ; /* Color institucional de marca externa: no tokenizar */
+  color:            var(--text-on-accent) ;
+  border-radius:    10px ;
+  display:          flex ;
+  align-items:      center ;
+  justify-content:  center ;
+  font-size:        1.2rem ;
+  font-weight:      800 ;
+  font-family:      sans-serif ;
+}
+
+.logoMercadoPago {
+  background-color: #009ee3 ; /* Color institucional de marca externa: no tokenizar */
+  color:            var(--text-on-accent) ;
+  border-radius:    10px ;
+  display:          flex ;
+  align-items:      center ;
+  justify-content:  center ;
+  font-size:        0.85rem ;
+  font-weight:      800 ;
+  font-family:      sans-serif ;
+}
+
+.logoCash {
+  background-color: var(--color-success) ;
+  color:            var(--text-on-accent) ;
+  border-radius:    10px ;
+  display:          flex ;
+  align-items:      center ;
+  justify-content:  center ;
+  font-size:        1.25rem ;
+  font-weight:      800 ;
+}
+
+.logoDefault {
+  background-color: rgba( 255 , 255 , 255 , 0.08 ) ;
+  color:            var(--text-muted) ;
+  border:           1px solid var(--border-card) ;
+  border-radius:    10px ;
+  display:          flex ;
+  align-items:      center ;
+  justify-content:  center ;
+  font-size:        0.85rem ;
+  font-weight:      700 ;
+}
+
+.pulse {
+  background-color: rgba( 255 , 255 , 255 , 0.05 ) ;
+  border:           1px solid var(--border-card) ;
+  animation:        pulseAnimation 1.5s infinite ease-in-out ;
+}
+
+@keyframes pulseAnimation {
+  0% { opacity: 0.6 ; }
+  50% { opacity: 0.3 ; }
+  100% { opacity: 0.6 ; }
+}

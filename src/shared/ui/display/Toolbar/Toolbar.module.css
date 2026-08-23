@@ -1,0 +1,456 @@
+/* ==========================================================================
+   Toolbar Styles (Glassmorphism & FinanzIA tokens)
+   ========================================================================== */
+
+.toolbar {
+  display:          flex ;
+  align-items:      center ;
+  gap:              0.5rem ;
+  padding:          0.5rem 0.75rem ;
+  margin-bottom:    1rem ;
+  background-color: var(--bg-card-glass) ;
+  backdrop-filter:  blur( 12px ) saturate( 180% ) ;
+  border:           1px solid var(--border-card-glass) ;
+  border-radius:    var(--radius-lg) ;
+  flex-wrap:        wrap ;
+  position:         relative ;
+  z-index:          var(--z-toolbar) ;
+  box-shadow:       var(--shadow-sm) ;
+}
+
+.divider {
+  width:            1px ;
+  height:           1.25rem ;
+  background-color: var(--border-card) ;
+  flex-shrink:      0 ;
+}
+
+/*  SEARCH  */
+.searchWrapper {
+  display:          flex ;
+  align-items:      center ;
+  gap:              0.375rem ;
+  flex:             1 ;
+  min-width:        160px ;
+  background-color: var(--bg-card) ;
+  border:           1.5px solid var(--border-card) ;
+  border-radius:    var(--radius-md) ;
+  padding:          0.35rem 0.75rem ;
+  transition:       var(--transition-smooth) ;
+}
+
+.searchWrapper:focus-within {
+  border-color: var(--color-primary) ;
+  box-shadow:   0 0 0 2.25px color-mix( in srgb , var(--color-primary) 15% , transparent ) ;
+}
+
+.searchIcon {
+  color:       var(--text-muted) ;
+  width:       0.95rem ;
+  height:      0.95rem ;
+  flex-shrink: 0 ;
+}
+
+.searchInput {
+  background:  transparent ;
+  border:      none ;
+  color:       var(--text-main) ;
+  font-size:   var(--fs-sm) ;
+  outline:     none ;
+  width:       100% ;
+  font-family: inherit ;
+}
+
+.searchInput::placeholder {
+  color: var(--text-light) ;
+}
+
+.clearBtn {
+  background:      none ;
+  border:          none ;
+  color:           var(--text-muted) ;
+  cursor:          pointer ;
+  width:           1.5rem ;
+  height:          1.5rem ;
+  display:         flex ;
+  align-items:     center ;
+  justify-content: center ;
+  flex-shrink:     0 ;
+  border-radius:   50% ;
+  transition:      all 0.2s ease ;
+}
+
+.clearBtn:hover {
+  color:      var(--text-main) ;
+  background: rgba( 255 , 255 , 255 , 0.05 ) ;
+}
+
+/*  ACTION BUTTONS  */
+.actionBtn {
+  display:          flex ;
+  align-items:      center ;
+  gap:              0.375rem ;
+  padding:          0.45rem 0.75rem ;
+  background-color: var(--bg-card) ;
+  color:            var(--text-muted) ;
+  border:           1.5px solid var(--border-card) ;
+  border-radius:    var(--radius-md) ;
+  font-size:        var(--fs-sm) ;
+  font-weight:      600 ;
+  cursor:           pointer ;
+  white-space:      nowrap ;
+  transition:       var(--transition-smooth) ;
+  font-family:      inherit ;
+}
+
+.actionBtn:hover {
+  background-color: var(--border-subtle) ;
+  border-color:     var(--color-primary) ;
+  color:            var(--color-primary) ;
+}
+
+.actionBtnActive {
+  border-color:     var(--color-primary) ;
+  color:            var(--color-primary) ;
+  background-color: color-mix( in srgb , var(--color-primary) 8% , transparent ) ;
+}
+
+.iconBtn {
+  display:          flex ;
+  align-items:      center ;
+  justify-content:  center ;
+  width:            2.125rem ;
+  height:           2.125rem ;
+  background-color: var(--bg-card) ;
+  color:            var(--text-muted) ;
+  border:           1.5px solid var(--border-card) ;
+  border-radius:    var(--radius-md) ;
+  cursor:           pointer ;
+  transition:       var(--transition-smooth) ;
+  flex-shrink:      0 ;
+}
+
+.iconBtn:hover:not( :disabled ) {
+  background-color: var(--border-subtle) ;
+  border-color:     var(--color-primary) ;
+  color:            var(--color-primary) ;
+}
+
+.iconBtn:disabled {
+  opacity: 0.4 ;
+  cursor:  not-allowed ;
+}
+
+.badge {
+  font-size:     var(--fs-xs) ;
+  padding:       0.05rem 0.35rem ;
+  border-radius: 9999px ;
+  font-weight:   700 ;
+  line-height:   1.4 ;
+  background:    color-mix( in srgb , var(--color-primary) 15% , transparent ) ;
+  color:         var(--color-primary) ;
+}
+
+/*  SORT  */
+.sortGroup {
+  display:     flex ;
+  align-items: center ;
+  gap:         0.375rem ;
+}
+
+.sortSelectWrapper {
+  position: relative ;
+  display:  flex ;
+  align-items: center ;
+}
+
+.sortSelect {
+  color:            var(--text-main) ;
+  padding:          0.45rem 1.75rem 0.45rem 0.75rem ;
+  border:           1.5px solid var(--border-card) ;
+  border-radius:    var(--radius-md) ;
+  background-color: var(--bg-card) ;
+  font-size:        var(--fs-sm) ;
+  cursor:           pointer ;
+  outline:          none ;
+  font-family:      inherit ;
+  transition:       var(--transition-smooth) ;
+  appearance:       none ;
+}
+
+.sortSelect option {
+  background-color: var(--bg-card) ;
+  color:            var(--text-main) ;
+}
+
+.sortArrow {
+  position:       absolute ;
+  right:          0.5rem ;
+  width:          0.9rem ;
+  height:         0.9rem ;
+  color:          var(--text-muted) ;
+  pointer-events: none ;
+  flex-shrink:    0 ;
+}
+
+.sortSelect:hover,
+.sortSelect:focus {
+  border-color: var(--color-primary) ;
+}
+
+/*  POPUPS  */
+.popupAnchor {
+  position: relative ;
+}
+
+.popup {
+  position:         absolute ;
+  top:              calc( 100% + 0.5rem ) ;
+  right:            0 ;
+  background-color: var(--bg-card) ;
+  border:           1px solid var(--border-card-glass) ;
+  border-radius:    var(--radius-lg) ;
+  padding:          0.9375rem ;
+  min-width:        240px ;
+  max-width:        calc( 100vw - 2rem ) ;
+  box-shadow:       var(--shadow-lg) ;
+  z-index:          var(--z-toolbar-popup) ;
+  animation:        slideIn 0.15s ease-out ;
+  max-height:       70vh ;
+  overflow-y:       auto ;
+}
+
+.popupRight {
+  left:  auto ;
+  right: 0 ;
+}
+
+@keyframes slideIn {
+  from {
+    opacity:   0 ;
+    transform: translateY( -6px ) ;
+  }
+  to {
+    opacity:   1 ;
+    transform: translateY( 0 ) ;
+  }
+}
+
+.popupHeader {
+  display:         flex ;
+  justify-content: space-between ;
+  align-items:     center ;
+  margin-bottom:   0.5rem ;
+  padding-bottom:  0.5rem ;
+  border-bottom:   1.5px solid var(--border-card-glass) ;
+}
+
+.popupHeaderActions {
+  display: flex ;
+  gap:     0.25rem ;
+}
+
+.popupFooter {
+  padding-top: 0.75rem ;
+  border-top:  1.5px solid var(--border-card-glass) ;
+  margin-top:  0.5rem ;
+}
+
+.sectionTitle {
+  font-size:      var(--fs-xs) ;
+  font-weight:    700 ;
+  color:          var(--text-muted) ;
+  text-transform: uppercase ;
+  letter-spacing: 0.05em ;
+}
+
+.textBtn {
+  padding:          0.15rem 0.4rem ;
+  font-size:        var(--fs-xs) ;
+  font-weight:      500 ;
+  border-radius:    var(--radius-sm) ;
+  border:           1.5px solid var(--border-card) ;
+  background-color: var(--bg-card) ;
+  color:            var(--text-muted) ;
+  cursor:           pointer ;
+  transition:       var(--transition-smooth) ;
+  font-family:      inherit ;
+}
+
+.textBtn:hover {
+  background-color: var(--border-subtle) ;
+  color:            var(--color-primary) ;
+  border-color:     var(--color-primary) ;
+}
+
+.resetBtn {
+  width:            100% ;
+  padding:          0.45rem 0.75rem ;
+  border:           1.5px solid var(--border-card) ;
+  border-radius:    var(--radius-md) ;
+  background-color: var(--bg-card) ;
+  color:            var(--text-main) ;
+  font-weight:      600 ;
+  cursor:           pointer ;
+  font-size:        var(--fs-sm) ;
+  font-family:      inherit ;
+  transition:       var(--transition-smooth) ;
+}
+
+.resetBtn:hover:not( :disabled ) {
+  background-color: var(--border-subtle) ;
+}
+
+.resetBtn:disabled {
+  opacity: 0.4 ;
+  cursor:  not-allowed ;
+}
+
+/*  FILTER PILLS  */
+.filterSection {
+  display:        flex ;
+  flex-direction: column ;
+  gap:            0.375rem ;
+  margin-bottom:  0.75rem ;
+}
+
+.filterSection:last-of-type {
+  margin-bottom: 0 ;
+}
+
+.pills {
+  display:   flex ;
+  flex-wrap: wrap ;
+  gap:       0.25rem ;
+}
+
+.pill {
+  display:         inline-flex ;
+  align-items:     center ;
+  padding:         0.25rem 0.5rem ;
+  border:          1px solid transparent ;
+  border-radius:   var(--radius-sm) ;
+  background:      transparent ;
+  color:           var(--text-muted) ;
+  font-size:       var(--fs-xs) ;
+  font-weight:     500 ;
+  cursor:          pointer ;
+  transition:      var(--transition-smooth) ;
+  white-space:     nowrap ;
+  font-family:     inherit ;
+}
+
+.pill:hover {
+  background: color-mix( in srgb , var(--color-primary) 6% , transparent ) ;
+  color:      var(--text-main) ;
+}
+
+.pillActive {
+  background:   color-mix( in srgb , var(--color-primary) 12% , transparent ) ;
+  color:        var(--color-primary) ;
+  border-color: color-mix( in srgb , var(--color-primary) 30% , transparent ) ;
+  font-weight:  600 ;
+}
+
+.pillActive:hover {
+  background: color-mix( in srgb , var(--color-primary) 18% , transparent ) ;
+  color:      var(--color-primary) ;
+}
+
+/*  COLUMN TOGGLES  */
+.colList {
+  display:        flex ;
+  flex-direction: column ;
+  gap:            0.25rem ;
+  margin-top:     0.375rem ;
+}
+
+.colItem {
+  display:         flex ;
+  align-items:     center ;
+  justify-content: space-between ;
+  cursor:          pointer ;
+  padding:         0.35rem 0.5rem ;
+  border-radius:   var(--radius-sm) ;
+  font-size:       var(--fs-sm) ;
+  color:           var(--text-muted) ;
+  transition:      var(--transition-smooth) ;
+  user-select:     none ;
+}
+
+.colItem:hover {
+  background-color: var(--border-subtle) ;
+}
+
+.colItemOn {
+  color: var(--text-main) ;
+}
+
+.toggle {
+  width:         1.85rem ;
+  height:        1.05rem ;
+  border-radius: 9999px ;
+  background:    var(--border-card) ;
+  position:      relative ;
+  flex-shrink:   0 ;
+  transition:    background 200ms ;
+}
+
+.toggleOn {
+  background: var(--color-primary) ;
+}
+
+.toggle::after {
+  content:       "" ;
+  position:      absolute ;
+  width:         0.75rem ;
+  height:        0.75rem ;
+  border-radius: 50% ;
+  background:    #ffffff ; /* Knob del toggle: blanco intencional en ambos temas, no tokenizar */
+  top:           50% ;
+  left:          2.25px ;
+  transform:     translateY( -50% ) ;
+  transition:    left 200ms ;
+  box-shadow:    0 1px 3px rgba( 0 , 0 , 0 , 0.3 ) ;
+}
+
+.toggleOn::after {
+  left: calc( 100% - 0.85rem ) ;
+}
+
+/*  SCROLLBAR  */
+.popup::-webkit-scrollbar {
+  width: 4px ;
+}
+
+.popup::-webkit-scrollbar-track {
+  background: transparent ;
+}
+
+.popup::-webkit-scrollbar-thumb {
+  background:    var(--border-card-glass) ;
+  border-radius: 2px ;
+}
+
+/*  RESPONSIVE  */
+@media ( max-width: 768px ) {
+  .toolbar {
+    gap:     0.375rem ;
+    padding: 0.375rem ;
+  }
+  .searchWrapper {
+    min-width: 120px ;
+  }
+  .divider {
+    display: none ;
+  }
+  .popup {
+    position:  fixed ;
+    top:       50% ;
+    left:      50% !important ;
+    right:     auto !important ;
+    transform: translate( -50% , -50% ) ;
+    width:     calc( 100vw - 2rem ) ;
+    max-width: 320px ;
+  }
+}

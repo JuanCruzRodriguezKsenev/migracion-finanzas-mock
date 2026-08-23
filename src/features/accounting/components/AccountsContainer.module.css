@@ -1,0 +1,265 @@
+.container {
+  display: flex ;
+  flex-direction: column ;
+  gap: 1.5rem ;
+  width: 100% ;
+}
+
+.actionBar {
+  display: flex ;
+  justify-content: flex-end ;
+  align-items: center ;
+  width: 100% ;
+}
+
+.actionBarButtons {
+  display: flex ;
+  gap: 0.75rem ;
+}
+
+.modalActionBar {
+  display: flex ;
+  justify-content: flex-end ;
+  margin-bottom: 1rem ;
+}
+
+.createBtn {
+  background: var(--color-primary) ;
+  color: var(--text-on-accent) ;
+  border: none ;
+  border-radius: 8px ;
+  font-size: 0.85rem ;
+  font-weight: 700 ;
+  padding: 0.65rem 1.2rem ;
+  cursor: pointer ;
+  transition: background 0.2s ease ;
+}
+
+.createBtn:hover {
+  background: var(--color-primary-hover) ;
+}
+
+.createBtn:active {
+  /* Removido transform de escala para evitar Layout Shift o saltos UX */
+}
+
+
+.tabsRow {
+  margin-top: 0.5rem ;
+  border-bottom: 1px solid var(--border-card) ;
+  padding-bottom: 0.5rem ;
+}
+
+.gridContent {
+  display: flex ;
+  flex-direction: column ;
+  gap: 2rem ;
+}
+
+.entitySection {
+  display: flex ;
+  flex-direction: column ;
+  gap: 0.85rem ;
+}
+
+.entityTitle {
+  font-size: 0.95rem ;
+  font-weight: 700 ;
+  color: var(--text-main) ;
+  border-left: 3px solid var(--color-primary) ;
+  padding-left: 0.6rem ;
+}
+
+.cardsGrid {
+  display: grid ;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) ;
+  gap: 1.25rem ;
+  width: 100% ;
+}
+
+.cardsGridPlan {
+  display: grid ;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) ;
+  gap: 1rem ;
+  width: 100% ;
+}
+
+/* Rediseño Estático de Tarjetas de Entidades */
+.entitySummaryCard {
+  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255, 255, 255, 0.01) 100%) ;
+  border: 1px solid var(--border-card) ;
+  border-radius: 16px ;
+  padding: 1.5rem ;
+  display: flex ;
+  flex-direction: column ;
+  justify-content: space-between ;
+  gap: 1.75rem ;
+  cursor: pointer ;
+  /* Se eliminan transformaciones físicas de movimiento */
+  transition: border-color 0.22s ease, background-color 0.22s ease ;
+}
+
+.entitySummaryCard:hover {
+  /* Resaltado estático de bordes y fondo */
+  border-color: rgba(26, 86, 240, 0.45) ; /* var(--color-primary) en rgba */
+  background-color: rgba(255, 255, 255, 0.02) ;
+}
+
+.entityCardTop {
+  display: flex ;
+  justify-content: space-between ;
+  align-items: flex-start ;
+  width: 100% ;
+}
+
+.entityMeta {
+  display: flex ;
+  flex-direction: column ;
+  gap: 0.25rem ;
+}
+
+.entityLogoBadge {
+  display: flex ;
+  align-items: center ;
+  justify-content: center ;
+}
+
+.entityNameMain {
+  font-size: 1.15rem ;
+  font-weight: 800 ;
+  color: var(--text-main) ;
+  letter-spacing: -0.01em ;
+}
+
+.subAccountsCount {
+  font-size: 0.75rem ;
+  color: var(--text-muted) ;
+  font-weight: 500 ;
+}
+
+.entityCardBottom {
+  display: flex ;
+  justify-content: space-between ;
+  align-items: flex-end ;
+  border-top: 1px solid var(--border-card) ;
+  padding-top: 0.85rem ;
+}
+
+.netBalanceLabel {
+  font-size: 0.75rem ;
+  color: var(--text-muted) ;
+  font-weight: 600 ;
+  text-transform: uppercase ;
+  letter-spacing: 0.05em ;
+}
+
+.entityNetBalance {
+  font-size: 1.4rem ;
+  font-weight: 800 ;
+  letter-spacing: -0.02em ;
+}
+
+/* Subcuentas en Modal Detalle */
+.modalScrollBody {
+  max-height: 320px ;
+  overflow-y: auto ;
+  padding-right: 0.25rem ;
+  margin-top: 0.5rem ;
+}
+
+.detailedCardsGrid {
+  display: flex ;
+  flex-direction: column ;
+  gap: 0.75rem ;
+}
+
+.accountCardDetailed {
+  padding: 1rem 1.25rem ;
+  display: flex ;
+  flex-direction: column ;
+  gap: 0.75rem ;
+}
+
+.accountNameDetailed {
+  font-size: 0.875rem ;
+  font-weight: 600 ;
+  color: var(--text-main) ;
+}
+
+.accountBalanceDetailed {
+  font-size: 1.1rem ;
+  font-weight: 700 ;
+}
+
+.cardHeader {
+  display: flex ;
+  justify-content: space-between ;
+  align-items: center ;
+}
+
+.accountCode {
+  font-size: 0.75rem ;
+  font-weight: 500 ;
+  color: var(--text-muted) ;
+  background: rgba(255, 255, 255, 0.05) ;
+  padding: 0.15rem 0.4rem ;
+  border-radius: 4px ;
+  font-family: monospace ;
+}
+
+.cardFooterDetailed {
+  display: flex ;
+  justify-content: space-between ;
+  align-items: center ;
+}
+
+.accountType {
+  font-size: 0.75rem ;
+  color: var(--text-muted) ;
+  text-transform: uppercase ;
+  letter-spacing: 0.02em ;
+}
+
+.accountBalanceMuted {
+  font-size: 1.1rem ;
+  font-weight: 700 ;
+  color: var(--text-main) ;
+}
+
+.greenText {
+  color: var(--color-success) ;
+  text-shadow: 0 0 12px rgba(5, 150, 105, 0.15) ;
+}
+
+.redText {
+  color: var(--color-danger) ;
+  text-shadow: 0 0 12px rgba(225, 29, 72, 0.15) ;
+}
+
+/* Estilos dinámicos para tarjetas con color corporativo */
+.entitySummaryCard.hasBrandColor {
+  transition: transform 0.22s ease, filter 0.22s ease, box-shadow 0.22s ease ;
+}
+
+.entitySummaryCard.hasBrandColor:hover {
+  filter: brightness(1.08) ;
+  transform: translateY(-2px) ;
+}
+
+.entitySummaryCard.hasBrandColor .entityNameMain {
+  color: var(--text-on-accent) ;
+}
+
+.entitySummaryCard.hasBrandColor .subAccountsCount,
+.entitySummaryCard.hasBrandColor .netBalanceLabel {
+  color: rgba(255, 255, 255, 0.72) ;
+}
+
+.entitySummaryCard.hasBrandColor .entityCardBottom {
+  border-top-color: rgba(255, 255, 255, 0.15) ;
+}
+
+.entitySummaryCard.hasBrandColor .entityNetBalance {
+  color: var(--text-on-accent) !important ;
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.1) ;
+}

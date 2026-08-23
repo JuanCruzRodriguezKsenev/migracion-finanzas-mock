@@ -2,19 +2,26 @@
 import { promisify } from "util" ;
 import crypto        from "crypto" ;
 
-// Definición asíncrona de scrypt con casteo de tipo estricto en TS
+// Promisifica la función nativa 'crypto.scrypt' (basada originalmente en callbacks) y la castea
+// a una firma asíncrona fuertemente tipada en TypeScript para evitar sobrecargas genéricas ambiguas.
 const scryptAsync = promisify( crypto.scrypt ) as (
-  password: string ,
-  salt:     string ,
-  keylen:   number ,
-  options:  crypto.ScryptOptions
-) => Promise< Buffer > ;
+  password: string ,              // Contraseña en texto plano a derivar
+  salt:     string ,              // Secuencia aleatoria única añadida a la contraseña antes del hash para evitar ataques de precomputación (Rainbow Tables)
+  keylen:   number ,              // Longitud en bytes de la clave final resultante
+  options:  crypto.ScryptOptions  // Parámetros de configuración de costos algorítmicos
+) => Promise< Buffer > ;          // Retorna un Buffer binario asincrónicamente con la clave derivada
 
-// Parámetros scrypt centralizados para consistencia y mantenibilidad
+
+// Parámetros scrypt centralizados para consistencia y mantenibilidad de la seguridad criptográfica
 const SCRYPT_PARAMS = {
-  keylen:  64 ,
-  options: { N: 16384 , r: 8 , p: 1 }
+  keylen:  64 ,   // Longitud de la clave derivada generada en bytes (64 bytes = 512 bits)
+  options: {
+    N: 16384 ,    // Factor de costo de CPU/memoria (debe ser potencia de 2; OWASP recomienda 16384 para hash de contraseñas)
+    r: 8     ,    // Tamaño de bloque (controla el tamaño de la memoria secuencial de lectura/escritura)
+    p: 1          // Factor de paralelización (1 para limitar el uso de hilos concurrentes en servidores compartidos)
+  }
 } as const ;
+
 
 /**
  * Genera un hash criptográfico seguro a partir de una contraseña en texto plano

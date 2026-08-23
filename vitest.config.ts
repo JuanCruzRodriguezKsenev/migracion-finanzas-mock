@@ -1,39 +1,40 @@
 // Librerías externas
+import react          from "@vitejs/plugin-react" ;
 import { defineConfig } from "vitest/config" ;
-import react  from "@vitejs/plugin-react" ;
-import dotenv from "dotenv" ;
-import path   from "path" ;
+import dotenv         from "dotenv" ;
+import path           from "path" ;
 
 // Cargar variables de entorno desde .env.local para los tests
 dotenv.config( {path: ".env.local"} ) ;
 
+// Redirigir la base de datos a la de tests para evitar borrar la de desarrollo
+const databaseUrl     = ( process.env.DATABASE_URL || "postgresql://postgres:postgres_dev_pwd@localhost:5432/finanzas_db" ) ;
+const testDatabaseUrl = databaseUrl.replace( /\/([^/?]+)(\?|$)/ , "/finanzas_db_test$2" ) ;
+process.env.DATABASE_URL = testDatabaseUrl ;
+
 export default defineConfig( {
   plugins: [
-    // Permite a Vitest entender la sintaxis de React y JSX/TSX si alguna librería la utiliza
     react()
   ] ,
   test: {
-    // Usamos el entorno "node" porque es extremadamente rápido y tus pruebas
-    // actuales están enfocadas en lógica pura (servicios y utilidades)
     environment: "node" ,
-    
-    // Habilita el uso de APIs globales como `describe`, `test` y `expect` sin tener que importarlas en cada archivo
-    globals: true ,
-    
-    // Define exactamente qué archivos de prueba debe buscar y ejecutar Vitest.
-    // Buscará archivos de prueba (.test.ts o .test.tsx) dentro de las utilidades compartidas y características.
+    globals:     true ,
+    globalSetup: "./src/shared/db/vitest.setup.ts" ,
+    setupFiles:  [ "./src/shared/lib/vitest.setup.dom.ts" ] ,
+    // Los tests de repositorios comparten la base finanzas_db_test y limpian tablas
+    // entre casos: ejecutar archivos en paralelo produce colisiones de llaves foráneas.
+    fileParallelism: false ,
     include: [
       "src/shared/lib/**/*.test.ts" ,
       "src/shared/services/**/*.test.ts" ,
+      "src/shared/ui/**/*.test.tsx" ,
       "src/features/**/*.test.ts" ,
       "src/features/**/*.test.tsx"
     ]
   } ,
   resolve: {
     alias: {
-      // Configura el alias "@" para apuntar a la carpeta "src" ,
-      // resolviendo las rutas absolutas tal como lo hace Next.js
-      "@": path.resolve( __dirname , "./src" )
+      "@" : path.resolve( __dirname , "./src" )
     }
   }
 } ) ;

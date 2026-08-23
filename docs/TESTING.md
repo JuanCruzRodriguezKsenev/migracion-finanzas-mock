@@ -26,6 +26,9 @@ import { Button } from "./Button";
 Para mantener el proyecto ordenado y evitar ejecuciones accidentales, Vitest está configurado para escanear **únicamente** archivos dentro de las siguientes rutas:
 *   `src/shared/lib/**/*.test.ts`
 *   `src/shared/services/**/*.test.ts`
+*   `src/shared/ui/**/*.test.tsx`
+*   `src/features/**/*.test.ts`
+*   `src/features/**/*.test.tsx`
 
 Los archivos de test deben ubicarse exactamente al lado del archivo de código que prueban.
 

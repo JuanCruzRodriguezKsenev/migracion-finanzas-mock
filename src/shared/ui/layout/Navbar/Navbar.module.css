@@ -1,0 +1,164 @@
+.navbar {
+    width:            var(--sidebar-width) ;
+    min-width:        var(--sidebar-width) ;
+    height:           100vh ;
+    position:         sticky ;
+    top:              0 ;
+    display:          flex ;
+    flex-direction:   column ;
+    padding:          1.25rem 0.625rem 0 ;
+    background-color: var(--bg-sidebar) ;
+    border-right:     1px solid var(--border-subtle) ;
+    box-shadow:       inset -1px 0 0 var(--border-card) ;
+    overflow:         visible ; /* crítico: no cortar el popup */
+}
+
+
+
+/* ── Botón cerrar (solo mobile) ───────────────── */
+.closeBtn {
+    display: none ;
+}
+
+/* ── Marca ────────────────────────────────────── */
+.brand {
+    display:        flex ;
+    align-items:    center ;
+    gap:            0.5rem ;
+    font-family:    var(--font-display) ;
+    font-size:      1rem ;
+    font-weight:    800 ;
+    color:          var(--color-primary) ;
+    letter-spacing: -0.02em ;
+    margin-bottom:  1.5rem ;
+    padding:        0 0.125rem ;
+    flex-shrink:    0 ;
+}
+
+.brandIcon {
+    display:          flex ;
+    align-items:      center ;
+    justify-content:  center ;
+    padding:          5px ;
+    background-color: var(--color-primary-light) ;
+    border-radius:    var(--radius-sm) ;
+    color:            var(--color-primary) ;
+}
+
+/* ── Navegación ───────────────────────────────── */
+.nav {
+    display:       flex ;
+    flex-direction:column ;
+    gap:           1.125rem ;
+    flex:          1 ;
+    overflow-y:    auto ;
+    overflow-x:    visible ;
+}
+
+.section {
+    display:        flex ;
+    flex-direction: column ;
+    gap:            0.2rem ;
+}
+
+.sectionTitle {
+    font-size:      8.5px ;
+    font-weight:    700 ;
+    text-transform: uppercase ;
+    letter-spacing: 0.1em ;
+    color:          var(--text-placeholder) ;
+    padding:        0 0.625rem ;
+    margin-bottom:  0.2rem ;
+}
+
+.menu {
+    list-style: none ;
+    display:    flex ;
+    flex-direction: column ;
+    gap:        0.1rem ;
+}
+
+.link {
+    display:       flex ;
+    align-items:   center ;
+    gap:           0.5rem ;
+    padding:       0.45rem 0.625rem ;
+    color:         var(--text-light) ;
+    font-size:     var(--fs-sm) ;
+    font-weight:   500 ;
+    border-radius: var(--radius-sm) ;
+    transition:    var(--transition-smooth) ;
+    white-space:   nowrap ;
+    position:      relative ;
+}
+
+.link svg {
+    flex-shrink: 0 ;
+    opacity:     0.65 ;
+    transition:  var(--transition-smooth) ;
+}
+
+.link:hover {
+    background-color: var(--color-primary-light) ;
+    color:            var(--color-primary) ;
+}
+.link:hover svg { opacity: 1 ; }
+
+.link.active {
+    background-color: var(--color-primary-light) ;
+    color:            var(--color-primary) ;
+    font-weight:      600 ;
+}
+.link.active svg { opacity: 1 ; }
+
+/* Indicador activo */
+.link.active::before {
+    content:       '' ;
+    position:      absolute ;
+    left:          -0.625rem ;
+    top:           25% ;
+    height:        50% ;
+    width:         2.5px ;
+    background:    var(--color-primary) ;
+    border-radius: 0 2px 2px 0 ;
+}
+
+/* ── Mobile ───────────────────────────────────── */
+@media (max-width: 768px) {
+    .navbar {
+        position:         fixed !important ;
+        top:              0 ;
+        left:             0 ;
+        bottom:           0 ;
+        width:            270px !important ;
+        max-width:        82vw !important ;
+        height:           100vh !important ;
+        z-index:          var(--z-sidebar) !important ;
+        transform:        translateX(-100%) ;
+        transition:       transform 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important ;
+        padding:          1.5rem 1rem !important ;
+        overflow-y:       auto !important ;
+        overflow-x:       visible !important ;
+    }
+    .navbar.open { transform: translateX(0) !important ; }
+
+    .closeBtn {
+        display:          flex !important ;
+        align-items:      center ;
+        justify-content:  center ;
+        position:         absolute ;
+        top:              1rem ;
+        right:            1rem ;
+        width:            30px ;
+        height:           30px ;
+        border-radius:    50% ;
+        background-color: var(--border-subtle) ;
+        color:            var(--text-main) ;
+        border:           none ;
+        cursor:           pointer ;
+        transition:       var(--transition-smooth) ;
+    }
+    .closeBtn:hover { background-color: var(--border-card) ; }
+
+    .brand { margin-top: 1rem ; margin-bottom: 2rem !important ; }
+}

@@ -1,0 +1,23 @@
+.popup {
+    position:         fixed;
+    top:              0;
+    left:             0;
+    background-color: var(--bg-card);
+    border:           1px solid var(--border-card);
+    border-radius:    var(--radius-lg);
+    box-shadow:       var(--shadow-xl);
+    overflow:         visible;
+    z-index:          var(--z-dialog);
+    width:            max-content;
+    min-width:        170px;
+
+    /* Animación de entrada */
+    animation: popupIn 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) both ;
+}
+
+@keyframes popupIn {
+    from { opacity: 0 ; transform: scale(0.95) translateY(4px) ; }
+    to   { opacity: 1 ; transform: scale(1)    translateY(0)   ; }
+}
+
+

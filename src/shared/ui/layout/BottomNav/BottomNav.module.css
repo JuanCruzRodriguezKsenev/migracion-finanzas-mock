@@ -1,0 +1,74 @@
+.bottomNav { display: none; }
+
+@media (max-width: 768px) {
+    .bottomNav {
+        display:          flex !important;
+        position:         fixed;
+        bottom:           0;
+        left:             0;
+        right:            0;
+        height:           64px;
+        background-color: color-mix(in srgb, var(--bg-card) 88%, transparent);
+        backdrop-filter:  blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border-top:       1px solid var(--border-subtle);
+        z-index:          var(--z-navbar);
+        justify-content:  space-around;
+        align-items:      center;
+        padding:          0 0.5rem;
+        /* Sombra hacia arriba */
+        box-shadow: 0 -1px 0 var(--border-card), var(--shadow-lg);
+    }
+
+    .bottomNavLink {
+        display:         flex;
+        flex-direction:  column;
+        align-items:     center;
+        justify-content: center;
+        gap:             0.175rem;
+        flex-grow:       1;
+        height:          100%;
+        color:           var(--text-placeholder);
+        font-size:       8px;
+        font-weight:     700;
+        letter-spacing:  0.04em;
+        text-transform:  uppercase;
+        transition:      var(--transition-smooth);
+        cursor:          pointer;
+        position:        relative;
+        background:      none;
+        border:          none;
+        outline:         none;
+    }
+
+    .bottomNavLink svg {
+        color:      var(--text-light);
+        transition: var(--transition-smooth);
+    }
+
+    /* Punto indicador activo */
+    .bottomNavLink.active::before {
+        content:          '';
+        position:         absolute;
+        top:              6px;
+        left:             50%;
+        transform:        translateX(-50%);
+        width:            20px;
+        height:           3px;
+        background:       var(--color-primary);
+        border-radius:    0 0 3px 3px;
+    }
+
+    .bottomNavLink.active {
+        color: var(--color-primary);
+    }
+    .bottomNavLink.active svg {
+        color:     var(--color-primary);
+        transform: translateY(-1px);
+    }
+
+    .bottomNavLink:not(.active):active {
+        color: var(--text-main);
+        transform: scale(0.95);
+    }
+}

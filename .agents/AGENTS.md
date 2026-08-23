@@ -37,9 +37,9 @@ Este archivo contiene instrucciones, restricciones y directrices operativas espe
 *   Utilizar **TSDoc** para documentar clases, interfaces, tipos y funciones públicas nuevas.
 *   **Reglas de Espaciado Estricto de Delimitadores (`( )`, `{ }`, `[ ]`, `< >`):**
     *   **Delimitadores Exteriores:** Si un delimitador es el contenedor más externo de una expresión o bloque sintáctico en una línea, debe llevar un espacio en sus extremos internos: `( expr )`, `[ item ]`, `{ key: val }`, `< Type >`. Esto aplica a delimitadores que, aun estando anidados en bloques multilínea, sean el contenedor más externo **en esa línea física en particular** (ej: `dbCredentials: { url: process.env.DATABASE_URL! } ,`).
-    *   **Delimitadores Anidados:** Si un delimitador está físicamente dentro de otro en la misma línea, sus extremos internos no llevan ningún espacio: `(inner)`, `{inner}`, `[inner]`, `<inner>` (ej: `dotenv.config( {path: ".env.local"} ) ;`).
+    *   **Delimitadores Anidados:** Si un delimitador está físicamente dentro de otro en la misma línea, sus extremos internos no llevan ningún espacio: `(inner)`, `{inner}`, `[inner]`, `<inner>` (ej: `dotenv.config( {path: ".env.local"} ) ;`). *Excepción:* Se tolera la sintaxis nativa de React para propiedades de estilo inline directas en JSX `style={{...}}` sin requerir espacios adicionales, pero si se escribe con un solo nivel de llaves o espaciado interno, debe cumplir con la regla de anidamiento (ej: `style={{color: "red"}}` en lugar de `style={ { color: "red" } }`).
     *   **Multilínea:** Si se desglosa en varias líneas, se usa salto de línea e indentación estándar en lugar de espaciados internos.
-    *   **Excepciones de Control:** Las estructuras condicionales `if(condicion)` y bucles `for(iterador)` no llevan espacios internos en sus límites de paréntesis. *Excepción:* Los early returns con condiciones muy simples y cortas escritos inline en una única línea física sí llevan espacios internos en la condición, ej: `if( err ){ return( reject(err) ) ; }`.
+    *   **Estructuras de Control:** Las estructuras condicionales `if( condicion ) {` y bucles `for( iterador ) {` sí llevan espacios internos en sus límites de paréntesis y un espacio antes de la llave de apertura `) {`.
     *   **Punto y coma:** Siempre se coloca exactamente un espacio antes de cada punto y coma: `const a = 1 ;`.
     *   **Comas:** Las comas van siempre aisladas por espacios a ambos lados: `func( a , b , c )`. No se debe colocar coma final (trailing comma) al último elemento de una lista de propiedades de un objeto literal si no es multilínea o si cierra el bloque del objeto.
     *   **Retornos (`return`):** Siempre se envuelve el retorno como `return( expresion ) ;` (sin espacio antes de `(`, y respetando la regla de espaciado en la expresión interna). *Excepción:* En retornos de promesas que envuelven funciones flecha, ej: `return( new Promise( (resolve , reject) => {`, se admite la sintaxis habitual del constructor.
@@ -51,6 +51,37 @@ Este archivo contiene instrucciones, restricciones y directrices operativas espe
     *   **Orden por Longitud (Pirámide Invertida):** Dentro de cada bloque de importaciones locales/del proyecto, las líneas deben ordenarse obligatoriamente de mayor a menor longitud física de línea.
     *   **Imports Simples (monoImport):** Si hay importaciones simples consecutivas dentro de un grupo, estas se alinean además por su palabra clave `from`. Las destructuradas (con `{ }`) no se alinean de esta forma pero sí se ordenan por su longitud física.
 *   **Expresiones Lógicas Complejas:**
-    *   Al combinar sub-expresiones de comparación con `&&` o `||`, aísla cada comparación entre paréntesis `( ... )`. Al estar anidados, no llevan espacios internos: `(a === b)`.
+    *   Al combinar sub-expresiones con `&&` o `||`, aísla únicamente las comparaciones complejas entre paréntesis `( ... )`. Las variables booleanas simples o propiedades no necesitan ser envueltas en paréntesis adicionales. Al estar anidados, no llevan espacios internos: `(a === b)`.
     *   Ejemplo `return`: `return( (user.role === "admin") || (user.role === "owner") ) ;`
-    *   Ejemplo `if`: `if( !((a === b) || (c === d)) ){`
+    *   Ejemplo `if`: `if( !key || (key.trim() === "") ) {` o `if( (existingRecord.status === "COMPLETED") && existingRecord.responseBody ) {`
+*   **Estilos (CSS):**
+    *   Está **estrictamente prohibido el CSS inline** (`style={{...}}`) en JSX. *Excepción:* valores genuinamente dinámicos calculados en runtime (ej: `style={{color: brandColor}}` o inyección de custom properties `style={{"--user-brand-color": color}}`), que no pueden expresarse en una clase estática.
+    *   Está **estrictamente prohibido** el uso de Tailwind CSS o cualquier framework de clases utilitarias.
+    *   Todo estilo debe vivir en un archivo `*.module.css` colocado junto a su componente, y debe consumir los design tokens de `src/app/globals.css` (`var(--...)`) en lugar de valores hardcodeados de color, tipografía, radios, sombras o z-index. Antes de usar una variable, verificar que exista en `globals.css`.
+
+---
+
+## 5. Gestión de Dependencias y Herramientas
+
+*   Está estrictamente prohibido el uso de `npm` para gestionar dependencias o ejecutar tareas/scripts del proyecto.
+*   En su lugar, debe utilizarse únicamente `pnpm` de manera obligatoria (ej: `pnpm install`, `pnpm test`, `pnpm dev`).
+
+---
+
+## 6. Responsividad y Medidas
+
+*   Está estrictamente prohibido utilizar medidas estáticas no responsive (ej: píxeles fijos como `width: 240px` o `130px`) para dimensiones de contenedores principales o componentes estructurales de la interfaz.
+*   En su lugar, deben utilizarse siempre unidades dinámicas fluidas (como `clamp()`, `vw`, `vh`, `%`, etc.) para asegurar una adaptación fluida del layout a diferentes pantallas.
+
+---
+
+## 7. Flujo de Trabajo y Control de Cambios (Anti-Improvisación)
+
+Para evitar modificaciones no planificadas o prematuras en la base de código, todos los agentes deben seguir estrictamente el siguiente proceso en fases antes de realizar cualquier cambio:
+
+1.  **Investigación e Informe:** Realizar una exploración y análisis completo de la base de código relevante. Presentar un informe detallado del problema, la arquitectura afectada y la propuesta técnica general, sin realizar modificaciones de código aún.
+2.  **Autorización Inicial:** Esperar la indicación explícita del usuario para avanzar.
+3.  **Plan de Acción Detallado:** Si el usuario autoriza avanzar, redactar un plan de acción detallado paso a paso con los archivos a modificar, el impacto de los cambios y el código propuesto.
+4.  **Aprobación Final:** Esperar la aprobación explícita y final del usuario sobre el plan de acción antes de ejecutar cualquier herramienta de escritura de archivos (`write_to_file`, `replace_file_content`, `multi_replace_file_content`) o comandos que modifiquen el entorno.
+
+

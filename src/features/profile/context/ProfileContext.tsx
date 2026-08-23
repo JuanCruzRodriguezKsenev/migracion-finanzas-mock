@@ -1,18 +1,24 @@
 /**
  * @file ProfileContext.tsx
- * Proveedor de contexto global de React para el perfil y preferencias del usuario.
+ * Proveedor y contexto de React para la gestión del perfil de usuario (Client Component).
  */
 "use client" ;
 
+// Librerías externas
 import React , { createContext , useState , useEffect , useContext } from "react" ;
-import { ProfileData } from "../types" ;
+
+// Shared
+import { Result , ok , fail } from "@/shared/lib/result" ;
+
+// Feature: Profile
 import { updateProfileAction } from "../actions/profileActions" ;
+import { ProfileData } from "../types" ;
 
 interface ProfileContextType {
   profile:        ProfileData ;
   loading:        boolean ;
   error:          string | null ;
-  updateProfile:  ( data: Partial< ProfileData > ) => Promise< ProfileData > ;
+  updateProfile:  ( data: Partial<ProfileData> ) => Promise< Result<ProfileData , string> > ;
   refreshProfile: () => Promise< void > ;
 }
 
@@ -25,9 +31,7 @@ export function ProfileProvider( {children , initialProfile}: {children: React.R
 
   // Sincroniza el tema en caliente y guarda la preferencia en localStorage para el script de bloqueo
   useEffect( () => {
-    if( !(profile) || !(profile.theme) ){
-      return ;
-    }
+    if( !profile || !profile.theme ){ return ; }
 
     let activeTheme = profile.theme ;
 
@@ -37,29 +41,40 @@ export function ProfileProvider( {children , initialProfile}: {children: React.R
 
     document.documentElement.setAttribute( "data-theme" , activeTheme ) ;
     localStorage.setItem( "theme" , profile.theme ) ;
-  } , [profile.theme] ) ;
+  } , [ profile.theme ] ) ;
 
-  async function updateProfile( newData: Partial< ProfileData > ): Promise< ProfileData > {
+  async function updateProfile( newData: Partial<ProfileData> ): Promise< Result<ProfileData , string> > {
     setLoading( true ) ;
     setError( null ) ;
     
     // Actualización optimista de estado local
     const oldProfile = profile ;
-    setProfile( (prev) => ( { ...prev , ...newData } ) ) ;
+    
+    setProfile( (prev) => ({...prev , ...newData}) ) ;
 
     try {
       const res = await updateProfileAction( newData ) ;
-      if( (res.isOk) && (res.value) ){
+
+      if( res.success ){
         setProfile( res.value ) ;
-        return( res.value ) ;
+        
+        return( ok(res.value) ) ;
       } else {
-        throw new Error( (res.error?.message) || "Error al guardar el perfil en el servidor." ) ;
+        // Revertir estado local si la Server Action falla
+        setProfile( oldProfile ) ;
+        setError( res.error || "Error al guardar el perfil en el servidor." ) ;
+        
+        return( fail(res.error || "Error al guardar el perfil en el servidor.") ) ;
       }
     } catch( err ) {
-      // Revertir estado local en caso de error
+      // Revertir estado local en caso de excepción inesperada
       setProfile( oldProfile ) ;
-      setError( (err as Error).message ) ;
-      throw err ;
+      
+      const errMsg = ( (err as Error).message || "Error al actualizar el perfil." ) ;
+      
+      setError( errMsg ) ;
+      
+      return( fail(errMsg) ) ;
     } finally {
       setLoading( false ) ;
     }
@@ -78,8 +93,10 @@ export function ProfileProvider( {children , initialProfile}: {children: React.R
 
 export function useProfileContext() {
   const context = useContext( ProfileContext ) ;
+  
   if( context === undefined ){
     throw new Error( "useProfileContext debe utilizarse dentro de un ProfileProvider." ) ;
   }
+  
   return( context ) ;
 }

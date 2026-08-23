@@ -1,0 +1,63 @@
+.appContainer {
+    display:  flex;
+    width:    100vw;
+    height:   100vh;
+    overflow: visible; /* NO hidden — cortaría el dropdown del sidebar */
+}
+
+.mainWrapper {
+    flex-grow:        1;
+    background-color: var(--bg-app);
+    padding:          clamp(0.875rem, 1.75vw, 1.625rem);
+    max-width:        calc(100vw - var(--sidebar-width));
+    height:           100%;
+    overflow-y:       auto;
+}
+
+
+
+.contentContainer {
+    width: 100%;
+    animation: contentFadeIn 0.25s ease both;
+}
+
+@keyframes contentFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Drawer overlay (mobile) ─────────────────── */
+.drawerOverlay { display: none; }
+
+@media (max-width: 768px) {
+    .appContainer {
+        flex-direction: column !important;
+        height:         100vh;
+        overflow:       hidden;
+    }
+
+    .mainWrapper {
+        max-width:  100% !important;
+        width:      100% !important;
+        height:     calc(100vh - 64px) !important;
+        padding:    1rem 0.875rem 5.5rem !important;
+        overflow-y: auto;
+    }
+
+    .drawerOverlay {
+        display:           block;
+        position:          fixed;
+        inset:             0;
+        background-color:  var(--bg-backdrop);
+        backdrop-filter:   blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index:           var(--z-backdrop);
+        opacity:           0;
+        pointer-events:    none;
+        transition:        opacity 0.25s ease;
+    }
+    .drawerOverlay.open {
+        opacity:        1;
+        pointer-events: auto;
+    }
+}

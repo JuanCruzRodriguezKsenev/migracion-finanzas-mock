@@ -1,0 +1,52 @@
+.summaryBar {
+  display: flex ;
+  align-items: center ;
+  justify-content: space-between ;
+  padding: 1.25rem 1.75rem ;
+  background-color: var(--bg-card) ;
+  border: 1px solid var(--border-card) ;
+  border-radius: 1.25rem ;
+  box-shadow: var(--shadow-sm) ;
+  margin-top: 1rem ;
+}
+
+.leftSection,
+.rightSection {
+  display: flex ;
+  flex-direction: column ;
+  gap: 0.125rem ;
+}
+
+.rightSection {
+  text-align: right ;
+  align-items: flex-end ;
+}
+
+.label {
+  font-size: 0.625rem ;
+  font-weight: 700 ;
+  letter-spacing: 0.08em ;
+  color: var(--text-light) ;
+  text-transform: uppercase ;
+}
+
+.yearlyLabel {
+  color: var(--color-primary) ;
+  opacity: 0.85 ;
+}
+
+.totalPrice {
+  font-size: 1.5rem ;
+  font-family: var(--font-display) ;
+  font-weight: 800 ;
+  color: var(--text-main) ;
+  line-height: 1 ;
+}
+
+.yearlyPrice {
+  font-size: 1.25rem ;
+  font-family: var(--font-display) ;
+  font-weight: 800 ;
+  color: var(--color-primary) ;
+  line-height: 1 ;
+}

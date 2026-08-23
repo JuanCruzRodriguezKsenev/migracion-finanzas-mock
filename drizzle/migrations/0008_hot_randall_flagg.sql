@@ -1,0 +1,1 @@
+ALTER TABLE "accounts" ADD COLUMN "institution" varchar(100) DEFAULT 'Otros' NOT NULL;

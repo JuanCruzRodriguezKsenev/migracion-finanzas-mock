@@ -1,0 +1,55 @@
+.tooltipContainer {
+    background:      var(--bg-card, rgba(15, 23, 42, 0.95)) ;
+    backdrop-filter: blur(10px) ;
+    border:          1px solid var(--border-card, rgba(255, 255, 255, 0.15)) ;
+    padding:         6px 10px ;
+    border-radius:   var(--radius-md, 8px) ;
+    font-size:       11px ;
+    color:           var(--text-main, #fff) ;
+    box-shadow:      0 10px 15px -3px rgba(0, 0, 0, 0.3) , 0 4px 6px -4px rgba(0, 0, 0, 0.3) ;
+    pointer-events:  none ;
+    display:         flex ;
+    flex-direction:  column ;
+    gap:             2px ;
+    min-width:       110px ;
+    opacity:         0.85 ;
+}
+
+.tooltipHeader {
+    color:       var(--text-muted, #94a3b8) ;
+    font-size:   10px ;
+    font-weight: 500 ;
+}
+
+.tooltipBody {
+    display:         flex ;
+    align-items:     center ;
+    justify-content: space-between ;
+    gap:             8px ;
+}
+
+.tooltipValue {
+    font-weight: 700 ;
+}
+
+.tooltipPct {
+    font-weight: 600 ;
+    font-size:   10px ;
+}
+
+.sparklineWrapper {
+    width: 100% ;
+}
+
+.tooltipFooter {
+    display:     flex ;
+    align-items: center ;
+    gap:         4px ;
+    margin-top:  2px ;
+}
+
+.tooltipCompareText {
+    color:       var(--text-light, #7b90ac) ;
+    font-size:   10px ;
+    font-weight: 500 ;
+}

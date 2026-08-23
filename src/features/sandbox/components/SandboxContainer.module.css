@@ -1,0 +1,63 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 0.5rem 0;
+}
+
+.header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.title {
+    font-size: var(--fs-lg);
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+    font-family: var(--font-display), var(--font-sans), sans-serif;
+}
+
+.subtitle {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+
+/* Tabs Navigation */
+.tabsHeader {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border-card);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.tabBtn {
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: var(--transition-smooth);
+}
+
+.tabBtn:hover {
+    color: var(--color-primary);
+    background-color: var(--color-primary-light);
+}
+
+.tabBtnActive {
+    color: var(--color-primary) !important;
+    background-color: var(--color-primary-light) !important;
+    box-shadow: 0 0 0 1.5px var(--color-primary);
+}
+
+.tabContent {
+    transition: opacity 0.2s ease-in-out;
+}

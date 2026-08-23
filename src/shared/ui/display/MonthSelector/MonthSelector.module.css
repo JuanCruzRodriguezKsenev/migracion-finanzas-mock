@@ -1,0 +1,258 @@
+.selectorContainer {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    position: relative;
+}
+
+.dropdownWrapper {
+    position: relative;
+    width: clamp(8.75rem, 12vw, 9.75rem);
+}
+
+.stepMonthBtn {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    padding: 0;
+    outline: none;
+    box-shadow: var(--shadow-xs);
+}
+
+.stepMonthBtn:hover:not(:disabled) {
+    background-color: var(--bg-inset);
+    color: var(--text-main);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-sm);
+}
+
+.stepMonthBtn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background-color: transparent;
+    border-color: var(--border-subtle);
+}
+
+.triggerButton {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-md);
+    color: var(--text-main);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    outline: none;
+    user-select: none;
+    height: 32px;
+    box-shadow: var(--shadow-xs);
+    width: 100%;
+}
+
+.triggerButton:hover {
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+}
+
+.triggerButton.active {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-glow);
+}
+
+.triggerButton:focus-visible,
+.stepMonthBtn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.triggerContent {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.triggerLabelText {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.monthText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-grow: 1;
+    min-width: 0;
+    text-align: left;
+}
+
+.yearText {
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.chevronIcon {
+    transition: var(--transition-smooth);
+    color: var(--text-muted);
+}
+
+.chevronIcon.rotated {
+    transform: rotate(180deg);
+}
+
+/* Grilla del Popover */
+.gridPopover {
+    position: absolute;
+    top: calc(100% + 0.375rem);
+    right: 50%;
+    transform: translateX(50%);
+    z-index: var(--z-dropdown);
+    width: 220px;
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-md);
+    padding: 0.75rem;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    box-shadow: var(--shadow-lg);
+}
+
+/* Centrar en pantallas pequeñas y alinear a la derecha en escritorios */
+@media (min-width: 640px) {
+    .gridPopover {
+        right: 0;
+        transform: none;
+    }
+}
+
+/* Navegador de Año */
+.yearNavigator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 0.5rem;
+}
+
+.navBtn {
+    background: none;
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-xs);
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    padding: 0;
+}
+
+.navBtn:hover:not(:disabled) {
+    background: var(--bg-inset);
+    color: var(--text-main);
+    border-color: var(--border-strong);
+}
+
+.yearLabel {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    color: var(--text-main);
+    user-select: none;
+}
+
+/* Grilla 3x4 de Meses */
+.monthsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.375rem;
+}
+
+.gridMonthBtn {
+    background: var(--bg-inset);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    padding: 0.5rem 0.25rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.gridMonthBtn:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+.gridMonthBtn.selected {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--text-on-accent);
+}
+
+.gridMonthBtn.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--text-placeholder);
+}
+
+.divider {
+    height: 1px;
+    background-color: var(--border-subtle);
+    width: 100%;
+}
+
+.todayBtn {
+    background: transparent;
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-sm);
+    color: var(--color-primary);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    padding: 0.375rem 0;
+    width: 100%;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    outline: none;
+    text-align: center;
+}
+
+.todayBtn:hover {
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary);
+}
+
+.navBtn:focus-visible,
+.gridMonthBtn:focus-visible,
+.todayBtn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -1px;
+}

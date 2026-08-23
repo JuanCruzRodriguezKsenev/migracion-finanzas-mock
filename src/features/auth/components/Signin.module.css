@@ -1,0 +1,151 @@
+.container {
+    display:          flex;
+    align-items:      center;
+    justify-content:  center;
+    min-height:       100vh;
+    background-color: var(--bg-app);
+    /* Fondo con gradiente sutil centrado */
+    background-image: radial-gradient(ellipse 80% 60% at 50% 0%, var(--color-primary-light) 0%, transparent 70%);
+    padding:          1rem;
+}
+
+[data-theme="dark"] .container {
+    background-image: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(26,86,240,0.12) 0%, transparent 70%);
+}
+
+.card {
+    width:            100%;
+    max-width:        400px;
+    padding:          2.5rem 2.25rem;
+    background-color: var(--bg-card);
+    border:           1px solid var(--border-card);
+    border-radius:    var(--radius-xl);
+    box-shadow:       var(--shadow-xl);
+    animation:        cardIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes cardIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Logotipo / brand arriba */
+.card::before {
+    content:         'FinanzIA';
+    display:         block;
+    text-align:      center;
+    font-family:     var(--font-display);
+    font-size:       1.125rem;
+    font-weight:     800;
+    color:           var(--color-primary);
+    letter-spacing:  -0.02em;
+    margin-bottom:   1.5rem;
+}
+
+.header {
+    margin-bottom:  0.375rem;
+    font-size:      var(--fs-xl);
+    font-weight:    800;
+    text-align:     center;
+    color:          var(--text-main);
+    letter-spacing: -0.025em;
+    font-family:    var(--font-display);
+    line-height:    1.2;
+}
+
+/* Subtítulo opcional debajo del título */
+.header + * { margin-top: 0.25rem; }
+
+.error {
+    display:          flex;
+    align-items:      flex-start;
+    gap:              0.5rem;
+    padding:          0.75rem 1rem;
+    margin-bottom:    1.25rem;
+    font-size:        var(--fs-sm);
+    color:            var(--color-danger-text);
+    background-color: var(--color-danger-light);
+    border:           1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
+    border-radius:    var(--radius-sm);
+    animation:        fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.form {
+    display:        flex;
+    flex-direction: column;
+    gap:            1rem;
+    margin-top:     1.5rem;
+}
+
+.fieldGroup {
+    display:        flex;
+    flex-direction: column;
+    gap:            0.35rem;
+}
+
+.label {
+    font-size:   var(--fs-xs);
+    font-weight: 700;
+    color:       var(--text-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.input {
+    padding:          0.625rem 0.75rem;
+    border:           1px solid var(--border-card);
+    border-radius:    var(--radius-sm);
+    font-size:        var(--fs-base);
+    background-color: var(--bg-inset);
+    color:            var(--text-main);
+    transition:       var(--transition-smooth);
+    box-shadow:       var(--shadow-xs);
+}
+.input::placeholder { color: var(--text-placeholder); }
+.input:hover        { border-color: var(--border-strong); }
+.input:focus {
+    outline:      none;
+    border-color: var(--color-primary);
+    box-shadow:   var(--shadow-glow);
+    background-color: var(--bg-card);
+}
+
+.submitButton {
+    padding:          0.7rem;
+    margin-top:       0.5rem;
+    background-color: var(--color-primary);
+    color:            var(--text-on-accent);
+    border:           none;
+    border-radius:    var(--radius-sm);
+    font-size:        var(--fs-sm);
+    font-weight:      700;
+    letter-spacing:   0.02em;
+    cursor:           pointer;
+    transition:       var(--transition-smooth);
+    box-shadow:       0 1px 2px rgba(26,86,240,0.3), inset 0 1px 0 rgba(255,255,255,0.12);
+    position:         relative;
+    overflow:         hidden;
+}
+.submitButton::after {
+    content:    '';
+    position:   absolute;
+    inset:      0;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.06), transparent);
+    pointer-events: none;
+}
+.submitButton:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+    box-shadow:       0 4px 12px rgba(26,86,240,0.4), inset 0 1px 0 rgba(255,255,255,0.12);
+    transform:        translateY(-1px);
+}
+.submitButton:active:not(:disabled)  { transform: translateY(0); }
+.submitButton:disabled {
+    cursor:   not-allowed;
+    opacity:  0.55;
+    transform:none;
+}

@@ -3,23 +3,26 @@
  * Layout estructural (App Shell) para las rutas principales bajo el grupo (main).
  * Incorpora la barra lateral y el encabezado de navegación global.
  */
-import { Sidebar } from "@/shared/components/Sidebar" ;
-import { Header } from "@/shared/components/Header" ;
+// Shared
+import { MetricsVisibilityProvider } from "@/shared/ui/layout/MetricsSection/MetricsVisibilityContext" ;
+import { AppShell }                  from "@/shared/ui/layout/AppShell/AppShell" ;
+import { getDictionary }             from "@/shared/lib/dictionary" ;
+
 
 interface MainLayoutProps {
   children: React.ReactNode ;
+  params:   Promise< {lang: string} > ;
 }
 
-export default function MainLayout( {children}: MainLayoutProps ) {
+export default async function MainLayout( {children , params}: MainLayoutProps ) {
+  const { lang } = await params ;
+  const dict     = await getDictionary( lang ) ;
+
   return(
-    <div className="app-container">
-      <Sidebar />
-      <div className="main-wrapper">
-        <Header />
-        <main>
-          {children}
-        </main>
-      </div>
-    </div>
+    <MetricsVisibilityProvider>
+      <AppShell dict={dict} lang={lang}>
+        { children }
+      </AppShell>
+    </MetricsVisibilityProvider>
   ) ;
 }

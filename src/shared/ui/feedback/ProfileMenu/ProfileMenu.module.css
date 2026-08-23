@@ -1,0 +1,225 @@
+.wrap {
+    flex-shrink: 0 ;
+    margin-top:  auto ;
+}
+
+/* ── Trigger (botón de perfil) ─────────────────── */
+.trigger {
+    border-top:      1px solid var(--border-subtle) ;
+    border-left:     none ;
+    border-right:    none ;
+    border-bottom:   none ;
+    border-radius:   0 ;
+    margin-left:     -0.625rem ;
+    margin-right:    -0.625rem ;
+    width:           calc(100% + 1.25rem) ;
+    padding:         0.75rem 0.75rem ;
+    display:         flex ;
+    align-items:     center ;
+    gap:             0.5rem ;
+    cursor:          pointer ;
+    transition:      var(--transition-smooth) ;
+    background-color:transparent ;
+    text-align:      left ;
+    outline:         none ;
+}
+.trigger:hover    { background-color: var(--border-subtle) ; }
+.trigger.open     { background-color: var(--border-subtle) ; }
+
+.avatar {
+    width:            28px ;
+    height:           28px ;
+    border-radius:    50% ;
+    background-color: var(--color-primary-light) ;
+    border:           1.5px solid var(--border-card) ;
+    flex-shrink:      0 ;
+}
+
+.info {
+    display:        flex ;
+    flex-direction: column ;
+    min-width:      0 ;
+    flex:           1 ;
+}
+
+.name {
+    font-size:     var(--fs-xs) ;
+    font-weight:   700 ;
+    color:         var(--text-main) ;
+    white-space:   nowrap ;
+    overflow:      hidden ;
+    text-overflow: ellipsis ;
+    letter-spacing:-0.01em ;
+}
+
+.email {
+    font-size:     8px ;
+    color:         var(--text-light) ;
+    white-space:   nowrap ;
+    overflow:      hidden ;
+    text-overflow: ellipsis ;
+    margin-top:    1px ;
+}
+
+.chevron {
+    color:      var(--text-light) ;
+    flex-shrink:0 ;
+    transition: transform 0.2s ease ;
+}
+.trigger.open .chevron { transform: rotate(180deg) ; }
+
+/* ── Contenido del popup ───────────────────────── */
+.popupContent {
+    width:     max-content ;
+    min-width: 170px ;
+    max-width: 240px ;
+    position:  relative ;
+    z-index:   var(--z-hover) ;
+}
+
+.header {
+    display:         flex ;
+    flex-direction:  column ;
+    align-items:     stretch ;
+    padding:         0.875rem ;
+    background:      linear-gradient(135deg, var(--color-primary-light) 0%, transparent 100%) ;
+    border-top-left-radius:  var(--radius-lg) ;
+    border-top-right-radius: var(--radius-lg) ;
+    border-bottom:           1px solid var(--border-subtle) ;
+}
+
+.headerTop {
+    display:     flex ;
+    align-items: center ;
+    gap:         0.625rem ;
+    width:       100% ;
+}
+
+.headerAvatar {
+    width:            34px ;
+    height:           34px ;
+    border-radius:    50% ;
+    background-color: var(--color-primary-light) ;
+    border:           2px solid var(--color-primary-glow) ;
+    flex-shrink:      0 ;
+}
+
+.headerName {
+    font-size:     var(--fs-sm) ;
+    font-weight:   700 ;
+    color:         var(--text-main) ;
+    letter-spacing:-0.01em ;
+}
+
+.headerEmail {
+    font-size:  var(--fs-xs) ;
+    color:      var(--text-muted) ;
+    margin-top: 1px ;
+}
+
+.headerMeta {
+    flex:      1 ;
+    min-width: 0 ;
+}
+
+.planRow {
+    display:         flex ;
+    align-items:     center ;
+    justify-content: space-between ;
+    width:           100% ;
+    margin-top:      0.75rem ;
+    padding-top:     0.625rem ;
+    border-top:      1px solid var(--border-subtle) ;
+}
+
+.planName {
+    font-size:   var(--fs-xs) ;
+    font-weight: 600 ;
+    color:       var(--text-muted) ;
+}
+
+.upgradeLink {
+    font-size:      10.5px ;
+    font-weight:    600 ;
+    color:          var(--color-primary) ;
+    background:     transparent ;
+    border:         none ;
+    padding:        0 ;
+    cursor:         pointer ;
+    transition:     var(--transition-smooth) ;
+    display:        inline-flex ;
+    align-items:    center ;
+    gap:            2px ;
+}
+
+.upgradeLink:hover {
+    color:           var(--color-primary-hover) ;
+    text-decoration: underline ;
+}
+
+[data-theme="dark"] .upgradeLink {
+    color: var(--color-primary-text) ;
+}
+
+[data-theme="dark"] .upgradeLink:hover {
+    color: var(--text-main) ;
+}
+
+/* ── Menú de ítems ─────────────────────────────── */
+.menu {
+    list-style: none ;
+    padding:    0 ;
+    width:      100% ;
+    display:    flex ;
+    flex-direction: column ;
+}
+
+.menu li {
+    width: 100% ;
+}
+
+.menu li:last-child {
+    border-top:                1px solid var(--border-subtle) ;
+    border-bottom-left-radius: var(--radius-lg) ;
+    border-bottom-right-radius: var(--radius-lg) ;
+}
+
+.menu li:last-child .menuItem {
+    border-bottom-left-radius: var(--radius-lg) ;
+    border-bottom-right-radius: var(--radius-lg) ;
+}
+
+.menuItem {
+    display:     flex ;
+    align-items: center ;
+    gap:         0.5rem ;
+    padding:     0.5rem 0.875rem ;
+    font-size:   var(--fs-sm) ;
+    font-weight: 500 ;
+    color:       var(--text-muted) ;
+    cursor:      pointer ;
+    transition:  var(--transition-smooth) ;
+    width:       100% ;
+    border:      none ;
+    background:  transparent ;
+    text-align:  left ;
+    border-radius: 0 ;
+    position:    relative ;
+    z-index:     var(--z-hover) ;
+}
+.menuItem:hover {
+    background-color: var(--border-subtle) ;
+    color:            var(--text-main) ;
+}
+.menuItem svg { flex-shrink: 0 ; opacity: 0.7 ; }
+
+.menuItem.danger        { color: var(--color-danger) ; }
+.menuItem.danger:hover  { background-color: var(--color-danger-light) ; color: var(--color-danger) ; }
+.menuItem.danger svg    { opacity: 1 ; }
+
+.divider {
+    height:           1px ;
+    background-color: var(--border-subtle) ;
+    margin:           0.25rem 0 ;
+    width:            100% ;
+}

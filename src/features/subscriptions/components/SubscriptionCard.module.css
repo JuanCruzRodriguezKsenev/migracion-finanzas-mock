@@ -1,0 +1,353 @@
+/* ==========================================================================
+   ESTILOS BASE (estructura y colores; medidas fluidas vía container queries)
+   ========================================================================== */
+
+.card {
+  position: relative ;
+  border-radius: 1.25rem ;
+
+  /* Padding proporcional: 8% del tamaño menor del contenedor */
+  padding: clamp(0.75rem, 8cqmin, 1.75rem) ;
+
+  display: flex ;
+  flex-direction: column ;
+  justify-content: space-between ;
+
+  /* Gap proporcional de seguridad de 6% del alto del contenedor */
+  gap: clamp(0.5rem, 6cqh, 2rem) ;
+
+  overflow: hidden ;
+  cursor: pointer ;
+  user-select: none ;
+  width: 100% ;
+  height: 100% ;
+
+  /* Tematización dinámica multi-tema (variables provistas por brand-adaptive-surface) */
+  background-color: var(--brand-bg, var(--bg-card)) ;
+  color: var(--brand-color, var(--text-main)) ;
+  border: 1px solid var(--brand-border, var(--border-card)) ;
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) ;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, background-color 0.3s ease, border-color 0.3s ease ;
+}
+
+.card:hover {
+  transform: translateY(-3px) scale(1.01) ;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08), 0 0 16px var(--brand-glow, var(--color-primary-light)) ;
+  border-color: var(--brand-border-hover, rgba(255, 255, 255, 0.15)) ;
+}
+
+.cardHeader {
+  display: flex ;
+  align-items: flex-start ;
+  justify-content: space-between ;
+  width: 100% ;
+}
+
+.badgeWrapper {
+  display: flex ;
+  align-items: center ;
+}
+
+.iconWrapper {
+  background-color: rgba(148, 163, 184, 0.12) ;
+  border: 1px solid rgba(148, 163, 184, 0.18) ;
+  border-radius: 0.75rem ;
+  display: flex ;
+  align-items: center ;
+  justify-content: center ;
+  flex-shrink: 0 ;
+  transition: transform 0.2s ease ;
+  backdrop-filter: blur(2px) ;
+}
+
+/* El SVG, IMG y el div del logo adaptativo internos heredan el tamaño fluido de su wrapper */
+.iconWrapper svg,
+.iconWrapper img,
+.iconWrapper > div {
+  width: 55% !important ;
+  height: 55% !important ;
+  object-fit: contain ;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15)) drop-shadow(0 0 1px rgba(0, 0, 0, 0.1)) ;
+}
+
+.card:hover .iconWrapper {
+  transform: scale(1.05) ;
+}
+
+.badge {
+  background-color: var(--brand-badge-bg, rgba(255, 255, 255, 0.85)) ;
+  color: var(--brand-color) !important ;
+  backdrop-filter: blur(4px) ;
+  padding: 0.1875rem 0.5625rem ;
+  border-radius: 9999px ;
+  font-size: 0.675rem ;
+  font-weight: 700 ;
+  font-family: var(--font-sans) ;
+  letter-spacing: -0.01em ;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) ;
+}
+
+.cardBody {
+  display: flex ;
+  flex-direction: column ;
+  gap: 0.25rem ;
+  width: 100% ;
+}
+
+.serviceName {
+  font-weight: 600 ;
+  color: var(--brand-color, var(--text-main)) ;
+  opacity: 0.95 ;
+  letter-spacing: -0.01em ;
+  line-height: 1.25 ;
+}
+
+.priceLabel {
+  font-family: var(--font-display) ;
+  font-weight: 800 ;
+  color: var(--brand-color, var(--text-main)) ;
+  line-height: 1.1 ;
+}
+
+.yearlyLabel {
+  font-weight: 500 ;
+  color: var(--brand-color, var(--text-light)) ;
+  opacity: 0.75 ;
+}
+
+.actionGroup {
+  position: absolute ;
+  top: 0.625rem ;
+  right: 2.75rem ;
+  display: flex ;
+  gap: 0.25rem ;
+  opacity: 0 ;
+  transform: translateY(-4px) ;
+  transition: opacity 0.2s ease, transform 0.2s ease ;
+}
+
+.card:hover .actionGroup {
+  opacity: 1 ;
+  transform: translateY(0) ;
+}
+
+.actionButton {
+  width: 1.5rem ;
+  height: 1.5rem ;
+  background-color: rgba(255, 255, 255, 0.9) ;
+  border-radius: 0.5rem ;
+  display: flex ;
+  align-items: center ;
+  justify-content: center ;
+  color: var(--text-muted) ;
+  border: none ;
+  cursor: pointer ;
+  transition: all 0.2s ease ;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) ;
+}
+
+.actionButton:hover {
+  background-color: var(--bg-card) ;
+  color: var(--text-main) ;
+  transform: scale(1.05) ;
+}
+
+.deleteButton:hover {
+  background-color: var(--color-danger-light) ;
+  color: var(--color-danger) ;
+}
+
+
+/* ==========================================================================
+   JERARQUÍA DE TAMAÑOS POR CATEGORÍA DE PESO (data-size)
+   ========================================================================== */
+
+/* 1. Categoría LARGE */
+.card[data-size="large"] .iconWrapper {
+  width: clamp(2.5rem, 24cqmin, 4rem) ;
+  height: clamp(2.5rem, 24cqmin, 4rem) ;
+}
+.card[data-size="large"] .serviceName {
+  font-size: clamp(0.9rem, 6cqmin, 1.25rem) ;
+}
+.card[data-size="large"] .priceLabel {
+  font-size: clamp(1.25rem, 11cqmin, 2.75rem) ;
+}
+.card[data-size="large"] .yearlyLabel {
+  font-size: clamp(0.7rem, 4.5cqmin, 0.95rem) ;
+}
+
+/* 2. Categoría MEDIUM */
+.card[data-size="medium"] .iconWrapper {
+  width: clamp(2.25rem, 22cqmin, 3.25rem) ;
+  height: clamp(2.25rem, 22cqmin, 3.25rem) ;
+}
+.card[data-size="medium"] .serviceName {
+  font-size: clamp(0.8rem, 5.5cqmin, 1.05rem) ;
+}
+.card[data-size="medium"] .priceLabel {
+  font-size: clamp(1rem, 10cqmin, 1.75rem) ;
+}
+.card[data-size="medium"] .yearlyLabel {
+  font-size: clamp(0.6rem, 4cqmin, 0.8rem) ;
+}
+
+/* 3. Categoría SMALL */
+.card[data-size="small"] .iconWrapper {
+  width: clamp(2rem, 20cqmin, 2.75rem) ;
+  height: clamp(2rem, 20cqmin, 2.75rem) ;
+}
+.card[data-size="small"] .serviceName {
+  font-size: clamp(0.7rem, 5cqmin, 0.85rem) ;
+}
+.card[data-size="small"] .priceLabel {
+  font-size: clamp(0.85rem, 9cqmin, 1.25rem) ;
+}
+.card[data-size="small"] .yearlyLabel {
+  font-size: clamp(0.55rem, 3.5cqmin, 0.7rem) ;
+}
+
+/* 4. Categoría TINY */
+.card[data-size="tiny"] .iconWrapper {
+  width: clamp(1.75rem, 18cqmin, 2.25rem) ;
+  height: clamp(1.75rem, 18cqmin, 2.25rem) ;
+}
+.card[data-size="tiny"] .serviceName {
+  font-size: clamp(0.65rem, 4.5cqmin, 0.75rem) ;
+}
+.card[data-size="tiny"] .priceLabel {
+  font-size: clamp(0.75rem, 8cqmin, 0.95rem) ;
+}
+.card[data-size="tiny"] .yearlyLabel {
+  font-size: clamp(0.5rem, 3cqmin, 0.6rem) ;
+}
+
+/* 5. Categoría MICRO */
+.card[data-size="micro"] .iconWrapper {
+  width: clamp(1.5rem, 16cqmin, 1.75rem) ;
+  height: clamp(1.5rem, 16cqmin, 1.75rem) ;
+}
+.card[data-size="micro"] .serviceName {
+  font-size: clamp(0.6rem, 4cqmin, 0.65rem) ;
+}
+.card[data-size="micro"] .priceLabel {
+  font-size: clamp(0.7rem, 7cqmin, 0.8rem) ;
+}
+.card[data-size="micro"] .yearlyLabel {
+  display: none !important ;
+}
+
+
+/* ==========================================================================
+   VARIABLES MULTI-TEMA
+   ========================================================================== */
+
+.card {
+  --brand-badge-bg: rgba(255, 255, 255, 0.85) ;
+  --brand-border-hover: rgba(255, 255, 255, 0.15) ;
+}
+
+:global([data-theme="dark"]) .card {
+  --brand-badge-bg: rgba(0, 0, 0, 0.25) ;
+  --brand-border-hover: rgba(255, 255, 255, 0.2) ;
+}
+
+
+/* ==========================================================================
+   CONTAINER QUERIES (layouts según proporciones reales del tile)
+   ========================================================================== */
+
+/* 1. Tarjetas muy estrechas y altas (widget vertical centrado) */
+@container (max-width: 130px) and (min-height: 150px) {
+  .card {
+    justify-content: center !important ;
+    align-items: center !important ;
+    text-align: center !important ;
+    gap: 1.5rem !important ;
+  }
+
+  .cardHeader {
+    flex-direction: column !important ;
+    align-items: center !important ;
+    justify-content: center !important ;
+    margin-bottom: 0 !important ;
+    gap: 0.5rem !important ;
+  }
+
+  .cardBody {
+    align-items: center !important ;
+    gap: 0.25rem !important ;
+  }
+
+  .yearlyLabel {
+    display: none !important ;
+  }
+}
+
+/* 2. Formato plano/horizontal (altura menor a 90px) */
+@container (max-height: 90px) {
+  .card {
+    flex-direction: row !important ;
+    align-items: center !important ;
+    justify-content: space-between !important ;
+    gap: 1rem !important ;
+    padding: 0.5rem 1rem !important ;
+  }
+
+  /* Disolver los bloques para crear un solo eje flex horizontal */
+  .cardHeader {
+    display: contents !important ;
+  }
+
+  .cardBody {
+    display: contents !important ;
+  }
+
+  .iconWrapper {
+    order: 1 !important ;
+    /* Limitar el tamaño del logo por la altura (cqh) en el formato plano */
+    width: clamp(1.5rem, 50cqh, 2.5rem) !important ;
+    height: clamp(1.5rem, 50cqh, 2.5rem) !important ;
+  }
+
+  .serviceName {
+    order: 2 !important ;
+    margin-bottom: 0 !important ;
+    white-space: nowrap !important ;
+    text-align: left !important ;
+    max-width: 45% !important ;
+    overflow: hidden !important ;
+    text-overflow: ellipsis !important ;
+  }
+
+  .priceLabel {
+    order: 3 !important ;
+    line-height: 1 !important ;
+    text-align: right !important ;
+    margin-left: auto !important ; /* Empuja el precio y el badge al extremo derecho */
+  }
+
+  .badgeWrapper {
+    order: 4 !important ;
+    display: flex !important ;
+    align-items: center !important ;
+  }
+
+  .yearlyLabel {
+    display: none !important ;
+  }
+
+  /* Ocultar badge y textos si no caben físicamente en horizontal */
+  @container (max-width: 200px) {
+    .badgeWrapper {
+      display: none !important ;
+    }
+  }
+
+  @container (max-width: 120px) {
+    .serviceName {
+      display: none !important ;
+    }
+  }
+}

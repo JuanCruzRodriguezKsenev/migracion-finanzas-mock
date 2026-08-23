@@ -2,11 +2,18 @@
  * @file types.ts
  * Interfaces y tipos de datos del dominio de contabilidad e integridad contable.
  */
+// Librerías externas
 import { InferSelectModel , InferInsertModel } from "drizzle-orm" ;
-import { categories , accounts , ledgerTransactions , ledgerEntries } from "./schema.db" ;
+
+// Feature: Accounting
+import { categories , accounts , ledgerTransactions , ledgerEntries , monthlySummaries , financialEntities } from "./schema.db" ;
+
 
 export type Category       = InferSelectModel< typeof categories > ;
 export type InsertCategory = InferInsertModel< typeof categories > ;
+
+export type FinancialEntity       = InferSelectModel< typeof financialEntities > ;
+export type InsertFinancialEntity = InferInsertModel< typeof financialEntities > ;
 
 export type Account       = InferSelectModel< typeof accounts > ;
 export type InsertAccount = InferInsertModel< typeof accounts > ;
@@ -17,6 +24,9 @@ export type InsertLedgerTransaction = InferInsertModel< typeof ledgerTransaction
 export type LedgerEntry       = InferSelectModel< typeof ledgerEntries > ;
 export type InsertLedgerEntry = InferInsertModel< typeof ledgerEntries > ;
 
+export type MonthlySummary       = InferSelectModel< typeof monthlySummaries > ;
+export type InsertMonthlySummary = InferInsertModel< typeof monthlySummaries > ;
+
 /**
  * Parámetros requeridos para crear un asiento contable.
  * Garantiza que una transacción incluya su descripción, organización, la categoría (opcional),
@@ -24,10 +34,10 @@ export type InsertLedgerEntry = InferInsertModel< typeof ledgerEntries > ;
  */
 export interface CreateTransactionParams {
   organizationId:  string ;
-  categoryId?:     string ;
+  categoryId?:     string | null ;
   description:     string ;
-  merchantName?:   string ;
-  merchantDomain?: string ;
+  merchantName?:   string | null ;
+  merchantDomain?: string | null ;
   entries: {
     accountId: string ;
     debit:     number ;

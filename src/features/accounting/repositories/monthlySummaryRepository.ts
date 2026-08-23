@@ -1,0 +1,137 @@
+/**
+ * @file monthlySummaryRepository.ts
+ * Repositorio para la gestión de Resúmenes Mensuales Históricos (Capa de Acceso a Datos - DAL).
+ * Optimizado con caché en memoria a nivel de registro para evitar consultas de base de datos redundantes.
+ */
+import { eq , and , desc , or , lt , lte } from "drizzle-orm" ;
+
+// Shared
+import { db , DBOrTx } from "@/shared/db/client" ;
+
+// Feature: Accounting
+import { monthlySummaries } from "../schema.db" ;
+import { MonthlySummary , InsertMonthlySummary } from "../types" ;
+
+// Caché en memoria para almacenar resúmenes individuales ya consultados
+// Clave: `${organizationId}-${year}-${month}` (donde month es 0-indexed de 0 a 11)
+const summaryCache = new Map< string , MonthlySummary | null >() ;
+
+/**
+ * Repositorio de Resúmenes Mensuales.
+ */
+export const monthlySummaryRepository = {
+  /**
+   * Registra un nuevo resumen mensual histórico.
+   */
+  async create( data: InsertMonthlySummary , tx: DBOrTx = db ): Promise< MonthlySummary > {
+    const [ inserted ] = await tx
+      .insert( monthlySummaries )
+      .values( data )
+      .returning() ;
+
+    // Sincronizar e invalidar caché
+    summaryCache.set( `${inserted.organizationId}-${inserted.year}-${inserted.month}` , inserted ) ;
+
+    return( inserted ) ;
+  } ,
+
+  /**
+   * Consulta los resúmenes mensuales ordenados cronológicamente de forma descendente.
+   * Optimizado con caché granular: solo consulta a la base de datos los meses individuales faltantes en memoria.
+   */
+  async findRecent(
+    organizationId: string ,
+    limit:          number = 6 ,
+    beforeYear?:    number ,
+    beforeMonth?:   number
+  ): Promise< MonthlySummary[] > {
+    // 1. Determinar el rango de los N meses objetivo finalizando en la fecha dada
+    let endYear = beforeYear ;
+    let endMonth = beforeMonth ; // 1-indexed (1 al 12)
+
+    if( (endYear === undefined) || (endMonth === undefined) ) {
+      const ahora = new Date() ;
+      endYear  = ahora.getFullYear() ;
+      endMonth = ahora.getMonth() + 1 ;
+    }
+
+    const targetMonths: { year: number ; month: number }[] = [] ;
+    for( let i = 0 ; i < limit ; i++ ) {
+      const date = new Date( endYear , endMonth - 1 - i , 1 ) ;
+      targetMonths.push( { year: date.getFullYear() , month: date.getMonth() } ) ;
+    }
+
+    // 2. Identificar qué meses del rango objetivo no están cargados en la caché en memoria
+    const missingTargets = targetMonths.filter( ( t ) => {
+      const key = `${organizationId}-${t.year}-${t.month}` ;
+      return( !summaryCache.has( key ) ) ;
+    } ) ;
+
+    // 3. Consultar a la base de datos únicamente los registros de meses faltantes
+    if( missingTargets.length > 0 ) {
+      const orConditions = missingTargets.map( ( t ) =>
+        and(
+          eq( monthlySummaries.year , t.year ) ,
+          eq( monthlySummaries.month , t.month )
+        )
+      ) ;
+
+      const queryCondition = and(
+        eq( monthlySummaries.organizationId , organizationId ) ,
+        orConditions.length === 1 ? orConditions[0] : or( ...orConditions )
+      ) ;
+
+      const fetched = await db
+        .select()
+        .from( monthlySummaries )
+        .where( queryCondition ) ;
+
+      // Almacenar en caché los registros encontrados
+      for( const s of fetched ) {
+        summaryCache.set( `${organizationId}-${s.year}-${s.month}` , s ) ;
+      }
+
+      // Marcar los meses no encontrados con null para evitar re-consultar en el futuro
+      for( const target of missingTargets ) {
+        const key = `${organizationId}-${target.year}-${target.month}` ;
+        if( !summaryCache.has( key ) ) {
+          summaryCache.set( key , null ) ;
+        }
+      }
+    }
+
+    // 4. Compilar y ordenar la serie temporal final combinando caché y nuevos registros
+    const results: MonthlySummary[] = [] ;
+    for( const target of targetMonths ) {
+      const key = `${organizationId}-${target.year}-${target.month}` ;
+      const cached = summaryCache.get( key ) ;
+      if( cached ) {
+        results.push( cached ) ;
+      }
+    }
+
+    // Retornar ordenados cronológicamente de forma descendente (del más reciente al más antiguo)
+    return( results.sort( ( a , b ) => {
+      if( a.year !== b.year ) {
+        return( b.year - a.year ) ;
+      }
+      return( b.month - a.month ) ;
+    } ) ) ;
+  } ,
+
+  /**
+   * Elimina todos los resúmenes mensuales de una organización (para limpieza o resiembra).
+   */
+  async clear( organizationId: string , tx: DBOrTx = db ): Promise< void > {
+    await tx
+      .delete( monthlySummaries )
+      .where( eq(monthlySummaries.organizationId , organizationId) ) ;
+
+    // Limpiar toda la caché en memoria correspondiente a esta organización
+    for( const key of Array.from( summaryCache.keys() ) ) {
+      if( key.startsWith( `${organizationId}-` ) ) {
+        summaryCache.delete( key ) ;
+      }
+    }
+  }
+} ;

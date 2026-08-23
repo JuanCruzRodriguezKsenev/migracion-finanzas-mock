@@ -1,0 +1,36 @@
+.simpleGrid {
+    display:               grid ;
+    grid-template-columns: repeat(auto-fit, minmax(clamp(130px, 15vw, 180px), 1fr)) ;
+    gap:                   1rem ;
+    width:                 100% ;
+}
+
+.heroLayout {
+    display:               grid ;
+    grid-template-columns: minmax( clamp(200px , 20vw , 280px) , 1fr ) 2.5fr ;
+    gap:                   1rem ;
+    width:                 100% ;
+}
+
+.cardsGrid {
+    display:               grid ;
+    grid-template-columns: repeat(auto-fit, minmax(clamp(110px, 12vw, 150px), 1fr)) ;
+    gap:                   1rem ;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .heroLayout {
+        grid-template-columns: 1fr ;
+    }
+}
+
+@media (max-width: 480px) {
+    .simpleGrid {
+        grid-template-columns: 1fr ;
+    }
+    
+    .cardsGrid {
+        grid-template-columns: 1fr ;
+    }
+}

@@ -1,0 +1,4 @@
+.logoImg {
+  object-fit:    contain ;
+  border-radius: var(--radius-sm) ;
+}

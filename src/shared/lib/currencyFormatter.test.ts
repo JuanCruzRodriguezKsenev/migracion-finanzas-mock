@@ -1,5 +1,9 @@
+// Librerías externas
 import { describe , it , expect } from "vitest" ;
+
+// Shared
 import { formatCurrency , getCurrencyDecimalPlaces } from "./currencyFormatter" ;
+
 
 /**
  * Suite de pruebas unitarias para el formateador de monedas escalable (currencyFormatter).
@@ -29,16 +33,19 @@ describe( "currencyFormatter" , () => {
   describe( "formatCurrency" , () => {
     it( "debería formatear correctamente monedas con 2 decimales" , () => {
       const formatted = formatCurrency( 123456 , "ARS" , "es-AR" ) ;
+      
       expect( formatted.replace(/\s/g , " ") ).toContain( "1.234,56" ) ;
     } ) ;
 
     it( "debería formatear correctamente monedas con 0 decimales" , () => {
       const formatted = formatCurrency( 1234 , "JPY" , "ja-JP" ) ;
+      
       expect( formatted.replace(/\s/g , " ") ).toContain( "1,234" ) ;
     } ) ;
 
     it( "debería formatear correctamente monedas con 3 decimales" , () => {
       const formatted = formatCurrency( 1234567 , "KWD" , "en-US" ) ;
+      
       expect( formatted.replace(/\s/g , " ") ).toContain( "1,234.567" ) ;
     } ) ;
   } ) ;

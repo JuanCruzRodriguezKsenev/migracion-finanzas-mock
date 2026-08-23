@@ -1,0 +1,27 @@
+.card {
+  background-color: var(--bg-card) ;
+  border:           0.75px solid var(--border-card) ;
+  border-radius:    var(--radius-md) ;
+  box-shadow:       var(--shadow-sm) ;
+  padding:          1.125rem ;
+  box-sizing:       border-box ;
+  display:          flex ;
+  flex-direction:   column ;
+  flex:             1 1 0 ;
+  min-height:       0 ;
+  width:            100% ;
+  transition:       var(--transition-smooth) ;
+}
+
+.noPadding {
+  padding: 0 ;
+}
+
+.interactive {
+  cursor: pointer ;
+}
+
+.interactive:hover {
+  border-color: rgba( 99 , 102 , 241 , 0.35 ) ;
+  box-shadow:   var(--shadow-md) ;
+}

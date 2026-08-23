@@ -1,0 +1,149 @@
+.globalHeader {
+    display:         flex;
+    align-items:     center;
+    justify-content: space-between;
+    margin-bottom:   1.75rem;
+    width:           100%;
+    animation:       fadeUp 0.3s ease both;
+    position:        relative;
+    z-index:         var(--z-sticky-header);
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Mobile menu btn ─────────────────────────── */
+.mobileMenuBtn { display: none; }
+
+/* ── Saludo ──────────────────────────────────── */
+.headerGreetingWrap { display: block; }
+
+.headerGreeting {
+    font-size:     var(--fs-xl);
+    font-weight:   800;
+    letter-spacing:-0.025em;
+    margin-bottom: 0.125rem;
+    color:         var(--text-main);
+    font-family:   var(--font-display);
+    line-height:   1.15;
+}
+
+.headerSubtitle {
+    font-size: var(--fs-sm);
+    color:     var(--text-muted);
+}
+
+/* ── Marca mobile ────────────────────────────── */
+.headerBrandMobile { display: none; }
+
+/* ── Acciones ────────────────────────────────── */
+.headerActions {
+    display:    flex;
+    align-items:center;
+    gap:        0.625rem;
+}
+
+.monthSelectorWrap {
+    opacity:    1;
+    transition: opacity 0.2s;
+}
+
+.monthSelectorWrap.pending {
+    opacity: 0.6;
+}
+
+.headerDatepicker {
+    display:          flex;
+    align-items:      center;
+    gap:              0.4rem;
+    background-color: var(--bg-card);
+    border:           1px solid var(--border-card);
+    padding:          0.45rem 0.8rem;
+    border-radius:    var(--radius-sm);
+    font-size:        var(--fs-xs);
+    font-weight:      600;
+    color:            var(--text-muted);
+    cursor:           pointer;
+    box-shadow:       var(--shadow-xs);
+    transition:       var(--transition-smooth);
+}
+.headerDatepicker:hover {
+    border-color: var(--border-strong);
+    color:        var(--text-main);
+    box-shadow:   var(--shadow-sm);
+}
+
+.notificationBtn {
+    width:            32px;
+    height:           32px;
+    background-color: var(--bg-card);
+    border:           1px solid var(--border-card);
+    border-radius:    var(--radius-sm);
+    display:          flex;
+    align-items:      center;
+    justify-content:  center;
+    position:         relative;
+    cursor:           pointer;
+    box-shadow:       var(--shadow-xs);
+    color:            var(--text-muted);
+    transition:       var(--transition-smooth);
+}
+.notificationBtn:hover {
+    border-color: var(--border-strong);
+    color:        var(--text-main);
+    box-shadow:   var(--shadow-sm);
+    transform:    translateY(-1px);
+}
+
+.notificationBadge {
+    position:         absolute;
+    top:              -4px;
+    right:            -4px;
+    background-color: var(--color-primary);
+    color:            white;
+    font-size:        7px;
+    font-weight:      800;
+    width:            14px;
+    height:           14px;
+    border-radius:    50%;
+    display:          flex;
+    align-items:      center;
+    justify-content:  center;
+    border:           2px solid var(--bg-app);
+    box-shadow:       var(--shadow-xs);
+}
+
+/* ── Responsive ──────────────────────────────── */
+@media (max-width: 768px) {
+    .globalHeader { margin-bottom: 1.25rem !important; }
+
+    .mobileMenuBtn {
+        display:          flex !important;
+        align-items:      center;
+        justify-content:  center;
+        width:            36px;
+        height:           36px;
+        border-radius:    var(--radius-sm);
+        border:           1px solid var(--border-card);
+        background-color: var(--bg-card);
+        color:            var(--text-main);
+        box-shadow:       var(--shadow-xs);
+        cursor:           pointer;
+        outline:          none;
+        transition:       var(--transition-smooth);
+    }
+    .mobileMenuBtn:hover { box-shadow: var(--shadow-sm); }
+
+    .headerGreetingWrap { display: none !important; }
+
+    .headerBrandMobile {
+        display:        block !important;
+        font-family:    var(--font-display);
+        font-size:      1.1rem;
+        font-weight:    800;
+        color:          var(--color-primary);
+        letter-spacing: -0.02em;
+    }
+}

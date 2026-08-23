@@ -60,11 +60,26 @@ describe( "authService" , () => {
   it( "debería fallar la verificación si la contraseña ingresada es incorrecta" , async () => {
     const contraseniaCorrecta   = "PasswordSeguro2026!" ;
     const contraseniaIncorrecta = "PasswordErroneo!" ;
-    
+
     const { hash , salt } = await hashPassword( contraseniaCorrecta ) ;
 
     const esValido = await verifyPassword( contraseniaIncorrecta , hash , salt ) ;
-    
+
+    expect( esValido ).toBe( false ) ;
+  } ) ;
+
+  /**
+   * Caso de prueba: Manejo defensivo de hashes de longitud distinta.
+   * Valida que verifyPassword retorne false de forma segura (sin lanzar excepción)
+   * cuando el hash almacenado no coincide en longitud con la clave derivada.
+   */
+  it( "debería retornar false sin lanzar excepción si el hash almacenado tiene longitud distinta" , async () => {
+    const contrasenia = "PasswordSeguro2026!" ;
+    const { salt } = await hashPassword( contrasenia ) ;
+    const hashCorto = "abcd1234" ;
+
+    const esValido = await verifyPassword( contrasenia , hashCorto , salt ) ;
+
     expect( esValido ).toBe( false ) ;
   } ) ;
 } ) ;

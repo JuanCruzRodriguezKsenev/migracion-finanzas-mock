@@ -3,7 +3,9 @@
  * Extensiones de tipos globales para NextAuth.
  * Añade soporte para el id de organización (multi-tenant) y roles de usuario.
  */
+// Librerías externas
 import { DefaultSession } from "next-auth" ;
+
 
 declare module "next-auth" {
   /**

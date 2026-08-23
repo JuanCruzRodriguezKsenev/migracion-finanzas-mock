@@ -2,10 +2,16 @@
  * @file accountRepository.ts
  * Repositorio de Cuentas Financieras (Capa de Acceso a Datos - DAL).
  */
-import { db } from "@/shared/db/client" ;
-import { accounts } from "../schema.db" ;
+// Librerías externas
 import { eq , and } from "drizzle-orm" ;
-import { Account , InsertAccount } from "../types" ;
+
+// Shared
+import { db , DBOrTx } from "@/shared/db/client" ;
+
+// Feature: Accounting
+import { accounts , financialEntities } from "../schema.db" ;
+import { Account , InsertAccount }      from "../types" ;
+
 
 /**
  * Repositorio de Cuentas Financieras.
@@ -20,7 +26,7 @@ export const accountRepository = {
    * @param tx - Instancia de transacción opcional.
    * @returns La cuenta encontrada o null si no existe.
    */
-  async findById( id: string , organizationId: string , tx = db ): Promise< Account | null > {
+  async findById( id: string , organizationId: string , tx: DBOrTx = db ): Promise< Account | null > {
     const results = await tx
       .select()
       .from( accounts )
@@ -32,7 +38,7 @@ export const accountRepository = {
       )
       .limit( 1 ) ;
     
-    return( (results[0]) || null ) ;
+    return( results[0] || null ) ;
   } ,
 
   /**
@@ -43,7 +49,7 @@ export const accountRepository = {
    * @param tx - Instancia de transacción de base de datos (requerido para bloqueo).
    * @returns La cuenta encontrada o null si no existe.
    */
-  async findByIdForUpdate( id: string , organizationId: string , tx: typeof db ): Promise< Account | null > {
+  async findByIdForUpdate( id: string , organizationId: string , tx: DBOrTx ): Promise< Account | null > {
     const results = await tx
       .select()
       .from( accounts )
@@ -54,7 +60,7 @@ export const accountRepository = {
         )
       )
       .for( "update" ) ;
-    return( (results[0]) || null ) ;
+    return( results[0] || null ) ;
   } ,
 
   /**
@@ -64,7 +70,7 @@ export const accountRepository = {
    * @param newBalance - El nuevo saldo en centavos.
    * @param tx - Instancia de transacción de base de datos.
    */
-  async updateBalance( id: string , newBalance: number , tx = db ): Promise< void > {
+  async updateBalance( id: string , newBalance: number , tx: DBOrTx = db ): Promise< void > {
     await tx
       .update( accounts )
       .set( {balance: newBalance} )
@@ -78,7 +84,7 @@ export const accountRepository = {
    * @param tx - Instancia de transacción opcional.
    * @returns La cuenta creada.
    */
-  async create( data: InsertAccount , tx = db ): Promise< Account > {
+  async create( data: InsertAccount , tx: DBOrTx = db ): Promise< Account > {
     const [ inserted ] = await tx
       .insert( accounts )
       .values( data )
@@ -87,17 +93,33 @@ export const accountRepository = {
   } ,
 
   /**
-   * Obtiene todas las cuentas asociadas a una organización.
+   * Obtiene todas las cuentas asociadas a una organización con su entidad financiera.
    * 
    * @param organizationId - ID de la organización.
    * @param tx - Instancia de transacción opcional.
-   * @returns Lista de cuentas asociadas ordenadas por código contable.
+   * @returns Lista de cuentas asociadas con sus entidades correspondientes ordenadas por código contable.
    */
-  async findAll( organizationId: string , tx = db ): Promise< Account[] > {
-    return( await tx
-      .select()
+  async findAll(
+    organizationId: string ,
+    tx: DBOrTx = db
+  ): Promise< (Account & { entity?: { name: string ; logo: string | null ; color: string | null } | null })[] > {
+    const results = await tx
+      .select( {
+        account: accounts ,
+        entity: {
+          name:  financialEntities.name ,
+          logo:  financialEntities.logo ,
+          color: financialEntities.color ,
+        } ,
+      } )
       .from( accounts )
+      .leftJoin( financialEntities , eq(accounts.entityId , financialEntities.id) )
       .where( eq(accounts.organizationId , organizationId) )
-      .orderBy( accounts.code ) ) ;
+      .orderBy( accounts.code ) ;
+
+    return( results.map( ( r ) => ( {
+      ...r.account ,
+      entity: r.entity?.name ? r.entity : null ,
+    } ) ) ) ;
   }
 } ;

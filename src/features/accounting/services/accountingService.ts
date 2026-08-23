@@ -2,13 +2,17 @@
  * @file accountingService.ts
  * Servicio para la gestión contable de partida doble e integridad transaccional.
  */
-import { db } from "@/shared/db/client" ;
-import { outboxEvents } from "../schema.db" ;
+// Shared
 import { Result , ok , fail } from "@/shared/lib/result" ;
 import { logger } from "@/shared/lib/logger" ;
+import { db } from "@/shared/db/client" ;
+
+// Feature: Accounting
+import { CreateTransactionParams , LedgerTransaction , InsertLedgerEntry } from "../types" ;
 import { accountRepository } from "../repositories/accountRepository" ;
 import { ledgerRepository } from "../repositories/ledgerRepository" ;
-import { CreateTransactionParams , LedgerTransaction , InsertLedgerEntry } from "../types" ;
+import { outboxEvents } from "../schema.db" ;
+
 
 /**
  * Crea una transacción contable de partida doble de manera transaccional.
@@ -24,7 +28,7 @@ export async function createLedgerTransaction(
   const { organizationId , categoryId , description , merchantName , merchantDomain , entries } = params ;
 
   // 1. Validar que la transacción no esté vacía
-  if( !entries || entries.length < 2 ){
+  if( !entries || (entries.length < 2) ){
     return( fail("Una transacción de partida doble requiere al menos dos entradas contables.") ) ;
   }
 
@@ -74,15 +78,16 @@ export async function createLedgerTransaction(
         let nuevoSaldo = account.balance ;
         const tipo     = account.type ;
 
-        if( tipo === "asset" || tipo === "expense" || tipo === "liability" ){
+        if( (tipo === "asset") || (tipo === "expense") || (tipo === "liability") ){
           // Aumentan con el Débito, disminuyen con el Crédito
           nuevoSaldo = account.balance + entry.debit - entry.credit ;
-        } else if( tipo === "equity" || tipo === "revenue" ){
+        } else if( (tipo === "equity") || (tipo === "revenue") ){
           // Disminuyen con el Débito, aumentan con el Crédito
           nuevoSaldo = account.balance - entry.debit + entry.credit ;
         } else {
           throw new Error( `Tipo de cuenta contable no reconocido: ${tipo}.` ) ;
         }
+
 
         // Actualizar el saldo acumulado de la cuenta en base de datos usando el DAL
         await accountRepository.updateBalance( account.id , nuevoSaldo , tx ) ;
@@ -155,13 +160,14 @@ export async function deleteLedgerTransaction(
         const tipo     = account.type ;
 
         // Operación inversa a la de creación
-        if( tipo === "asset" || tipo === "expense" || tipo === "liability" ){
+        if( (tipo === "asset") || (tipo === "expense") || (tipo === "liability") ){
           nuevoSaldo = account.balance - entry.debit + entry.credit ;
-        } else if( tipo === "equity" || tipo === "revenue" ){
+        } else if( (tipo === "equity") || (tipo === "revenue") ){
           nuevoSaldo = account.balance + entry.debit - entry.credit ;
         } else {
           throw new Error( `Tipo de cuenta contable no reconocido: ${tipo}.` ) ;
         }
+
 
         // Actualizar el saldo acumulado en la base de datos
         await accountRepository.updateBalance( account.id , nuevoSaldo , tx ) ;

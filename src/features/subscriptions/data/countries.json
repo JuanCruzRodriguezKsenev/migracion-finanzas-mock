@@ -1,0 +1,1502 @@
+[
+  {
+    "code": "AR",
+    "label": "🇦🇷 Argentina",
+    "name": "argentina",
+    "tld": ".com.ar"
+  },
+  {
+    "code": "ES",
+    "label": "🇪🇸 España",
+    "name": "españa",
+    "tld": ".es"
+  },
+  {
+    "code": "MX",
+    "label": "🇲🇽 México",
+    "name": "méxico",
+    "tld": ".com.mx"
+  },
+  {
+    "code": "BR",
+    "label": "🇧🇷 Brasil",
+    "name": "brasil",
+    "tld": ".com.br"
+  },
+  {
+    "code": "US",
+    "label": "🇺🇸 Estados Unidos",
+    "name": "estados unidos",
+    "tld": ".com"
+  },
+  {
+    "code": "AF",
+    "label": "🇦🇫 Afganistán",
+    "name": "afganistán",
+    "tld": ".af"
+  },
+  {
+    "code": "AX",
+    "label": "🇦🇽 Alandia",
+    "name": "alandia",
+    "tld": ".ax"
+  },
+  {
+    "code": "AL",
+    "label": "🇦🇱 Albania",
+    "name": "albania",
+    "tld": ".al"
+  },
+  {
+    "code": "DE",
+    "label": "🇩🇪 Alemania",
+    "name": "alemania",
+    "tld": ".de"
+  },
+  {
+    "code": "AD",
+    "label": "🇦🇩 Andorra",
+    "name": "andorra",
+    "tld": ".ad"
+  },
+  {
+    "code": "AO",
+    "label": "🇦🇴 Angola",
+    "name": "angola",
+    "tld": ".ao"
+  },
+  {
+    "code": "AI",
+    "label": "🇦🇮 Anguilla",
+    "name": "anguilla",
+    "tld": ".ai"
+  },
+  {
+    "code": "AQ",
+    "label": "🇦🇶 Antártida",
+    "name": "antártida",
+    "tld": ".aq"
+  },
+  {
+    "code": "AG",
+    "label": "🇦🇬 Antigua y Barbuda",
+    "name": "antigua y barbuda",
+    "tld": ".ag"
+  },
+  {
+    "code": "SA",
+    "label": "🇸🇦 Arabia Saudí",
+    "name": "arabia saudí",
+    "tld": ".sa"
+  },
+  {
+    "code": "DZ",
+    "label": "🇩🇿 Argelia",
+    "name": "argelia",
+    "tld": ".dz"
+  },
+  {
+    "code": "AM",
+    "label": "🇦🇲 Armenia",
+    "name": "armenia",
+    "tld": ".am"
+  },
+  {
+    "code": "AW",
+    "label": "🇦🇼 Aruba",
+    "name": "aruba",
+    "tld": ".aw"
+  },
+  {
+    "code": "AU",
+    "label": "🇦🇺 Australia",
+    "name": "australia",
+    "tld": ".au"
+  },
+  {
+    "code": "AT",
+    "label": "🇦🇹 Austria",
+    "name": "austria",
+    "tld": ".at"
+  },
+  {
+    "code": "AZ",
+    "label": "🇦🇿 Azerbaiyán",
+    "name": "azerbaiyán",
+    "tld": ".az"
+  },
+  {
+    "code": "BS",
+    "label": "🇧🇸 Bahamas",
+    "name": "bahamas",
+    "tld": ".bs"
+  },
+  {
+    "code": "BH",
+    "label": "🇧🇭 Bahrein",
+    "name": "bahrein",
+    "tld": ".bh"
+  },
+  {
+    "code": "BD",
+    "label": "🇧🇩 Bangladesh",
+    "name": "bangladesh",
+    "tld": ".bd"
+  },
+  {
+    "code": "BB",
+    "label": "🇧🇧 Barbados",
+    "name": "barbados",
+    "tld": ".bb"
+  },
+  {
+    "code": "BE",
+    "label": "🇧🇪 Bélgica",
+    "name": "bélgica",
+    "tld": ".be"
+  },
+  {
+    "code": "BZ",
+    "label": "🇧🇿 Belice",
+    "name": "belice",
+    "tld": ".bz"
+  },
+  {
+    "code": "BJ",
+    "label": "🇧🇯 Benín",
+    "name": "benín",
+    "tld": ".bj"
+  },
+  {
+    "code": "BM",
+    "label": "🇧🇲 Bermudas",
+    "name": "bermudas",
+    "tld": ".bm"
+  },
+  {
+    "code": "BY",
+    "label": "🇧🇾 Bielorrusia",
+    "name": "bielorrusia",
+    "tld": ".by"
+  },
+  {
+    "code": "BO",
+    "label": "🇧🇴 Bolivia",
+    "name": "bolivia",
+    "tld": ".bo"
+  },
+  {
+    "code": "BA",
+    "label": "🇧🇦 Bosnia y Herzegovina",
+    "name": "bosnia y herzegovina",
+    "tld": ".ba"
+  },
+  {
+    "code": "BW",
+    "label": "🇧🇼 Botswana",
+    "name": "botswana",
+    "tld": ".bw"
+  },
+  {
+    "code": "BN",
+    "label": "🇧🇳 Brunei",
+    "name": "brunei",
+    "tld": ".bn"
+  },
+  {
+    "code": "BG",
+    "label": "🇧🇬 Bulgaria",
+    "name": "bulgaria",
+    "tld": ".bg"
+  },
+  {
+    "code": "BF",
+    "label": "🇧🇫 Burkina Faso",
+    "name": "burkina faso",
+    "tld": ".bf"
+  },
+  {
+    "code": "BI",
+    "label": "🇧🇮 Burundi",
+    "name": "burundi",
+    "tld": ".bi"
+  },
+  {
+    "code": "BT",
+    "label": "🇧🇹 Bután",
+    "name": "bután",
+    "tld": ".bt"
+  },
+  {
+    "code": "CV",
+    "label": "🇨🇻 Cabo Verde",
+    "name": "cabo verde",
+    "tld": ".cv"
+  },
+  {
+    "code": "KH",
+    "label": "🇰🇭 Camboya",
+    "name": "camboya",
+    "tld": ".kh"
+  },
+  {
+    "code": "CM",
+    "label": "🇨🇲 Camerún",
+    "name": "camerún",
+    "tld": ".cm"
+  },
+  {
+    "code": "CA",
+    "label": "🇨🇦 Canadá",
+    "name": "canadá",
+    "tld": ".ca"
+  },
+  {
+    "code": "BQ",
+    "label": " Caribe Neerlandés",
+    "name": "caribe neerlandés",
+    "tld": ".bq"
+  },
+  {
+    "code": "QA",
+    "label": "🇶🇦 Catar",
+    "name": "catar",
+    "tld": ".qa"
+  },
+  {
+    "code": "TD",
+    "label": "🇹🇩 Chad",
+    "name": "chad",
+    "tld": ".td"
+  },
+  {
+    "code": "CZ",
+    "label": "🇨🇿 Chequia",
+    "name": "chequia",
+    "tld": ".cz"
+  },
+  {
+    "code": "CL",
+    "label": "🇨🇱 Chile",
+    "name": "chile",
+    "tld": ".cl"
+  },
+  {
+    "code": "CN",
+    "label": "🇨🇳 China",
+    "name": "china",
+    "tld": ".cn"
+  },
+  {
+    "code": "CY",
+    "label": "🇨🇾 Chipre",
+    "name": "chipre",
+    "tld": ".cy"
+  },
+  {
+    "code": "VA",
+    "label": "🇻🇦 Ciudad del Vaticano",
+    "name": "ciudad del vaticano",
+    "tld": ".va"
+  },
+  {
+    "code": "CO",
+    "label": "🇨🇴 Colombia",
+    "name": "colombia",
+    "tld": ".com.co"
+  },
+  {
+    "code": "KM",
+    "label": "🇰🇲 Comoras",
+    "name": "comoras",
+    "tld": ".km"
+  },
+  {
+    "code": "CG",
+    "label": "🇨🇬 Congo",
+    "name": "congo",
+    "tld": ".cg"
+  },
+  {
+    "code": "CD",
+    "label": "🇨🇩 Congo (Rep. Dem.)",
+    "name": "congo (rep. dem.)",
+    "tld": ".cd"
+  },
+  {
+    "code": "KP",
+    "label": "🇰🇵 Corea del Norte",
+    "name": "corea del norte",
+    "tld": ".kp"
+  },
+  {
+    "code": "KR",
+    "label": "🇰🇷 Corea del Sur",
+    "name": "corea del sur",
+    "tld": ".kr"
+  },
+  {
+    "code": "CI",
+    "label": "🇨🇮 Costa de Marfil",
+    "name": "costa de marfil",
+    "tld": ".ci"
+  },
+  {
+    "code": "CR",
+    "label": "🇨🇷 Costa Rica",
+    "name": "costa rica",
+    "tld": ".cr"
+  },
+  {
+    "code": "HR",
+    "label": "🇭🇷 Croacia",
+    "name": "croacia",
+    "tld": ".hr"
+  },
+  {
+    "code": "CU",
+    "label": "🇨🇺 Cuba",
+    "name": "cuba",
+    "tld": ".cu"
+  },
+  {
+    "code": "CW",
+    "label": "🇨🇼 Curazao",
+    "name": "curazao",
+    "tld": ".cw"
+  },
+  {
+    "code": "DK",
+    "label": "🇩🇰 Dinamarca",
+    "name": "dinamarca",
+    "tld": ".dk"
+  },
+  {
+    "code": "DJ",
+    "label": "🇩🇯 Djibouti",
+    "name": "djibouti",
+    "tld": ".dj"
+  },
+  {
+    "code": "DM",
+    "label": "🇩🇲 Dominica",
+    "name": "dominica",
+    "tld": ".dm"
+  },
+  {
+    "code": "EC",
+    "label": "🇪🇨 Ecuador",
+    "name": "ecuador",
+    "tld": ".com.ec"
+  },
+  {
+    "code": "EG",
+    "label": "🇪🇬 Egipto",
+    "name": "egipto",
+    "tld": ".eg"
+  },
+  {
+    "code": "SV",
+    "label": "🇸🇻 El Salvador",
+    "name": "el salvador",
+    "tld": ".sv"
+  },
+  {
+    "code": "AE",
+    "label": "🇦🇪 Emiratos Árabes Unidos",
+    "name": "emiratos árabes unidos",
+    "tld": ".ae"
+  },
+  {
+    "code": "ER",
+    "label": "🇪🇷 Eritrea",
+    "name": "eritrea",
+    "tld": ".er"
+  },
+  {
+    "code": "SK",
+    "label": "🇸🇰 Eslovaquia",
+    "name": "eslovaquia",
+    "tld": ".sk"
+  },
+  {
+    "code": "SI",
+    "label": "🇸🇮 Eslovenia",
+    "name": "eslovenia",
+    "tld": ".si"
+  },
+  {
+    "code": "EE",
+    "label": "🇪🇪 Estonia",
+    "name": "estonia",
+    "tld": ".ee"
+  },
+  {
+    "code": "SZ",
+    "label": "🇸🇿 Esuatini",
+    "name": "esuatini",
+    "tld": ".sz"
+  },
+  {
+    "code": "ET",
+    "label": "🇪🇹 Etiopía",
+    "name": "etiopía",
+    "tld": ".et"
+  },
+  {
+    "code": "PH",
+    "label": "🇵🇭 Filipinas",
+    "name": "filipinas",
+    "tld": ".ph"
+  },
+  {
+    "code": "FI",
+    "label": "🇫🇮 Finlandia",
+    "name": "finlandia",
+    "tld": ".fi"
+  },
+  {
+    "code": "FJ",
+    "label": "🇫🇯 Fiyi",
+    "name": "fiyi",
+    "tld": ".fj"
+  },
+  {
+    "code": "FR",
+    "label": "🇫🇷 Francia",
+    "name": "francia",
+    "tld": ".fr"
+  },
+  {
+    "code": "GA",
+    "label": "🇬🇦 Gabón",
+    "name": "gabón",
+    "tld": ".ga"
+  },
+  {
+    "code": "GM",
+    "label": "🇬🇲 Gambia",
+    "name": "gambia",
+    "tld": ".gm"
+  },
+  {
+    "code": "GE",
+    "label": "🇬🇪 Georgia",
+    "name": "georgia",
+    "tld": ".ge"
+  },
+  {
+    "code": "GH",
+    "label": "🇬🇭 Ghana",
+    "name": "ghana",
+    "tld": ".gh"
+  },
+  {
+    "code": "GI",
+    "label": "🇬🇮 Gibraltar",
+    "name": "gibraltar",
+    "tld": ".gi"
+  },
+  {
+    "code": "GR",
+    "label": "🇬🇷 Grecia",
+    "name": "grecia",
+    "tld": ".gr"
+  },
+  {
+    "code": "GD",
+    "label": "🇬🇩 Grenada",
+    "name": "grenada",
+    "tld": ".gd"
+  },
+  {
+    "code": "GL",
+    "label": "🇬🇱 Groenlandia",
+    "name": "groenlandia",
+    "tld": ".gl"
+  },
+  {
+    "code": "GP",
+    "label": "🇬🇵 Guadalupe",
+    "name": "guadalupe",
+    "tld": ".gp"
+  },
+  {
+    "code": "GU",
+    "label": "🇬🇺 Guam",
+    "name": "guam",
+    "tld": ".gu"
+  },
+  {
+    "code": "GT",
+    "label": "🇬🇹 Guatemala",
+    "name": "guatemala",
+    "tld": ".gt"
+  },
+  {
+    "code": "GF",
+    "label": "🇬🇫 Guayana Francesa",
+    "name": "guayana francesa",
+    "tld": ".gf"
+  },
+  {
+    "code": "GG",
+    "label": "🇬🇬 Guernsey",
+    "name": "guernsey",
+    "tld": ".gg"
+  },
+  {
+    "code": "GN",
+    "label": "🇬🇳 Guinea",
+    "name": "guinea",
+    "tld": ".gn"
+  },
+  {
+    "code": "GQ",
+    "label": "🇬🇶 Guinea Ecuatorial",
+    "name": "guinea ecuatorial",
+    "tld": ".gq"
+  },
+  {
+    "code": "GW",
+    "label": "🇬🇼 Guinea-Bisáu",
+    "name": "guinea-bisáu",
+    "tld": ".gw"
+  },
+  {
+    "code": "GY",
+    "label": "🇬🇾 Guyana",
+    "name": "guyana",
+    "tld": ".gy"
+  },
+  {
+    "code": "HT",
+    "label": "🇭🇹 Haití",
+    "name": "haití",
+    "tld": ".ht"
+  },
+  {
+    "code": "HN",
+    "label": "🇭🇳 Honduras",
+    "name": "honduras",
+    "tld": ".hn"
+  },
+  {
+    "code": "HK",
+    "label": "🇭🇰 Hong Kong",
+    "name": "hong kong",
+    "tld": ".hk"
+  },
+  {
+    "code": "HU",
+    "label": "🇭🇺 Hungría",
+    "name": "hungría",
+    "tld": ".hu"
+  },
+  {
+    "code": "IN",
+    "label": "🇮🇳 India",
+    "name": "india",
+    "tld": ".in"
+  },
+  {
+    "code": "ID",
+    "label": "🇮🇩 Indonesia",
+    "name": "indonesia",
+    "tld": ".id"
+  },
+  {
+    "code": "IQ",
+    "label": "🇮🇶 Irak",
+    "name": "irak",
+    "tld": ".iq"
+  },
+  {
+    "code": "IR",
+    "label": "🇮🇷 Iran",
+    "name": "iran",
+    "tld": ".ir"
+  },
+  {
+    "code": "IE",
+    "label": "🇮🇪 Irlanda",
+    "name": "irlanda",
+    "tld": ".ie"
+  },
+  {
+    "code": "BV",
+    "label": "🇧🇻 Isla Bouvet",
+    "name": "isla bouvet",
+    "tld": ".bv"
+  },
+  {
+    "code": "IM",
+    "label": "🇮🇲 Isla de Man",
+    "name": "isla de man",
+    "tld": ".im"
+  },
+  {
+    "code": "CX",
+    "label": "🇨🇽 Isla de Navidad",
+    "name": "isla de navidad",
+    "tld": ".cx"
+  },
+  {
+    "code": "NF",
+    "label": "🇳🇫 Isla de Norfolk",
+    "name": "isla de norfolk",
+    "tld": ".nf"
+  },
+  {
+    "code": "IS",
+    "label": "🇮🇸 Islandia",
+    "name": "islandia",
+    "tld": ".is"
+  },
+  {
+    "code": "KY",
+    "label": "🇰🇾 Islas Caimán",
+    "name": "islas caimán",
+    "tld": ".ky"
+  },
+  {
+    "code": "CC",
+    "label": "🇨🇨 Islas Cocos o Islas Keeling",
+    "name": "islas cocos o islas keeling",
+    "tld": ".cc"
+  },
+  {
+    "code": "CK",
+    "label": "🇨🇰 Islas Cook",
+    "name": "islas cook",
+    "tld": ".ck"
+  },
+  {
+    "code": "FO",
+    "label": "🇫🇴 Islas Faroe",
+    "name": "islas faroe",
+    "tld": ".fo"
+  },
+  {
+    "code": "GS",
+    "label": "🇬🇸 Islas Georgias del Sur y Sandwich del Sur",
+    "name": "islas georgias del sur y sandwich del sur",
+    "tld": ".gs"
+  },
+  {
+    "code": "HM",
+    "label": "🇭🇲 Islas Heard y McDonald",
+    "name": "islas heard y mcdonald",
+    "tld": ".hm"
+  },
+  {
+    "code": "FK",
+    "label": "🇫🇰 Islas Malvinas",
+    "name": "islas malvinas",
+    "tld": ".fk"
+  },
+  {
+    "code": "MP",
+    "label": "🇲🇵 Islas Marianas del Norte",
+    "name": "islas marianas del norte",
+    "tld": ".mp"
+  },
+  {
+    "code": "MH",
+    "label": "🇲🇭 Islas Marshall",
+    "name": "islas marshall",
+    "tld": ".mh"
+  },
+  {
+    "code": "PN",
+    "label": "🇵🇳 Islas Pitcairn",
+    "name": "islas pitcairn",
+    "tld": ".pn"
+  },
+  {
+    "code": "SB",
+    "label": "🇸🇧 Islas Salomón",
+    "name": "islas salomón",
+    "tld": ".sb"
+  },
+  {
+    "code": "SJ",
+    "label": "🇸🇯 Islas Svalbard y Jan Mayen",
+    "name": "islas svalbard y jan mayen",
+    "tld": ".sj"
+  },
+  {
+    "code": "TK",
+    "label": "🇹🇰 Islas Tokelau",
+    "name": "islas tokelau",
+    "tld": ".tk"
+  },
+  {
+    "code": "TC",
+    "label": "🇹🇨 Islas Turks y Caicos",
+    "name": "islas turks y caicos",
+    "tld": ".tc"
+  },
+  {
+    "code": "UM",
+    "label": "🇺🇲 Islas Ultramarinas Menores de Estados Unidos",
+    "name": "islas ultramarinas menores de estados unidos",
+    "tld": ".us"
+  },
+  {
+    "code": "VI",
+    "label": "🇻🇮 Islas Vírgenes de los Estados Unidos",
+    "name": "islas vírgenes de los estados unidos",
+    "tld": ".vi"
+  },
+  {
+    "code": "VG",
+    "label": "🇻🇬 Islas Vírgenes del Reino Unido",
+    "name": "islas vírgenes del reino unido",
+    "tld": ".vg"
+  },
+  {
+    "code": "IL",
+    "label": "🇮🇱 Israel",
+    "name": "israel",
+    "tld": ".il"
+  },
+  {
+    "code": "IT",
+    "label": "🇮🇹 Italia",
+    "name": "italia",
+    "tld": ".it"
+  },
+  {
+    "code": "JM",
+    "label": "🇯🇲 Jamaica",
+    "name": "jamaica",
+    "tld": ".jm"
+  },
+  {
+    "code": "JP",
+    "label": "🇯🇵 Japón",
+    "name": "japón",
+    "tld": ".co.jp"
+  },
+  {
+    "code": "JE",
+    "label": "🇯🇪 Jersey",
+    "name": "jersey",
+    "tld": ".je"
+  },
+  {
+    "code": "JO",
+    "label": "🇯🇴 Jordania",
+    "name": "jordania",
+    "tld": ".jo"
+  },
+  {
+    "code": "KZ",
+    "label": "🇰🇿 Kazajistán",
+    "name": "kazajistán",
+    "tld": ".kz"
+  },
+  {
+    "code": "KE",
+    "label": "🇰🇪 Kenia",
+    "name": "kenia",
+    "tld": ".ke"
+  },
+  {
+    "code": "KG",
+    "label": "🇰🇬 Kirguizistán",
+    "name": "kirguizistán",
+    "tld": ".kg"
+  },
+  {
+    "code": "KI",
+    "label": "🇰🇮 Kiribati",
+    "name": "kiribati",
+    "tld": ".ki"
+  },
+  {
+    "code": "XK",
+    "label": "🇽🇰 Kosovo",
+    "name": "kosovo",
+    "tld": ".xk"
+  },
+  {
+    "code": "KW",
+    "label": "🇰🇼 Kuwait",
+    "name": "kuwait",
+    "tld": ".kw"
+  },
+  {
+    "code": "LA",
+    "label": "🇱🇦 Laos",
+    "name": "laos",
+    "tld": ".la"
+  },
+  {
+    "code": "LS",
+    "label": "🇱🇸 Lesotho",
+    "name": "lesotho",
+    "tld": ".ls"
+  },
+  {
+    "code": "LV",
+    "label": "🇱🇻 Letonia",
+    "name": "letonia",
+    "tld": ".lv"
+  },
+  {
+    "code": "LB",
+    "label": "🇱🇧 Líbano",
+    "name": "líbano",
+    "tld": ".lb"
+  },
+  {
+    "code": "LR",
+    "label": "🇱🇷 Liberia",
+    "name": "liberia",
+    "tld": ".lr"
+  },
+  {
+    "code": "LY",
+    "label": "🇱🇾 Libia",
+    "name": "libia",
+    "tld": ".ly"
+  },
+  {
+    "code": "LI",
+    "label": "🇱🇮 Liechtenstein",
+    "name": "liechtenstein",
+    "tld": ".li"
+  },
+  {
+    "code": "LT",
+    "label": "🇱🇹 Lituania",
+    "name": "lituania",
+    "tld": ".lt"
+  },
+  {
+    "code": "LU",
+    "label": "🇱🇺 Luxemburgo",
+    "name": "luxemburgo",
+    "tld": ".lu"
+  },
+  {
+    "code": "MO",
+    "label": "🇲🇴 Macao",
+    "name": "macao",
+    "tld": ".mo"
+  },
+  {
+    "code": "MK",
+    "label": "🇲🇰 Macedonia del Norte",
+    "name": "macedonia del norte",
+    "tld": ".mk"
+  },
+  {
+    "code": "MG",
+    "label": "🇲🇬 Madagascar",
+    "name": "madagascar",
+    "tld": ".mg"
+  },
+  {
+    "code": "MY",
+    "label": "🇲🇾 Malasia",
+    "name": "malasia",
+    "tld": ".my"
+  },
+  {
+    "code": "MW",
+    "label": "🇲🇼 Malawi",
+    "name": "malawi",
+    "tld": ".mw"
+  },
+  {
+    "code": "MV",
+    "label": "🇲🇻 Maldivas",
+    "name": "maldivas",
+    "tld": ".mv"
+  },
+  {
+    "code": "ML",
+    "label": "🇲🇱 Mali",
+    "name": "mali",
+    "tld": ".ml"
+  },
+  {
+    "code": "MT",
+    "label": "🇲🇹 Malta",
+    "name": "malta",
+    "tld": ".mt"
+  },
+  {
+    "code": "MA",
+    "label": "🇲🇦 Marruecos",
+    "name": "marruecos",
+    "tld": ".ma"
+  },
+  {
+    "code": "MQ",
+    "label": "🇲🇶 Martinica",
+    "name": "martinica",
+    "tld": ".mq"
+  },
+  {
+    "code": "MU",
+    "label": "🇲🇺 Mauricio",
+    "name": "mauricio",
+    "tld": ".mu"
+  },
+  {
+    "code": "MR",
+    "label": "🇲🇷 Mauritania",
+    "name": "mauritania",
+    "tld": ".mr"
+  },
+  {
+    "code": "YT",
+    "label": "🇾🇹 Mayotte",
+    "name": "mayotte",
+    "tld": ".yt"
+  },
+  {
+    "code": "FM",
+    "label": "🇫🇲 Micronesia",
+    "name": "micronesia",
+    "tld": ".fm"
+  },
+  {
+    "code": "MD",
+    "label": "🇲🇩 Moldavia",
+    "name": "moldavia",
+    "tld": ".md"
+  },
+  {
+    "code": "MC",
+    "label": "🇲🇨 Mónaco",
+    "name": "mónaco",
+    "tld": ".mc"
+  },
+  {
+    "code": "MN",
+    "label": "🇲🇳 Mongolia",
+    "name": "mongolia",
+    "tld": ".mn"
+  },
+  {
+    "code": "ME",
+    "label": "🇲🇪 Montenegro",
+    "name": "montenegro",
+    "tld": ".me"
+  },
+  {
+    "code": "MS",
+    "label": "🇲🇸 Montserrat",
+    "name": "montserrat",
+    "tld": ".ms"
+  },
+  {
+    "code": "MZ",
+    "label": "🇲🇿 Mozambique",
+    "name": "mozambique",
+    "tld": ".mz"
+  },
+  {
+    "code": "MM",
+    "label": "🇲🇲 Myanmar",
+    "name": "myanmar",
+    "tld": ".mm"
+  },
+  {
+    "code": "NA",
+    "label": "🇳🇦 Namibia",
+    "name": "namibia",
+    "tld": ".na"
+  },
+  {
+    "code": "NR",
+    "label": "🇳🇷 Nauru",
+    "name": "nauru",
+    "tld": ".nr"
+  },
+  {
+    "code": "NP",
+    "label": "🇳🇵 Nepal",
+    "name": "nepal",
+    "tld": ".np"
+  },
+  {
+    "code": "NI",
+    "label": "🇳🇮 Nicaragua",
+    "name": "nicaragua",
+    "tld": ".ni"
+  },
+  {
+    "code": "NE",
+    "label": "🇳🇪 Níger",
+    "name": "níger",
+    "tld": ".ne"
+  },
+  {
+    "code": "NG",
+    "label": "🇳🇬 Nigeria",
+    "name": "nigeria",
+    "tld": ".ng"
+  },
+  {
+    "code": "NU",
+    "label": "🇳🇺 Niue",
+    "name": "niue",
+    "tld": ".nu"
+  },
+  {
+    "code": "NO",
+    "label": "🇳🇴 Noruega",
+    "name": "noruega",
+    "tld": ".no"
+  },
+  {
+    "code": "NC",
+    "label": "🇳🇨 Nueva Caledonia",
+    "name": "nueva caledonia",
+    "tld": ".nc"
+  },
+  {
+    "code": "NZ",
+    "label": "🇳🇿 Nueva Zelanda",
+    "name": "nueva zelanda",
+    "tld": ".nz"
+  },
+  {
+    "code": "OM",
+    "label": "🇴🇲 Omán",
+    "name": "omán",
+    "tld": ".om"
+  },
+  {
+    "code": "NL",
+    "label": "🇳🇱 Países Bajos",
+    "name": "países bajos",
+    "tld": ".nl"
+  },
+  {
+    "code": "PK",
+    "label": "🇵🇰 Pakistán",
+    "name": "pakistán",
+    "tld": ".pk"
+  },
+  {
+    "code": "PW",
+    "label": "🇵🇼 Palau",
+    "name": "palau",
+    "tld": ".pw"
+  },
+  {
+    "code": "PS",
+    "label": "🇵🇸 Palestina",
+    "name": "palestina",
+    "tld": ".ps"
+  },
+  {
+    "code": "PA",
+    "label": "🇵🇦 Panamá",
+    "name": "panamá",
+    "tld": ".pa"
+  },
+  {
+    "code": "PG",
+    "label": "🇵🇬 Papúa Nueva Guinea",
+    "name": "papúa nueva guinea",
+    "tld": ".pg"
+  },
+  {
+    "code": "PY",
+    "label": "🇵🇾 Paraguay",
+    "name": "paraguay",
+    "tld": ".py"
+  },
+  {
+    "code": "PE",
+    "label": "🇵🇪 Perú",
+    "name": "perú",
+    "tld": ".com.pe"
+  },
+  {
+    "code": "PF",
+    "label": "🇵🇫 Polinesia Francesa",
+    "name": "polinesia francesa",
+    "tld": ".pf"
+  },
+  {
+    "code": "PL",
+    "label": "🇵🇱 Polonia",
+    "name": "polonia",
+    "tld": ".pl"
+  },
+  {
+    "code": "PT",
+    "label": "🇵🇹 Portugal",
+    "name": "portugal",
+    "tld": ".pt"
+  },
+  {
+    "code": "PR",
+    "label": "🇵🇷 Puerto Rico",
+    "name": "puerto rico",
+    "tld": ".pr"
+  },
+  {
+    "code": "GB",
+    "label": "🇬🇧 Reino Unido",
+    "name": "reino unido",
+    "tld": ".co.uk"
+  },
+  {
+    "code": "CF",
+    "label": "🇨🇫 República Centroafricana",
+    "name": "república centroafricana",
+    "tld": ".cf"
+  },
+  {
+    "code": "DO",
+    "label": "🇩🇴 República Dominicana",
+    "name": "república dominicana",
+    "tld": ".do"
+  },
+  {
+    "code": "RE",
+    "label": "🇷🇪 Reunión",
+    "name": "reunión",
+    "tld": ".re"
+  },
+  {
+    "code": "RW",
+    "label": "🇷🇼 Ruanda",
+    "name": "ruanda",
+    "tld": ".rw"
+  },
+  {
+    "code": "RO",
+    "label": "🇷🇴 Rumania",
+    "name": "rumania",
+    "tld": ".ro"
+  },
+  {
+    "code": "RU",
+    "label": "🇷🇺 Rusia",
+    "name": "rusia",
+    "tld": ".ru"
+  },
+  {
+    "code": "EH",
+    "label": "🇪🇭 Sahara Occidental",
+    "name": "sahara occidental",
+    "tld": ".eh"
+  },
+  {
+    "code": "MF",
+    "label": "🇲🇫 Saint Martin",
+    "name": "saint martin",
+    "tld": ".fr"
+  },
+  {
+    "code": "WS",
+    "label": "🇼🇸 Samoa",
+    "name": "samoa",
+    "tld": ".ws"
+  },
+  {
+    "code": "AS",
+    "label": "🇦🇸 Samoa Americana",
+    "name": "samoa americana",
+    "tld": ".as"
+  },
+  {
+    "code": "BL",
+    "label": "🇧🇱 San Bartolomé",
+    "name": "san bartolomé",
+    "tld": ".bl"
+  },
+  {
+    "code": "KN",
+    "label": "🇰🇳 San Cristóbal y Nieves",
+    "name": "san cristóbal y nieves",
+    "tld": ".kn"
+  },
+  {
+    "code": "SM",
+    "label": "🇸🇲 San Marino",
+    "name": "san marino",
+    "tld": ".sm"
+  },
+  {
+    "code": "PM",
+    "label": "🇵🇲 San Pedro y Miquelón",
+    "name": "san pedro y miquelón",
+    "tld": ".pm"
+  },
+  {
+    "code": "VC",
+    "label": "🇻🇨 San Vicente y Granadinas",
+    "name": "san vicente y granadinas",
+    "tld": ".vc"
+  },
+  {
+    "code": "SH",
+    "label": "🇸🇭 Santa Elena, Ascensión y Tristán de Acuña",
+    "name": "santa elena, ascensión y tristán de acuña",
+    "tld": ".sh"
+  },
+  {
+    "code": "LC",
+    "label": "🇱🇨 Santa Lucía",
+    "name": "santa lucía",
+    "tld": ".lc"
+  },
+  {
+    "code": "ST",
+    "label": "🇸🇹 Santo Tomé y Príncipe",
+    "name": "santo tomé y príncipe",
+    "tld": ".st"
+  },
+  {
+    "code": "SN",
+    "label": "🇸🇳 Senegal",
+    "name": "senegal",
+    "tld": ".sn"
+  },
+  {
+    "code": "RS",
+    "label": "🇷🇸 Serbia",
+    "name": "serbia",
+    "tld": ".rs"
+  },
+  {
+    "code": "SC",
+    "label": "🇸🇨 Seychelles",
+    "name": "seychelles",
+    "tld": ".sc"
+  },
+  {
+    "code": "SL",
+    "label": "🇸🇱 Sierra Leone",
+    "name": "sierra leone",
+    "tld": ".sl"
+  },
+  {
+    "code": "SG",
+    "label": "🇸🇬 Singapur",
+    "name": "singapur",
+    "tld": ".sg"
+  },
+  {
+    "code": "SX",
+    "label": "🇸🇽 Sint Maarten",
+    "name": "sint maarten",
+    "tld": ".sx"
+  },
+  {
+    "code": "SY",
+    "label": "🇸🇾 Siria",
+    "name": "siria",
+    "tld": ".sy"
+  },
+  {
+    "code": "SO",
+    "label": "🇸🇴 Somalia",
+    "name": "somalia",
+    "tld": ".so"
+  },
+  {
+    "code": "LK",
+    "label": "🇱🇰 Sri Lanka",
+    "name": "sri lanka",
+    "tld": ".lk"
+  },
+  {
+    "code": "ZA",
+    "label": "🇿🇦 Sudáfrica",
+    "name": "sudáfrica",
+    "tld": ".za"
+  },
+  {
+    "code": "SD",
+    "label": "🇸🇩 Sudán",
+    "name": "sudán",
+    "tld": ".sd"
+  },
+  {
+    "code": "SS",
+    "label": "🇸🇸 Sudán del Sur",
+    "name": "sudán del sur",
+    "tld": ".ss"
+  },
+  {
+    "code": "SE",
+    "label": "🇸🇪 Suecia",
+    "name": "suecia",
+    "tld": ".se"
+  },
+  {
+    "code": "CH",
+    "label": "🇨🇭 Suiza",
+    "name": "suiza",
+    "tld": ".ch"
+  },
+  {
+    "code": "SR",
+    "label": "🇸🇷 Surinam",
+    "name": "surinam",
+    "tld": ".sr"
+  },
+  {
+    "code": "TH",
+    "label": "🇹🇭 Tailandia",
+    "name": "tailandia",
+    "tld": ".th"
+  },
+  {
+    "code": "TW",
+    "label": "🇹🇼 Taiwán",
+    "name": "taiwán",
+    "tld": ".tw"
+  },
+  {
+    "code": "TZ",
+    "label": "🇹🇿 Tanzania",
+    "name": "tanzania",
+    "tld": ".tz"
+  },
+  {
+    "code": "TJ",
+    "label": "🇹🇯 Tayikistán",
+    "name": "tayikistán",
+    "tld": ".tj"
+  },
+  {
+    "code": "IO",
+    "label": "🇮🇴 Territorio Británico del Océano Índico",
+    "name": "territorio británico del océano índico",
+    "tld": ".io"
+  },
+  {
+    "code": "TF",
+    "label": "🇹🇫 Tierras Australes y Antárticas Francesas",
+    "name": "tierras australes y antárticas francesas",
+    "tld": ".tf"
+  },
+  {
+    "code": "TL",
+    "label": "🇹🇱 Timor Oriental",
+    "name": "timor oriental",
+    "tld": ".tl"
+  },
+  {
+    "code": "TG",
+    "label": "🇹🇬 Togo",
+    "name": "togo",
+    "tld": ".tg"
+  },
+  {
+    "code": "TO",
+    "label": "🇹🇴 Tonga",
+    "name": "tonga",
+    "tld": ".to"
+  },
+  {
+    "code": "TT",
+    "label": "🇹🇹 Trinidad y Tobago",
+    "name": "trinidad y tobago",
+    "tld": ".tt"
+  },
+  {
+    "code": "TN",
+    "label": "🇹🇳 Túnez",
+    "name": "túnez",
+    "tld": ".tn"
+  },
+  {
+    "code": "TM",
+    "label": "🇹🇲 Turkmenistán",
+    "name": "turkmenistán",
+    "tld": ".tm"
+  },
+  {
+    "code": "TR",
+    "label": "🇹🇷 Turquía",
+    "name": "turquía",
+    "tld": ".tr"
+  },
+  {
+    "code": "TV",
+    "label": "🇹🇻 Tuvalu",
+    "name": "tuvalu",
+    "tld": ".tv"
+  },
+  {
+    "code": "UA",
+    "label": "🇺🇦 Ucrania",
+    "name": "ucrania",
+    "tld": ".ua"
+  },
+  {
+    "code": "UG",
+    "label": "🇺🇬 Uganda",
+    "name": "uganda",
+    "tld": ".ug"
+  },
+  {
+    "code": "UY",
+    "label": "🇺🇾 Uruguay",
+    "name": "uruguay",
+    "tld": ".com.uy"
+  },
+  {
+    "code": "UZ",
+    "label": "🇺🇿 Uzbekistán",
+    "name": "uzbekistán",
+    "tld": ".uz"
+  },
+  {
+    "code": "VU",
+    "label": "🇻🇺 Vanuatu",
+    "name": "vanuatu",
+    "tld": ".vu"
+  },
+  {
+    "code": "VE",
+    "label": "🇻🇪 Venezuela",
+    "name": "venezuela",
+    "tld": ".com.ve"
+  },
+  {
+    "code": "VN",
+    "label": "🇻🇳 Vietnam",
+    "name": "vietnam",
+    "tld": ".vn"
+  },
+  {
+    "code": "WF",
+    "label": "🇼🇫 Wallis y Futuna",
+    "name": "wallis y futuna",
+    "tld": ".wf"
+  },
+  {
+    "code": "YE",
+    "label": "🇾🇪 Yemen",
+    "name": "yemen",
+    "tld": ".ye"
+  },
+  {
+    "code": "ZM",
+    "label": "🇿🇲 Zambia",
+    "name": "zambia",
+    "tld": ".zm"
+  },
+  {
+    "code": "ZW",
+    "label": "🇿🇼 Zimbabue",
+    "name": "zimbabue",
+    "tld": ".zw"
+  }
+]

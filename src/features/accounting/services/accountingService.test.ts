@@ -1,11 +1,19 @@
+// Librerías externas
 import { describe , it , expect , beforeEach , afterEach } from "vitest" ;
 import { eq } from "drizzle-orm" ;
+
+// Shared
+import { executeIdempotent } from "@/shared/services/idempotencyService" ;
 import { db } from "@/shared/db/client" ;
+
+// Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
+
+// Feature: Accounting
 import { accounts , ledgerTransactions , ledgerEntries , idempotencyKeys , outboxEvents } from "../schema.db" ;
 import { createLedgerTransaction , deleteLedgerTransaction } from "./accountingService" ;
-import { executeIdempotent } from "@/shared/services/idempotencyService" ;
 import { createTransactionSchema } from "../schemas/accounting.schema" ;
+
 
 /**
  * Suite de pruebas de integración para el Core Contable de Partida Doble.
@@ -129,7 +137,7 @@ describe( "accountingService" , () => {
     const entradas = await db
       .select()
       .from( ledgerEntries )
-      .where( eq( ledgerEntries.transactionId , transaccion.id ) ) ;
+      .where( eq(ledgerEntries.transactionId , transaccion.id) ) ;
 
     expect( entradas.length ).toBe( 2 ) ;
     
@@ -148,22 +156,22 @@ describe( "accountingService" , () => {
     const [ bancoActualizado ] = await db
       .select()
       .from( accounts )
-      .where( eq( accounts.id , ctaBancoId ) ) ;
+      .where( eq(accounts.id , ctaBancoId) ) ;
     expect( bancoActualizado.balance ).toBe( monto ) ;
 
     const [ ingresosActualizados ] = await db
       .select()
       .from( accounts )
-      .where( eq( accounts.id , ctaIngresosId ) ) ;
+      .where( eq(accounts.id , ctaIngresosId) ) ;
     expect( ingresosActualizados.balance ).toBe( monto ) ;
 
     // Validar evento en Outbox
     const events = await db
       .select()
       .from( outboxEvents )
-      .where( eq( outboxEvents.organizationId , orgId ) ) ;
+      .where( eq(outboxEvents.organizationId , orgId) ) ;
     expect( events.length ).toBe( 1 ) ;
-    expect( events[ 0 ].eventType ).toBe( "TRANSACTION_CREATED" ) ;
+    expect( events[0].eventType ).toBe( "TRANSACTION_CREATED" ) ;
   } ) ;
 
   it( "debería retornar fail y no alterar DB si la transacción está desbalanceada" , async () => {
@@ -194,7 +202,7 @@ describe( "accountingService" , () => {
     const entradas = await db.select().from( ledgerEntries ) ;
     expect( entradas.length ).toBe( 0 ) ;
 
-    const [ ctaBanco ] = await db.select().from( accounts ).where( eq( accounts.id , ctaBancoId ) ) ;
+    const [ ctaBanco ] = await db.select().from( accounts ).where( eq(accounts.id , ctaBancoId) ) ;
     expect( ctaBanco.balance ).toBe( 0 ) ;
   } ) ;
 
@@ -260,8 +268,8 @@ describe( "accountingService" , () => {
     expect( result.error ).toContain( "no existe o no pertenece a la organización solicitante" ) ;
 
     // Limpieza de org intrusa
-    await db.delete( accounts      ).where( eq( accounts.organizationId , orgIntrusa.id ) ) ;
-    await db.delete( organizations ).where( eq( organizations.id        , orgIntrusa.id ) ) ;
+    await db.delete( accounts      ).where( eq(accounts.organizationId , orgIntrusa.id) ) ;
+    await db.delete( organizations ).where( eq(organizations.id        , orgIntrusa.id) ) ;
   } ) ;
 
   it( "debería registrar un pago de tarjeta de crédito (pasivo) y reducir la deuda correctamente" , async () => {
@@ -269,7 +277,7 @@ describe( "accountingService" , () => {
     await db
       .update( accounts )
       .set( { balance: 10000 } )
-      .where( eq( accounts.id , ctaBancoId ) ) ;
+      .where( eq(accounts.id , ctaBancoId) ) ;
 
     const pago = 5000 ;
 
@@ -293,10 +301,10 @@ describe( "accountingService" , () => {
     expect( result.success ).toBe( true ) ;
     if( !result.success ) return ;
 
-    const [ tarjetaActualizada ] = await db.select().from( accounts ).where( eq( accounts.id , ctaTarjetaId ) ) ;
+    const [ tarjetaActualizada ] = await db.select().from( accounts ).where( eq(accounts.id , ctaTarjetaId) ) ;
     expect( tarjetaActualizada.balance ).toBe( 0 ) ;
 
-    const [ bancoActualizado ] = await db.select().from( accounts ).where( eq( accounts.id , ctaBancoId ) ) ;
+    const [ bancoActualizado ] = await db.select().from( accounts ).where( eq(accounts.id , ctaBancoId) ) ;
     expect( bancoActualizado.balance ).toBe( 5000 ) ;
   } ) ;
 
@@ -327,8 +335,8 @@ describe( "accountingService" , () => {
     const txId = resCrear.value.id ;
 
     // Verificar saldos actualizados
-    let [ ctaBanco ] = await db.select().from( accounts ).where( eq( accounts.id , ctaBancoId ) ) ;
-    let [ ctaIngresos ] = await db.select().from( accounts ).where( eq( accounts.id , ctaIngresosId ) ) ;
+    let [ ctaBanco ] = await db.select().from( accounts ).where( eq(accounts.id , ctaBancoId) ) ;
+    let [ ctaIngresos ] = await db.select().from( accounts ).where( eq(accounts.id , ctaIngresosId) ) ;
     expect( ctaBanco.balance ).toBe( monto ) ;
     expect( ctaIngresos.balance ).toBe( monto ) ;
 
@@ -337,25 +345,25 @@ describe( "accountingService" , () => {
     expect( resEliminar.success ).toBe( true ) ;
 
     // Verificar saldos revertidos a 0
-    [ ctaBanco ] = await db.select().from( accounts ).where( eq( accounts.id , ctaBancoId ) ) ;
-    [ ctaIngresos ] = await db.select().from( accounts ).where( eq( accounts.id , ctaIngresosId ) ) ;
+    [ ctaBanco ] = await db.select().from( accounts ).where( eq(accounts.id , ctaBancoId) ) ;
+    [ ctaIngresos ] = await db.select().from( accounts ).where( eq(accounts.id , ctaIngresosId) ) ;
     expect( ctaBanco.balance ).toBe( 0 ) ;
     expect( ctaIngresos.balance ).toBe( 0 ) ;
 
     // Verificar que la transacción y asientos fueron eliminados
-    const txCount = await db.select().from( ledgerTransactions ).where( eq( ledgerTransactions.id , txId ) ) ;
+    const txCount = await db.select().from( ledgerTransactions ).where( eq(ledgerTransactions.id , txId) ) ;
     expect( txCount.length ).toBe( 0 ) ;
 
-    const entriesCount = await db.select().from( ledgerEntries ).where( eq( ledgerEntries.transactionId , txId ) ) ;
+    const entriesCount = await db.select().from( ledgerEntries ).where( eq(ledgerEntries.transactionId , txId) ) ;
     expect( entriesCount.length ).toBe( 0 ) ;
 
     // Verificar evento de eliminación en Outbox
     const events = await db
       .select()
       .from( outboxEvents )
-      .where( eq( outboxEvents.eventType , "TRANSACTION_DELETED" ) ) ;
+      .where( eq(outboxEvents.eventType , "TRANSACTION_DELETED") ) ;
     expect( events.length ).toBe( 1 ) ;
-    expect( events[ 0 ].organizationId ).toBe( orgId ) ;
+    expect( events[0].organizationId ).toBe( orgId ) ;
   } ) ;
 
   it( "debería validar la partida doble con el esquema de Zod en runtime" , () => {
@@ -466,7 +474,7 @@ describe( "accountingService" , () => {
     expect( res2.value?.id ).toBe( res1.value?.id ) ;
 
     // Verificar que los saldos del banco aumentaron sólo una vez (1000 centavos en vez de 2000)
-    const [ ctaBanco ] = await db.select().from( accounts ).where( eq( accounts.id , ctaBancoId ) ) ;
+    const [ ctaBanco ] = await db.select().from( accounts ).where( eq(accounts.id , ctaBancoId) ) ;
     expect( ctaBanco.balance ).toBe( 1000 ) ;
 
     // Simular conflicto (PROCESSING en curso)

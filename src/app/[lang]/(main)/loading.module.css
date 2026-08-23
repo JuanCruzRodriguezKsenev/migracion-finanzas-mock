@@ -1,0 +1,12 @@
+.container {
+  display: flex ;
+  flex-direction: column ;
+  gap: 1.5rem ;
+  width: 100% ;
+}
+
+.grid {
+  display: grid ;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(110px, 12vw, 150px), 1fr)) ;
+  gap: 1.25rem ;
+}

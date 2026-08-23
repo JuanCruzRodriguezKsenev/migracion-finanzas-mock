@@ -50,6 +50,41 @@
       "when": 1782351165765,
       "tag": "0006_brainy_excalibur",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782710863594,
+      "tag": "0007_sweet_darwin",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783282079677,
+      "tag": "0008_hot_randall_flagg",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783392013864,
+      "tag": "0009_next_killraven",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1783399679511,
+      "tag": "0010_clear_zaran",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1783566978135,
+      "tag": "0011_silent_namorita",
+      "breakpoints": true
     }
   ]
 }

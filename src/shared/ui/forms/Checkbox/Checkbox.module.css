@@ -1,0 +1,95 @@
+.checkboxWrapper {
+  display:        flex ;
+  flex-direction: column ;
+  gap:            0.25rem ;
+  width:          100% ;
+}
+
+.checkboxLabel {
+  display:     flex ;
+  align-items: center ;
+  gap:         0.5rem ;
+  cursor:      pointer ;
+  position:    relative ;
+  user-select: none ;
+}
+
+.checkboxInput {
+  position: absolute ;
+  opacity:  0 ;
+  width:    1.125rem ;
+  height:   1.125rem ;
+  cursor:   pointer ;
+  margin:   0 ;
+}
+
+.checkboxCustom {
+  width:            1.125rem ;
+  height:           1.125rem ;
+  min-width:        1.125rem ;
+  border:           1.5px solid var(--border-card) ;
+  border-radius:    var(--radius-sm) ;
+  background-color: var(--bg-card) ;
+  position:         relative ;
+  transition:       var(--transition-smooth) ;
+  display:          flex ;
+  align-items:      center ;
+  justify-content:  center ;
+}
+
+.checkboxCustomError {
+  border-color: var(--color-danger) ;
+}
+
+.checkboxInput:hover + .checkboxCustom {
+  border-color: var(--color-primary) ;
+}
+
+.checkboxInput:focus-visible + .checkboxCustom {
+  outline:        2px solid var(--color-primary) ;
+  outline-offset: 2px ;
+}
+
+.checkboxInput:checked + .checkboxCustom {
+  background-color: var(--color-primary) ;
+  border-color:     var(--color-primary) ;
+}
+
+.checkboxInput:checked + .checkboxCustom::after {
+  content:      "" ;
+  position:     absolute ;
+  width:        0.3rem ;
+  height:       0.5rem ;
+  border:       solid var(--text-on-accent) ;
+  border-width: 0 1.5px 1.5px 0 ;
+  transform:    rotate( 45deg ) ;
+  top:          15% ;
+}
+
+.checkboxInput:disabled + .checkboxCustom {
+  opacity:          0.5 ;
+  cursor:           not-allowed ;
+  background-color: var(--bg-app) ;
+}
+
+.checkboxText {
+  font-size:   var(--fs-sm) ;
+  color:       var(--text-main) ;
+  font-weight: 500 ;
+}
+
+.required {
+  color: var(--color-danger) ;
+}
+
+.checkboxDescription {
+  font-size:   var(--fs-xs) ;
+  color:       var(--text-muted) ;
+  margin-left: calc( 1.125rem + 0.5rem ) ;
+}
+
+.errorText {
+  font-size:  var(--fs-xs) ;
+  color:      var(--color-danger) ;
+  margin-top: 0.125rem ;
+}
