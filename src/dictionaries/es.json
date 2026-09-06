@@ -2,7 +2,14 @@
   "header": {
     "greeting": "Hola",
     "subtitle": "Bienvenido de vuelta a tu panel de control.",
-    "thisMonth": "Este Mes"
+    "thisMonth": "Este Mes",
+    "monthSelector": {
+      "prevMonth": "Mes anterior",
+      "nextMonth": "Mes siguiente",
+      "currentMonth": "Ir al mes actual",
+      "selectMonth": "Seleccionar mes",
+      "dialogAriaLabel": "Selector de mes y año"
+    }
   },
   "sidebar": {
     "dashboard": "Dashboard",

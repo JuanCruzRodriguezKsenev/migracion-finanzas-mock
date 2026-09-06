@@ -9,6 +9,14 @@
 import React , { useState , useRef , useEffect , useMemo , useCallback } from "react" ;
 import styles                                                           from "./MonthSelector.module.css" ;
 
+export interface MonthSelectorDictionary {
+  prevMonth?:       string ;
+  nextMonth?:       string ;
+  currentMonth?:    string ;
+  selectMonth?:     string ;
+  dialogAriaLabel?: string ;
+}
+
 export interface MonthSelectorProps {
   /** Mes seleccionado en formato "YYYY-MM". */
   selectedKey: string ;
@@ -16,20 +24,34 @@ export interface MonthSelectorProps {
   onChange:    ( key: string ) => void ;
   /** Idioma para los nombres de mes ("es" | "en" | "br"). Por defecto "es". */
   lang?:       string ;
-  /** Clave "YYYY-MM" mínima seleccionable. Actualmente sin uso en el bloqueo de UI. */
+  /** Clave "YYYY-MM" mínima seleccionable. */
   minKey?:     string ;
   /** Clave "YYYY-MM" máxima seleccionable; bloquea avance a meses futuros. */
   maxKey?:     string ;
+  /** Clave "YYYY-MM" del mes actual; si no se provee usa maxKey o la fecha actual del sistema. */
+  todayKey?:   string ;
   className?:  string ;
   /** Ícono opcional mostrado junto a la etiqueta del botón disparador. */
   icon?:       React.ReactNode ;
+  /** Diccionario para accesibilidad y traducciones. */
+  dict?:       MonthSelectorDictionary ;
 }
 
-const MONTH_LABELS_MAP: Record< string , string[] > = {
-  es: [ "Ene" , "Feb" , "Mar" , "Abr" , "May" , "Jun" , "Jul" , "Ago" , "Sep" , "Oct" , "Nov" , "Dic" ] ,
-  en: [ "Jan" , "Feb" , "Mar" , "Apr" , "May" , "Jun" , "Jul" , "Aug" , "Sep" , "Oct" , "Nov" , "Dec" ] ,
-  br: [ "Jan" , "Fev" , "Mar" , "Abr" , "Mai" , "Jun" , "Jul" , "Ago" , "Set" , "Out" , "Nov" , "Dez" ]
-} ;
+/**
+ * Obtiene las etiquetas cortas de los 12 meses internacionalizadas según el locale.
+ */
+export function getLocalizedMonthShortLabels( lang: string = "es" ): string[] {
+  const locale    = lang === "en" ? "en-US" : lang === "br" ? "pt-BR" : "es-ES" ;
+  const formatter = new Intl.DateTimeFormat( locale , {month: "short"} ) ;
+  const labels: string[] = [] ;
+  for( let m = 0 ; m < 12 ; m++ ) {
+    const d   = new Date( 2026 , m , 1 ) ;
+    const raw = formatter.format( d ).replace( "." , "" ) ;
+    const capitalized = ( raw.charAt( 0 ).toUpperCase() + raw.slice( 1 ) ) ;
+    labels.push( capitalized ) ;
+  }
+  return( labels ) ;
+}
 
 /**
  * Calcula una clave de mes desplazada por un offset de meses.
@@ -47,12 +69,16 @@ export function MonthSelector( {
   selectedKey ,
   onChange ,
   lang = "es" ,
+  minKey ,
   maxKey ,
+  todayKey ,
   className = "" ,
-  icon
+  icon ,
+  dict
 }: MonthSelectorProps ) {
   const [ isOpen , setIsOpen ] = useState( false ) ;
-  const containerRef = useRef<HTMLDivElement>(null) ;
+  const containerRef = useRef<HTMLDivElement>( null ) ;
+  const triggerRef   = useRef<HTMLButtonElement>( null ) ;
 
   // Extraer año y mes seleccionados
   const [ selectedYear , selectedMonthIdx ] = useMemo( () => {
@@ -66,6 +92,14 @@ export function MonthSelector( {
     return( Number( maxKey.split( "-" )[0] ) ) ;
   } , [ maxKey ] ) ;
 
+  // Clave del mes actual efectivo para el botón rápido (M4)
+  const effectiveTodayKey = useMemo( () => {
+    if( todayKey ) { return( todayKey ) ; }
+    if( maxKey )   { return( maxKey ) ; }
+    const d = new Date() ;
+    return( `${d.getFullYear()}-${String( d.getMonth() + 1 ).padStart( 2 , "0" )}` ) ;
+  } , [ todayKey , maxKey ] ) ;
+
   // Estado para el año que se está visualizando en la grilla del popover
   const [ viewYear , setViewYear ] = useState( selectedYear ) ;
 
@@ -74,20 +108,30 @@ export function MonthSelector( {
     if( !isOpen ) {
       setViewYear( selectedYear ) ;
     }
-    setIsOpen( (prev) => !prev ) ;
+    setIsOpen( ( prev ) => !prev ) ;
   } ;
 
-  // Registrar listener global solo cuando el popover está abierto
+  // Manejar Escape y clics afuera del popover para a11y (M6)
   useEffect( () => {
     if( !isOpen ) { return ; }
+
+    function handleKeyDown( event: KeyboardEvent ) {
+      if( event.key === "Escape" ) {
+        setIsOpen( false ) ;
+        triggerRef.current?.focus() ;
+      }
+    }
 
     function handleClickOutside( event: MouseEvent ) {
       if( containerRef.current && !containerRef.current.contains( event.target as Node ) ) {
         setIsOpen( false ) ;
       }
     }
+
+    document.addEventListener( "keydown" , handleKeyDown ) ;
     document.addEventListener( "mousedown" , handleClickOutside ) ;
     return( () => {
+      document.removeEventListener( "keydown" , handleKeyDown ) ;
       document.removeEventListener( "mousedown" , handleClickOutside ) ;
     } ) ;
   } , [ isOpen ] ) ;
@@ -95,7 +139,8 @@ export function MonthSelector( {
   // Obtener etiquetas del mes y año por separado para evitar ocultar el año al truncar
   const labelParts = useMemo( () => {
     const date = new Date( selectedYear , selectedMonthIdx , 1 ) ;
-    const monthStr = date.toLocaleDateString( lang === "en" ? "en-US" : lang === "br" ? "pt-BR" : "es-ES" , {month: "long"} ) ;
+    const locale = lang === "en" ? "en-US" : lang === "br" ? "pt-BR" : "es-ES" ;
+    const monthStr = date.toLocaleDateString( locale , {month: "long"} ) ;
     const formattedMonth = ( monthStr.charAt( 0 ).toUpperCase() + monthStr.slice( 1 ) ) ;
     return( {
       month: formattedMonth ,
@@ -103,13 +148,13 @@ export function MonthSelector( {
     } ) ;
   } , [ selectedYear , selectedMonthIdx , lang ] ) ;
 
-  // Nombres cortos de meses en el idioma activo
-  const monthLabels = MONTH_LABELS_MAP[lang] || MONTH_LABELS_MAP.es ;
+  // Nombres cortos de meses generados dinámicamente con Intl (M5b)
+  const monthLabels = useMemo( () => getLocalizedMonthShortLabels( lang ) , [ lang ] ) ;
 
   // Manejar el cambio de año en el navegador (bloqueando avance más allá del año máximo)
   const adjustYear = useCallback( ( amount: number ) => {
-    setViewYear( (prev) => {
-      const next = prev + amount ;
+    setViewYear( ( prev ) => {
+      const next = ( prev + amount ) ;
       if( amount > 0 && next > maxYear ) { return( prev ) ; }
       return( next ) ;
     } ) ;
@@ -124,19 +169,24 @@ export function MonthSelector( {
 
     onChange( key ) ;
     setIsOpen( false ) ;
+    triggerRef.current?.focus() ;
   } , [ viewYear , maxKey , onChange ] ) ;
 
-  // Ir rápidamente al mes actual (T-0)
+  // Ir rápidamente al mes actual (M4)
   const handleGoToCurrent = useCallback( () => {
-    if( maxKey ) {
-      onChange( maxKey ) ;
-    } else {
-      const d = new Date() ;
-      const todayKey = `${d.getFullYear()}-${String( d.getMonth() + 1 ).padStart( 2 , "0" )}` ;
-      onChange( todayKey ) ;
-    }
+    onChange( effectiveTodayKey ) ;
+    const [ targetYear ] = effectiveTodayKey.split( "-" ).map( Number ) ;
+    setViewYear( targetYear ) ;
     setIsOpen( false ) ;
-  } , [ maxKey , onChange ] ) ;
+    triggerRef.current?.focus() ;
+  } , [ effectiveTodayKey , onChange ] ) ;
+
+  // Textos accesibles e internacionalizados (S7/M5)
+  const prevLabel             = dict?.prevMonth || ( lang === "en" ? "Previous month" : lang === "br" ? "Mês anterior" : "Mes anterior" ) ;
+  const nextLabel             = dict?.nextMonth || ( lang === "en" ? "Next month" : lang === "br" ? "Próximo mês" : "Mes siguiente" ) ;
+  const triggerLabel          = dict?.selectMonth || ( lang === "en" ? "Select month" : lang === "br" ? "Selecionar mês" : "Seleccionar mes" ) ;
+  const dialogLabel           = dict?.dialogAriaLabel || ( lang === "en" ? "Month and year selector" : lang === "br" ? "Seletor de mês e ano" : "Selector de mes y año" ) ;
+  const currentMonthBtnLabel  = dict?.currentMonth || ( lang === "en" ? "Go to current month" : lang === "br" ? "Ir para o mês atual" : "Ir al mes actual" ) ;
 
   // Calcular claves para controles de paso lateral
   const prevMonthKey   = useMemo( () => getOffsetMonthKey( selectedKey , -1 ) , [ selectedKey ] ) ;
@@ -150,7 +200,7 @@ export function MonthSelector( {
         type="button"
         className={styles.stepMonthBtn}
         onClick={ () => onChange( prevMonthKey ) }
-        aria-label="Mes anterior"
+        aria-label={prevLabel}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="15 18 9 12 15 6" />
@@ -160,11 +210,14 @@ export function MonthSelector( {
       {/* Selector Desplegable Central */}
       <div className={styles.dropdownWrapper}>
         <button
+          ref={triggerRef}
           type="button"
           className={ `${styles.triggerButton} ${isOpen ? styles.active : ""}` }
           onClick={handleTriggerClick}
           aria-expanded={isOpen}
           aria-haspopup="dialog"
+          aria-controls="month-selector-dialog"
+          aria-label={triggerLabel}
         >
           <div className={styles.triggerContent}>
             {icon}
@@ -189,13 +242,20 @@ export function MonthSelector( {
         </button>
 
         {isOpen ? (
-          <div className={styles.gridPopover}>
+          <div
+            id="month-selector-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label={dialogLabel}
+            className={styles.gridPopover}
+          >
             {/* Cabecera: Navegador de Año */}
             <div className={styles.yearNavigator}>
               <button
                 type="button"
                 className={styles.navBtn}
                 onClick={ () => adjustYear( -1 ) }
+                aria-label="Año anterior"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="15 18 9 12 15 6" />
@@ -207,6 +267,7 @@ export function MonthSelector( {
                 className={styles.navBtn}
                 disabled={viewYear >= maxYear}
                 onClick={ () => adjustYear( 1 ) }
+                aria-label="Año siguiente"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="9 18 15 12 9 6" />
@@ -224,16 +285,18 @@ export function MonthSelector( {
                 // Bloquear solo meses futuros respecto al mes actual
                 const isDisabled = ( !!maxKey && (currentMonthKey > maxKey) ) ;
 
+                const btnClass = [
+                  styles.gridMonthBtn ,
+                  isSelected ? styles.selected : "" ,
+                  isDisabled ? styles.disabled : ""
+                ].filter( Boolean ).join( " " ) ;
+
                 return(
                   <button
                     key={index}
                     type="button"
                     disabled={isDisabled}
-                    className={ `
-                      ${styles.gridMonthBtn} 
-                      ${isSelected ? styles.selected : ""} 
-                      ${isDisabled ? styles.disabled : ""}
-                    ` }
+                    className={btnClass}
                     onClick={ () => handleMonthSelect( index ) }
                   >
                     {label}
@@ -248,7 +311,7 @@ export function MonthSelector( {
               className={styles.todayBtn}
               onClick={handleGoToCurrent}
             >
-              {lang === "en" ? "Go to current month" : lang === "br" ? "Ir para o mês atual" : "Ir al mes actual"}
+              {currentMonthBtnLabel}
             </button>
           </div>
         ) : null}
@@ -260,7 +323,7 @@ export function MonthSelector( {
         disabled={isNextDisabled}
         className={styles.stepMonthBtn}
         onClick={ () => onChange( nextMonthKey ) }
-        aria-label="Mes siguiente"
+        aria-label={nextLabel}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="9 18 15 12 9 6" />

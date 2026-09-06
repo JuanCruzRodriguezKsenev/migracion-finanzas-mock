@@ -12,16 +12,17 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `fix/dashboard-visual` (abierta sobre `master` el 2026-09-06).
+**Rama activa:** `fix/dashboard-i18n-a11y` (abierta sobre `master` el 2026-09-06).
 
-**En curso:** Tanda B — Visual del dashboard (cerrando cambios y verificando tests).
-1. `src/shared/ui/MetricCard/MetricCard.module.css`: `overflow: visible` en `.heroCard`, `position: relative; z-index: 3` en `.heroSparkline` para evitar que el tooltip flotante se recorte (S4).
-2. `src/shared/ui/display/RechartsSparkline/Sparkline.tsx` + `Sparkline.module.css`: Cursor con token CSS `var(--border-subtle)` (S5), `allowEscapeViewBox` en Tooltip, opacidad 1 y elevación con sombras, y `.sparklineWrapper` con layout estable durante el montaje inicial (S8).
-3. `src/shared/ui/display/RechartsSparkline/Sparkline.tsx`: Formateo monetario internacionalizado (`formatSparklineCurrency`) armonizado con `formatCents` (S6).
-4. `src/shared/ui/display/MonthSelector/MonthSelector.module.css` + `MonthSelector.tsx`: Eliminados píxeles fijos (reemplazados por `rem` y `clamp`), popover con `--bg-card-glass` y eliminación de bordes duplicados en "Ir al mes actual" (M7).
+**En curso:** Tanda C — Accesibilidad e internacionalización (cerrando cambios y verificando tests).
+1. `src/dictionaries/{es,en,br}.json`: Incorporación de claves para `header.monthSelector` (prevMonth, nextMonth, currentMonth, selectMonth, dialogAriaLabel) (S7/M5).
+2. `src/shared/ui/display/MonthSelector/MonthSelector.tsx`: Generación dinámica de etiquetas de mes con `Intl` (`getLocalizedMonthShortLabels`) (M5b).
+3. `src/shared/ui/display/MonthSelector/MonthSelector.tsx`: Accesibilidad dialog (`role="dialog"`, `aria-modal="true"`, `aria-expanded`, `aria-controls`), manejo de tecla Escape y retorno de foco a trigger (M6).
+4. `src/shared/ui/display/MonthSelector/MonthSelector.tsx`: Soporte para `todayKey` explícito en botón rápido y limpieza de clases CSS (M4/M8).
+5. `src/shared/ui/display/MonthSelector/MonthSelector.test.tsx`: Suite unitaria con 9 tests para a11y, Intl, teclado y navegación.
 
 **Próximo paso inmediato:**
-Commitear en `fix/dashboard-visual`, mergear a `master` con fast-forward, e iniciar **Tanda C — Accesibilidad e internacionalización** en la rama `fix/dashboard-i18n-a11y`.
+Commitear en `fix/dashboard-i18n-a11y`, mergear a `master` con fast-forward, e iniciar **Tanda D — Límites y rutas del selector** en la rama `feat/month-selector-limites`.
 
 ---
 
@@ -33,8 +34,9 @@ Commitear en `fix/dashboard-visual`, mergear a `master` con fast-forward, e inic
 | :--- | :--- | :---: | :--- |
 | **Tanda 0** | `docs/gobernanza-base` | 🟢 **Cerrada** | `docs/trabajo-en-vuelo.md` y §8 en `.agents/AGENTS.md` (commit `36b0019`) |
 | **Tanda A** | `fix/dashboard-correctitud` | 🟢 **Cerrada** | S1 ({value, monthKey}[]), S2 (ojito), S3 (pct 0.0%), M1 (hoy en server), A5 (summaryCache) (commit `2661f8e`) |
-| **Tanda B** | `fix/dashboard-visual` | 🟢 **Completada** | S4 (overflow hero), S5 (cursor tema claro), S6 (formatCents), M7 (px fijos), S8 (flash) |
-| **Tanda C** | `fix/dashboard-i18n-a11y` | ⚪ Pendiente | S7/M5 (i18n es/en/br), M5b (Intl labels), M6 (dialog a11y), M4 (todayKey), M8 (clases) |
+| **Tanda B** | `fix/dashboard-visual` | 🟢 **Cerrada** | S4 (overflow hero), S5 (cursor tema claro), S6 (formatCents), M7 (px fijos), S8 (flash) (commit `b41b0b3`) |
+| **Tanda C** | `fix/dashboard-i18n-a11y` | 🟢 **Completada** | S7/M5 (i18n es/en/br), M5b (Intl labels), M6 (dialog a11y), M4 (todayKey), M8 (clases) |
+| **Tanda D** | `feat/month-selector-limites`| ⚪ Pendiente | M2 (ocultar donde no se consume), M3 (minKey primer mes con datos) |
 | **Tanda D** | `feat/month-selector-limites`| ⚪ Pendiente | M2 (ocultar donde no se consume), M3 (minKey primer mes con datos) |
 | **Tanda E** | `fix/lint-set-state-in-effect`| ⚪ Pendiente | 4 errores ESLint: NotificationsContext, InstitutionLogo, CreateFinancialEntityForm |
 | **Tanda F** | `feat/env-validado` | ⚪ Pendiente | `env.ts` con Zod (lazy `obtenerEnv`), eliminar fallback silencioso de `client.ts:15` |

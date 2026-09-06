@@ -2,7 +2,14 @@
   "header": {
     "greeting": "Hello",
     "subtitle": "Welcome back to your control panel.",
-    "thisMonth": "This Month"
+    "thisMonth": "This Month",
+    "monthSelector": {
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "currentMonth": "Go to current month",
+      "selectMonth": "Select month",
+      "dialogAriaLabel": "Month and year selector"
+    }
   },
   "sidebar": {
     "dashboard": "Dashboard",

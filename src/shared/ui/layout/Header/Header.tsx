@@ -111,7 +111,9 @@ export function Header( {dict , onMenuClick , lang = "es" , currentMonthKey}: He
             onChange={handleMonthChange}
             lang={lang}
             maxKey={maxKey}
+            todayKey={currentKey}
             icon={<IconCalendar size={14} />}
+            dict={dict.header?.monthSelector}
           />
         </div>
         <button
