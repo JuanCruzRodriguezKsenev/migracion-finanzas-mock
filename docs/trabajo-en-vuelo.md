@@ -12,18 +12,17 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-## Rama y próximo paso
+**Rama activa:** `feat/env-validado` (abierta sobre `master` el 2026-09-06).
 
-**Rama activa:** `fix/lint-set-state-in-effect` (abierta sobre `master` el 2026-09-06).
-
-**En curso:** Tanda E — Limpieza de ESLint (set-state-in-effect) (cerrando cambios y verificando tests).
-1. `src/features/notifications/context/NotificationsContext.tsx`: Migración completa a `useSyncExternalStore` con `notificationStore` desacoplado, eliminando completamente `useState` y `useEffect` con render en cascada y resolviendo hidratación SSR sin warnings.
-2. `src/shared/ui/display/InstitutionLogo/InstitutionLogo.tsx`: Derivación síncrona en `useMemo` (`resolveDirectLogo`) para URLs directas, dominios, caché en memoria y fallbacks físicos. `useEffect` reservado exclusivamente a peticiones asíncronas de Brandfetch con `setAsyncState` dentro de resolución asíncrona.
-3. `src/features/accounting/components/CreateFinancialEntityForm.tsx`: Inicialización perezosa de `selectedCountry` (`useState(() => detectUserCountry())`) eliminando efecto inicializador; manejo de reseteo de sugerencias en eventos de usuario (`handleNameChange`, `handleClearBrandLink`, `handleSubmit`), eliminando llamadas de `setState` sincrónicas en el debounce.
-4. Verificación: `pnpm exec eslint --quiet .` reporta exactamente **0 errores**. Todos los 175 tests unitarios pasan.
+**En curso:** Tanda F — Validación Zod de variables de entorno y conexión estricta (cerrando cambios y verificando tests).
+1. `src/shared/lib/env.ts`: Esquema Zod estricto (`envSchema`) y función lazy evaluada con caché (`obtenerEnv()`) que valida `DATABASE_URL` (requerida con protocolo PostgreSQL), `NODE_ENV`, `NEXTAUTH_SECRET` (obligatorio en producción), `NEXTAUTH_URL` y variables de Brandfetch.
+2. `src/shared/db/client.ts`: Eliminación del fallback silencioso a localhost (`process.env.DATABASE_URL || ...`), adoptando `obtenerEnv().DATABASE_URL` para garantizar fallas tempranas explícitas si falta configuración en producción.
+3. `src/shared/lib/env.test.ts`: Suite unitaria con 7 tests para validar protocolos, obligatoriedad en producción, valores por defecto y comportamiento ante errores.
+4. `.env.example` y `README.md`: Documentación canónica actualizada con `NEXTAUTH_URL` y notas de validación Zod.
+5. Verificación: `tsc --noEmit` y `eslint --quiet .` en 0 errores; los 182 tests unitarios (24 archivos) pasan.
 
 **Próximo paso inmediato:**
-Commitear en `fix/lint-set-state-in-effect`, mergear a `master` con fast-forward, e iniciar **Tanda F — Validación Zod de variables de entorno y conexión estricta** en la rama `feat/env-validado`.
+Commitear en `feat/env-validado`, mergear a `master` con fast-forward, e iniciar **Tanda G — Compuerta de CI en GitHub Actions** en la rama `ci/compuerta`.
 
 ---
 
@@ -38,8 +37,8 @@ Commitear en `fix/lint-set-state-in-effect`, mergear a `master` con fast-forward
 | **Tanda B** | `fix/dashboard-visual` | 🟢 **Cerrada** | S4 (overflow hero), S5 (cursor tema claro), S6 (formatCents), M7 (px fijos), S8 (flash) (commit `b41b0b3`) |
 | **Tanda C** | `fix/dashboard-i18n-a11y` | 🟢 **Cerrada** | S7/M5 (i18n es/en/br), M5b (Intl labels), M6 (dialog a11y), M4 (todayKey), M8 (clases) (commit `12a9c5c`) |
 | **Tanda D** | `feat/month-selector-limites`| 🟢 **Cerrada** | M2 (ocultar en accounts/subscriptions), M3 (minKey primer mes con datos) (commit `6e7bbe8`) |
-| **Tanda E** | `fix/lint-set-state-in-effect`| 🟢 **Completada** | 4 errores ESLint resueltos (NotificationsContext, InstitutionLogo, CreateFinancialEntityForm) |
-| **Tanda F** | `feat/env-validado` | ⚪ Pendiente | `env.ts` con Zod (lazy `obtenerEnv`), eliminar fallback silencioso de `client.ts:15` |
+| **Tanda E** | `fix/lint-set-state-in-effect`| 🟢 **Cerrada** | 4 errores ESLint resueltos (NotificationsContext, InstitutionLogo, CreateFinancialEntityForm) (commit `4cdb0ad`) |
+| **Tanda F** | `feat/env-validado` | 🟢 **Completada** | `env.ts` con Zod (lazy `obtenerEnv`), eliminar fallback silencioso de `client.ts:15` |
 | **Tanda G** | `ci/compuerta` | ⚪ Pendiente | `.github/workflows/compuerta.yml` con service postgres + `packageManager: pnpm@11.3.0` |
 | **Tanda H** | `docs/canonicos` | ⚪ Pendiente | `patterns.md`, `TECHNICAL_DEBT.md`, `ROADMAP.md`, `docs/adr/` desde la próxima decisión |
 

@@ -8,11 +8,14 @@ import { drizzle } from "drizzle-orm/postgres-js" ;
 import postgres    from "postgres" ;
 import dotenv      from "dotenv" ;
 
+// Shared
+import { obtenerEnv } from "@/shared/lib/env" ;
+
 // Cargar variables de entorno locales
 dotenv.config( {path: ".env.local"} ) ;
 
-// Obtiene la URI de conexión de las variables de entorno
-const connectionString = ( process.env.DATABASE_URL || "postgresql://postgres:postgres_dev_pwd@localhost:5432/finanzas_db" ) ;
+// Obtiene la URI de conexión validada de las variables de entorno
+const connectionString = ( obtenerEnv().DATABASE_URL ) ;
 
 // Declarar tipo global para evitar fugas en desarrollo (HMR)
 const globalForDb = globalThis as unknown as {

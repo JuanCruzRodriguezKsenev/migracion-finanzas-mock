@@ -24,16 +24,19 @@ Ver [ARCHITECTURE.md](./ARCHITECTURE.md) para la arquitectura orientada a caract
 2.  Crear `.env.local` en la raíz con las siguientes variables:
 
     ```bash
-    # Conexión a PostgreSQL
+    # Conexión a PostgreSQL (validado con Zod en runtime en src/shared/lib/env.ts)
     DATABASE_URL=postgresql://postgres:postgres_dev_pwd@localhost:5432/finanzas_db
 
     # Secreto de firma de JWT para NextAuth (obligatorio en producción)
     NEXTAUTH_SECRET=
 
+    # URL canónica de la aplicación para NextAuth
+    NEXTAUTH_URL=http://localhost:3000
+
     # Opcional: habilita metadatos enriquecidos de marcas (logos, colores corporativos)
     # vía Brandfetch. Sin esta key, el sistema usa un fallback con Clearbit.
     BRANDFETCH_API_KEY=
-    NEXT_PUBLIC_BRANDFETCH_CLIENT_ID=
+    NEXT_PUBLIC_BRANDFETCH_CLIENT_ID=brandfetch
     ```
 
 3.  Aplicar las migraciones de base de datos:
