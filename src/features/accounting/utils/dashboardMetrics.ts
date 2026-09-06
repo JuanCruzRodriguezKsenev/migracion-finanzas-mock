@@ -5,7 +5,10 @@
  */
 
 // Shared
-import { SparklinePoint , calcularCambioPorcentual } from "@/shared/ui/display/RechartsSparkline/Sparkline" ;
+import {
+  SparklinePoint ,
+  calcularCambioPorcentual
+} from "@/shared/ui/display/RechartsSparkline/sparklineUtils" ;
 
 export type { SparklinePoint } ;
 export { calcularCambioPorcentual } ;
