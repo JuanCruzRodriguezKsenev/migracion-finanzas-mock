@@ -96,8 +96,9 @@ function CustomMiniTooltip( { active , payload , lang , isContentVisible = true 
       ) ;
     }
 
+    const locale    = lang === "en" ? "en-US" : lang === "br" ? "pt-BR" : "es-AR" ;
     const formatted = typeof val === "number"
-      ? ( val < 0 ? `-$${Math.abs( val ).toLocaleString( undefined , {minimumFractionDigits: 2 , maximumFractionDigits: 2} )}` : `$${val.toLocaleString( undefined , {minimumFractionDigits: 2 , maximumFractionDigits: 2} )}` )
+      ? ( val < 0 ? `-$${Math.abs( val ).toLocaleString( locale , {minimumFractionDigits: 2 , maximumFractionDigits: 2} )}` : `$${val.toLocaleString( locale , {minimumFractionDigits: 2 , maximumFractionDigits: 2} )}` )
       : String( val ) ;
 
     const isPositive = ( (pctChange ?? 0) >= 0 ) ;
@@ -229,9 +230,10 @@ export function Sparkline( {
           <YAxis domain={[ domainMin , domainMax ]} hide />
           <Tooltip
             content={<CustomMiniTooltip lang={lang} isContentVisible={isContentVisible} />}
-            cursor={{stroke: "rgba(255, 255, 255, 0.15)" , strokeWidth: 1}}
+            cursor={{stroke: "var(--border-subtle, rgba(255, 255, 255, 0.2))" , strokeWidth: 1}}
             isAnimationActive={false}
             position={{y: -50}}
+            allowEscapeViewBox={{x: true , y: true}}
           />
           <Area
             type="monotone"

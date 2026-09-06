@@ -242,8 +242,7 @@ export function MonthSelector( {
               } )}
             </div>
 
-            {/* Divisor & Botón Rápido "Hoy / Mes Actual" */}
-            <div className={styles.divider} />
+            {/* Botón Rápido "Hoy / Mes Actual" */}
             <button
               type="button"
               className={styles.todayBtn}

@@ -12,17 +12,16 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `fix/dashboard-correctitud` (abierta sobre `master` el 2026-09-06).
+**Rama activa:** `fix/dashboard-visual` (abierta sobre `master` el 2026-09-06).
 
-**En curso:** Tanda A — Correctitud del dashboard (cerrando cambios y verificando tests).
-1. `src/features/accounting/repositories/monthlySummaryRepository.ts`: Eliminado cacheo permanente de `null` en `summaryCache` (A5).
-2. `src/shared/ui/display/RechartsSparkline/Sparkline.tsx`: Puntos con `SparklinePoint` `{ value, monthKey }`, formateo de meses con Intl (`formatMonthKeyLabel`), privacidad respetada con `MetricsVisibilityContext` (`••••••` sin leak en tooltip, S2), cálculo preciso sin falsos porcentajes (`calcularCambioPorcentual`, S3).
-3. `src/features/accounting/utils/dashboardMetrics.ts`: Emisión cronológica de `SparklinePoint[]` con claves "YYYY-MM" explícitas, eliminación de rellenos de ceros ficticios (S1), cálculo de tendencias sincronizado sin 0.0% inventado (S3).
-4. `src/app/[lang]/(main)/layout.tsx` + `AppShell.tsx` + `Header.tsx`: Resolución en servidor de `currentMonthKey` para evitar desincronizaciones de reloj entre cliente y servidor (M1/A4).
-5. `src/shared/ui/layout/MetricsSection/MetricsSection.tsx` + `page.tsx`: Tipado con `SparklinePoint[]` y eliminación de centinelas `[0, 0]`.
+**En curso:** Tanda B — Visual del dashboard (cerrando cambios y verificando tests).
+1. `src/shared/ui/MetricCard/MetricCard.module.css`: `overflow: visible` en `.heroCard`, `position: relative; z-index: 3` en `.heroSparkline` para evitar que el tooltip flotante se recorte (S4).
+2. `src/shared/ui/display/RechartsSparkline/Sparkline.tsx` + `Sparkline.module.css`: Cursor con token CSS `var(--border-subtle)` (S5), `allowEscapeViewBox` en Tooltip, opacidad 1 y elevación con sombras, y `.sparklineWrapper` con layout estable durante el montaje inicial (S8).
+3. `src/shared/ui/display/RechartsSparkline/Sparkline.tsx`: Formateo monetario internacionalizado (`formatSparklineCurrency`) armonizado con `formatCents` (S6).
+4. `src/shared/ui/display/MonthSelector/MonthSelector.module.css` + `MonthSelector.tsx`: Eliminados píxeles fijos (reemplazados por `rem` y `clamp`), popover con `--bg-card-glass` y eliminación de bordes duplicados en "Ir al mes actual" (M7).
 
 **Próximo paso inmediato:**
-Verificar paso de vitest y tsc, commitear en `fix/dashboard-correctitud`, mergear a `master` con fast-forward, e iniciar **Tanda B — Visual del dashboard** en la rama `fix/dashboard-visual`.
+Commitear en `fix/dashboard-visual`, mergear a `master` con fast-forward, e iniciar **Tanda C — Accesibilidad e internacionalización** en la rama `fix/dashboard-i18n-a11y`.
 
 ---
 
@@ -33,8 +32,8 @@ Verificar paso de vitest y tsc, commitear en `fix/dashboard-correctitud`, mergea
 | Tanda | Rama | Estado | Foco principal |
 | :--- | :--- | :---: | :--- |
 | **Tanda 0** | `docs/gobernanza-base` | 🟢 **Cerrada** | `docs/trabajo-en-vuelo.md` y §8 en `.agents/AGENTS.md` (commit `36b0019`) |
-| **Tanda A** | `fix/dashboard-correctitud` | 🟢 **Completada** | S1 ({value, monthKey}[]), S2 (ojito), S3 (pct 0.0%), M1 (hoy en server), A5 (summaryCache) |
-| **Tanda B** | `fix/dashboard-visual` | ⚪ Pendiente | S4 (overflow hero), S5 (cursor tema claro), S6 (formatCents), M7 (px fijos), S8 (flash) |
+| **Tanda A** | `fix/dashboard-correctitud` | 🟢 **Cerrada** | S1 ({value, monthKey}[]), S2 (ojito), S3 (pct 0.0%), M1 (hoy en server), A5 (summaryCache) (commit `2661f8e`) |
+| **Tanda B** | `fix/dashboard-visual` | 🟢 **Completada** | S4 (overflow hero), S5 (cursor tema claro), S6 (formatCents), M7 (px fijos), S8 (flash) |
 | **Tanda C** | `fix/dashboard-i18n-a11y` | ⚪ Pendiente | S7/M5 (i18n es/en/br), M5b (Intl labels), M6 (dialog a11y), M4 (todayKey), M8 (clases) |
 | **Tanda D** | `feat/month-selector-limites`| ⚪ Pendiente | M2 (ocultar donde no se consume), M3 (minKey primer mes con datos) |
 | **Tanda E** | `fix/lint-set-state-in-effect`| ⚪ Pendiente | 4 errores ESLint: NotificationsContext, InstitutionLogo, CreateFinancialEntityForm |
