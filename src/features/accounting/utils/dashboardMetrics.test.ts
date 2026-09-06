@@ -170,85 +170,136 @@ describe( "dashboardMetrics" , () => {
   } ) ;
 
   describe( "calcularSparklineBalance" , () => {
-    it( "debería rellenar con ceros al inicio cuando faltan meses históricos" , () => {
+    const refDate = new Date( 2026 , 2 , 15 ) ; // Marzo 2026
+
+    it( "debería retornar solo los meses existentes ordenados cronológicamente sin rellenar con ceros ficticios" , () => {
       const accounts = [ makeAccount( {type: "asset" , balance: 40000} ) ] ; // $400 actual
       const monthlySummaries = [
-        makeSummary( {balanceSnapshot: 30000} ) , // mes más reciente anterior ($300)
-        makeSummary( {balanceSnapshot: 20000} ) , // mes más antiguo disponible ($200)
+        makeSummary( {year: 2026 , month: 1 , balanceSnapshot: 30000} ) , // Feb 2026 ($300)
+        makeSummary( {year: 2026 , month: 0 , balanceSnapshot: 20000} ) , // Ene 2026 ($200)
       ] ;
 
-      const serie = calcularSparklineBalance( monthlySummaries , accounts , 5 ) ;
+      const serie = calcularSparklineBalance( monthlySummaries , accounts , 5 , refDate ) ;
 
-      expect( serie ).toEqual( [ 0 , 0 , 200 , 300 , 400 ] ) ;
+      expect( serie ).toEqual( [
+        { value: 200 , monthKey: "2026-01" } ,
+        { value: 300 , monthKey: "2026-02" } ,
+        { value: 400 , monthKey: "2026-03" }
+      ] ) ;
     } ) ;
 
-    it( "no debería rellenar con ceros cuando hay suficiente historial" , () => {
+    it( "debería respetar el límite de meses" , () => {
       const accounts = [ makeAccount( {type: "asset" , balance: 40000} ) ] ;
       const monthlySummaries = [
-        makeSummary( {balanceSnapshot: 30000} ) ,
-        makeSummary( {balanceSnapshot: 20000} ) ,
+        makeSummary( {year: 2026 , month: 1 , balanceSnapshot: 30000} ) ,
+        makeSummary( {year: 2026 , month: 0 , balanceSnapshot: 20000} ) ,
       ] ;
 
-      const serie = calcularSparklineBalance( monthlySummaries , accounts , 3 ) ;
+      const serie = calcularSparklineBalance( monthlySummaries , accounts , 2 , refDate ) ;
 
-      expect( serie ).toEqual( [ 200 , 300 , 400 ] ) ;
+      expect( serie ).toEqual( [
+        { value: 300 , monthKey: "2026-02" } ,
+        { value: 400 , monthKey: "2026-03" }
+      ] ) ;
+    } ) ;
+
+    it( "debería manejar series discontinuas con huecos preservando monthKey exactos" , () => {
+      const accounts = [ makeAccount( {type: "asset" , balance: 50000} ) ] ;
+      const monthlySummaries = [
+        makeSummary( {year: 2025 , month: 11 , balanceSnapshot: 10000} ) , // Dic 2025
+      ] ;
+
+      const serie = calcularSparklineBalance( monthlySummaries , accounts , 6 , refDate ) ;
+
+      expect( serie ).toEqual( [
+        { value: 100 , monthKey: "2025-12" } ,
+        { value: 500 , monthKey: "2026-03" }
+      ] ) ;
     } ) ;
   } ) ;
 
   describe( "calcularSparklineIngresos / Gastos / Ahorro" , () => {
+    const refDate = new Date( 2026 , 1 , 15 ) ; // Feb 2026
     const monthlySummaries = [
-      makeSummary( {totalRevenue: 30000 , totalExpense: 10000} ) ,
+      makeSummary( {year: 2026 , month: 0 , totalRevenue: 30000 , totalExpense: 10000} ) ,
     ] ;
 
-    it( "calcularSparklineIngresos debería anexar el valor del mes actual al final" , () => {
-      const serie = calcularSparklineIngresos( monthlySummaries , 50000 , 2 ) ;
-      expect( serie ).toEqual( [ 300 , 500 ] ) ;
+    it( "calcularSparklineIngresos debería anexar el valor del mes actual al final con monthKey" , () => {
+      const serie = calcularSparklineIngresos( monthlySummaries , 50000 , 5 , refDate ) ;
+      expect( serie ).toEqual( [
+        { value: 300 , monthKey: "2026-01" } ,
+        { value: 500 , monthKey: "2026-02" }
+      ] ) ;
     } ) ;
 
-    it( "calcularSparklineGastos debería anexar el valor del mes actual al final" , () => {
-      const serie = calcularSparklineGastos( monthlySummaries , 15000 , 2 ) ;
-      expect( serie ).toEqual( [ 100 , 150 ] ) ;
+    it( "calcularSparklineGastos debería anexar el valor del mes actual al final con monthKey" , () => {
+      const serie = calcularSparklineGastos( monthlySummaries , 15000 , 5 , refDate ) ;
+      expect( serie ).toEqual( [
+        { value: 100 , monthKey: "2026-01" } ,
+        { value: 150 , monthKey: "2026-02" }
+      ] ) ;
     } ) ;
 
-    it( "calcularSparklineAhorro debería calcular ingresos menos gastos por mes" , () => {
-      const serie = calcularSparklineAhorro( monthlySummaries , 20000 , 2 ) ;
-      expect( serie ).toEqual( [ 200 , 200 ] ) ; // (30000-10000)/100 = 200 histórico, 20000/100 = 200 actual
+    it( "calcularSparklineAhorro debería calcular ingresos menos gastos por mes con monthKey" , () => {
+      const serie = calcularSparklineAhorro( monthlySummaries , 20000 , 5 , refDate ) ;
+      expect( serie ).toEqual( [
+        { value: 200 , monthKey: "2026-01" } ,
+        { value: 200 , monthKey: "2026-02" }
+      ] ) ;
     } ) ;
   } ) ;
 
   describe( "calcularTendenciaDesdeSparkline" , () => {
-    it( "debería retornar el valor por defecto con menos de 2 puntos de datos" , () => {
-      expect( calcularTendenciaDesdeSparkline([]) ).toEqual( {value: "0.0%" , isPositive: true , isRising: true} ) ;
-      expect( calcularTendenciaDesdeSparkline([100]) ).toEqual( {value: "0.0%" , isPositive: true , isRising: true} ) ;
+    it( "debería retornar undefined con menos de 2 puntos de datos" , () => {
+      expect( calcularTendenciaDesdeSparkline([]) ).toBeUndefined() ;
+      expect( calcularTendenciaDesdeSparkline([ { value: 100 , monthKey: "2026-01" } ]) ).toBeUndefined() ;
+      expect( calcularTendenciaDesdeSparkline([ 100 ]) ).toBeUndefined() ;
     } ) ;
 
-    it( "debería manejar de forma segura un punto anterior en cero (sin dividir por cero)" , () => {
-      expect( calcularTendenciaDesdeSparkline([0 , 100]) ).toEqual( {value: "100.0%" , isPositive: true , isRising: true} ) ;
-      expect( calcularTendenciaDesdeSparkline([0 , 0]) ).toEqual( {value: "0.0%" , isPositive: false , isRising: false} ) ;
+    it( "debería retornar undefined cuando el punto anterior es cero para evitar porcentajes inventados" , () => {
+      expect( calcularTendenciaDesdeSparkline([ 0 , 100 ]) ).toBeUndefined() ;
+      expect( calcularTendenciaDesdeSparkline([
+        { value: 0 , monthKey: "2026-01" } ,
+        { value: 100 , monthKey: "2026-02" }
+      ]) ).toBeUndefined() ;
     } ) ;
 
     it( "debería calcular el porcentaje de cambio entre los dos últimos puntos" , () => {
-      const resultado = calcularTendenciaDesdeSparkline( [100 , 150] ) ;
+      const resultado = calcularTendenciaDesdeSparkline( [ 100 , 150 ] ) ;
 
-      expect( resultado.value ).toBe( "50.0%" ) ;
-      expect( resultado.isPositive ).toBe( true ) ;
-      expect( resultado.isRising ).toBe( true ) ;
+      expect( resultado ).toBeDefined() ;
+      expect( resultado?.value ).toBe( "50.0%" ) ;
+      expect( resultado?.isPositive ).toBe( true ) ;
+      expect( resultado?.isRising ).toBe( true ) ;
+    } ) ;
+
+    it( "debería funcionar idéntico con SparklinePoint[]" , () => {
+      const resultado = calcularTendenciaDesdeSparkline( [
+        { value: 100 , monthKey: "2026-01" } ,
+        { value: 150 , monthKey: "2026-02" }
+      ] ) ;
+
+      expect( resultado ).toBeDefined() ;
+      expect( resultado?.value ).toBe( "50.0%" ) ;
+      expect( resultado?.isPositive ).toBe( true ) ;
+      expect( resultado?.isRising ).toBe( true ) ;
     } ) ;
 
     it( "debería invertir la interpretación de positivo/negativo cuando isInverted es true" , () => {
-      // Un aumento (isRising=true) en una métrica invertida (ej. gastos) es una mala señal (isPositive=false)
-      const resultado = calcularTendenciaDesdeSparkline( [100 , 150] , true ) ;
+      const resultado = calcularTendenciaDesdeSparkline( [ 100 , 150 ] , true ) ;
 
-      expect( resultado.isRising ).toBe( true ) ;
-      expect( resultado.isPositive ).toBe( false ) ;
+      expect( resultado ).toBeDefined() ;
+      expect( resultado?.isRising ).toBe( true ) ;
+      expect( resultado?.isPositive ).toBe( false ) ;
     } ) ;
 
     it( "debería calcular correctamente una caída (valor negativo)" , () => {
-      const resultado = calcularTendenciaDesdeSparkline( [200 , 100] ) ;
+      const resultado = calcularTendenciaDesdeSparkline( [ 200 , 100 ] ) ;
 
-      expect( resultado.value ).toBe( "50.0%" ) ;
-      expect( resultado.isPositive ).toBe( false ) ;
-      expect( resultado.isRising ).toBe( false ) ;
+      expect( resultado ).toBeDefined() ;
+      expect( resultado?.value ).toBe( "50.0%" ) ;
+      expect( resultado?.isPositive ).toBe( false ) ;
+      expect( resultado?.isRising ).toBe( false ) ;
     } ) ;
   } ) ;
 } ) ;

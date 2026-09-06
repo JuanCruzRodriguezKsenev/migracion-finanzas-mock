@@ -1,29 +1,62 @@
 /**
  * @file Sparkline.tsx
  * Componente gráfico Sparkline implementado con la librería Recharts para un renderizado y tooltip fluidos.
+ * Soporta series etiquetadas por monthKey, enmascaramiento con MetricsVisibilityContext y porcentajes precisos.
  */
 "use client" ;
 
 // Librerías externas
 import { ResponsiveContainer , AreaChart , Area , YAxis , Tooltip } from "recharts" ;
-import React , { useId , useState , useEffect }                       from "react" ;
+import React , { useId , useState , useEffect , useContext }         from "react" ;
+
+// Shared
+import { MetricsVisibilityContext } from "@/shared/ui/layout/MetricsSection/MetricsVisibilityContext" ;
 
 // Estilos
 import styles from "./Sparkline.module.css" ;
 
-function getMonthsLabelSequence( length: number , lang: string = "es" , referenceDate?: Date ) {
-  const labels = [] ;
-  const currentDate = referenceDate || new Date() ;
-  for( let i = 0 ; i < length ; i++ ) {
-    const date = new Date( currentDate.getFullYear() , currentDate.getMonth() - ( (length - 1) - i ) , 1 ) ;
-    const monthStr = date.toLocaleDateString( lang === "en" ? "en-US" : "es-ES" , {month: "short"} ) ;
-    const yearStr = date.toLocaleDateString( lang === "en" ? "en-US" : "es-ES" , {year: "2-digit"} ) ;
-    // Quitar el punto en español (ej: "may.") y capitalizar
-    const cleanMonth = monthStr.replace( "." , "" ) ;
-    const formattedMonth = ( cleanMonth.charAt( 0 ).toUpperCase() + cleanMonth.slice( 1 ) ) ;
-    labels.push( `${formattedMonth} ${yearStr}` ) ;
+/**
+ * Representa un punto de la serie temporal del Sparkline con su clave de mes explícita.
+ */
+export interface SparklinePoint {
+  value:    number ;
+  monthKey: string ; // Formato: "YYYY-MM"
+}
+
+/**
+ * Formatea una clave "YYYY-MM" a etiqueta legible internacionalizada ("May 26" / "May. 26").
+ */
+export function formatMonthKeyLabel( monthKey: string , lang: string = "es" ): string {
+  const parts = monthKey.split( "-" ) ;
+  if( parts.length !== 2 ) {
+    return( monthKey ) ;
   }
-  return( labels ) ;
+  const year  = parseInt( parts[0] , 10 ) ;
+  const month = parseInt( parts[1] , 10 ) ;
+  if( isNaN( year ) || isNaN( month ) ) {
+    return( monthKey ) ;
+  }
+  const date   = new Date( year , month - 1 , 1 ) ;
+  const locale = lang === "en" ? "en-US" : lang === "br" ? "pt-BR" : "es-ES" ;
+  const mStr   = date.toLocaleDateString( locale , {month: "short"} ) ;
+  const yStr   = date.toLocaleDateString( locale , {year: "2-digit"} ) ;
+  const cleanMonth     = mStr.replace( "." , "" ) ;
+  const formattedMonth = ( cleanMonth.charAt( 0 ).toUpperCase() + cleanMonth.slice( 1 ) ) ;
+  return( `${formattedMonth} ${yStr}` ) ;
+}
+
+/**
+ * Calcula el cambio porcentual entre dos valores numéricos.
+ * Retorna null si no hay valor anterior o si el valor anterior es 0 (evita porcentajes inventados).
+ */
+export function calcularCambioPorcentual(
+  actual:   number ,
+  anterior: number | null | undefined
+): number | null {
+  if( (anterior === null) || (anterior === undefined) || (anterior === 0) ) {
+    return( null ) ;
+  }
+  return( ((actual - anterior) / Math.abs( anterior )) * 100 ) ;
 }
 
 interface SparklineDataPoint {
@@ -34,12 +67,13 @@ interface SparklineDataPoint {
 }
 
 interface CustomMiniTooltipProps {
-  active?:  boolean ;
-  payload?: { payload: SparklineDataPoint }[] ;
-  lang?:    string ;
+  active?:           boolean ;
+  payload?:          { payload: SparklineDataPoint }[] ;
+  lang?:             string ;
+  isContentVisible?: boolean ;
 }
 
-function CustomMiniTooltip( { active , payload , lang }: CustomMiniTooltipProps ) {
+function CustomMiniTooltip( { active , payload , lang , isContentVisible = true }: CustomMiniTooltipProps ) {
   if( active && payload && payload.length ) {
     const dataPoint       = payload[0].payload ;
     const val             = dataPoint.value ;
@@ -48,23 +82,33 @@ function CustomMiniTooltip( { active , payload , lang }: CustomMiniTooltipProps 
     const isInverted      = dataPoint.isInverted ;
     const comparisonLabel = lang === "en" ? "vs last month" : lang === "br" ? "vs mês anterior" : "vs mes anterior" ;
 
+    // Si los saldos están ocultos (ojito cerrado), enmascarar valor y ocultar porcentaje por privacidad (S2)
+    if( !isContentVisible ) {
+      return(
+        <div className={styles.tooltipContainer}>
+          <div className={styles.tooltipHeader}>
+            { monthLabel }
+          </div>
+          <div className={styles.tooltipBody}>
+            <span className={styles.tooltipValue}>••••••</span>
+          </div>
+        </div>
+      ) ;
+    }
+
     const formatted = typeof val === "number"
       ? ( val < 0 ? `-$${Math.abs( val ).toLocaleString( undefined , {minimumFractionDigits: 2 , maximumFractionDigits: 2} )}` : `$${val.toLocaleString( undefined , {minimumFractionDigits: 2 , maximumFractionDigits: 2} )}` )
       : String( val ) ;
 
-    // pctChange puede ser null (sin dato histórico anterior): se trata como 0 en las comparaciones,
-    // preservando la coerción implícita que ya aplicaba este mismo código antes de tipar el tooltip.
-    const pctChangeComparable = ( pctChange ?? 0 ) ;
-    const isPositive = ( pctChangeComparable >= 0 ) ;
-    const isNeutral  = ( pctChange === 0 ) || ( pctChange === null ) ;
-    const isGood     = isInverted ? ( pctChangeComparable < 0 ) : ( pctChangeComparable > 0 ) ;
+    const isPositive = ( (pctChange ?? 0) >= 0 ) ;
+    const isGood     = isInverted ? ( (pctChange ?? 0) < 0 ) : ( (pctChange ?? 0) > 0 ) ;
 
     let pctColor = "var(--text-muted, #94a3b8)" ;
-    if( !isNeutral ) {
+    if( (pctChange !== null) && (pctChange !== 0) ) {
       pctColor = isGood ? "var(--color-success, #10b981)" : "var(--color-danger, #ef4444)" ;
     }
 
-    const formattedPct = pctChange !== null
+    const formattedPct = ( pctChange !== null )
       ? `${isPositive ? "+" : ""}${pctChange.toFixed( 1 )}%`
       : null ;
 
@@ -92,17 +136,19 @@ function CustomMiniTooltip( { active , payload , lang }: CustomMiniTooltipProps 
   return( null ) ;
 }
 
-interface SparklineProps {
-  data:          number[] ;
-  color:         string ;
-  height?:       number | string ;
-  lang?:         string ;
-  isInverted?:   boolean ;
-  fullWidth?:    boolean ;
+export interface SparklineProps {
+  points?:        SparklinePoint[] ;
+  data?:          number[] ;
+  color:          string ;
+  height?:        number | string ;
+  lang?:          string ;
+  isInverted?:    boolean ;
+  fullWidth?:     boolean ;
   referenceDate?: Date ;
 }
 
 export function Sparkline( {
+  points ,
   data ,
   color ,
   height = "100%" ,
@@ -113,6 +159,7 @@ export function Sparkline( {
 }: SparklineProps ) {
   const id = useId() ;
   const [ mounted , setMounted ] = useState( false ) ;
+  const { isContentVisible } = useContext( MetricsVisibilityContext ) ;
 
   useEffect( () => {
     const handle = requestAnimationFrame( () => {
@@ -121,33 +168,47 @@ export function Sparkline( {
     return( () => cancelAnimationFrame( handle ) ) ;
   } , [] ) ;
 
-  if( !mounted || !data || ( data.length < 2 ) ) {
+  // Resolver los puntos efectivos: si viene points se usa directamente; si viene data se deriva
+  const resolvedPoints: SparklinePoint[] = ( points && ( points.length > 0 ) )
+    ? points
+    : ( data && ( data.length > 0 ) )
+    ? data.map( ( val , i ) => {
+        const ref = referenceDate ? new Date( referenceDate ) : new Date() ;
+        const d   = new Date( ref.getFullYear() , ref.getMonth() - (data.length - 1 - i) , 1 ) ;
+        const mk  = `${d.getFullYear()}-${String( d.getMonth() + 1 ).padStart( 2 , "0" )}` ;
+        return( { value: val , monthKey: mk } ) ;
+      } )
+    : [] ;
+
+  if( !mounted || ( resolvedPoints.length === 0 ) ) {
     return( <div className={styles.sparklineWrapper} style={{height}} /> ) ;
   }
 
-  const labels = getMonthsLabelSequence( data.length , lang , referenceDate ) ;
-  const chartData = data.map( ( val , i ) => {
-    let pctChange = null ;
-    if( i > 0 ) {
-      const prevVal = data[i - 1] ;
-      pctChange = prevVal !== 0 ? ( ((val - prevVal) / Math.abs( prevVal )) * 100 ) : 0 ;
+  // Si hay un solo punto, duplicamos para que el AreaChart de Recharts pueda trazar la línea horizontal
+  const effectivePoints = resolvedPoints.length === 1 ? [ resolvedPoints[0] , resolvedPoints[0] ] : resolvedPoints ;
+
+  const chartData: SparklineDataPoint[] = effectivePoints.map( ( pt , i ) => {
+    let pctChange: number | null = null ;
+    if( (i > 0) && (effectivePoints.length > 1) ) {
+      const prevVal = effectivePoints[i - 1].value ;
+      pctChange = calcularCambioPorcentual( pt.value , prevVal ) ;
     }
     return( {
-      value: val ,
-      index: i ,
-      label: labels[i] ,
+      value:      pt.value ,
+      label:      formatMonthKeyLabel( pt.monthKey , lang ) ,
       pctChange ,
       isInverted
     } ) ;
   } ) ;
 
-  const safeId = id.replace( /:/g , "" ) ;
+  const safeId     = id.replace( /:/g , "" ) ;
   const gradientId = `sparkline-gradient-${safeId}` ;
-  const min = Math.min( ...data ) ;
-  const max = Math.max( ...data ) ;
-  const range = ( max - min ) ;
+  const values     = effectivePoints.map( ( p ) => p.value ) ;
+  const min        = Math.min( ...values ) ;
+  const max        = Math.max( ...values ) ;
+  const range      = ( max - min ) ;
   
-  const padding = range === 0 ? 1 : ( range * 0.03 ) ;
+  const padding   = range === 0 ? 1 : ( range * 0.03 ) ;
   const domainMin = ( min - padding ) ;
   const domainMax = ( max + padding ) ;
 
@@ -167,7 +228,7 @@ export function Sparkline( {
           </defs>
           <YAxis domain={[ domainMin , domainMax ]} hide />
           <Tooltip
-            content={<CustomMiniTooltip lang={lang} />}
+            content={<CustomMiniTooltip lang={lang} isContentVisible={isContentVisible} />}
             cursor={{stroke: "rgba(255, 255, 255, 0.15)" , strokeWidth: 1}}
             isAnimationActive={false}
             position={{y: -50}}
@@ -180,8 +241,6 @@ export function Sparkline( {
             fillOpacity={1}
             fill={`url(#${gradientId})`}
             isAnimationActive={false}
-            dot={false}
-            activeDot={{r: 3 , stroke: color , strokeWidth: 1 , fill: "#fff"}}
           />
         </AreaChart>
       </ResponsiveContainer>

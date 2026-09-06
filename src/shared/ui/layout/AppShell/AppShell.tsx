@@ -17,16 +17,17 @@ import { Header }             from "@/shared/ui/layout/Header/Header" ;
 import styles from "./AppShell.module.css" ;
 
 interface AppShellProps {
-  children: React.ReactNode ;
-  lang:     string ;
-  dict:     Awaited< ReturnType< typeof getDictionary > > ;
+  children:         React.ReactNode ;
+  lang:             string ;
+  dict:             Awaited< ReturnType< typeof getDictionary > > ;
+  currentMonthKey?: string ;
 }
 
 /**
  * App Shell unificado para la aplicación.
  * Maneja el estado de visibilidad del sidebar en móvil (Drawer).
  */
-export function AppShell( {children , lang , dict}: AppShellProps ) {
+export function AppShell( {children , lang , dict , currentMonthKey}: AppShellProps ) {
   const [ isDrawerOpen , setIsDrawerOpen ] = useState( false ) ;
 
   const openDrawer  = () => setIsDrawerOpen( true ) ;
@@ -51,6 +52,7 @@ export function AppShell( {children , lang , dict}: AppShellProps ) {
           dict={dict}
           onMenuClick={openDrawer}
           lang={lang}
+          currentMonthKey={currentMonthKey}
         />
         <main className={styles.contentContainer}>
           {children}

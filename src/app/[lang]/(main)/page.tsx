@@ -24,6 +24,8 @@ import {
 // Utils
 import {
   formatCents ,
+  formatMonthKey ,
+  SparklinePoint ,
   calcularBalanceTotal ,
   calcularIngresosMes ,
   calcularGastosMes ,
@@ -85,14 +87,14 @@ export default async function HomePage( {params , searchParams}: HomePageProps )
   const currentMonthKey = `${ahora.getFullYear()}-${String( ahora.getMonth() + 1 ).padStart( 2 , "0" )}` ;
   const isCurrentMonth  = !month || (month === currentMonthKey) ;
 
-  let ingresosMes:           number ;
-  let gastosMes:             number ;
-  let ahorro:                number ;
-  let liquidezTotal:         number ;
-  let sparklineDataBalance:  number[] ;
-  let sparklineDataIngresos: number[] ;
-  let sparklineDataGastos:   number[] ;
-  let sparklineDataAhorro:   number[] ;
+  let ingresosMes:             number ;
+  let gastosMes:               number ;
+  let ahorro:                  number ;
+  let liquidezTotal:           number ;
+  let sparklinePointsBalance:  SparklinePoint[] ;
+  let sparklinePointsIngresos: SparklinePoint[] ;
+  let sparklinePointsGastos:   SparklinePoint[] ;
+  let sparklinePointsAhorro:   SparklinePoint[] ;
 
   if( selectedSummary ) {
     // Mes cerrado: Usar datos consolidados del resumen mensual
@@ -101,17 +103,24 @@ export default async function HomePage( {params , searchParams}: HomePageProps )
     ahorro        = ( ingresosMes - gastosMes ) ;
     liquidezTotal = selectedSummary.balanceSnapshot ;
 
-    // Generar sparklines directamente de la serie temporal obtenida
-    sparklineDataBalance  = monthlySummaries.map( ( s ) => s.balanceSnapshot / 100 ).reverse() ;
-    sparklineDataIngresos = monthlySummaries.map( ( s ) => s.totalRevenue / 100 ).reverse() ;
-    sparklineDataGastos   = monthlySummaries.map( ( s ) => s.totalExpense / 100 ).reverse() ;
-    sparklineDataAhorro   = monthlySummaries.map( ( s ) => ( s.totalRevenue - s.totalExpense ) / 100 ).reverse() ;
-
-    // Rellenar con ceros a la izquierda para garantizar siempre exactamente 12 puntos en pantalla
-    while( sparklineDataBalance.length < 12 ) { sparklineDataBalance.unshift( 0 ) ; }
-    while( sparklineDataIngresos.length < 12 ) { sparklineDataIngresos.unshift( 0 ) ; }
-    while( sparklineDataGastos.length < 12 ) { sparklineDataGastos.unshift( 0 ) ; }
-    while( sparklineDataAhorro.length < 12 ) { sparklineDataAhorro.unshift( 0 ) ; }
+    // monthlySummaries viene ordenado descendente; invertimos para cronología izquierda a derecha
+    const cronologico = [ ...monthlySummaries ].reverse() ;
+    sparklinePointsBalance  = cronologico.map( ( s ) => ( {
+      value:    ( s.balanceSnapshot / 100 ) ,
+      monthKey: formatMonthKey( s.year , s.month )
+    } ) ) ;
+    sparklinePointsIngresos = cronologico.map( ( s ) => ( {
+      value:    ( s.totalRevenue / 100 ) ,
+      monthKey: formatMonthKey( s.year , s.month )
+    } ) ) ;
+    sparklinePointsGastos   = cronologico.map( ( s ) => ( {
+      value:    ( s.totalExpense / 100 ) ,
+      monthKey: formatMonthKey( s.year , s.month )
+    } ) ) ;
+    sparklinePointsAhorro   = cronologico.map( ( s ) => ( {
+      value:    ( ( s.totalRevenue - s.totalExpense ) / 100 ) ,
+      monthKey: formatMonthKey( s.year , s.month )
+    } ) ) ;
   } else if( isCurrentMonth ) {
     // Mes activo o sin resumen: Calcular dinámicamente desde las cuentas y transacciones diarias
     const balanceTotal = calcularBalanceTotal( accounts ) ;
@@ -120,11 +129,11 @@ export default async function HomePage( {params , searchParams}: HomePageProps )
     ahorro        = ( ingresosMes - gastosMes ) ;
     liquidezTotal = balanceTotal ;
 
-    // Utilizar las funciones helpers que anexan el mes actual al final
-    sparklineDataBalance  = calcularSparklineBalance( monthlySummaries , accounts , 12 ) ;
-    sparklineDataIngresos = calcularSparklineIngresos( monthlySummaries , ingresosMes , 12 ) ;
-    sparklineDataGastos   = calcularSparklineGastos( monthlySummaries , gastosMes , 12 ) ;
-    sparklineDataAhorro   = calcularSparklineAhorro( monthlySummaries , ahorro , 12 ) ;
+    // Utilizar las funciones helpers que anexan el mes actual al final con monthKey explícito
+    sparklinePointsBalance  = calcularSparklineBalance( monthlySummaries , accounts , 12 , fromDate ) ;
+    sparklinePointsIngresos = calcularSparklineIngresos( monthlySummaries , ingresosMes , 12 , fromDate ) ;
+    sparklinePointsGastos   = calcularSparklineGastos( monthlySummaries , gastosMes , 12 , fromDate ) ;
+    sparklinePointsAhorro   = calcularSparklineAhorro( monthlySummaries , ahorro , 12 , fromDate ) ;
   } else {
     // Mes pasado sin registros en la base de datos: Mostrar todo en cero de forma coherente
     ingresosMes   = 0 ;
@@ -132,23 +141,23 @@ export default async function HomePage( {params , searchParams}: HomePageProps )
     ahorro        = 0 ;
     liquidezTotal = 0 ;
 
-    // Inicializar sparklines vacíos de 12 puntos en cero
-    sparklineDataBalance  = Array( 12 ).fill( 0 ) ;
-    sparklineDataIngresos = Array( 12 ).fill( 0 ) ;
-    sparklineDataGastos   = Array( 12 ).fill( 0 ) ;
-    sparklineDataAhorro   = Array( 12 ).fill( 0 ) ;
+    // Sin datos históricos: series vacías
+    sparklinePointsBalance  = [] ;
+    sparklinePointsIngresos = [] ;
+    sparklinePointsGastos   = [] ;
+    sparklinePointsAhorro   = [] ;
   }
 
   // ── Calcular tendencias DIRECTAMENTE sobre los datos visuales del Sparkline ──
-  const tendenciaBalance  = calcularTendenciaDesdeSparkline( sparklineDataBalance ) ;
-  const tendenciaIngresos = calcularTendenciaDesdeSparkline( sparklineDataIngresos ) ;
-  const tendenciaGastos   = calcularTendenciaDesdeSparkline( sparklineDataGastos , true ) ; // Invertido
-  const tendenciaAhorro   = calcularTendenciaDesdeSparkline( sparklineDataAhorro ) ;
+  const tendenciaBalance  = calcularTendenciaDesdeSparkline( sparklinePointsBalance ) ;
+  const tendenciaIngresos = calcularTendenciaDesdeSparkline( sparklinePointsIngresos ) ;
+  const tendenciaGastos   = calcularTendenciaDesdeSparkline( sparklinePointsGastos , true ) ; // Invertido
+  const tendenciaAhorro   = calcularTendenciaDesdeSparkline( sparklinePointsAhorro ) ;
 
   // ── Colores dinámicos para los gráficos de área ─────────────────────────────
-  const colorIngresos     = tendenciaIngresos.isPositive ? "var(--color-success)" : "var(--color-danger)" ;
-  const colorGastos       = tendenciaGastos.isPositive ? "var(--color-success)" : "var(--color-danger)" ;
-  const colorAhorro       = tendenciaAhorro.isPositive ? "var(--color-purple)" : "var(--color-danger)" ;
+  const colorIngresos = tendenciaIngresos ? ( tendenciaIngresos.isPositive ? "var(--color-success)" : "var(--color-danger)" ) : "var(--color-success)" ;
+  const colorGastos   = tendenciaGastos ? ( tendenciaGastos.isPositive ? "var(--color-success)" : "var(--color-danger)" ) : "var(--color-danger)" ;
+  const colorAhorro   = tendenciaAhorro ? ( tendenciaAhorro.isPositive ? "var(--color-purple)" : "var(--color-danger)" ) : "var(--color-purple)" ;
 
   // ── Iconos SVG ────────────────────────────────────────────────────────────
   const iconoIngresos = (
@@ -194,41 +203,42 @@ export default async function HomePage( {params , searchParams}: HomePageProps )
       <MetricsSection
         allowVisibilityToggle={true}
         hero={{
-          label:         dict.dashboard.balanceLabel ,
-          value:         formatCents( liquidezTotal ) ,
-          sparklineData: sparklineDataBalance.length >= 2 ? sparklineDataBalance : undefined ,
-          lang:          lang ,
-          isInverted:    false ,
-          trend:         {
+          label:           dict.dashboard.balanceLabel ,
+          value:           formatCents( liquidezTotal ) ,
+          sparklinePoints: sparklinePointsBalance.length > 0 ? sparklinePointsBalance : undefined ,
+          lang:            lang ,
+          isInverted:      false ,
+          trend:           tendenciaBalance ? {
             value:      tendenciaBalance.value ,
             isPositive: tendenciaBalance.isPositive ,
             isRising:   tendenciaBalance.isRising ,
             label:      dict.dashboard.savingTrend
-          } ,
-          referenceDate: fromDate
+          } : undefined ,
+          referenceDate:   fromDate
         }}
       >
         {/* Tarjeta 1: Ingresos */}
         <MetricCard
           title={dict.dashboard.incomeLabel}
           value={formatCents( ingresosMes )}
-          trend={{
+          trend={tendenciaIngresos ? {
             value:      tendenciaIngresos.value ,
             isPositive: tendenciaIngresos.isPositive ,
             isRising:   tendenciaIngresos.isRising ,
             label:      dict.dashboard.savingTrend
-          }}
+          } : undefined}
           icon={iconoIngresos}
           iconBg="rgba(5, 150, 105, 0.12)"
           iconColor="var(--color-success)"
           sparkline={
-            <Sparkline
-              data={sparklineDataIngresos.length >= 2 ? sparklineDataIngresos : [ 0 , 0 ]}
-              color={colorIngresos}
-              height={ 26 }
-              lang={lang}
-              referenceDate={fromDate}
-            />
+            sparklinePointsIngresos.length > 0 ? (
+              <Sparkline
+                points={sparklinePointsIngresos}
+                color={colorIngresos}
+                height={ 26 }
+                lang={lang}
+              />
+            ) : undefined
           }
         />
 
@@ -236,25 +246,26 @@ export default async function HomePage( {params , searchParams}: HomePageProps )
         <MetricCard
           title={dict.dashboard.expenseLabel}
           value={formatCents( gastosMes )}
-          trend={{
+          trend={tendenciaGastos ? {
             value:      tendenciaGastos.value ,
             isPositive: tendenciaGastos.isPositive ,
             isRising:   tendenciaGastos.isRising ,
             label:      dict.dashboard.savingTrend
-          }}
+          } : undefined}
           isDanger={ gastosMes > ingresosMes }
           icon={iconoEgresos}
           iconBg="rgba(225, 29, 72, 0.12)"
           iconColor="var(--color-danger)"
           sparkline={
-            <Sparkline
-              data={sparklineDataGastos.length >= 2 ? sparklineDataGastos : [ 0 , 0 ]}
-              color={colorGastos}
-              height={ 26 }
-              lang={lang}
-              isInverted={true}
-              referenceDate={fromDate}
-            />
+            sparklinePointsGastos.length > 0 ? (
+              <Sparkline
+                points={sparklinePointsGastos}
+                color={colorGastos}
+                height={ 26 }
+                lang={lang}
+                isInverted={true}
+              />
+            ) : undefined
           }
         />
 
@@ -262,23 +273,24 @@ export default async function HomePage( {params , searchParams}: HomePageProps )
         <MetricCard
           title={dict.dashboard.savingsLabel}
           value={formatCents( ahorro )}
-          trend={{
+          trend={tendenciaAhorro ? {
             value:      tendenciaAhorro.value ,
             isPositive: tendenciaAhorro.isPositive ,
             isRising:   tendenciaAhorro.isRising ,
             label:      dict.dashboard.savingTrend
-          }}
+          } : undefined}
           icon={iconoAhorro}
           iconBg="rgba(124, 58, 237, 0.12)"
           iconColor="var(--color-purple)"
           sparkline={
-            <Sparkline
-              data={sparklineDataAhorro.length >= 2 ? sparklineDataAhorro : [ 0 , 0 ]}
-              color={colorAhorro}
-              height={ 26 }
-              lang={lang}
-              referenceDate={fromDate}
-            />
+            sparklinePointsAhorro.length > 0 ? (
+              <Sparkline
+                points={sparklinePointsAhorro}
+                color={colorAhorro}
+                height={ 26 }
+                lang={lang}
+              />
+            ) : undefined
           }
         />
       </MetricsSection>

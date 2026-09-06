@@ -11,9 +11,9 @@ import React from "react" ;
 
 // Shared
 import { MetricsVisibilityContext , MetricsVisibilityProvider , useMetricsVisibility } from "./MetricsVisibilityContext" ;
-import { Sparkline }                                          from "@/shared/ui/display/RechartsSparkline/Sparkline" ;
-import { MetricCard }                                         from "@/shared/ui/MetricCard/MetricCard" ;
-import styles                                                 from "./MetricsSection.module.css" ;
+import { Sparkline , SparklinePoint }                                 from "@/shared/ui/display/RechartsSparkline/Sparkline" ;
+import { MetricCard }                                                 from "@/shared/ui/MetricCard/MetricCard" ;
+import styles                                                         from "./MetricsSection.module.css" ;
 
 export interface HeroProps {
   label:            string ;
@@ -30,6 +30,7 @@ export interface HeroProps {
     label?:     string ;
   } ;
   sparklineData?:   number[] ;
+  sparklinePoints?: SparklinePoint[] ;
   lang?:            string ;
   isInverted?:      boolean ;
   icon?:            React.ReactNode ;
@@ -86,7 +87,16 @@ function MetricsSectionInner( {
         value={hero.value}
         trend={hero.trend}
         sparkline={
-          ( hero.sparklineData && ( hero.sparklineData.length > 0 ) ) ? (
+          ( hero.sparklinePoints && ( hero.sparklinePoints.length > 0 ) ) ? (
+            <Sparkline
+              points={hero.sparklinePoints}
+              color="rgba(255, 255, 255, 0.8)"
+              height="100%"
+              lang={hero.lang}
+              isInverted={hero.isInverted}
+              fullWidth={true}
+            />
+          ) : ( hero.sparklineData && ( hero.sparklineData.length > 0 ) ) ? (
             <Sparkline
               data={hero.sparklineData}
               color="rgba(255, 255, 255, 0.8)"

@@ -14,7 +14,7 @@ import { MonthlySummary , InsertMonthlySummary } from "../types" ;
 
 // Caché en memoria para almacenar resúmenes individuales ya consultados
 // Clave: `${organizationId}-${year}-${month}` (donde month es 0-indexed de 0 a 11)
-const summaryCache = new Map< string , MonthlySummary | null >() ;
+const summaryCache = new Map< string , MonthlySummary >() ;
 
 /**
  * Repositorio de Resúmenes Mensuales.
@@ -89,14 +89,6 @@ export const monthlySummaryRepository = {
       // Almacenar en caché los registros encontrados
       for( const s of fetched ) {
         summaryCache.set( `${organizationId}-${s.year}-${s.month}` , s ) ;
-      }
-
-      // Marcar los meses no encontrados con null para evitar re-consultar en el futuro
-      for( const target of missingTargets ) {
-        const key = `${organizationId}-${target.year}-${target.month}` ;
-        if( !summaryCache.has( key ) ) {
-          summaryCache.set( key , null ) ;
-        }
       }
     }
 

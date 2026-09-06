@@ -12,14 +12,17 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `docs/gobernanza-base` (abierta sobre `master` el 2026-09-06, commit base `ff69c56`).
+**Rama activa:** `fix/dashboard-correctitud` (abierta sobre `master` el 2026-09-06).
 
-**En curso:** Tanda 0 — Gobernanza mínima.
-1. `docs/trabajo-en-vuelo.md` (este archivo).
-2. Sección §8 "Lo que este proyecto cobra caro" en `.agents/AGENTS.md` con las cinco reglas contables y de datos.
+**En curso:** Tanda A — Correctitud del dashboard (cerrando cambios y verificando tests).
+1. `src/features/accounting/repositories/monthlySummaryRepository.ts`: Eliminado cacheo permanente de `null` en `summaryCache` (A5).
+2. `src/shared/ui/display/RechartsSparkline/Sparkline.tsx`: Puntos con `SparklinePoint` `{ value, monthKey }`, formateo de meses con Intl (`formatMonthKeyLabel`), privacidad respetada con `MetricsVisibilityContext` (`••••••` sin leak en tooltip, S2), cálculo preciso sin falsos porcentajes (`calcularCambioPorcentual`, S3).
+3. `src/features/accounting/utils/dashboardMetrics.ts`: Emisión cronológica de `SparklinePoint[]` con claves "YYYY-MM" explícitas, eliminación de rellenos de ceros ficticios (S1), cálculo de tendencias sincronizado sin 0.0% inventado (S3).
+4. `src/app/[lang]/(main)/layout.tsx` + `AppShell.tsx` + `Header.tsx`: Resolución en servidor de `currentMonthKey` para evitar desincronizaciones de reloj entre cliente y servidor (M1/A4).
+5. `src/shared/ui/layout/MetricsSection/MetricsSection.tsx` + `page.tsx`: Tipado con `SparklinePoint[]` y eliminación de centinelas `[0, 0]`.
 
 **Próximo paso inmediato:**
-Verificar que las cinco reglas de `AGENTS.md` tengan archivo y línea comprobados, commitear en `docs/gobernanza-base`, mergear a `master` e iniciar **Tanda A — Correctitud del dashboard** en la rama `fix/dashboard-correctitud`.
+Verificar paso de vitest y tsc, commitear en `fix/dashboard-correctitud`, mergear a `master` con fast-forward, e iniciar **Tanda B — Visual del dashboard** en la rama `fix/dashboard-visual`.
 
 ---
 
@@ -29,8 +32,8 @@ Verificar que las cinco reglas de `AGENTS.md` tengan archivo y línea comprobado
 
 | Tanda | Rama | Estado | Foco principal |
 | :--- | :--- | :---: | :--- |
-| **Tanda 0** | `docs/gobernanza-base` | 🟡 **En ejecución** | `docs/trabajo-en-vuelo.md` y §8 en `.agents/AGENTS.md` |
-| **Tanda A** | `fix/dashboard-correctitud` | ⚪ Pendiente | S1 ({value, monthKey}[]), S2 (ojito), S3 (pct 0.0%), M1 (hoy en server), A5 (summaryCache) |
+| **Tanda 0** | `docs/gobernanza-base` | 🟢 **Cerrada** | `docs/trabajo-en-vuelo.md` y §8 en `.agents/AGENTS.md` (commit `36b0019`) |
+| **Tanda A** | `fix/dashboard-correctitud` | 🟢 **Completada** | S1 ({value, monthKey}[]), S2 (ojito), S3 (pct 0.0%), M1 (hoy en server), A5 (summaryCache) |
 | **Tanda B** | `fix/dashboard-visual` | ⚪ Pendiente | S4 (overflow hero), S5 (cursor tema claro), S6 (formatCents), M7 (px fijos), S8 (flash) |
 | **Tanda C** | `fix/dashboard-i18n-a11y` | ⚪ Pendiente | S7/M5 (i18n es/en/br), M5b (Intl labels), M6 (dialog a11y), M4 (todayKey), M8 (clases) |
 | **Tanda D** | `feat/month-selector-limites`| ⚪ Pendiente | M2 (ocultar donde no se consume), M3 (minKey primer mes con datos) |

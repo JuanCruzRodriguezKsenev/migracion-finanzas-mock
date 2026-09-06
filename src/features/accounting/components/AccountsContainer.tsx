@@ -136,12 +136,12 @@ export function AccountsContainer( {
           value:         formatCents( netWorth ) ,
           sparklineData: sparklineDataNetWorth ,
           lang:          lang ,
-          trend:         {
+          trend:         tendenciaNetWorth ? {
             value:      tendenciaNetWorth.value ,
             isPositive: tendenciaNetWorth.isPositive ,
             isRising:   tendenciaNetWorth.isRising ,
             label:      labelTrend
-          }
+          } : undefined
         } }
       >
         <MetricCard
@@ -150,12 +150,12 @@ export function AccountsContainer( {
           iconBg="rgba( 16 , 185 , 129 , 0.1 )"
           iconColor="#10b981"
           isSensitive={true}
-          trend={ {
+          trend={ tendenciaAssets ? {
             value:      tendenciaAssets.value ,
             isPositive: tendenciaAssets.isPositive ,
             isRising:   tendenciaAssets.isRising ,
             label:      labelTrend
-          } }
+          } : undefined }
           sparkline={
             <Sparkline
               data={sparklineDataAssets}
@@ -170,12 +170,12 @@ export function AccountsContainer( {
           value={formatCents( totalLiabs )}
           isDanger={true}
           isSensitive={true}
-          trend={ {
+          trend={ tendenciaLiabs ? {
             value:      tendenciaLiabs.value ,
             isPositive: tendenciaLiabs.isPositive ,
             isRising:   tendenciaLiabs.isRising ,
             label:      labelTrend
-          } }
+          } : undefined }
           sparkline={
             <Sparkline
               data={sparklineDataLiabs}

@@ -1,7 +1,14 @@
 /**
  * @file dashboardMetrics.ts
  * Utilidades para calcular métricas del dashboard desde datos contables reales.
+ * Genera series etiquetadas cronológicamente para Sparklines y tendencias consistentes.
  */
+
+// Shared
+import { SparklinePoint , calcularCambioPorcentual } from "@/shared/ui/display/RechartsSparkline/Sparkline" ;
+
+export type { SparklinePoint } ;
+export { calcularCambioPorcentual } ;
 
 // Feature: Accounting
 import { TransactionWithEntries } from "../repositories/ledgerRepository" ;
@@ -18,6 +25,13 @@ export function formatCents( cents: number , currency: string = "ARS" ): string 
 }
 
 /**
+ * Convierte un año y un mes (0-indexed de 0 a 11) a la clave canónica "YYYY-MM".
+ */
+export function formatMonthKey( year: number , month: number ): string {
+  return( `${year}-${String( month + 1 ).padStart( 2 , "0" )}` ) ;
+}
+
+/**
  * Calcula el balance total sumando todas las cuentas de tipo 'asset'.
  */
 export function calcularBalanceTotal( accounts: Account[] ): number {
@@ -31,8 +45,8 @@ export function calcularBalanceTotal( accounts: Account[] ): number {
  * Busca transacciones donde haya créditos en cuentas de tipo 'revenue'.
  */
 export function calcularIngresosMes(
-  transactions:  TransactionWithEntries[] ,
-  accounts:      Account[] ,
+  transactions:   TransactionWithEntries[] ,
+  accounts:       Account[] ,
   referenceDate?: Date
 ): number {
   const revenueIds = new Set( accounts.filter( ( a ) => a.type === "revenue" ).map( ( a ) => a.id ) ) ;
@@ -53,8 +67,8 @@ export function calcularIngresosMes(
  * Busca transacciones donde haya débitos en cuentas de tipo 'expense'.
  */
 export function calcularGastosMes(
-  transactions:  TransactionWithEntries[] ,
-  accounts:      Account[] ,
+  transactions:   TransactionWithEntries[] ,
+  accounts:       Account[] ,
   referenceDate?: Date
 ): number {
   const expenseIds = new Set( accounts.filter( ( a ) => a.type === "expense" ).map( ( a ) => a.id ) ) ;
@@ -72,59 +86,58 @@ export function calcularGastosMes(
 
 /**
  * Genera datos para el sparkline: balance total de los últimos N meses.
- * Utiliza los saldos consolidados de los resúmenes mensuales y el balance consolidado actual.
- * Devuelve un array de N números (uno por mes, del más antiguo al más reciente).
+ * Cada punto lleva su clave de mes "YYYY-MM" explícita para evitar desfasajes en tooltips.
  */
 export function calcularSparklineBalance(
   monthlySummaries: MonthlySummary[] ,
   accounts:         Account[] ,
-  meses:            number = 6
-): number[] {
+  limiteMeses:      number = 12 ,
+  referenceDate?:   Date
+): SparklinePoint[] {
   const actualBalance = calcularBalanceTotal( accounts ) ;
-  
+  const ref           = referenceDate || new Date() ;
+  const currentKey    = formatMonthKey( ref.getFullYear() , ref.getMonth() ) ;
+
   const historico = [ ...monthlySummaries ]
-    .slice( 0 , meses - 1 )
-    .reverse() ;
+    .filter( ( ms ) => formatMonthKey( ms.year , ms.month ) < currentKey )
+    .sort( ( a , b ) => ( a.year !== b.year ? a.year - b.year : a.month - b.month ) )
+    .slice( -(limiteMeses - 1) ) ;
 
-  const serie = historico.map( ( ms ) => ms.balanceSnapshot / 100 ) ;
-  serie.push( actualBalance / 100 ) ;
+  const points: SparklinePoint[] = historico.map( ( ms ) => ( {
+    value:    ( ms.balanceSnapshot / 100 ) ,
+    monthKey: formatMonthKey( ms.year , ms.month )
+  } ) ) ;
 
-  while( serie.length < meses ) {
-    serie.unshift( 0 ) ;
-  }
+  points.push( {
+    value:    ( actualBalance / 100 ) ,
+    monthKey: currentKey
+  } ) ;
 
-  return( serie ) ;
+  return( points ) ;
 }
 
 /**
- * Calcula la tendencia de una tarjeta basándose directamente en los dos últimos
- * puntos del Sparkline visual correspondiente, garantizando consistencia absoluta.
- *
- * @param sparklineData - Array de valores que alimentará al gráfico.
- * @param isInverted - Si es verdadero, el incremento se considera un cambio negativo.
+ * Calcula la tendencia de una tarjeta basándose en los dos últimos puntos de la serie.
+ * Utiliza exactamente la misma lógica que el tooltip del Sparkline (sin porcentajes inventados).
  */
 export function calcularTendenciaDesdeSparkline(
-  sparklineData: number[] ,
-  isInverted:    boolean = false
-): { value: string ; isPositive: boolean ; isRising: boolean } {
-  if( !sparklineData || ( sparklineData.length < 2 ) ) {
-    return( {value: "0.0%" , isPositive: !isInverted , isRising: true} ) ;
+  points?:    SparklinePoint[] | number[] ,
+  isInverted: boolean = false
+): { value: string ; isPositive: boolean ; isRising: boolean } | undefined {
+  if( !points || ( points.length < 2 ) ) {
+    return( undefined ) ;
   }
 
-  const actual   = sparklineData[sparklineData.length - 1] ;
-  const anterior = sparklineData[sparklineData.length - 2] ;
+  const pLast    = points[points.length - 1] ;
+  const pPrev    = points[points.length - 2] ;
+  const actual   = typeof pLast === "number" ? pLast : pLast.value ;
+  const anterior = typeof pPrev === "number" ? pPrev : pPrev.value ;
+  const pct      = calcularCambioPorcentual( actual , anterior ) ;
 
-  // Manejo seguro si no hay datos históricos anteriores (cero de relleno en el Sparkline)
-  if( anterior === 0 ) {
-    const isRising = ( actual > 0 ) ;
-    return( {
-      value:      actual > 0 ? "100.0%" : "0.0%" ,
-      isPositive: isInverted ? !isRising : isRising ,
-      isRising
-    } ) ;
+  if( pct === null ) {
+    return( undefined ) ;
   }
 
-  const pct = ( ((actual - anterior) / Math.abs( anterior )) * 100 ) ;
   const isRising   = ( pct >= 0 ) ;
   const isPositive = isInverted ? ( pct <= 0 ) : ( pct >= 0 ) ;
 
@@ -136,67 +149,91 @@ export function calcularTendenciaDesdeSparkline(
 }
 
 /**
- * Genera datos para el sparkline de ingresos de los últimos N meses.
+ * Genera datos para el sparkline de ingresos de los últimos N meses con sus claves de mes.
  */
 export function calcularSparklineIngresos(
-  monthlySummaries: MonthlySummary[] ,
+  monthlySummaries:  MonthlySummary[] ,
   ingresosMesActual: number ,
-  meses:             number = 6
-): number[] {
+  limiteMeses:       number = 12 ,
+  referenceDate?:    Date
+): SparklinePoint[] {
+  const ref        = referenceDate || new Date() ;
+  const currentKey = formatMonthKey( ref.getFullYear() , ref.getMonth() ) ;
+
   const historico = [ ...monthlySummaries ]
-    .slice( 0 , meses - 1 )
-    .reverse() ;
+    .filter( ( ms ) => formatMonthKey( ms.year , ms.month ) < currentKey )
+    .sort( ( a , b ) => ( a.year !== b.year ? a.year - b.year : a.month - b.month ) )
+    .slice( -(limiteMeses - 1) ) ;
 
-  const serie = historico.map( ( ms ) => ms.totalRevenue / 100 ) ;
-  serie.push( ingresosMesActual / 100 ) ;
+  const points: SparklinePoint[] = historico.map( ( ms ) => ( {
+    value:    ( ms.totalRevenue / 100 ) ,
+    monthKey: formatMonthKey( ms.year , ms.month )
+  } ) ) ;
 
-  while( serie.length < meses ) {
-    serie.unshift( 0 ) ;
-  }
+  points.push( {
+    value:    ( ingresosMesActual / 100 ) ,
+    monthKey: currentKey
+  } ) ;
 
-  return( serie ) ;
+  return( points ) ;
 }
 
 /**
- * Genera datos para el sparkline de gastos de los últimos N meses.
+ * Genera datos para el sparkline de gastos de los últimos N meses con sus claves de mes.
  */
 export function calcularSparklineGastos(
   monthlySummaries: MonthlySummary[] ,
   gastosMesActual:  number ,
-  meses:            number = 6
-): number[] {
+  limiteMeses:      number = 12 ,
+  referenceDate?:   Date
+): SparklinePoint[] {
+  const ref        = referenceDate || new Date() ;
+  const currentKey = formatMonthKey( ref.getFullYear() , ref.getMonth() ) ;
+
   const historico = [ ...monthlySummaries ]
-    .slice( 0 , meses - 1 )
-    .reverse() ;
+    .filter( ( ms ) => formatMonthKey( ms.year , ms.month ) < currentKey )
+    .sort( ( a , b ) => ( a.year !== b.year ? a.year - b.year : a.month - b.month ) )
+    .slice( -(limiteMeses - 1) ) ;
 
-  const serie = historico.map( ( ms ) => ms.totalExpense / 100 ) ;
-  serie.push( gastosMesActual / 100 ) ;
+  const points: SparklinePoint[] = historico.map( ( ms ) => ( {
+    value:    ( ms.totalExpense / 100 ) ,
+    monthKey: formatMonthKey( ms.year , ms.month )
+  } ) ) ;
 
-  while( serie.length < meses ) {
-    serie.unshift( 0 ) ;
-  }
+  points.push( {
+    value:    ( gastosMesActual / 100 ) ,
+    monthKey: currentKey
+  } ) ;
 
-  return( serie ) ;
+  return( points ) ;
 }
 
 /**
- * Genera datos para el sparkline de ahorro neto de los últimos N meses.
+ * Genera datos para el sparkline de ahorro neto de los últimos N meses con sus claves de mes.
  */
 export function calcularSparklineAhorro(
   monthlySummaries: MonthlySummary[] ,
   ahorroMesActual:  number ,
-  meses:            number = 6
-): number[] {
+  limiteMeses:      number = 12 ,
+  referenceDate?:   Date
+): SparklinePoint[] {
+  const ref        = referenceDate || new Date() ;
+  const currentKey = formatMonthKey( ref.getFullYear() , ref.getMonth() ) ;
+
   const historico = [ ...monthlySummaries ]
-    .slice( 0 , meses - 1 )
-    .reverse() ;
+    .filter( ( ms ) => formatMonthKey( ms.year , ms.month ) < currentKey )
+    .sort( ( a , b ) => ( a.year !== b.year ? a.year - b.year : a.month - b.month ) )
+    .slice( -(limiteMeses - 1) ) ;
 
-  const serie = historico.map( ( ms ) => ( ms.totalRevenue - ms.totalExpense ) / 100 ) ;
-  serie.push( ahorroMesActual / 100 ) ;
+  const points: SparklinePoint[] = historico.map( ( ms ) => ( {
+    value:    ( ( ms.totalRevenue - ms.totalExpense ) / 100 ) ,
+    monthKey: formatMonthKey( ms.year , ms.month )
+  } ) ) ;
 
-  while( serie.length < meses ) {
-    serie.unshift( 0 ) ;
-  }
+  points.push( {
+    value:    ( ahorroMesActual / 100 ) ,
+    monthKey: currentKey
+  } ) ;
 
-  return( serie ) ;
+  return( points ) ;
 }

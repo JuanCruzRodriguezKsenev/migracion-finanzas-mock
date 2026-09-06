@@ -191,9 +191,9 @@ export function DashboardSandbox( {dict , lang}: DashboardSandboxProps ) {
   } , [ months , selectedIndex , limitTo6Months ] ) ;
 
   // Colores dinámicos para los Sparklines
-  const colorIngresos = metrics.tendenciaIngresos.isPositive ? "var(--color-success)" : "var(--color-danger)" ;
-  const colorGastos   = metrics.tendenciaGastos.isPositive ? "var(--color-success)" : "var(--color-danger)" ;
-  const colorAhorro   = metrics.tendenciaAhorro.isPositive ? "var(--color-purple)" : "var(--color-danger)" ;
+  const colorIngresos = metrics.tendenciaIngresos ? ( metrics.tendenciaIngresos.isPositive ? "var(--color-success)" : "var(--color-danger)" ) : "var(--color-success)" ;
+  const colorGastos   = metrics.tendenciaGastos ? ( metrics.tendenciaGastos.isPositive ? "var(--color-success)" : "var(--color-danger)" ) : "var(--color-danger)" ;
+  const colorAhorro   = metrics.tendenciaAhorro ? ( metrics.tendenciaAhorro.isPositive ? "var(--color-purple)" : "var(--color-danger)" ) : "var(--color-purple)" ;
 
   // Iconos
   const iconoIngresos = (
@@ -318,24 +318,24 @@ export function DashboardSandbox( {dict , lang}: DashboardSandboxProps ) {
           sparklineData: metrics.sparklineDataLiquidez.length >= 2 ? metrics.sparklineDataLiquidez : undefined ,
           lang:          lang ,
           isInverted:    false ,
-          trend:         {
+          trend:         metrics.tendenciaLiquidez ? {
             value:      metrics.tendenciaLiquidez.value ,
             isPositive: metrics.tendenciaLiquidez.isPositive ,
             isRising:   metrics.tendenciaLiquidez.isRising ,
             label:      dict.dashboard.savingTrend
-          }
+          } : undefined
         }}
       >
         {/* Tarjeta 1: Ingresos */}
         <MetricCard
           title={ `${dict.dashboard.incomeLabel} (${selectedMonth?.label || ""})` }
           value={formatCents( metrics.ingresosMes )}
-          trend={{
+          trend={metrics.tendenciaIngresos ? {
             value:      metrics.tendenciaIngresos.value ,
             isPositive: metrics.tendenciaIngresos.isPositive ,
             isRising:   metrics.tendenciaIngresos.isRising ,
             label:      dict.dashboard.savingTrend
-          }}
+          } : undefined}
           icon={iconoIngresos}
           iconBg="rgba(5, 150, 105, 0.12)"
           iconColor="var(--color-success)"
@@ -353,12 +353,12 @@ export function DashboardSandbox( {dict , lang}: DashboardSandboxProps ) {
         <MetricCard
           title={ `${dict.dashboard.expenseLabel} (${selectedMonth?.label || ""})` }
           value={formatCents( metrics.gastosMes )}
-          trend={{
+          trend={metrics.tendenciaGastos ? {
             value:      metrics.tendenciaGastos.value ,
             isPositive: metrics.tendenciaGastos.isPositive ,
             isRising:   metrics.tendenciaGastos.isRising ,
             label:      dict.dashboard.savingTrend
-          }}
+          } : undefined}
           isDanger={ metrics.gastosMes > metrics.ingresosMes }
           icon={iconoEgresos}
           iconBg="rgba(225, 29, 72, 0.12)"
@@ -378,12 +378,12 @@ export function DashboardSandbox( {dict , lang}: DashboardSandboxProps ) {
         <MetricCard
           title={ `${dict.dashboard.savingsLabel} (${selectedMonth?.label || ""})` }
           value={formatCents( metrics.ahorro )}
-          trend={{
+          trend={metrics.tendenciaAhorro ? {
             value:      metrics.tendenciaAhorro.value ,
             isPositive: metrics.tendenciaAhorro.isPositive ,
             isRising:   metrics.tendenciaAhorro.isRising ,
             label:      dict.dashboard.savingTrend
-          }}
+          } : undefined}
           icon={iconoAhorro}
           iconBg="rgba(124, 58, 237, 0.12)"
           iconColor="var(--color-purple)"

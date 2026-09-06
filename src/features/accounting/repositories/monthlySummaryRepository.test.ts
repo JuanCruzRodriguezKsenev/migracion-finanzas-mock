@@ -127,4 +127,27 @@ describe( "monthlySummaryRepository" , () => {
     expect( listado[1].year ).toBe( 2025 ) ;
     expect( listado[1].month ).toBe( 9 ) ;
   } ) ;
+
+  it( "no debe cachear permanentemente meses ausentes ni bloquear lecturas posteriores a su creación" , async () => {
+    // 1. Consultar un mes que no existe aún (ej: 2024-05, month: 4)
+    const antes = await monthlySummaryRepository.findRecent( orgId , 1 , 2024 , 5 ) ;
+    expect( antes.length ).toBe( 0 ) ;
+
+    // 2. Crear el resumen para ese mes
+    await monthlySummaryRepository.create( {
+      organizationId:  orgId ,
+      year:            2024 ,
+      month:           4 ,
+      totalRevenue:    5000 ,
+      totalExpense:    3000 ,
+      balanceSnapshot: 2000
+    } ) ;
+
+    // 3. Consultar nuevamente: debe encontrarlo sin estar bloqueado por caché negativa
+    const despues = await monthlySummaryRepository.findRecent( orgId , 1 , 2024 , 5 ) ;
+    expect( despues.length ).toBe( 1 ) ;
+    expect( despues[0].year ).toBe( 2024 ) ;
+    expect( despues[0].month ).toBe( 4 ) ;
+    expect( despues[0].balanceSnapshot ).toBe( 2000 ) ;
+  } ) ;
 } ) ;

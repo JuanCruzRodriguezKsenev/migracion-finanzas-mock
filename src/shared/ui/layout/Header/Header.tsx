@@ -23,12 +23,13 @@ import { NotificationsDropdown } from "@/features/notifications/components/Notif
 import { useNotifications }      from "@/features/notifications/context/NotificationsContext" ;
 
 interface HeaderProps {
-  onMenuClick?: () => void ;
-  dict:         Awaited< ReturnType< typeof getDictionary > > ;
-  lang?:        string ;
+  onMenuClick?:     () => void ;
+  dict:             Awaited< ReturnType< typeof getDictionary > > ;
+  lang?:            string ;
+  currentMonthKey?: string ;
 }
 
-export function Header( {dict , onMenuClick , lang = "es"}: HeaderProps ) {
+export function Header( {dict , onMenuClick , lang = "es" , currentMonthKey}: HeaderProps ) {
   const { data: session } = useSession() ;
 
   const router       = useRouter() ;
@@ -67,10 +68,13 @@ export function Header( {dict , onMenuClick , lang = "es"}: HeaderProps ) {
 
   // Determinar la clave inicial (mes actual) y límites de futuro dinámicamente
   const [ currentKey , maxKey ] = useMemo( () => {
+    if( currentMonthKey ) {
+      return( [ currentMonthKey , currentMonthKey ] ) ;
+    }
     const d = new Date() ;
     const max = `${d.getFullYear()}-${String( d.getMonth() + 1 ).padStart( 2 , "0" )}` ;
     return( [ max , max ] ) ;
-  } , [] ) ;
+  } , [ currentMonthKey ] ) ;
 
   // Sincronizar el mes seleccionado con la URL
   const selectedMonthKey = searchParams.get( "month" ) || currentKey ;
