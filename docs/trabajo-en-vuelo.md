@@ -12,19 +12,17 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `ci/compuerta` (abierta sobre `master` el 2026-09-06).
+**Rama activa:** `master` (Plan de punta a punta finalizado y consolidado).
 
-**En curso:** Tanda G — Compuerta de CI en GitHub Actions (cerrando cambios y verificando build).
-1. `package.json`: Agregado de `"packageManager": "pnpm@11.3.0"` para anclar explícitamente la versión exacta del gestor de paquetes.
-2. `.github/workflows/compuerta.yml`: Configuración del pipeline de Integración Continua con GitHub Actions.
-   - Activación ante `push` y `pull_request` a `master`.
-   - Servicio PostgreSQL contenedorizado (`postgres:16-alpine`) con healthcheck.
-   - Caché nativo de `pnpm` con Node 20.
-   - Pasos estrictos: `tsc --noEmit`, `eslint --quiet .`, `pnpm test` (182 pruebas en 24 suites), y `pnpm build` de producción con Next.js.
-3. Verificación: Compilación y build de producción validados localmente.
+**Estado:** 🟢 **Todas las tandas (0 a H) han sido completadas, verificadas y mergeadas a `master`.**
+1. `docs/patterns.md`: Documentación canónica de los 4 patrones de arquitectura centrales (Partida Doble Real, Transactional Outbox, Idempotencia y Circuit Breaker) con referencias al código.
+2. `docs/TECHNICAL_DEBT.md`: Registro de deudas resueltas en el sprint y puntos abiertos reales pendientes de refactorización sobre código existente.
+3. `docs/ROADMAP.md`: Hoja de ruta de producto con catálogo de módulos y fases a construir referenciadas a las propuestas de `docs/proposals/`.
+4. `docs/adr/`: Inicialización de registros de decisiones arquitectónicas con `README.md`, plantilla `template.md` y `0001-registro-de-decisiones-arquitectonicas.md`.
+5. `docs/registro/`: Congelamiento formal del plan en `2026-09-06-cierre-tandas-0-a-g.md`.
 
-**Próximo paso inmediato:**
-Commitear en `ci/compuerta`, mergear a `master` con fast-forward, e iniciar **Tanda H — Documentación canónica, arquitectura y ADRs** en la rama `docs/canonicos`.
+**Próximo paso de desarrollo:**
+Seleccionar el primer módulo de la Fase 1 del Roadmap ([`docs/ROADMAP.md`](ROADMAP.md)) para iniciar su desarrollo (ej: Tarjetas de Crédito `/tarjetas` según RFC 007).
 
 ---
 
@@ -41,8 +39,8 @@ Commitear en `ci/compuerta`, mergear a `master` con fast-forward, e iniciar **Ta
 | **Tanda D** | `feat/month-selector-limites`| 🟢 **Cerrada** | M2 (ocultar en accounts/subscriptions), M3 (minKey primer mes con datos) (commit `6e7bbe8`) |
 | **Tanda E** | `fix/lint-set-state-in-effect`| 🟢 **Cerrada** | 4 errores ESLint resueltos (NotificationsContext, InstitutionLogo, CreateFinancialEntityForm) (commit `4cdb0ad`) |
 | **Tanda F** | `feat/env-validado` | 🟢 **Cerrada** | `env.ts` con Zod (lazy `obtenerEnv`), eliminar fallback silencioso de `client.ts:15` (commit `70b147d`) |
-| **Tanda G** | `ci/compuerta` | 🟢 **Completada** | `.github/workflows/compuerta.yml` con service postgres + `packageManager: pnpm@11.3.0` |
-| **Tanda H** | `docs/canonicos` | ⚪ Pendiente | `patterns.md`, `TECHNICAL_DEBT.md`, `ROADMAP.md`, `docs/adr/` desde la próxima decisión |
+| **Tanda G** | `ci/compuerta` | 🟢 **Cerrada** | `.github/workflows/compuerta.yml` con service postgres + `packageManager: pnpm@11.3.0` (commit `a190447`) |
+| **Tanda H** | `docs/canonicos` | 🟢 **Completada** | `patterns.md`, `TECHNICAL_DEBT.md`, `ROADMAP.md`, `docs/adr/`, `docs/registro/` |
 
 ---
 
