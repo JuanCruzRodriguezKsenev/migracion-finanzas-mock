@@ -7,7 +7,7 @@
 "use client" ;
 
 // Librerías externas
-import React , { useState , useEffect } from "react" ;
+import React , { useState , useEffect , useMemo } from "react" ;
 
 // Shared
 import { getBrandLogoUrl } from "@/shared/services/brand/brandService" ;
@@ -24,53 +24,64 @@ interface InstitutionLogoProps {
 // Caché en memoria para evitar llamadas redundantes de red por la misma marca en la misma sesión
 const logoCache: Record< string , string | null > = {} ;
 
+/**
+ * Resuelve sincrónicamente la URL directa del logo si se puede deducir sin llamadas de red.
+ */
+function resolveDirectLogo( propLogoUrl?: string | null , institution?: string ): { url: string | null ; isFallback: boolean } | null {
+  if( propLogoUrl ) {
+    if( propLogoUrl.startsWith( "http://" ) || propLogoUrl.startsWith( "https://" ) ) {
+      return( { url: propLogoUrl , isFallback: false } ) ;
+    }
+    if( propLogoUrl.includes( "." ) ) {
+      return( { url: `https://cdn.brandfetch.io/${propLogoUrl.trim().toLowerCase()}?c=brandfetch` , isFallback: false } ) ;
+    }
+  }
+
+  if( !institution ) {
+    return( { url: null , isFallback: true } ) ;
+  }
+
+  const instLower = institution.toLowerCase() ;
+
+  // Si es dinero físico o contabilidad pura, usar fallback directamente
+  if( instLower.includes( "efectivo" ) || instLower.includes( "billetera" ) || instLower.includes( "cash" ) || instLower.includes( "contabilidad" ) ) {
+    return( { url: null , isFallback: true } ) ;
+  }
+
+  // Si la institución ingresada es un dominio (ej: mercadopago.com.ar)
+  if( institution.includes( "." ) ) {
+    const directUrl = getBrandLogoUrl( institution ) ;
+    logoCache[institution] = directUrl ;
+    return( { url: directUrl , isFallback: false } ) ;
+  }
+
+  // Comprobar si ya existe en la caché en memoria
+  if( logoCache[institution] !== undefined ) {
+    const cached = logoCache[institution] ;
+    return( { url: cached , isFallback: !cached } ) ;
+  }
+
+  return( null ) ;
+}
+
 export function InstitutionLogo( {institution , logoUrl: propLogoUrl , className = "" , size = 36}: InstitutionLogoProps ) {
-  const [ logoUrl , setLogoUrl ] = useState< string | null >( null ) ;
-  const [ loading , setLoading ] = useState( true ) ;
-  const [ error , setError ]     = useState( false ) ;
+  // 1. Derivar sincrónicamente la URL o fallback si es estático o está en caché
+  const direct = useMemo(
+    () => resolveDirectLogo( propLogoUrl , institution ) ,
+    [ propLogoUrl , institution ]
+  ) ;
+
+  // 2. Estado exclusivo para resultados asíncronos de la API Brandfetch
+  const [ asyncState , setAsyncState ] = useState<{ url: string | null ; loading: boolean ; error: boolean }>( () => ( {
+    url:     null ,
+    loading: direct === null ,
+    error:   false
+  } ) ) ;
+
+  const [ imgError , setImgError ] = useState( false ) ;
 
   useEffect( () => {
-    if( propLogoUrl ) {
-      if( propLogoUrl.startsWith( "http://" ) || propLogoUrl.startsWith( "https://" ) ) {
-        setLogoUrl( propLogoUrl ) ;
-        setLoading( false ) ;
-        setError( false ) ;
-        return ;
-      }
-      if( propLogoUrl.includes( "." ) ) {
-        const cdnUrl = `https://cdn.brandfetch.io/${propLogoUrl.trim().toLowerCase()}?c=brandfetch` ;
-        setLogoUrl( cdnUrl ) ;
-        setLoading( false ) ;
-        setError( false ) ;
-        return ;
-      }
-    }
-
-    const instLower = institution.toLowerCase() ;
-
-    // Si es dinero físico o contabilidad pura, usar fallback directamente
-    if( instLower.includes( "efectivo" ) || instLower.includes( "billetera" ) || instLower.includes( "cash" ) || instLower.includes( "contabilidad" ) ) {
-      setLoading( false ) ;
-      setError( true ) ;
-      return ;
-    }
-
-    // ATAJO: Si la institución ingresada es un dominio (ej: mercadopago.com.ar)
-    if( institution.includes( "." ) ) {
-      const directUrl = getBrandLogoUrl( institution ) ;
-      logoCache[institution] = directUrl ;
-      setLogoUrl( directUrl ) ;
-      setLoading( false ) ;
-      return ;
-    }
-
-    // Comprobar si ya existe en la caché
-    if( logoCache[institution] !== undefined ) {
-      setLogoUrl( logoCache[institution] ) ;
-      setLoading( false ) ;
-      if( !logoCache[institution] ) {
-        setError( true ) ;
-      }
+    if( direct !== null ) {
       return ;
     }
 
@@ -90,27 +101,23 @@ export function InstitutionLogo( {institution , logoUrl: propLogoUrl , className
           if( data && ( data.length > 0 ) && data[0].icon ) {
             const iconUrl = data[0].icon ;
             logoCache[institution] = iconUrl ;
-            setLogoUrl( iconUrl ) ;
+            setAsyncState( { url: iconUrl , loading: false , error: false } ) ;
           } else {
             logoCache[institution] = null ;
-            setError( true ) ;
+            setAsyncState( { url: null , loading: false , error: true } ) ;
           }
         }
-      } catch( e ) {
+      } catch {
         if( isMounted ) {
           logoCache[institution] = null ;
-          setError( true ) ;
-        }
-      } finally {
-        if( isMounted ) {
-          setLoading( false ) ;
+          setAsyncState( { url: null , loading: false , error: true } ) ;
         }
       }
     } ;
 
     fetchLogo() ;
     return( () => { isMounted = false ; } ) ;
-  } , [ institution ] ) ;
+  } , [ institution , direct ] ) ;
 
   const sizeStyle = {
     width:  `${size}px` ,
@@ -135,11 +142,15 @@ export function InstitutionLogo( {institution , logoUrl: propLogoUrl , className
     ) ;
   } ;
 
+  const loading = direct ? false : asyncState.loading ;
+  const error   = direct ? direct.isFallback : asyncState.error ;
+  const logoUrl = direct ? direct.url : asyncState.url ;
+
   if( loading ) {
     return( <div className={ `${styles.logoDefault} ${styles.pulse} ${className}` } style={sizeStyle} /> ) ;
   }
 
-  if( error || !logoUrl ) {
+  if( error || !logoUrl || imgError ) {
     return( renderLocalFallback() ) ;
   }
 
@@ -149,7 +160,7 @@ export function InstitutionLogo( {institution , logoUrl: propLogoUrl , className
         src={logoUrl}
         alt={`Logo of ${institution}`}
         className={styles.logoImage}
-        onError={ () => setError( true ) }
+        onError={ () => setImgError( true ) }
       />
     </div>
   ) ;

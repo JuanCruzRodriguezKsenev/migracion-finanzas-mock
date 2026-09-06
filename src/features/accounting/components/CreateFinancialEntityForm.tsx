@@ -104,23 +104,16 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
   const [ balance , setBalance ]         = useState( "" ) ;
   const [ notice , setNotice ]           = useState< string | null >( null ) ;
 
-  const [ selectedCountry , setSelectedCountry ] = useState( "ar" ) ;
+  const [ selectedCountry , setSelectedCountry ] = useState( () => detectUserCountry() ) ;
 
   const [ suggestions , setSuggestions ]     = useState< { name: string ; domain: string ; icon?: string }[] >( [] ) ;
   const [ isSearching , setIsSearching ]     = useState( false ) ;
   const [ showDropdown , setShowDropdown ]   = useState( false ) ;
   const [ isBrandFromApi , setIsBrandFromApi ] = useState( false ) ;
 
-  // Inicializar selección de país dinámicamente al montar el cliente
-  useEffect( () => {
-    setSelectedCountry( detectUserCountry() ) ;
-  } , [] ) ;
-
   // Autocompletado de Marcas con Debounce, Multiconsulta y Filtro Prioritario del País Seleccionado
   useEffect( () => {
-    if( name.trim().length < 3 || isBrandFromApi ) {
-      setSuggestions( [] ) ;
-      setShowDropdown( false ) ;
+    if( (name.trim().length < 3) || isBrandFromApi ) {
       return ;
     }
 
@@ -239,6 +232,17 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
     }
   } ;
 
+  const handleNameChange = ( val: string ) => {
+    setName( val ) ;
+    if( isBrandFromApi ) {
+      setIsBrandFromApi( false ) ;
+    }
+    if( val.trim().length < 3 ) {
+      setSuggestions( [] ) ;
+      setShowDropdown( false ) ;
+    }
+  } ;
+
   const handleClearBrandLink = () => {
     setIsBrandFromApi( false ) ;
     setName( "" ) ;
@@ -246,6 +250,8 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
     setColor( "#6366f1" ) ;
     setBalance( "" ) ;
     setNotice( null ) ;
+    setSuggestions( [] ) ;
+    setShowDropdown( false ) ;
   } ;
 
   // Adaptar las sugerencias de marca al contrato genérico de Autocomplete
@@ -288,6 +294,8 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
         setColor( "#6366f1" ) ;
         setBalance( "" ) ;
         setIsBrandFromApi( false ) ;
+        setSuggestions( [] ) ;
+        setShowDropdown( false ) ;
         router.refresh() ;
         if( onSuccess ) {
           onSuccess() ;
@@ -324,7 +332,7 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
               label="Nombre o Dominio de la Entidad"
               placeholder="Ej: galicia.com.ar, itau.com.br, Mercado Pago"
               value={name}
-              onChange={setName}
+              onChange={handleNameChange}
               options={autocompleteOptions}
               onSelect={handleAutocompleteSelect}
               isOpen={showDropdown}

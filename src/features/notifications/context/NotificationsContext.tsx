@@ -5,7 +5,7 @@
 "use client" ;
 
 // Librerías externas
-import React , { createContext , useContext , useState , useEffect } from "react" ;
+import React , { createContext , useContext , useSyncExternalStore , useCallback } from "react" ;
 
 // Feature: Notifications
 import { getUnreadNotificationsCount } from "../lib/notificationHelpers" ;
@@ -45,57 +45,112 @@ const DEMO_NOTIFICATIONS: Notification[] = [
   }
 ] ;
 
+const STORAGE_KEY = "finanzia-notifications-demo" ;
+const EMPTY_NOTIFICATIONS: Notification[] = [] ;
+
+let listeners: Array< () => void > = [] ;
+let memoryNotifications: Notification[] | null = null ;
+
+function getStoredNotifications(): Notification[] {
+  if( typeof window === "undefined" ) {
+    return( EMPTY_NOTIFICATIONS ) ;
+  }
+  if( memoryNotifications !== null ) {
+    return( memoryNotifications ) ;
+  }
+  const saved = localStorage.getItem( STORAGE_KEY ) ;
+  if( saved ) {
+    try {
+      memoryNotifications = JSON.parse( saved ) ;
+      return( memoryNotifications! ) ;
+    } catch {
+      memoryNotifications = DEMO_NOTIFICATIONS ;
+      return( DEMO_NOTIFICATIONS ) ;
+    }
+  }
+  memoryNotifications = DEMO_NOTIFICATIONS ;
+  return( DEMO_NOTIFICATIONS ) ;
+}
+
+function emitChange() {
+  for( const listener of listeners ) {
+    listener() ;
+  }
+}
+
+const notificationStore = {
+  subscribe( listener: () => void ) {
+    listeners.push( listener ) ;
+    const onStorage = ( event: StorageEvent ) => {
+      if( event.key === STORAGE_KEY ) {
+        memoryNotifications = null ;
+        listener() ;
+      }
+    } ;
+    if( typeof window !== "undefined" ) {
+      window.addEventListener( "storage" , onStorage ) ;
+    }
+    return( () => {
+      listeners = listeners.filter( ( l ) => l !== listener ) ;
+      if( typeof window !== "undefined" ) {
+        window.removeEventListener( "storage" , onStorage ) ;
+      }
+    } ) ;
+  } ,
+  getSnapshot(): Notification[] {
+    return( getStoredNotifications() ) ;
+  } ,
+  getServerSnapshot(): Notification[] {
+    return( EMPTY_NOTIFICATIONS ) ;
+  } ,
+  setNotifications( updater: ( prev: Notification[] ) => Notification[] ) {
+    const prev = getStoredNotifications() ;
+    const next = updater( prev ) ;
+    memoryNotifications = next ;
+    if( typeof window !== "undefined" ) {
+      localStorage.setItem( STORAGE_KEY , JSON.stringify( next ) ) ;
+    }
+    emitChange() ;
+  } ,
+  resetDemo() {
+    memoryNotifications = DEMO_NOTIFICATIONS ;
+    if( typeof window !== "undefined" ) {
+      localStorage.setItem( STORAGE_KEY , JSON.stringify( DEMO_NOTIFICATIONS ) ) ;
+    }
+    emitChange() ;
+  }
+} ;
+
 /**
  * Proveedor de contexto para las alertas y notificaciones.
- * Persiste el estado de demostración interactiva en localStorage.
+ * Persiste el estado de demostración interactiva en localStorage mediante useSyncExternalStore.
  */
 export function NotificationsProvider( {children}: {children: React.ReactNode} ) {
-  const [ notifications , setNotifications ] = useState< Notification[] >( [] ) ;
-  const [ isLoaded , setIsLoaded ]           = useState( false ) ;
+  const notifications = useSyncExternalStore(
+    notificationStore.subscribe ,
+    notificationStore.getSnapshot ,
+    notificationStore.getServerSnapshot
+  ) ;
 
-  // Cargar estado inicial desde localStorage
-  useEffect( () => {
-    const saved = localStorage.getItem( "finanzia-notifications-demo" ) ;
-    if( saved ) {
-      try {
-        setNotifications( JSON.parse( saved ) ) ;
-      } catch( e ) {
-        setNotifications( DEMO_NOTIFICATIONS ) ;
-      }
-    } else {
-      setNotifications( DEMO_NOTIFICATIONS ) ;
-    }
-    setIsLoaded( true ) ;
-  } , [] ) ;
-
-  // Guardar cambios en localStorage
-  useEffect( () => {
-    if( isLoaded ) {
-      localStorage.setItem( "finanzia-notifications-demo" , JSON.stringify( notifications ) ) ;
-    }
-  } , [ notifications , isLoaded ] ) ;
-
-  const markAsSent = ( id: string ) => {
-    setNotifications( ( prev ) =>
+  const markAsSent = useCallback( ( id: string ) => {
+    notificationStore.setNotifications( ( prev ) =>
       prev.map( ( n ) => ( n.id === id ? {...n , status: "sent"} : n ) )
     ) ;
-  } ;
+  } , [] ) ;
 
-  const confirmReceipt = ( id: string ) => {
-    // Al confirmar, removemos la notificación ya que fue resuelta
-    setNotifications( ( prev ) => prev.filter( ( n ) => n.id !== id ) ) ;
-  } ;
+  const confirmReceipt = useCallback( ( id: string ) => {
+    notificationStore.setNotifications( ( prev ) => prev.filter( ( n ) => n.id !== id ) ) ;
+  } , [] ) ;
 
-  const rejectReceipt = ( id: string ) => {
-    // Al rechazar, volvemos el estado a pending para el deudor
-    setNotifications( ( prev ) =>
+  const rejectReceipt = useCallback( ( id: string ) => {
+    notificationStore.setNotifications( ( prev ) =>
       prev.map( ( n ) => ( n.id === id ? {...n , status: "pending"} : n ) )
     ) ;
-  } ;
+  } , [] ) ;
 
-  const resetDemo = () => {
-    setNotifications( DEMO_NOTIFICATIONS ) ;
-  } ;
+  const resetDemo = useCallback( () => {
+    notificationStore.resetDemo() ;
+  } , [] ) ;
 
   // Unread count: deudas pendientes o recibos enviados por confirmar
   const unreadCount = getUnreadNotificationsCount( notifications ) ;
