@@ -1,0 +1,65 @@
+name: Compuerta CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  calidad:
+    name: Verificación de Calidad
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_dev_pwd
+          POSTGRES_DB: finanzas_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres_dev_pwd@localhost:5432/finanzas_db
+      NEXTAUTH_SECRET: ci-secret-token-compuerta-1234567890
+      NEXTAUTH_URL: http://localhost:3000
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Verificación de tipos TypeScript
+        run: pnpm exec tsc --noEmit
+
+      - name: Verificación de linter ESLint
+        run: pnpm exec eslint --quiet .
+
+      - name: Ejecutar suite de pruebas unitarias
+        run: pnpm test
+
+      - name: Compilación de producción (Next.js build)
+        env:
+          NODE_ENV: production
+          NEXTAUTH_SECRET: ci-secret-token-compuerta-1234567890
+          DATABASE_URL: postgresql://postgres:postgres_dev_pwd@localhost:5432/finanzas_db
+        run: pnpm build
