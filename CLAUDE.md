@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Estado de trabajo en curso y próximo paso:** [`docs/trabajo-en-vuelo.md`](docs/trabajo-en-vuelo.md).
+
 ## Hard restrictions
 
 - **NEVER read, write, list, search, or access the `migracion/` directory or its contents** under any circumstances without explicit written user authorization. This applies to all tools (Glob, Grep, Read, Bash). See `.agents/AGENTS.md` §1.

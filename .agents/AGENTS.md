@@ -2,6 +2,16 @@
 
 Este archivo contiene instrucciones, restricciones y directrices operativas específicas para este espacio de trabajo que todos los agentes inteligentes (incluidos asistentes de codificación como Antigravity) deben seguir obligatoriamente.
 
+
+> ## Por dónde empezar
+>
+> **Este archivo no lleva estado.** Punteros:
+> - **Qué hay a medias y cuál es el próximo paso** → [`docs/trabajo-en-vuelo.md`](../docs/trabajo-en-vuelo.md).
+>   **Si retomás sin contexto, empezá por ahí**: dice en qué rama está el trabajo, qué tanda sigue y qué decisiones se tomaron en conversación.
+> - **Backlog de deuda** → [`docs/TECHNICAL_DEBT.md`](../docs/TECHNICAL_DEBT.md) (creado en Tanda H).
+> - **Propuestas técnicas y decisiones** → [`docs/proposals/`](../docs/proposals/).
+> - **Arquitectura del sistema** → [`ARCHITECTURE.md`](../ARCHITECTURE.md).
+
 ---
 
 ## 1. Restricción de Acceso Crítica
@@ -84,4 +94,20 @@ Para evitar modificaciones no planificadas o prematuras en la base de código, t
 3.  **Plan de Acción Detallado:** Si el usuario autoriza avanzar, redactar un plan de acción detallado paso a paso con los archivos a modificar, el impacto de los cambios y el código propuesto.
 4.  **Aprobación Final:** Esperar la aprobación explícita y final del usuario sobre el plan de acción antes de ejecutar cualquier herramienta de escritura de archivos (`write_to_file`, `replace_file_content`, `multi_replace_file_content`) o comandos que modifiquen el entorno.
 
+
+
+---
+
+## 8. Lo que este proyecto cobra caro
+
+*   **1. El balance Debe/Haber nunca se rompe:**  
+    La suma de débitos debe ser estrictamente idéntica a la suma de créditos en cualquier transacción contable. En [`src/features/accounting/schema.db.ts:71-76`](../src/features/accounting/schema.db.ts#L71-L76), cada movimiento en `ledger_entries` vincula un débito y un crédito. La validación vive centralizada en [`src/features/accounting/services/accountingService.ts:35-46`](../src/features/accounting/services/accountingService.ts#L35-L46) (`totalDebit !== totalCredit` rechaza la mutación). Si se insertan asientos directos en la base sin pasar por el servicio contable, la integridad de la partida doble queda destruida.
+*   **2. Prohibido usar números con punto flotante (floats):**  
+    Todo importe monetario viaja y se almacena en **centavos enteros** (`integer` / `bigint`). Definido en [`src/features/accounting/schema.db.ts:47,75,76,113-115`](../src/features/accounting/schema.db.ts#L47) (`balance`, `debit`, `credit`, `totalRevenue`, `totalExpense`). La conversión a formato visible la realiza exclusivamente [`src/features/accounting/utils/dashboardMetrics.ts:14-19`](../src/features/accounting/utils/dashboardMetrics.ts#L14-L19) (`formatCents`). Manipular importes dividiendo o multiplicando por 100 en componentes de UI introduce errores de redondeo acumulativos.
+*   **3. Aislamiento multi-tenant obligatorio:**  
+    Toda consulta a la base de datos debe filtrar obligatoriamente por `organizationId`. El esquema lo impone como clave foránea no anulable con eliminación en cascada en [`src/features/accounting/schema.db.ts:16,26,38,57,110`](../src/features/accounting/schema.db.ts#L16). Omitir este filtro en una consulta en repositorios ([`src/features/accounting/repositories/`](../src/features/accounting/repositories/)) filtra datos entre distintas organizaciones sin generar ningún error visible de compilación.
+*   **4. `monthly_summaries.month` es 0-indexed en la base, mientras que `beforeMonth` en `findRecent()` es 1-indexed:**  
+    La columna `month` de la tabla `monthly_summaries` ([`src/features/accounting/schema.db.ts:112`](../src/features/accounting/schema.db.ts#L112)) almacena los meses del 0 al 11 (0 = Enero, 11 = Diciembre, igual que `Date.getMonth()`). Sin embargo, el parámetro público `beforeMonth` del repositorio [`src/features/accounting/repositories/monthlySummaryRepository.ts:42-51`](../src/features/accounting/repositories/monthlySummaryRepository.ts#L42-L51) recibe meses del 1 al 12 (1-indexed por convención de API pública). Asumir que ambos son 0-indexed o ambos 1-indexed desfasa los cierres contables un mes entero.
+*   **5. Las series temporales de meses no son contiguas:**  
+    El método `findRecent()` en [`src/features/accounting/repositories/monthlySummaryRepository.ts:97-107`](../src/features/accounting/repositories/monthlySummaryRepository.ts#L97-L107) solo agrega al resultado los meses que ya tienen resumen generado, descartando silenciosamente los huecos. Consumir este array por índice de posición o asumir doce meses consecutivos hacia atrás desde hoy (como hacía `getMonthsLabelSequence()` en [`src/shared/ui/display/RechartsSparkline/Sparkline.tsx:14-27`](../src/shared/ui/display/RechartsSparkline/Sparkline.tsx#L14-L27) o el relleno con `unshift(0)` en [`src/features/accounting/utils/dashboardMetrics.ts:93-95`](../src/features/accounting/utils/dashboardMetrics.ts#L93-L95)) desplaza los valores y atribuye saldos al mes equivocado (bug S1). La etiqueta de mes debe viajar siempre emparejada con el dato (`{ value, monthKey }`).
 
