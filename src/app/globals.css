@@ -268,11 +268,10 @@ a      { color: inherit; text-decoration: none; }
     background-color: var(--brand-bg) !important;
     color:            var(--brand-color) !important;
     border-color:     var(--brand-border) !important;
-    transition:       box-shadow 0.2s ease, transform 0.2s ease;
+    transition:       box-shadow 0.2s ease;
 }
 .brand-adaptive-surface:hover {
     box-shadow: 0 8px 20px rgba(0,0,0,0.06), 0 0 20px var(--brand-glow) !important;
-    transform:  translateY(-1px);
 }
 
 [data-theme="dark"] .brand-adaptive-surface {

@@ -94,7 +94,6 @@
     border-color: var(--border-strong);
     color:        var(--text-main);
     box-shadow:   var(--shadow-sm);
-    transform:    translateY(-1px);
 }
 
 .notificationBadge {

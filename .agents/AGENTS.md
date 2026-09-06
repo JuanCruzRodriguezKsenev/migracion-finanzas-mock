@@ -68,6 +68,8 @@ Este archivo contiene instrucciones, restricciones y directrices operativas espe
     *   Está **estrictamente prohibido el CSS inline** (`style={{...}}`) en JSX. *Excepción:* valores genuinamente dinámicos calculados en runtime (ej: `style={{color: brandColor}}` o inyección de custom properties `style={{"--user-brand-color": color}}`), que no pueden expresarse en una clase estática.
     *   Está **estrictamente prohibido** el uso de Tailwind CSS o cualquier framework de clases utilitarias.
     *   Todo estilo debe vivir en un archivo `*.module.css` colocado junto a su componente, y debe consumir los design tokens de `src/app/globals.css` (`var(--...)`) en lugar de valores hardcodeados de color, tipografía, radios, sombras o z-index. Antes de usar una variable, verificar que exista en `globals.css`.
+    *   **Prohibición de desplazamiento y cambio de tamaño en `:hover` (Regla Anti-Layout-Shift / Anti-Flicker):**
+        Está **estrictamente prohibido** alterar dimensiones físicas (`width`, `height`, `padding`, `margin`, `border-width`), fuentes (`font-weight`), o posiciones/escalas físicas (`transform: translateY(...)`, `transform: scale(...)`, `top`, `left`, etc.) en estados `:hover`. Toda micro-interacción de hover debe ser puramente cromática o lumínica (`background-color`, `color`, `border-color`, `box-shadow`, `opacity`), garantizando estabilidad visual estricta y eliminando bucles de parpadeo (*flicker*) y *Cumulative Layout Shift* (CLS).
 
 ---
 

@@ -246,11 +246,11 @@
     cursor: pointer;
     border: 2px solid var(--bg-card);
     box-shadow: var(--shadow-sm);
-    transition: transform 0.1s ease;
+    transition: box-shadow 0.15s ease;
 }
 
 .slider::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
+    box-shadow: 0 0 0 4px var(--color-primary-light);
 }
 
 .revenueSlider::-webkit-slider-thumb {

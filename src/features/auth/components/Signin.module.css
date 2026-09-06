@@ -141,11 +141,8 @@
 .submitButton:hover:not(:disabled) {
     background-color: var(--color-primary-hover);
     box-shadow:       0 4px 12px rgba(26,86,240,0.4), inset 0 1px 0 rgba(255,255,255,0.12);
-    transform:        translateY(-1px);
 }
-.submitButton:active:not(:disabled)  { transform: translateY(0); }
 .submitButton:disabled {
     cursor:   not-allowed;
     opacity:  0.55;
-    transform:none;
 }

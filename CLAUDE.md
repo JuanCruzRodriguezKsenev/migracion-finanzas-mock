@@ -61,6 +61,7 @@ This repo uses an unusual, strict formatting convention. Match surrounding code 
 - TSDoc on new public functions/types/interfaces.
 - **No fixed px** for structural container dimensions — use fluid units (`clamp()`, `vw`, `%`, …).
 - **CSS:** no inline `style={{...}}` except genuinely dynamic runtime values (e.g. a fetched brand color); no Tailwind or utility-class frameworks; every style lives in a colocated `*.module.css` and consumes the design tokens in `src/app/globals.css` (`var(--...)`) rather than hardcoded colors/spacing.
+- **No layout shifts or movement on `:hover`:** strictly prohibited to alter dimensions (`width`, `height`, `padding`, `margin`, `border-width`), `font-weight`, or physical positions/transforms (`translateY`, `scale`, `top`, `left`). Hover micro-interactions must be purely chromatic or lighting-based (`background-color`, `color`, `border-color`, `box-shadow`, `opacity`) to eliminate flicker loops and layout shifts.
 
 ## Naming
 

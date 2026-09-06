@@ -238,12 +238,12 @@
 
 /* Estilos dinámicos para tarjetas con color corporativo */
 .entitySummaryCard.hasBrandColor {
-  transition: transform 0.22s ease, filter 0.22s ease, box-shadow 0.22s ease ;
+  transition: filter 0.22s ease, box-shadow 0.22s ease ;
 }
 
 .entitySummaryCard.hasBrandColor:hover {
   filter: brightness(1.08) ;
-  transform: translateY(-2px) ;
+  box-shadow: var(--shadow-md) ;
 }
 
 .entitySummaryCard.hasBrandColor .entityNameMain {

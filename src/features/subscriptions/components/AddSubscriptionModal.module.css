@@ -131,12 +131,11 @@
 }
 
 .iconPickerBtn:hover {
-  transform: translateY(-1px) ;
   border-color: var(--text-muted) ;
 }
 
 .iconPickerBtn[data-selected="true"] {
-  transform: scale(1.05) ;
+  border-color: var(--color-primary) ;
   box-shadow: var(--shadow-sm) ;
 }
 
@@ -160,16 +159,15 @@
   border-radius: 50% ;
   border: 2px solid var(--bg-card) ;
   cursor: pointer ;
-  transition: transform 0.2s ease, box-shadow 0.2s ease ;
+  transition: box-shadow 0.2s ease ;
   padding: 0 ;
 }
 
 .colorDot:hover {
-  transform: scale(1.1) ;
+  box-shadow: 0 0 0 2px var(--border-strong) ;
 }
 
 .colorDot[data-selected="true"] {
-  transform: scale(1.15) ;
   box-shadow: 0 0 0 2px var(--color-primary) ;
 }
 
@@ -340,7 +338,6 @@
 }
 
 .colorSwatchCard:hover {
-  transform: translateY(-1px) ;
   box-shadow: var(--shadow-sm) ;
   border-color: var(--text-muted) ;
 }
@@ -535,7 +532,6 @@
 
 .socialBtn:hover {
   border-color: var(--text-muted) ;
-  transform: translateY(-1px) ;
   background-color: var(--border-subtle) ;
 }
 
@@ -696,7 +692,6 @@
 
 .logoPickerBtn:hover {
   border-color: var(--text-muted) ;
-  transform: translateY(-1px) ;
 }
 
 .logoPickerBtnActive {
