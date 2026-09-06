@@ -3,7 +3,7 @@
  * Repositorio para la gestión de Resúmenes Mensuales Históricos (Capa de Acceso a Datos - DAL).
  * Optimizado con caché en memoria a nivel de registro para evitar consultas de base de datos redundantes.
  */
-import { eq , and , desc , or , lt , lte } from "drizzle-orm" ;
+import { eq , and , desc , asc , or , lt , lte } from "drizzle-orm" ;
 
 // Shared
 import { db , DBOrTx } from "@/shared/db/client" ;
@@ -109,6 +109,28 @@ export const monthlySummaryRepository = {
       }
       return( b.month - a.month ) ;
     } ) ) ;
+  } ,
+
+  /**
+   * Consulta la clave de mes (YYYY-MM) más antigua con registros para la organización.
+   */
+  async findEarliestMonthKey( organizationId: string , tx: DBOrTx = db ): Promise< string | undefined > {
+    const [ earliestSummary ] = await tx
+      .select( {
+        year:  monthlySummaries.year ,
+        month: monthlySummaries.month ,
+      } )
+      .from( monthlySummaries )
+      .where( eq( monthlySummaries.organizationId , organizationId ) )
+      .orderBy( asc( monthlySummaries.year ) , asc( monthlySummaries.month ) )
+      .limit( 1 ) ;
+
+    if( !earliestSummary ) {
+      return( undefined ) ;
+    }
+
+    const monthStr = String( earliestSummary.month + 1 ).padStart( 2 , "0" ) ;
+    return( `${earliestSummary.year}-${monthStr}` ) ;
   } ,
 
   /**

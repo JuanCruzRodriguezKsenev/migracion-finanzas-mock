@@ -382,3 +382,24 @@ export async function getMonthlySummariesAction(
     return( fail("Error al consultar los resúmenes mensuales en el servidor.") ) ;
   }
 }
+
+/**
+ * Consulta y retorna la clave de mes (YYYY-MM) más antigua con registros para la organización.
+ *
+ * @returns Un objeto Result con el string YYYY-MM o undefined si no existen resúmenes.
+ */
+export async function getEarliestMonthKeyAction(): Promise< Result< string | undefined , string > > {
+  const session = await getServerSession( authOptions ) ;
+
+  if( !session?.user?.organizationId ) {
+    return( fail( "No autorizado para consultar los resúmenes mensuales." ) ) ;
+  }
+
+  try {
+    const earliestKey = await monthlySummaryRepository.findEarliestMonthKey( session.user.organizationId ) ;
+    return( ok( earliestKey ) ) ;
+  } catch( error ) {
+    logger.error( "Error al consultar mes más antiguo en getEarliestMonthKeyAction." , { error: String( error ) } ) ;
+    return( fail( "Error al consultar el mes más antiguo en el servidor." ) ) ;
+  }
+}

@@ -92,6 +92,12 @@ export function MonthSelector( {
     return( Number( maxKey.split( "-" )[0] ) ) ;
   } , [ maxKey ] ) ;
 
+  // Extraer año mínimo para bloquear retroceso a años sin datos (M3)
+  const minYear = useMemo( () => {
+    if( !minKey ) { return( undefined ) ; }
+    return( Number( minKey.split( "-" )[0] ) ) ;
+  } , [ minKey ] ) ;
+
   // Clave del mes actual efectivo para el botón rápido (M4)
   const effectiveTodayKey = useMemo( () => {
     if( todayKey ) { return( todayKey ) ; }
@@ -151,26 +157,28 @@ export function MonthSelector( {
   // Nombres cortos de meses generados dinámicamente con Intl (M5b)
   const monthLabels = useMemo( () => getLocalizedMonthShortLabels( lang ) , [ lang ] ) ;
 
-  // Manejar el cambio de año en el navegador (bloqueando avance más allá del año máximo)
+  // Manejar el cambio de año en el navegador (bloqueando avance más allá del máximo o retroceso antes del mínimo)
   const adjustYear = useCallback( ( amount: number ) => {
     setViewYear( ( prev ) => {
       const next = ( prev + amount ) ;
-      if( amount > 0 && next > maxYear ) { return( prev ) ; }
+      if( (amount > 0) && (next > maxYear) ) { return( prev ) ; }
+      if( (amount < 0) && (minYear !== undefined) && (next < minYear) ) { return( prev ) ; }
       return( next ) ;
     } ) ;
-  } , [ maxYear ] ) ;
+  } , [ maxYear , minYear ] ) ;
 
   // Manejar selección de mes en la cuadrícula
   const handleMonthSelect = useCallback( ( monthIdx: number ) => {
     const key = `${viewYear}-${String( monthIdx + 1 ).padStart( 2 , "0" )}` ;
 
-    // Permitir selección ilimitada del pasado, pero bloquear futuro
+    // Bloquear selecciones fuera del rango [minKey, maxKey]
     if( maxKey && (key > maxKey) ) { return ; }
+    if( minKey && (key < minKey) ) { return ; }
 
     onChange( key ) ;
     setIsOpen( false ) ;
     triggerRef.current?.focus() ;
-  } , [ viewYear , maxKey , onChange ] ) ;
+  } , [ viewYear , maxKey , minKey , onChange ] ) ;
 
   // Ir rápidamente al mes actual (M4)
   const handleGoToCurrent = useCallback( () => {
@@ -191,6 +199,7 @@ export function MonthSelector( {
   // Calcular claves para controles de paso lateral
   const prevMonthKey   = useMemo( () => getOffsetMonthKey( selectedKey , -1 ) , [ selectedKey ] ) ;
   const nextMonthKey   = useMemo( () => getOffsetMonthKey( selectedKey , 1 )  , [ selectedKey ] ) ;
+  const isPrevDisabled = useMemo( () => ( !!minKey && (prevMonthKey < minKey) ) , [ prevMonthKey , minKey ] ) ;
   const isNextDisabled = useMemo( () => ( !!maxKey && (nextMonthKey > maxKey) ) , [ nextMonthKey , maxKey ] ) ;
 
   return(
@@ -198,6 +207,7 @@ export function MonthSelector( {
       {/* Botón de Paso Atrás (Mes Anterior) */}
       <button
         type="button"
+        disabled={isPrevDisabled}
         className={styles.stepMonthBtn}
         onClick={ () => onChange( prevMonthKey ) }
         aria-label={prevLabel}
@@ -254,6 +264,7 @@ export function MonthSelector( {
               <button
                 type="button"
                 className={styles.navBtn}
+                disabled={ (minYear !== undefined) && (viewYear <= minYear) }
                 onClick={ () => adjustYear( -1 ) }
                 aria-label="Año anterior"
               >
@@ -282,8 +293,8 @@ export function MonthSelector( {
 
                 const isSelected = ( viewYear === selectedYear ) && ( index === selectedMonthIdx ) ;
 
-                // Bloquear solo meses futuros respecto al mes actual
-                const isDisabled = ( !!maxKey && (currentMonthKey > maxKey) ) ;
+                // Bloquear meses futuros respecto a maxKey o pasados respecto a minKey (M3)
+                const isDisabled = ( (!!maxKey && (currentMonthKey > maxKey)) || (!!minKey && (currentMonthKey < minKey)) ) ;
 
                 const btnClass = [
                   styles.gridMonthBtn ,

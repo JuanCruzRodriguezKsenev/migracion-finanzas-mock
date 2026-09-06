@@ -111,4 +111,35 @@ describe( "MonthSelector Component" , () => {
 
     expect( onChange ).toHaveBeenCalledWith( "2026-06" ) ;
   } ) ;
+
+  it( "debería deshabilitar el botón de mes anterior cuando prevMonthKey es menor a minKey" , () => {
+    render( <MonthSelector {...defaultProps} selectedKey="2026-03" minKey="2026-03" /> ) ;
+
+    const prevBtn = screen.getByRole( "button" , { name: "Mes anterior" } ) ;
+    expect( prevBtn ).toBeDisabled() ;
+  } ) ;
+
+  it( "debería deshabilitar el botón de año anterior cuando el año actual es igual al minYear" , () => {
+    render( <MonthSelector {...defaultProps} selectedKey="2025-05" minKey="2025-01" /> ) ;
+
+    const trigger = screen.getByLabelText( "Seleccionar mes" ) ;
+    fireEvent.click( trigger ) ;
+
+    const prevYearBtn = screen.getByRole( "button" , { name: "Año anterior" } ) ;
+    expect( prevYearBtn ).toBeDisabled() ;
+  } ) ;
+
+  it( "debería deshabilitar meses de la grilla anteriores a minKey y no invocar onChange al hacer clic" , () => {
+    const onChange = vi.fn() ;
+    render( <MonthSelector {...defaultProps} selectedKey="2026-05" minKey="2026-04" onChange={onChange} /> ) ;
+
+    const trigger = screen.getByLabelText( "Seleccionar mes" ) ;
+    fireEvent.click( trigger ) ;
+
+    const febBtn = screen.getByText( /Feb/i ) ;
+    expect( febBtn ).toBeDisabled() ;
+
+    fireEvent.click( febBtn ) ;
+    expect( onChange ).not.toHaveBeenCalled() ;
+  } ) ;
 } ) ;

@@ -21,13 +21,14 @@ interface AppShellProps {
   lang:             string ;
   dict:             Awaited< ReturnType< typeof getDictionary > > ;
   currentMonthKey?: string ;
+  minKey?:          string ;
 }
 
 /**
  * App Shell unificado para la aplicación.
  * Maneja el estado de visibilidad del sidebar en móvil (Drawer).
  */
-export function AppShell( {children , lang , dict , currentMonthKey}: AppShellProps ) {
+export function AppShell( {children , lang , dict , currentMonthKey , minKey}: AppShellProps ) {
   const [ isDrawerOpen , setIsDrawerOpen ] = useState( false ) ;
 
   const openDrawer  = () => setIsDrawerOpen( true ) ;
@@ -53,6 +54,7 @@ export function AppShell( {children , lang , dict , currentMonthKey}: AppShellPr
           onMenuClick={openDrawer}
           lang={lang}
           currentMonthKey={currentMonthKey}
+          minKey={minKey}
         />
         <main className={styles.contentContainer}>
           {children}

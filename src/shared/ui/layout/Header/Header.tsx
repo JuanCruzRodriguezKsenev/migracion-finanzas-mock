@@ -27,9 +27,10 @@ interface HeaderProps {
   dict:             Awaited< ReturnType< typeof getDictionary > > ;
   lang?:            string ;
   currentMonthKey?: string ;
+  minKey?:          string ;
 }
 
-export function Header( {dict , onMenuClick , lang = "es" , currentMonthKey}: HeaderProps ) {
+export function Header( {dict , onMenuClick , lang = "es" , currentMonthKey , minKey}: HeaderProps ) {
   const { data: session } = useSession() ;
 
   const router       = useRouter() ;
@@ -46,9 +47,10 @@ export function Header( {dict , onMenuClick , lang = "es" , currentMonthKey}: He
   const nombreUsuario = session?.user?.name || nombreDefecto ;
   const primerNombre  = ( nombreUsuario.split( " " )[0] ) ;
 
-  const isAccounts      = pathname.includes( "/accounts" ) ;
-  const isSandbox       = pathname.includes( "/sandbox" ) ;
-  const isSubscriptions = pathname.includes( "/subscriptions" ) ;
+  const isAccounts        = pathname.includes( "/accounts" ) ;
+  const isSandbox         = pathname.includes( "/sandbox" ) ;
+  const isSubscriptions   = pathname.includes( "/subscriptions" ) ;
+  const showMonthSelector = ( !isAccounts && !isSubscriptions ) ;
 
   const titleText = isAccounts
     ? ( dict.accountsPage?.title || "Cuentas Financieras" )
@@ -105,17 +107,20 @@ export function Header( {dict , onMenuClick , lang = "es" , currentMonthKey}: He
       </div>
 
       <div className={styles.headerActions}>
-        <div className={ `${styles.monthSelectorWrap} ${isPending ? styles.pending : ""}` }>
-          <MonthSelector
-            selectedKey={selectedMonthKey}
-            onChange={handleMonthChange}
-            lang={lang}
-            maxKey={maxKey}
-            todayKey={currentKey}
-            icon={<IconCalendar size={14} />}
-            dict={dict.header?.monthSelector}
-          />
-        </div>
+        {showMonthSelector && (
+          <div className={ `${styles.monthSelectorWrap} ${isPending ? styles.pending : ""}` }>
+            <MonthSelector
+              selectedKey={selectedMonthKey}
+              onChange={handleMonthChange}
+              lang={lang}
+              maxKey={maxKey}
+              minKey={minKey}
+              todayKey={currentKey}
+              icon={<IconCalendar size={14} />}
+              dict={dict.header?.monthSelector}
+            />
+          </div>
+        )}
         <button
           ref={triggerRef}
           className={styles.notificationBtn}

@@ -150,4 +150,24 @@ describe( "monthlySummaryRepository" , () => {
     expect( despues[0].month ).toBe( 4 ) ;
     expect( despues[0].balanceSnapshot ).toBe( 2000 ) ;
   } ) ;
+
+  it( "debe retornar la clave de mes más antigua (YYYY-MM) disponible para la organización" , async () => {
+    const earliestKey = await monthlySummaryRepository.findEarliestMonthKey( orgId ) ;
+
+    // La semilla contiene registros desde Octubre 2025 (year: 2025, month: 9 -> 2025-10)
+    expect( earliestKey ).toBe( "2025-10" ) ;
+  } ) ;
+
+  it( "debe retornar undefined cuando una organización no tiene resúmenes mensuales" , async () => {
+    const [ emptyOrg ] = await db
+      .insert( organizations )
+      .values( {
+        name: "Empty Org" ,
+        slug: "empty-org" ,
+      } )
+      .returning() ;
+
+    const earliestKey = await monthlySummaryRepository.findEarliestMonthKey( emptyOrg.id ) ;
+    expect( earliestKey ).toBeUndefined() ;
+  } ) ;
 } ) ;
