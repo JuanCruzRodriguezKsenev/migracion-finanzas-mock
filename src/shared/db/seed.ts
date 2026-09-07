@@ -215,6 +215,7 @@ async function main() {
         organizationId: org.id ,
         name:           "Banco Galicia" ,
         logo:           "bank" ,
+        brandDomain:    "galicia.ar" ,
         color:          "#e67e22"
       } )
       .returning() ;
@@ -225,6 +226,7 @@ async function main() {
         organizationId: org.id ,
         name:           "Efectivo" ,
         logo:           "cash" ,
+        brandDomain:    null ,
         color:          "#2ecc71"
       } )
       .returning() ;

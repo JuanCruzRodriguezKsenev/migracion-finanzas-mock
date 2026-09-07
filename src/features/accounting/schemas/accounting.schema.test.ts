@@ -2,7 +2,12 @@
 import { describe , it , expect } from "vitest" ;
 
 // Feature: Accounting
-import { createTransactionSchema , createAccountSchema , createFinancialEntitySchema } from "./accounting.schema" ;
+import {
+  createTransactionSchema ,
+  createAccountSchema ,
+  createFinancialEntitySchema ,
+  createAccountForEntitySchema
+} from "./accounting.schema" ;
 
 
 const UUID_A = "11111111-1111-4111-8111-111111111111" ;
@@ -114,8 +119,12 @@ describe( "accounting.schema" , () => {
   } ) ;
 
   describe( "createFinancialEntitySchema" , () => {
-    it( "debería aceptar un color hexadecimal válido" , () => {
-      const resultado = createFinancialEntitySchema.safeParse( {name: "Banco Galicia" , color: "#FF00AA"} ) ;
+    it( "debería aceptar un color hexadecimal válido y brandDomain" , () => {
+      const resultado = createFinancialEntitySchema.safeParse( {
+        name:        "Banco Galicia" ,
+        brandDomain: "galicia.ar" ,
+        color:       "#FF00AA"
+      } ) ;
       expect( resultado.success ).toBe( true ) ;
     } ) ;
 
@@ -123,9 +132,30 @@ describe( "accounting.schema" , () => {
       const resultado = createFinancialEntitySchema.safeParse( {name: "Banco Galicia" , color: "rojo"} ) ;
       expect( resultado.success ).toBe( false ) ;
     } ) ;
+  } ) ;
+
+  describe( "createAccountForEntitySchema" , () => {
+    it( "debería aceptar una entidad con saldo inicial válido" , () => {
+      const resultado = createAccountForEntitySchema.safeParse( {
+        entityId: UUID_A ,
+        balance:  150000
+      } ) ;
+      expect( resultado.success ).toBe( true ) ;
+    } ) ;
 
     it( "debería rechazar un saldo inicial negativo" , () => {
-      const resultado = createFinancialEntitySchema.safeParse( {name: "Banco Galicia" , balance: -100} ) ;
+      const resultado = createAccountForEntitySchema.safeParse( {
+        entityId: UUID_A ,
+        balance:  -100
+      } ) ;
+      expect( resultado.success ).toBe( false ) ;
+    } ) ;
+
+    it( "debería rechazar un entityId que no sea UUID" , () => {
+      const resultado = createAccountForEntitySchema.safeParse( {
+        entityId: "no-es-uuid" ,
+        balance:  1000
+      } ) ;
       expect( resultado.success ).toBe( false ) ;
     } ) ;
   } ) ;

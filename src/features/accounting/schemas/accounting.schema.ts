@@ -69,13 +69,26 @@ export type CreateAccountInput = z.infer< typeof createAccountSchema > ;
  * Esquema de validación en runtime para la creación de una entidad financiera.
  */
 export const createFinancialEntitySchema = z.object( {
-  name:    z.string().min( 2 , "El nombre de la entidad debe tener al menos 2 caracteres." ).max( 150 ) ,
-  logo:    z.string().max( 100 ).optional().nullable() ,
-  color:   z.string().regex( /^#[0-9A-Fa-f]{6}$/ , "El color debe ser un hexadecimal válido (#RRGGBB)." ).optional().nullable() ,
-  balance: z.number().int( "El saldo inicial debe expresarse en centavos enteros." ).nonnegative( "El saldo inicial no puede ser negativo." ).optional() ,
+  name:        z.string().min( 2 , "El nombre de la entidad debe tener al menos 2 caracteres." ).max( 150 ) ,
+  logo:        z.string().max( 100 ).optional().nullable() ,
+  brandDomain: z.string().max( 100 ).optional().nullable() ,
+  color:       z.string().regex( /^#[0-9A-Fa-f]{6}$/ , "El color debe ser un hexadecimal válido (#RRGGBB)." ).optional().nullable() ,
 } ) ;
 
 /**
  * Tipo para la entrada de creación de entidades inferido del esquema de Zod.
  */
 export type CreateFinancialEntityInput = z.infer< typeof createFinancialEntitySchema > ;
+
+/**
+ * Esquema de validación en runtime para la creación de una cuenta contable vinculada a una entidad financiera.
+ */
+export const createAccountForEntitySchema = z.object( {
+  entityId: z.string().uuid( "El ID de entidad debe ser un UUID válido." ) ,
+  balance:  z.number().int( "El saldo inicial debe expresarse en centavos enteros." ).nonnegative( "El saldo inicial no puede ser negativo." ).optional() ,
+} ) ;
+
+/**
+ * Tipo para la entrada de creación de cuentas vinculadas a entidades inferido de Zod.
+ */
+export type CreateAccountForEntityInput = z.infer< typeof createAccountForEntitySchema > ;

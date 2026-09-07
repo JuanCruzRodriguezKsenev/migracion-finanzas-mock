@@ -54,6 +54,7 @@ describe( "contactsRepository — DAL de Contactos y Métodos de Cobro" , () => 
         organizationId: org1Id ,
         name:           "Mercado Pago" ,
         logo:           "mercadopago" ,
+        brandDomain:    "mercadopago.com.ar" ,
         color:          "#009EE3" ,
       } )
       .returning() ;

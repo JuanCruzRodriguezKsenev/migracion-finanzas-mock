@@ -12,18 +12,14 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `fix/entidades-financieras` (sale de `chore/gobernanza-reglas-neutrales`). Ejecuta [`planes/fix-entidades-financieras.md`](planes/fix-entidades-financieras.md): partir el alta de entidades, asiento de apertura contra `3.1.01.01`, columna `brand_domain` y variante del formulario para el flujo de contactos.
+**Rama activa:** `fix/entidades-financieras` (sale de `chore/gobernanza-reglas-neutrales`). Ejecutó [`planes/fix-entidades-financieras.md`](planes/fix-entidades-financieras.md): partir el alta de entidades, asiento de apertura contra `3.1.01.01`, columna `brand_domain` y variante del formulario para el flujo de contactos.
 
 **Ramas pendientes de merge, en este orden:** `feat/contacts-management` → `chore/gobernanza-reglas-neutrales` → `fix/entidades-financieras`. Cada una es ancestro de la siguiente, y `master` todavía no recibió ninguna.
 
-**Estado:** 🟢 **Módulo `/contacts` y Métodos de Cobro (RFC 006) finalizados. Enmiendas arquitectónicas aplicadas y RFC 006 en APPROVED; decisión de cotizaciones registrada en RFC 015 (DRAFT). Esquema Drizzle (`contacts`, `contact_payment_methods`, y extensión con `cbu_cvu`/`alias` en `accounts`) con migración `0019_tidy_piledriver.sql` aplicada. Validadores puros de identificadores argentinos (CBU con doble dígito verificador BCRA, Alias AFIP 6-20 caracteres y CUIT módulo 11). DAL `contactsRepository.ts` con aislamiento multi-tenant transitivo obligatorio, búsqueda por texto, baja lógica (`archived_at`) y actualización transaccional de predeterminado. Server Actions (`contactsActions.ts`) tipadas con Result pattern y esquemas Zod. UI reactiva en `/contacts` (`ContactsContainer`, `ContactsTable`, `ContactFormModal`, `PaymentMethodsPanel` con alta al vuelo reutilizando `CreateFinancialEntityForm`). Integración en navegación (`Navbar`, `BottomNav`, `IconContacts`) y diccionarios i18n (`es`, `en`, `br`). 39 suites de test (298 pruebas) pasando en verde, 0 advertencias ESLint y build de producción exitoso.**
+**Estado:** 🟢 **Corrección del alta de entidades financieras completada integralmente. `createFinancialEntityAction` desacoplada como alta pura a nivel organización sin creación de cuentas espurias. Nueva `createAccountForEntityAction` que garantiza partida doble emitiendo asiento contable contra Patrimonio Neto (`3.1.01.01`) ante saldos iniciales mayores a cero. Columna `brand_domain` (`varchar(100)`) añadida con migración `0020_soft_fixer.sql` y backfill de dominios históricos aplicado. `CreateFinancialEntityForm` adaptado con prop `withOwnAccount?: boolean` (`withOwnAccount={false}` en `PaymentMethodsPanel`) y protección de selector de iconos. `InstitutionLogo` refactorizado con soporte directo de `brandDomain`. Fixtures actualizados y suite de tests completa con 5 nuevas pruebas contables y multi-tenant.**
 
 **Próximo paso de desarrollo:**
-Ejecutar el plan de corrección de entidades, mergear las tres ramas a master en el orden de arriba y
-retomar la **Fase 1**, que no está cerrada: falta el **RFC 015 — perfil, preferencias y consolidación
-multimoneda**, hoy el único RFC en `DRAFT` y el único bloqueo formal del proyecto. Tarjetas (RFC 007)
-es Fase 2 y va después; **Metas (RFC 011) es Fase 3**, no un candidato inmediato: su saldo libre resta
-compromisos que todavía no existen. La hoja de ruta vigente es el artifact, no `ROADMAP.md`.
+Mergear las tres ramas a master en el orden establecido (`feat/contacts-management` → `chore/gobernanza-reglas-neutrales` → `fix/entidades-financieras`), resolver la limpieza de la entidad de diagnóstico `kk` si el usuario lo decide, y retomar la **Fase 1** con la aprobación y desarrollo del **RFC 015 — perfil, preferencias y consolidación multimoneda** (único RFC en `DRAFT`).
 
 > **Corrección de rumbo (2026-09-07):** este documento venía proponiendo Tarjetas o Metas como próximo
 > módulo, en contra del artifact. Metas en la primera fase es justamente el error que el artifact
@@ -65,6 +61,7 @@ previo de `tanda`, no suyo.
 | **Fase 0 (A3)** | `feat/transactions-management` | 🟢 **Completada** | Regularización RFC 018 a APPROVED con estado de implementación del core contable (migraciones 0012–0016). |
 | **Fase 0 (A4)** | `feat/transactions-management` | 🟢 **Completada** | RFC 019 y migración de 9 columnas monetarias a bigint (modo number, migración `0018_slimy_wiccan.sql`). |
 | **Bloque B** | `feat/contacts-management` | 🟢 **Completada** | Agenda de contactos y métodos de cobro en `/contacts` (RFC 006, migración `0019_tidy_piledriver.sql`, validadores CBU/Alias/CUIT, DAL transitivo multi-tenant, 42 tests nuevos de contactos, 298 tests totales). |
+| **Fix Entidades** | `fix/entidades-financieras` | 🟢 **Completada** | Alta pura de entidades, asiento de apertura contable `3.1.01.01`, columna `brand_domain` (`0020_soft_fixer.sql`), prop `withOwnAccount` en formulario para contactos (5 tests nuevos). |
 
 ---
 

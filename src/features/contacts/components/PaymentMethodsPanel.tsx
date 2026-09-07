@@ -208,7 +208,7 @@ export function PaymentMethodsPanel( {
                   <div className={styles.methodLeft}>
                     <InstitutionLogo
                       institution={pm.financialEntity?.name || "Entidad"}
-                      logoUrl={pm.financialEntity?.logo}
+                      brandDomain={pm.financialEntity?.brandDomain}
                       size={28}
                     />
                     <div className={styles.methodMeta}>
@@ -414,6 +414,7 @@ export function PaymentMethodsPanel( {
         {dict?.accountsPage && (
           <CreateFinancialEntityForm
             dict={dict.accountsPage}
+            withOwnAccount={false}
             onSuccess={ () => {
               setIsEntityModalOpen( false ) ;
               onRefresh() ;

@@ -38,6 +38,7 @@ describe( "ContactsTable" , () => {
             organizationId: "org-1" ,
             name:           "Mercado Pago" ,
             logo:           "mercadopago" ,
+            brandDomain:    "mercadopago.com.ar" ,
             color:          "#009EE3" ,
             createdAt:      new Date() ,
           } ,

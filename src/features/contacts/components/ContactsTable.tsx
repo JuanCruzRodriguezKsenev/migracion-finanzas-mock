@@ -101,7 +101,7 @@ export function ContactsTable( {
               >
                 <InstitutionLogo
                   institution={pm.financialEntity?.name || "Entidad"}
-                  logoUrl={pm.financialEntity?.logo}
+                  brandDomain={pm.financialEntity?.brandDomain}
                   size={14}
                 />
                 <span>{pm.alias || ( pm.cbuCvu ? `CBU ...${pm.cbuCvu.slice( -4 )}` : pm.financialEntity?.name )}</span>

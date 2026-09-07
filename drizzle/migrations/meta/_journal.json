@@ -141,6 +141,13 @@
       "when": 1788809859263,
       "tag": "0019_tidy_piledriver",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1788819749800,
+      "tag": "0020_soft_fixer",
+      "breakpoints": true
     }
   ]
 }

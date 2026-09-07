@@ -27,11 +27,12 @@ export const categories = pgTable( "categories" , {
  * Esquema de la tabla para Entidades Financieras (Bancos, Billeteras Virtuales, Efectivo).
  */
 export const financialEntities = pgTable( "financial_entities" , {
-  id:             uuid( "id"              ).primaryKey().defaultRandom() ,
-  organizationId: uuid( "organization_id" ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
-  name:           varchar( "name"  , {length: 150} ).notNull() ,
-  logo:           varchar( "logo"  , {length: 100} ) , // Identificador de logo o icono
-  color:          varchar( "color" , {length: 7  } ) , // Color hexadecimal representative
+  id:             uuid( "id"                 ).primaryKey().defaultRandom() ,
+  organizationId: uuid( "organization_id"    ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
+  name:           varchar( "name"         , {length: 150} ).notNull() ,
+  logo:           varchar( "logo"         , {length: 100} ) , // Icono de respaldo (bank | wallet | cash | credit-card)
+  brandDomain:    varchar( "brand_domain" , {length: 100} ) , // Dominio web de la marca para resolución de logos
+  color:          varchar( "color"        , {length: 7  } ) , // Color hexadecimal representativo
   createdAt:      timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
 } ) ;
 

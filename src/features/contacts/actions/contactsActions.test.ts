@@ -72,6 +72,7 @@ describe( "contactsActions.ts — Server Actions" , () => {
         organizationId: orgId ,
         name:           "Banco Galicia" ,
         logo:           "galicia" ,
+        brandDomain:    "galicia.ar" ,
         color:          "#FF4500" ,
       } )
       .returning() ;

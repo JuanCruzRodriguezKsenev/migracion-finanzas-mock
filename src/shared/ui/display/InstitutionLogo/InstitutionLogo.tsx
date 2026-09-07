@@ -15,10 +15,11 @@ import styles              from "./InstitutionLogo.module.css" ;
 
 
 interface InstitutionLogoProps {
-  institution: string ;
-  logoUrl?:    string | null ;
-  className?:  string ;
-  size?:       number ;
+  institution:  string ;
+  logoUrl?:     string | null ;
+  brandDomain?: string | null ;
+  className?:   string ;
+  size?:        number ;
 }
 
 // Caché en memoria para evitar llamadas redundantes de red por la misma marca en la misma sesión
@@ -26,14 +27,25 @@ const logoCache: Record< string , string | null > = {} ;
 
 /**
  * Resuelve sincrónicamente la URL directa del logo si se puede deducir sin llamadas de red.
+ * Si se provee brandDomain explícito, resuelve directamente sin recurrir a heurísticas de texto.
  */
-function resolveDirectLogo( propLogoUrl?: string | null , institution?: string ): { url: string | null ; isFallback: boolean } | null {
+function resolveDirectLogo(
+  propLogoUrl?: string | null ,
+  institution?: string ,
+  brandDomain?: string | null
+): { url: string | null ; isFallback: boolean } | null {
+  if( brandDomain ) {
+    const directUrl = getBrandLogoUrl( brandDomain ) ;
+    return( { url: directUrl , isFallback: false } ) ;
+  }
+
   if( propLogoUrl ) {
     if( propLogoUrl.startsWith( "http://" ) || propLogoUrl.startsWith( "https://" ) ) {
       return( { url: propLogoUrl , isFallback: false } ) ;
     }
+    // Respaldo para filas o llamadas históricas que pasen el dominio en logoUrl
     if( propLogoUrl.includes( "." ) ) {
-      return( { url: `https://cdn.brandfetch.io/${propLogoUrl.trim().toLowerCase()}?c=brandfetch` , isFallback: false } ) ;
+      return( { url: getBrandLogoUrl( propLogoUrl ) , isFallback: false } ) ;
     }
   }
 
@@ -64,11 +76,17 @@ function resolveDirectLogo( propLogoUrl?: string | null , institution?: string )
   return( null ) ;
 }
 
-export function InstitutionLogo( {institution , logoUrl: propLogoUrl , className = "" , size = 36}: InstitutionLogoProps ) {
+export function InstitutionLogo( {
+  institution ,
+  logoUrl: propLogoUrl ,
+  brandDomain ,
+  className = "" ,
+  size = 36
+}: InstitutionLogoProps ) {
   // 1. Derivar sincrónicamente la URL o fallback si es estático o está en caché
   const direct = useMemo(
-    () => resolveDirectLogo( propLogoUrl , institution ) ,
-    [ propLogoUrl , institution ]
+    () => resolveDirectLogo( propLogoUrl , institution , brandDomain ) ,
+    [ propLogoUrl , institution , brandDomain ]
   ) ;
 
   // 2. Estado exclusivo para resultados asíncronos de la API Brandfetch

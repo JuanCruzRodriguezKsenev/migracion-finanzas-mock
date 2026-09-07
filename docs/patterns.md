@@ -150,3 +150,8 @@ Los archivos que implementan este patrón son:
 *   [`SubscriptionIcon.tsx`](../src/features/subscriptions/components/SubscriptionIcon.tsx)
 *   [`AddSubscriptionModal.tsx`](../src/features/subscriptions/components/AddSubscriptionModal.tsx)
 *   [`CreateFinancialEntityForm.tsx`](../src/features/accounting/components/CreateFinancialEntityForm.tsx)
+
+### Separación de Marca y Dominio Web (`brandDomain`)
+Siguiendo el precedente establecido en `ledger_transactions` (`merchantName` / `merchantDomain`), las entidades que consumen logotipos externos separan explícitamente el nombre visible del dominio web:
+*   `financial_entities` almacena `name` (nombre de la institución), `brand_domain` (dominio web para Brandfetch) y `logo` (icono local de respaldo: `bank`, `wallet`, `cash`, `credit-card`).
+*   [`InstitutionLogo`](../src/shared/ui/display/InstitutionLogo/InstitutionLogo.tsx) recibe la propiedad opcional `brandDomain` para resolver sincrónicamente la CDN de Brandfetch sin depender de inspección heurística de cadenas (`includes( "." )`), manteniendo la deducción heurística únicamente como fallback de compatibilidad para registros previos.

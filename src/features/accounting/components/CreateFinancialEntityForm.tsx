@@ -13,13 +13,18 @@ import { FormInput }                         from "@/shared/ui/forms/Form/FormIn
 import { FormError }                         from "@/shared/ui/forms/Form/FormError" ;
 
 // Feature: Accounting
-import { createFinancialEntityAction } from "../actions/accountingActions" ;
-import styles                          from "./CreateAccountForm.module.css" ;
+import { createFinancialEntityAction , createAccountForEntityAction } from "../actions/accountingActions" ;
+import styles                                                        from "./CreateAccountForm.module.css" ;
 
 
 interface CreateFinancialEntityFormProps {
-  dict:       Awaited< ReturnType< typeof getDictionary > >["accountsPage"] ;
-  onSuccess?: () => void ;
+  dict:            Awaited< ReturnType< typeof getDictionary > >["accountsPage"] ;
+  onSuccess?:      () => void ;
+  /**
+   * Determina si se crea atómicamente la cuenta propia asociada con saldo inicial (flujo /accounts)
+   * o si se realiza un alta pura de la entidad financiera (flujo /contacts). Por defecto true.
+   */
+  withOwnAccount?: boolean ;
 }
 
 const COUNTRIES = [
@@ -93,13 +98,14 @@ function getDomainCountryFlag( domain: string ): string {
   return( "🌐" ) ;
 }
 
-export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancialEntityFormProps ) {
+export function CreateFinancialEntityForm( { dict , onSuccess , withOwnAccount = true }: CreateFinancialEntityFormProps ) {
   const router                           = useRouter() ;
   const [ isTransitioning , startTrans ] = useTransition() ;
   const [ error , setError ]             = useState< string | null >( null ) ;
 
   const [ name , setName ]               = useState( "" ) ;
   const [ logo , setLogo ]               = useState( "bank" ) ;
+  const [ brandDomain , setBrandDomain ] = useState< string | null >( null ) ;
   const [ color , setColor ]             = useState( "#6366f1" ) ;
   const [ balance , setBalance ]         = useState( "" ) ;
   const [ notice , setNotice ]           = useState< string | null >( null ) ;
@@ -141,52 +147,34 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
             )
           ) ;
 
-          // Generar placeholders locales y comerciales por defecto basados en el query
-          const localPlaceholders = [
-            {
-              name:   cleanQuery.charAt( 0 ).toUpperCase() + cleanQuery.slice( 1 ) ,
-              domain: `${cleanQuery.toLowerCase()}.com`
-            }
-          ] ;
+          // Consolidar resultados sin duplicados de dominio
+          const merged: { name: string ; domain: string ; icon?: string }[] = [] ;
+          const seen = new Set<string>() ;
 
-          if( selectedCountry ) {
-            localPlaceholders.push(
-              {
-                name:   cleanQuery.charAt( 0 ).toUpperCase() + cleanQuery.slice( 1 ) ,
-                domain: `${cleanQuery.toLowerCase()}.com.${selectedCountry}`
-              } ,
-              {
-                name:   cleanQuery.charAt( 0 ).toUpperCase() + cleanQuery.slice( 1 ) ,
-                domain: `${cleanQuery.toLowerCase()}.${selectedCountry}`
-              }
-            ) ;
-          }
-
-          const combined = [ ...localPlaceholders , ...responses.flat() ] ;
-
-          // Eliminar duplicados por domain (enriqueciendo placeholders si la API devuelve iconos o nombres reales)
-          const unique: { name: string ; domain: string ; icon?: string }[] = [] ;
-          const seen = new Set< string >() ;
-          for( const item of combined ) {
-            if( item && item.domain ) {
-              const domLower = item.domain.toLowerCase() ;
-              if( !seen.has( domLower ) ) {
-                seen.add( domLower ) ;
-                unique.push( item ) ;
-              } else {
-                const existingIdx = unique.findIndex( ( u ) => u.domain.toLowerCase() === domLower ) ;
-                if( ( existingIdx !== -1 ) && item.icon && !unique[existingIdx].icon ) {
-                  unique[existingIdx] = item ;
+          for( const res of responses ) {
+            if( Array.isArray( res ) ) {
+              for( const item of res ) {
+                if( item?.domain && !seen.has( item.domain ) ) {
+                  seen.add( item.domain ) ;
+                  merged.push( {
+                    name:   item.name || item.domain ,
+                    domain: item.domain ,
+                    icon:   item.icon
+                  } ) ;
                 }
               }
             }
           }
 
-          // Ordenar priorizando dominios con ccTLD del país seleccionado en el selector
-          const sorted = unique.sort( ( a , b ) => {
-            const aIsLocal = ( selectedCountry && a.domain.toLowerCase().endsWith( `.${selectedCountry}` ) ) ? 1 : 0 ;
-            const bIsLocal = ( selectedCountry && b.domain.toLowerCase().endsWith( `.${selectedCountry}` ) ) ? 1 : 0 ;
-            return( bIsLocal - aIsLocal ) ;
+          // Priorizar resultados del país seleccionado en la UI si corresponde
+          const sorted = merged.sort( ( a , b ) => {
+            if( selectedCountry ) {
+              const aLocal = a.domain.endsWith( `.${selectedCountry}` ) || a.domain.includes( `.${selectedCountry}.` ) ;
+              const bLocal = b.domain.endsWith( `.${selectedCountry}` ) || b.domain.includes( `.${selectedCountry}.` ) ;
+              if( aLocal && !bLocal ) { return( -1 ) ; }
+              if( !aLocal && bLocal ) { return( 1 ) ; }
+            }
+            return( 0 ) ;
           } ) ;
 
           setSuggestions( sorted.slice( 0 , 5 ) ) ;
@@ -203,7 +191,7 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
 
   const handleSelectSuggestion = async ( sugg: { name: string ; domain: string } ) => {
     setName( sugg.name ) ;
-    setLogo( sugg.domain ) ; // Guardamos el dominio en la columna 'logo'
+    setBrandDomain( sugg.domain ) ;
     setSuggestions( [] ) ;
     setShowDropdown( false ) ;
     setIsBrandFromApi( true ) ;
@@ -242,6 +230,7 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
   const handleClearBrandLink = () => {
     setIsBrandFromApi( false ) ;
     setName( "" ) ;
+    setBrandDomain( null ) ;
     setLogo( "bank" ) ;
     setColor( "#6366f1" ) ;
     setBalance( "" ) ;
@@ -279,26 +268,41 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
     startTrans( async () => {
       const rawCents = Math.floor( ( Number( balance ) || 0 ) * 100 ) ;
       const res = await createFinancialEntityAction( {
-        name:    name.trim() ,
-        logo ,
+        name:        name.trim() ,
+        logo:        isBrandFromApi ? "bank" : logo ,
+        brandDomain: isBrandFromApi ? brandDomain : null ,
         color ,
-        balance: rawCents
       } ) ;
 
-      if( res.success ) {
-        setName( "" ) ;
-        setLogo( "bank" ) ;
-        setColor( "#6366f1" ) ;
-        setBalance( "" ) ;
-        setIsBrandFromApi( false ) ;
-        setSuggestions( [] ) ;
-        setShowDropdown( false ) ;
-        router.refresh() ;
-        if( onSuccess ) {
-          onSuccess() ;
-        }
-      } else {
+      if( !res.success ) {
         setError( res.error ) ;
+        return ;
+      }
+
+      // Si se requiere crear la cuenta propia asociada (flujo /accounts)
+      if( withOwnAccount ) {
+        const accountRes = await createAccountForEntityAction( {
+          entityId: res.value.id ,
+          balance:  rawCents ,
+        } ) ;
+
+        if( !accountRes.success ) {
+          setError( accountRes.error ) ;
+          return ;
+        }
+      }
+
+      setName( "" ) ;
+      setBrandDomain( null ) ;
+      setLogo( "bank" ) ;
+      setColor( "#6366f1" ) ;
+      setBalance( "" ) ;
+      setIsBrandFromApi( false ) ;
+      setSuggestions( [] ) ;
+      setShowDropdown( false ) ;
+      router.refresh() ;
+      if( onSuccess ) {
+        onSuccess() ;
       }
     } ) ;
   } ;
@@ -312,7 +316,7 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
       {isBrandFromApi ? (
         <div className={styles.brandLinkedBanner}>
           <span>
-            ✨ Marca vinculada: <strong>{ name }</strong> <span className={styles.brandLinkedDomain}>({ logo })</span> { getDomainCountryFlag( logo ) }
+            ✨ Marca vinculada: <strong>{ name }</strong> <span className={styles.brandLinkedDomain}>({ brandDomain })</span> { brandDomain ? getDomainCountryFlag( brandDomain ) : "" }
           </span>
           <button
             type="button"
@@ -363,34 +367,36 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
         </div>
       )}
 
-      <div className={styles.row}>
-        <FormInput
-          label="Saldo Inicial de la Cuenta por Defecto"
-          type="number"
-          step="0.01"
-          placeholder="0.00"
-          value={balance}
-          onChange={ ( e ) => setBalance( e.target.value ) }
-          disabled={isTransitioning}
-          required
-        />
-      </div>
+      {withOwnAccount && (
+        <div className={styles.row}>
+          <FormInput
+            label="Saldo Inicial de la Cuenta por Defecto"
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            value={balance}
+            onChange={ ( e ) => setBalance( e.target.value ) }
+            disabled={isTransitioning}
+            required
+          />
+        </div>
+      )}
 
-      <div className={styles.row}>
-        <FormSelect
-          label="Icono / Logo de Respaldo"
-          value={logo}
-          onChange={ ( e ) => setLogo( e.target.value ) }
-          disabled={isTransitioning}
-          required
-        >
-          <option value="bank">Banco / Entidad Financiera</option>
-          <option value="wallet">Billetera Virtual</option>
-          <option value="cash">Efectivo / Caja</option>
-          <option value="credit-card">Tarjeta de Crédito</option>
-        </FormSelect>
+      {!isBrandFromApi && (
+        <div className={styles.row}>
+          <FormSelect
+            label="Icono / Logo de Respaldo"
+            value={logo}
+            onChange={ ( e ) => setLogo( e.target.value ) }
+            disabled={isTransitioning}
+            required
+          >
+            <option value="bank">Banco / Entidad Financiera</option>
+            <option value="wallet">Billetera Virtual</option>
+            <option value="cash">Efectivo / Caja</option>
+            <option value="credit-card">Tarjeta de Crédito</option>
+          </FormSelect>
 
-        {!isBrandFromApi && (
           <FormInput
             label="Color de la Entidad"
             type="color"
@@ -400,8 +406,8 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
             required
             containerStyle={{width: "100px"}}
           />
-        )}
-      </div>
+        </div>
+      )}
 
       <Button type="submit" isLoading={isTransitioning} className={styles.submitBtn}>
         { isTransitioning ? "Procesando..." : "Crear Entidad" }

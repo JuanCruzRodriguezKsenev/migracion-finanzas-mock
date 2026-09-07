@@ -12,10 +12,14 @@ import { executeIdempotent } from "@/shared/services/idempotencyService" ;
 import { ok , fail , Result } from "@/shared/lib/result" ;
 import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
-import { db }                 from "@/shared/db/client" ;
 
 // Feature: Accounting
-import { createTransactionSchema , createAccountSchema , createFinancialEntitySchema } from "../schemas/accounting.schema" ;
+import {
+  createTransactionSchema ,
+  createAccountSchema ,
+  createFinancialEntitySchema ,
+  createAccountForEntitySchema
+} from "../schemas/accounting.schema" ;
 import {
   createLedgerTransaction ,
   deleteLedgerTransaction ,
@@ -121,16 +125,16 @@ export async function createAccountAction( params: {
 
 /**
  * Registra una nueva entidad financiera (Banco, Billetera Virtual, etc.) en el espacio de trabajo.
- * Junto con ella, registra atómicamente su cuenta principal asociada por defecto.
+ * Es un alta pura a nivel organización que no genera cuentas contables por defecto.
  * 
- * @param params - Los parámetros para registrar la entidad financiera y su saldo inicial.
- * @returns Un objeto Result con la entidad financiera creada o error.
+ * @param params - Parámetros de la entidad financiera (nombre, logo e icono, color).
+ * @returns Un objeto Result con la entidad financiera creada o mensaje de error.
  */
 export async function createFinancialEntityAction( params: {
-  name:     string ;
-  logo?:    string ;
-  color?:   string ;
-  balance?: number ;
+  name:         string ;
+  logo?:        string | null ;
+  brandDomain?: string | null ;
+  color?:       string | null ;
 } ): Promise< Result<FinancialEntity , string> > {
   const session = await getServerSession( authOptions ) ;
 
@@ -145,62 +149,128 @@ export async function createFinancialEntityAction( params: {
     return( fail(errorMsg) ) ;
   }
 
-  const { name , logo , color , balance } = validation.data ;
+  const { name , logo , brandDomain , color } = validation.data ;
 
   logger.info( "[createFinancialEntityAction] Iniciando registro de entidad financiera..." , {
-    orgId:   session.user.organizationId ,
+    orgId: session.user.organizationId ,
     name ,
     logo ,
+    brandDomain ,
     color ,
-    balance
   } ) ;
 
   try {
-    const result = await db.transaction( async ( tx ) => {
-      // 1. Crear la entidad financiera
-      const nuevaEntidad = await financialEntityRepository.create( {
-        organizationId: session.user.organizationId ,
-        name ,
-        logo:           logo || null ,
-        color:          color || null ,
-      } , tx ) ;
-
-      logger.info( `[createFinancialEntityAction] Entidad financiera creada con ID: ${nuevaEntidad.id}. Generando cuenta asociada...` ) ;
-
-      // 2. Obtener cuentas para autogenerar el código correlativo de activo libre
-      const todasLasCuentas = await accountRepository.findAll( session.user.organizationId , tx ) ;
-      const codigoGenerado  = getNextCode( "asset" , todasLasCuentas ) ;
-
-      logger.info( `[createFinancialEntityAction] Código contable autogenerado para la cuenta principal: ${codigoGenerado}` ) ;
-
-      // 3. Crear la cuenta principal por defecto
-      const cuentaCreada = await accountRepository.create( {
-        organizationId: session.user.organizationId ,
-        code:           codigoGenerado ,
-        name:           `Cuenta Principal ${name}` ,
-        type:           "asset" ,
-        balance:        balance || 0 ,
-        currency:       "ARS" ,
-        entityId:       nuevaEntidad.id ,
-      } , tx ) ;
-
-      logger.info( `[createFinancialEntityAction] Cuenta principal creada con ID: ${cuentaCreada.id} y saldo: ${cuentaCreada.balance} centavos.` ) ;
-
-      return( nuevaEntidad ) ;
+    const nuevaEntidad = await financialEntityRepository.create( {
+      organizationId: session.user.organizationId ,
+      name ,
+      logo:           logo || null ,
+      brandDomain:    brandDomain || null ,
+      color:          color || null ,
     } ) ;
 
-    logger.info( `[createFinancialEntityAction] Registro completado exitosamente para la entidad: ${name}` ) ;
-    return( ok(result) ) ;
+    logger.info( `[createFinancialEntityAction] Registro completado exitosamente para la entidad: ${name} (ID: ${nuevaEntidad.id})` ) ;
+    return( ok(nuevaEntidad) ) ;
   } catch( error ) {
-    // Colisión del índice único org+code: dos altas concurrentes generaron el mismo código contable
+    if( (error as {code?: string})?.code === "23503" ) {
+      return( fail("Tu sesión referencia una organización inexistente. Cerrá sesión y volvé a ingresar.") ) ;
+    }
+    logger.error( "Error al registrar entidad en createFinancialEntityAction." , {error: String(error)} ) ;
+    return( fail("Error al registrar la entidad financiera en el servidor.") ) ;
+  }
+}
+
+/**
+ * Registra una cuenta contable principal de activo para una entidad financiera dada
+ * y, si se especifica un saldo inicial mayor a cero, emite el asiento contable de apertura
+ * garantizando la partida doble contra Patrimonio Neto.
+ * 
+ * @param params - Identificador de la entidad financiera y saldo inicial opcional en centavos.
+ * @returns Un objeto Result con la cuenta creada o mensaje de error.
+ */
+export async function createAccountForEntityAction( params: {
+  entityId: string ;
+  balance?: number ;
+} ): Promise< Result<Account , string> > {
+  const session = await getServerSession( authOptions ) ;
+
+  if( !session?.user?.organizationId ) {
+    return( fail("No autorizado para registrar cuentas.") ) ;
+  }
+
+  // 1. Validar parámetros con Zod en runtime
+  const validation = createAccountForEntitySchema.safeParse( params ) ;
+  if( !validation.success ) {
+    const errorMsg = validation.error.issues[0]?.message || "Parámetros de cuenta inválidos." ;
+    return( fail(errorMsg) ) ;
+  }
+
+  const { entityId } = validation.data ;
+  const balance      = validation.data.balance || 0 ;
+
+  try {
+    // 2. Verificar que la entidad pertenezca a la organización (aislamiento multi-tenant estricto)
+    const entidad = await financialEntityRepository.findById( entityId , session.user.organizationId ) ;
+    if( !entidad ) {
+      return( fail("Entidad financiera no encontrada o no pertenece a la organización.") ) ;
+    }
+
+    // 3. Consultar cuentas de la organización una sola vez
+    const todasLasCuentas = await accountRepository.findAll( session.user.organizationId ) ;
+
+    // 4. Si hay saldo inicial, localizar cuenta de patrimonio antes de crear nada
+    let ctaPatrimonio: Account | undefined ;
+    if( balance > 0 ) {
+      ctaPatrimonio = todasLasCuentas.find( ( c ) => c.code === "3.1.01.01" ) || todasLasCuentas.find( ( c ) => c.type === "equity" ) ;
+      if( !ctaPatrimonio ) {
+        return( fail("No se encontró una cuenta de patrimonio neto para registrar el asiento de apertura.") ) ;
+      }
+    }
+
+    const codigoGenerado = getNextCode( "asset" , todasLasCuentas ) ;
+
+    // 5. Crear la cuenta con saldo 0 siempre dentro de su propia persistencia
+    const cuentaCreada = await accountRepository.create( {
+      organizationId: session.user.organizationId ,
+      code:           codigoGenerado ,
+      name:           `Cuenta Principal ${entidad.name}` ,
+      type:           "asset" ,
+      balance:        0 ,
+      currency:       "ARS" ,
+      entityId:       entidad.id ,
+    } ) ;
+
+    logger.info( `[createAccountForEntityAction] Cuenta principal creada con ID: ${cuentaCreada.id} para entidad: ${entidad.name}` ) ;
+
+    // 6. Asiento de apertura sólo si balance > 0 (createLedgerTransaction abre su propia transacción)
+    if( (balance > 0) && ctaPatrimonio ) {
+      const txResult = await createLedgerTransaction( {
+        organizationId: session.user.organizationId ,
+        description:    `Apertura ${cuentaCreada.name}` ,
+        occurredAt:     new Date() ,
+        entries: [
+          { accountId: cuentaCreada.id  , debit: balance , credit: 0       } ,
+          { accountId: ctaPatrimonio.id , debit: 0       , credit: balance } ,
+        ] ,
+      } ) ;
+
+      if( !txResult.success ) {
+        logger.error( `[createAccountForEntityAction] Falló asiento de apertura para cuenta ${cuentaCreada.id}: ${txResult.error}` ) ;
+        return( fail(`La cuenta fue creada con saldo cero, pero falló el asiento de apertura: ${txResult.error}`) ) ;
+      }
+
+      cuentaCreada.balance = balance ;
+    }
+
+    return( ok(cuentaCreada) ) ;
+  } catch( error ) {
     if( (error as {code?: string})?.code === "23505" ) {
       return( fail("Conflicto al generar el código contable. Por favor, intente de nuevo.") ) ;
     }
     if( (error as {code?: string})?.code === "23503" ) {
       return( fail("Tu sesión referencia una organización inexistente. Cerrá sesión y volvé a ingresar.") ) ;
     }
-    logger.error( "Error al registrar entidad en createFinancialEntityAction." , {error: String(error)} ) ;
-    return( fail("Error al registrar la entidad financiera en el servidor.") ) ;
+    logger.error( "Error en createAccountForEntityAction." , {error: String(error)} ) ;
+    return( fail("Error al crear la cuenta contable para la entidad.") ) ;
   }
 }
 

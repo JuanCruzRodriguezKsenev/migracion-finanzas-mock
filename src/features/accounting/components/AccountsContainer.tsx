@@ -251,7 +251,7 @@ export function AccountsContainer( {
                       <div className={styles.entityLogoBadge}>
                         <InstitutionLogo
                           institution={institution}
-                          logoUrl={financialEntities.find( ( e ) => e.name === institution )?.logo}
+                          brandDomain={financialEntities.find( ( e ) => e.name === institution )?.brandDomain}
                         />
                       </div>
                     </div>
