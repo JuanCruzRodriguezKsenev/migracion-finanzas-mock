@@ -13,8 +13,13 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     `accounts` con `balance: integer` y sin `entityId`. Antes de implementar un RFC viejo, contrastar
     su esquema contra `src/features/*/schema.db.ts`.
 *   **`createFinancialEntityAction` crea la entidad Y una cuenta propia** (`Cuenta Principal <nombre>`,
-    tipo `asset`). No es un "crear entidad" puro. Reusar `CreateFinancialEntityForm` desde contactos
-    introdujo un bug por esto.
+    tipo `asset`, `accountingActions.ts:158-190`). No es un "crear entidad" puro. Como
+    `PaymentMethodsPanel.tsx:415` reusa `CreateFinancialEntityForm` sin variante, dar de alta una
+    entidad para el método de cobro de un contacto **crea una cuenta de activo del usuario en un banco
+    donde no opera**. Peor: el form expone "Saldo Inicial" también ahí, y `accountRepository.create`
+    (`:87`) es un insert pelado sin asiento — un saldo > 0 **viola Debe = Haber**. `entityId` tiene
+    `onDelete: "restrict"`, así que limpiar exige borrar antes la cuenta espuria.
+    Documentado en `TECHNICAL_DEBT.md` § Abierto desde 2026-09-07.
 *   **`financial_entities.logo` hace dos trabajos**: guarda un dominio de marca o un nombre de ícono, y
     `InstitutionLogo` los desambigua olfateando strings. En el formulario de entidad, el `FormSelect`
     de ícono no tiene el guard `!isBrandFromApi` y **pisa el dominio en silencio**.
@@ -44,10 +49,21 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Estado
 
-*   Rama `feat/contacts-management`, limpia, **13 commits por delante de `master`** (arrastra Tandas I/J/K,
-    toda la Fase 0 y el Bloque B). `master` nunca recibió el merge. 298 tests.
+*   Rama `chore/gobernanza-reglas-neutrales` (sale de `feat/contacts-management`, no de master), limpia,
+    **15 commits por delante de `master`**. Arrastra Tandas I/J/K, Fase 0, Bloque B y la gobernanza.
+    `master` sigue sin recibir nada. 298 tests.
+*   **Dos ramas pendientes de merge a master, en orden**: primero `feat/contacts-management`, después
+    `chore/gobernanza-reglas-neutrales` (la segunda es descendiente de la primera).
 *   Fase 1 del artifact: RFC 006 cerrado; **RFC 015 (perfil, preferencias y consolidación) es el único
     RFC en `DRAFT`** — falta que Juan Cruz lo apruebe antes de tocar código.
-*   Pendiente propio: plan de corrección de entidades (partir la acción, partir `logo`, limpiar `kk`).
+*   Próximo módulo del roadmap: Tarjetas `/cards` (RFC 007) o Metas `/goals` (RFC 011).
+*   **Plan de corrección de entidades ESCRITO** en `docs/planes/fix-entidades-financieras.md`
+    (2026-09-07), listo para `obra`. Decisiones del usuario: asiento de apertura contra `3.1.01.01`,
+    diagnóstico SQL sin borrar datos, `brand_domain` como columna nueva, y `/accounts` mantiene el
+    combo de un solo submit.
+*   **El `kk` que esta memoria mencionaba no existe**: `grep -rn "\bkk\b" src/ docs/` da cero.
+    Verificado el 2026-09-07; era una nota errónea.
+*   Otros pendientes propios: estrenar `obra`; evaluar `model: sonnet` en `verificador`; revisar
+    duplicación entre `ARCHITECTURE.md` y `.agents/AGENTS.md` §2–§5.
 *   El artifact de la hoja de ruta trae datos viejos en el encabezado (rama `feat/transactions-management`,
     253 tests, RFC 019 en DRAFT, RFC 015 pintado APPROVED). Corregir cuando se lo edite.
