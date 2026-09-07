@@ -18,6 +18,8 @@ function makeAccount( overrides: Partial<Account> ): Account {
     balance:        0 ,
     currency:       "ARS" ,
     entityId:       null ,
+    cbuCvu:         null ,
+    alias:          null ,
     createdAt:      new Date() ,
     ...overrides ,
   } ) ;
@@ -137,22 +139,22 @@ describe( "derivarTipo" , () => {
 describe( "derivarTipo — cambios de moneda" , () => {
   const cajaArs: Account = {
     id: "acc-ars" , organizationId: "org-1" , code: "1.1.01" , name: "Caja ARS" ,
-    type: "asset" , balance: 0 , currency: "ARS" , entityId: null , createdAt: new Date() ,
+    type: "asset" , balance: 0 , currency: "ARS" , entityId: null , cbuCvu: null , alias: null , createdAt: new Date() ,
   } ;
 
   const cajaUsd: Account = {
     id: "acc-usd" , organizationId: "org-1" , code: "1.1.02" , name: "Caja USD" ,
-    type: "asset" , balance: 0 , currency: "USD" , entityId: null , createdAt: new Date() ,
+    type: "asset" , balance: 0 , currency: "USD" , entityId: null , cbuCvu: null , alias: null , createdAt: new Date() ,
   } ;
 
   const posicionArs: Account = {
     id: "pos-ars" , organizationId: "org-1" , code: "3.3.01-ARS" , name: "Posición de cambio (ARS)" ,
-    type: "equity" , balance: 0 , currency: "ARS" , entityId: null , createdAt: new Date() ,
+    type: "equity" , balance: 0 , currency: "ARS" , entityId: null , cbuCvu: null , alias: null , createdAt: new Date() ,
   } ;
 
   const posicionUsd: Account = {
     id: "pos-usd" , organizationId: "org-1" , code: "3.3.01-USD" , name: "Posición de cambio (USD)" ,
-    type: "equity" , balance: 0 , currency: "USD" , entityId: null , createdAt: new Date() ,
+    type: "equity" , balance: 0 , currency: "USD" , entityId: null , cbuCvu: null , alias: null , createdAt: new Date() ,
   } ;
 
   const cuentas = [ cajaArs , cajaUsd , posicionArs , posicionUsd ] ;

@@ -16,6 +16,8 @@ function makeAccount( code: string , type: string ): Account {
     balance:        0 ,
     currency:       "ARS" ,
     entityId:       null ,
+    cbuCvu:         null ,
+    alias:          null ,
     createdAt:      new Date() ,
   } ) ;
 }
