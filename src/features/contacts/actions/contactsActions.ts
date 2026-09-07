@@ -19,7 +19,7 @@ import {
   contactFormSchema ,
   paymentMethodFormSchema ,
   ContactFormData ,
-  PaymentMethodFormData
+  PaymentMethodFormInput
 } from "../schemas/contacts.schema" ;
 import {
   contactsRepository ,
@@ -101,7 +101,7 @@ export async function createContactAction(
 
   const parsed = contactFormSchema.safeParse( rawData ) ;
   if( !parsed.success ) {
-    return( fail( parsed.error.errors[0]?.message || "Datos del contacto inválidos." ) ) ;
+    return( fail( parsed.error.issues[0]?.message || "Datos del contacto inválidos." ) ) ;
   }
 
   try {
@@ -140,7 +140,7 @@ export async function updateContactAction(
 
   const parsed = contactFormSchema.safeParse( rawData ) ;
   if( !parsed.success ) {
-    return( fail( parsed.error.errors[0]?.message || "Datos del contacto inválidos." ) ) ;
+    return( fail( parsed.error.issues[0]?.message || "Datos del contacto inválidos." ) ) ;
   }
 
   try {
@@ -232,7 +232,7 @@ export async function unarchiveContactAction(
  */
 export async function addPaymentMethodAction(
   contactId: string ,
-  rawData:   PaymentMethodFormData
+  rawData:   PaymentMethodFormInput
 ): Promise< Result< ContactPaymentMethodWithEntity , string > > {
   const session = await getServerSession( authOptions ) ;
 
@@ -242,7 +242,7 @@ export async function addPaymentMethodAction(
 
   const parsed = paymentMethodFormSchema.safeParse( rawData ) ;
   if( !parsed.success ) {
-    return( fail( parsed.error.errors[0]?.message || "Datos del método de cobro inválidos." ) ) ;
+    return( fail( parsed.error.issues[0]?.message || "Datos del método de cobro inválidos." ) ) ;
   }
 
   try {

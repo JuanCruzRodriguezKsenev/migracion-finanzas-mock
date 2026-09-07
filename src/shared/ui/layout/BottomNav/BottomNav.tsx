@@ -10,7 +10,7 @@ import { useParams , usePathname } from "next/navigation" ;
 import Link from "next/link" ;
 
 // Shared
-import { IconDashboard , IconAccounts , IconRepeat , IconMenu } from "@/shared/ui/display/Icons/Icons" ;
+import { IconDashboard , IconAccounts , IconRepeat , IconContacts , IconMenu } from "@/shared/ui/display/Icons/Icons" ;
 import styles from "./BottomNav.module.css" ;
 
 interface BottomNavProps {
@@ -19,6 +19,7 @@ interface BottomNavProps {
     dashboard:     string ;
     accounts:      string ;
     subscriptions: string ;
+    contacts?:     string ;
   } ;
 }
 
@@ -36,6 +37,7 @@ export function BottomNav( {dict , onMenuClick}: BottomNavProps ) {
   const isDashboardActive     = ( pathname === `/${lang}` ) ;
   const isAccountsActive      = ( pathname.includes("/accounts") ) ;
   const isSubscriptionsActive = ( pathname.includes("/subscriptions") ) ;
+  const isContactsActive      = ( pathname.includes("/contacts") ) ;
 
   return(
     <nav className={styles.bottomNav}>
@@ -61,6 +63,14 @@ export function BottomNav( {dict , onMenuClick}: BottomNavProps ) {
       >
         <IconRepeat size={20} />
         <span>{dict.subscriptions}</span>
+      </Link>
+
+      <Link
+        href={ `/${lang}/contacts` }
+        className={ `${styles.bottomNavLink} ${isContactsActive ? styles.active : ""}` }
+      >
+        <IconContacts size={20} />
+        <span>{dict.contacts || "Contactos"}</span>
       </Link>
 
       <button className={styles.bottomNavLink} onClick={onMenuClick}>

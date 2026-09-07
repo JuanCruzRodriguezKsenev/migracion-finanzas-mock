@@ -22,7 +22,7 @@ import {
  */
 export const contactFormSchema = z.object( {
   name: z
-    .string( { required_error: "El nombre es obligatorio." } )
+    .string( { message: "El nombre es obligatorio." } )
     .trim()
     .min( 2 , "El nombre debe tener al menos 2 caracteres." )
     .max( 150 , "El nombre no puede exceder 150 caracteres." ) ,
@@ -55,11 +55,11 @@ export type ContactFormData = z.infer< typeof contactFormSchema > ;
 export const paymentMethodFormSchema = z
   .object( {
     financialEntityId: z
-      .string( { required_error: "La entidad financiera es obligatoria." } )
+      .string( { message: "La entidad financiera es obligatoria." } )
       .uuid( "ID de entidad financiera inválido." ) ,
     type: z
       .enum( [ "bank_account" , "wallet" ] , {
-        errorMap: () => ( { message: "El tipo debe ser 'bank_account' o 'wallet'." } ) ,
+        error: "El tipo debe ser 'bank_account' o 'wallet'." ,
       } )
       .default( "wallet" ) ,
     cbuCvu: z
@@ -102,4 +102,5 @@ export const paymentMethodFormSchema = z
     }
   ) ;
 
-export type PaymentMethodFormData = z.infer< typeof paymentMethodFormSchema > ;
+export type PaymentMethodFormData  = z.infer< typeof paymentMethodFormSchema > ;
+export type PaymentMethodFormInput = z.input< typeof paymentMethodFormSchema > ;

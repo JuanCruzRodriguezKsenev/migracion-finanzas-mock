@@ -16,6 +16,7 @@ import {
   IconTransactions ,
   IconAccounts ,
   IconRepeat ,
+  IconContacts ,
   IconSandbox ,
   IconClose
 } from "@/shared/ui/display/Icons/Icons" ;
@@ -30,6 +31,7 @@ interface NavbarProps {
     accounts:       string ;
     transactions?:  string ;
     subscriptions:  string ;
+    contacts?:      string ;
     settings:       string ;
     sandbox:        string ;
     logout:         string ;
@@ -52,8 +54,9 @@ export function Navbar( {dict , isOpen , onClose}: NavbarProps ) {
   const isDashboardActive    = ( pathname === `/${lang}` ) ;
   const isSandboxActive      = ( pathname === `/${lang}/sandbox` ) ;
   const isTransactionsActive = ( pathname === `/${lang}/transactions` ) ;
-  const isAccountsActive     = ( pathname === `/${lang}/accounts` ) ;
+  const isAccountsActive      = ( pathname === `/${lang}/accounts` ) ;
   const isSubscriptionsActive = ( pathname === `/${lang}/subscriptions` ) ;
+  const isContactsActive      = ( pathname === `/${lang}/contacts` ) ;
 
   return(
     <aside className={ `${styles.navbar} ${isOpen ? styles.open : ""}` }>
@@ -108,6 +111,12 @@ export function Navbar( {dict , isOpen , onClose}: NavbarProps ) {
               <Link href={ `/${lang}/subscriptions` } className={ `${styles.link} ${isSubscriptionsActive ? styles.active : ""}` }>
                 <IconRepeat size={15} />
                 <span>{dict.subscriptions}</span>
+              </Link>
+            </li>
+            <li>
+              <Link href={ `/${lang}/contacts` } className={ `${styles.link} ${isContactsActive ? styles.active : ""}` }>
+                <IconContacts size={15} />
+                <span>{dict.contacts || "Contactos"}</span>
               </Link>
             </li>
           </ul>

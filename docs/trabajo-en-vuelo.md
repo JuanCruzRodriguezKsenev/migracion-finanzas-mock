@@ -12,12 +12,12 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `feat/transactions-management` (Módulo de Transacciones y Despachador Outbox completados integralmente con pruebas y build de producción exitoso).
+**Rama activa:** `feat/contacts-management` (Módulo de Contactos y Cuentas de Cobro — RFC 006 completado integralmente con pruebas y build de producción exitoso).
 
-**Estado:** 🟢 **Módulo `/transactions` y Despachador Outbox (RFC 020) finalizados. Esquema contable con `occurred_at` (migración `0014_real_komodo.sql`), DAL con paginación por cursor determinístico `(occurred_at, id)`, búsqueda y filtros. Soporte multimoneda con balance Debe=Haber validado por divisa, transacciones de cambio de divisas (4 asientos contra `3.3.01-<MONEDA>`) y reversión contable ACID irrepetible con bloqueo `SELECT FOR UPDATE` (migración `0015_icy_blizzard.sql`). Despachador Outbox (`outboxDispatcher.ts`) con ciclo desacoplado en 3 pasos (`SELECT ... FOR UPDATE SKIP LOCKED` hacia `PROCESSING`, despacho asíncrono sin retención de transacciones DB, y asentamiento a `SENT`/`FAILED`), recuperación automática de huérfanos con incremento de intentos y pase a FAILED, asentamiento idempotente protegido, purga periódica a 30 días (`purgeOldSentEvents`), script CLI `pnpm db:outbox` (`dispatchOutbox.ts`) e índice de polling `outbox_status_created_idx` (migración `0016_eminent_roxanne_simpson.sql`). Índice único en `monthly_summaries` por `(organization_id, year, month)` (migración `0017_free_iron_monger.sql`). Migración de 9 columnas monetarias a `bigint` (modo number, RFC 019, migración `0018_slimy_wiccan.sql`). Regularización de RFC 018 y RFC 019 a APPROVED. Primitivas compartidas accesibles `DataTable` y `SearchInput`. UI reactiva con Server Actions, selector de columnas visibles y badges de marcas. 34 suites de test (256 pruebas) pasando en verde, 0 advertencias ESLint y build exitoso.**
+**Estado:** 🟢 **Módulo `/contacts` y Métodos de Cobro (RFC 006) finalizados. Enmiendas arquitectónicas aplicadas y RFC 006 en APPROVED; decisión de cotizaciones registrada en RFC 015 (DRAFT). Esquema Drizzle (`contacts`, `contact_payment_methods`, y extensión con `cbu_cvu`/`alias` en `accounts`) con migración `0019_tidy_piledriver.sql` aplicada. Validadores puros de identificadores argentinos (CBU con doble dígito verificador BCRA, Alias AFIP 6-20 caracteres y CUIT módulo 11). DAL `contactsRepository.ts` con aislamiento multi-tenant transitivo obligatorio, búsqueda por texto, baja lógica (`archived_at`) y actualización transaccional de predeterminado. Server Actions (`contactsActions.ts`) tipadas con Result pattern y esquemas Zod. UI reactiva en `/contacts` (`ContactsContainer`, `ContactsTable`, `ContactFormModal`, `PaymentMethodsPanel` con alta al vuelo reutilizando `CreateFinancialEntityForm`). Integración en navegación (`Navbar`, `BottomNav`, `IconContacts`) y diccionarios i18n (`es`, `en`, `br`). 39 suites de test (298 pruebas) pasando en verde, 0 advertencias ESLint y build de producción exitoso.**
 
 **Próximo paso de desarrollo:**
-Fase 0 completada. Portar siguiente módulo de finanzas según el inventario de RFCs (Tarjetas `/tarjetas` — RFC 007 o Metas `/metas` — RFC 011).
+Merge de `feat/contacts-management` a master o continuar con el siguiente módulo financiero del roadmap (Tarjetas `/cards` — RFC 007 o Metas `/goals` — RFC 011).
 
 ---
 
@@ -46,6 +46,7 @@ Fase 0 completada. Portar siguiente módulo de finanzas según el inventario de 
 | **Fase 0 (A2)** | `feat/transactions-management` | 🟢 **Completada** | Índice único `monthly_summaries_org_year_month_unique` (migración `0017_free_iron_monger.sql`). |
 | **Fase 0 (A3)** | `feat/transactions-management` | 🟢 **Completada** | Regularización RFC 018 a APPROVED con estado de implementación del core contable (migraciones 0012–0016). |
 | **Fase 0 (A4)** | `feat/transactions-management` | 🟢 **Completada** | RFC 019 y migración de 9 columnas monetarias a bigint (modo number, migración `0018_slimy_wiccan.sql`). |
+| **Bloque B** | `feat/contacts-management` | 🟢 **Completada** | Agenda de contactos y métodos de cobro en `/contacts` (RFC 006, migración `0019_tidy_piledriver.sql`, validadores CBU/Alias/CUIT, DAL transitivo multi-tenant, 42 tests nuevos de contactos, 298 tests totales). |
 
 ---
 

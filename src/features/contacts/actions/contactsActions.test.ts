@@ -3,7 +3,7 @@
  * Pruebas unitarias y de integración para las Server Actions de Contactos y Métodos de Cobro.
  */
 // Librerías externas
-import { describe , it , expect , vi , beforeEach } from "vitest" ;
+import { describe , it , expect , vi , beforeEach , afterEach , afterAll } from "vitest" ;
 import { getServerSession }                         from "next-auth" ;
 import type { Session }                             from "next-auth" ;
 
@@ -42,13 +42,17 @@ describe( "contactsActions.ts — Server Actions" , () => {
   let otherOrg: string ;
   let entityId: string ;
 
-  beforeEach( async() => {
-    vi.clearAllMocks() ;
-
+  const cleanDb = async() => {
     await db.delete( contactPaymentMethods ) ;
     await db.delete( contacts ) ;
     await db.delete( financialEntities ) ;
     await db.delete( organizations ) ;
+  } ;
+
+  beforeEach( async() => {
+    vi.clearAllMocks() ;
+
+    await cleanDb() ;
 
     const [ org1 ] = await db
       .insert( organizations )
@@ -78,6 +82,14 @@ describe( "contactsActions.ts — Server Actions" , () => {
       user: { id: "user-1" , organizationId: orgId , name: "Test User" } ,
       expires: "9999-12-31" ,
     } as unknown as Session ) ;
+  } ) ;
+
+  afterEach( async() => {
+    await cleanDb() ;
+  } ) ;
+
+  afterAll( async() => {
+    await cleanDb() ;
   } ) ;
 
   it( "falla si el usuario no tiene sesión activa" , async() => {

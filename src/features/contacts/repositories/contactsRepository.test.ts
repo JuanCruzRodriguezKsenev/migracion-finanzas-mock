@@ -4,7 +4,7 @@
  * Verifica aislamiento multi-tenant transitivo, baja lógica y setDefault transaccional.
  */
 // Librerías externas
-import { describe , it , expect , beforeEach } from "vitest" ;
+import { describe , it , expect , beforeEach , afterEach , afterAll } from "vitest" ;
 
 // Shared
 import { db } from "@/shared/db/client" ;
@@ -23,12 +23,16 @@ describe( "contactsRepository — DAL de Contactos y Métodos de Cobro" , () => 
   let org2Id: string ;
   let entityId: string ;
 
-  beforeEach( async() => {
-    // 1. Limpiar tablas
+  const cleanDb = async() => {
     await db.delete( contactPaymentMethods ) ;
     await db.delete( contacts ) ;
     await db.delete( financialEntities ) ;
     await db.delete( organizations ) ;
+  } ;
+
+  beforeEach( async() => {
+    // 1. Limpiar tablas
+    await cleanDb() ;
 
     // 2. Crear organizaciones para pruebas multi-tenant
     const [ org1 ] = await db
@@ -54,6 +58,14 @@ describe( "contactsRepository — DAL de Contactos y Métodos de Cobro" , () => 
       } )
       .returning() ;
     entityId = entity.id ;
+  } ) ;
+
+  afterEach( async() => {
+    await cleanDb() ;
+  } ) ;
+
+  afterAll( async() => {
+    await cleanDb() ;
   } ) ;
 
   describe( "Gestión de Contactos (CRUD y Búsqueda)" , () => {
