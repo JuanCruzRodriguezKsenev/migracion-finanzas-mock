@@ -47,6 +47,8 @@ export const accounts = pgTable( "accounts" , {
   balance:        bigint( "balance" , {mode: "number"} ).default( 0 ).notNull() , // Saldo en centavos. Negativo para pasivos o sobregiros
   currency:       varchar( "currency" , {length: 10} ).default( "ARS" ).notNull() ,
   entityId:       uuid( "entity_id" ).references( () => financialEntities.id , {onDelete: "restrict"} ) , // Entidad vinculada
+  cbuCvu:         varchar( "cbu_cvu" , {length: 22} ) , // Datos de transferencia propios (22 dígitos)
+  alias:          varchar( "alias"   , {length: 20} ) , // Alias bancario/billetera (6-20 caracteres)
   createdAt:      timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
 } , ( table ) => { return( {
   uniqueOrgCode: uniqueIndex( "accounts_org_code_unique" ).on( table.organizationId , table.code ) ,

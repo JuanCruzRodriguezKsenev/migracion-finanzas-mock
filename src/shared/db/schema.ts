@@ -6,5 +6,6 @@
 // Features
 export * from "@/features/subscriptions/schema.db" ;
 export * from "@/features/accounting/schema.db" ;
+export * from "@/features/contacts/schema.db" ;
 export * from "@/features/profile/schema.db" ;
 export * from "@/features/auth/schema.db" ;
