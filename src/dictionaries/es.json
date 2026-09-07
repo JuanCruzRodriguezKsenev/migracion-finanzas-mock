@@ -46,7 +46,8 @@
     "submitBtn": "Ingresar",
     "loadingBtn": "Cargando...",
     "errorMsg": "Credenciales incorrectas. Intenta de nuevo.",
-    "unexpectedError": "Ocurrió un error inesperado al iniciar sesión."
+    "unexpectedError": "Ocurrió un error inesperado al iniciar sesión.",
+    "tooManyAttempts": "Demasiados intentos fallidos. Esperá unos minutos antes de volver a intentar."
   },
   "accountsPage": {
     "title": "Cuentas Financieras",

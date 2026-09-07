@@ -33,6 +33,7 @@ async function main() {
     const contraseniaPlana = "AdminPass123!" ;
 
     // 1. Garantizar idempotencia limpiando registros previos en el orden correcto
+    // Se preservan organizations y users con upsert para no invalidar sesiones JWT activas
     console.log( "Limpiando registros previos..." ) ;
     await db.delete( subscriptions      ) ;
     await db.delete( ledgerEntries      ) ;
@@ -42,24 +43,26 @@ async function main() {
     await db.delete( financialEntities  ) ;
     await db.delete( categories         ) ;
     await db.delete( profiles           ) ;
-    await db.delete( users              ) ;
-    await db.delete( organizations      ) ;
 
-    // 2. Crear Organización y hashear contraseña en paralelo
-    const [ [org] , {hash , salt} ] = await Promise.all( [
+    // 2. Crear u obtener Organización demo existente y hashear contraseña en paralelo
+    const [ [org] , {hash , salt , params} ] = await Promise.all( [
       db
         .insert( organizations )
         .values( {
           name: "Finanzas Familiares Demo" ,
-          slug: "finanzas-familiares-demo"
+          slug: "finanzas-familiares-demo" ,
+        } )
+        .onConflictDoUpdate( {
+          target: organizations.slug ,
+          set:    { name: "Finanzas Familiares Demo" } ,
         } )
         .returning() ,
-      hashPassword( contraseniaPlana )
+      hashPassword( contraseniaPlana ) ,
     ] ) ;
 
     console.log( `Organización demo creada con ID: ${org.id}` ) ;
 
-    // 3. Crear Usuario administrador de prueba
+    // 3. Crear u obtener Usuario administrador demo (upsert por email)
     const [ usuario ] = await db
       .insert( users )
       .values( {
@@ -68,13 +71,26 @@ async function main() {
         name:           "Admin Demo" ,
         role:           "owner" ,
         passwordHash:   hash ,
-        salt:           salt
+        salt:           salt ,
+        hashParams:     params ,
+      } )
+      .onConflictDoUpdate( {
+        target: users.email ,
+        set: {
+          organizationId: org.id ,
+          name:           "Admin Demo" ,
+          role:           "owner" ,
+          passwordHash:   hash ,
+          salt:           salt ,
+          hashParams:     params ,
+          updatedAt:      new Date() ,
+        } ,
       } )
       .returning() ;
 
     console.log( `Usuario demo creado con Email: ${usuario.email}` ) ;
 
-    // 4. Crear Perfil y Preferencias asociadas en Argentina/ARS
+    // 4. Crear Perfil y Preferencias asociadas en Argentina/ARS (idempotente)
     await db
       .insert( profiles )
       .values( {
@@ -94,7 +110,28 @@ async function main() {
         defaultAccount:   "Caja de Ahorro Galicia" ,
         planName:         "Básico" ,
         planBilling:      "Mensual" ,
-        planNextCharge:   ""
+        planNextCharge:   "" ,
+      } )
+      .onConflictDoUpdate( {
+        target: profiles.userId ,
+        set: {
+          phone:            "+54 9 11 1234 5678" ,
+          currency:         "Peso argentino (ARS)" ,
+          timezone:         "(GMT-03:00) Buenos Aires" ,
+          bio:              "Administrador del panel financiero de FinanzIA." ,
+          theme:            "system" ,
+          defaultView:      "Dashboard" ,
+          fastLogin:        true ,
+          weeklyStart:      "Lunes" ,
+          dateFormat:       "DD/MM/YYYY" ,
+          numberFormat:     "1.234,56" ,
+          roundAmounts:     false ,
+          includeTransfers: true ,
+          defaultAccount:   "Caja de Ahorro Galicia" ,
+          planName:         "Básico" ,
+          planBilling:      "Mensual" ,
+          planNextCharge:   "" ,
+        } ,
       } ) ;
 
     console.log( "Perfil del administrador inicializado con éxito." ) ;

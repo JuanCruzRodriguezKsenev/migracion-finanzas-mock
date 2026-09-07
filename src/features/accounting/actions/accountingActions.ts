@@ -102,6 +102,9 @@ export async function createAccountAction( params: {
     if( (error as {code?: string})?.code === "23505" ) {
       return( fail("Ya existe una cuenta con ese código contable. Por favor, intente de nuevo.") ) ;
     }
+    if( (error as {code?: string})?.code === "23503" ) {
+      return( fail("Tu sesión referencia una organización inexistente. Cerrá sesión y volvé a ingresar.") ) ;
+    }
     logger.error( "Error al crear cuenta en createAccountAction." ,  {error: String(error)} ) ;
     return( fail("Error al crear la cuenta contable en el servidor.") ) ;
   }
@@ -183,6 +186,9 @@ export async function createFinancialEntityAction( params: {
     // Colisión del índice único org+code: dos altas concurrentes generaron el mismo código contable
     if( (error as {code?: string})?.code === "23505" ) {
       return( fail("Conflicto al generar el código contable. Por favor, intente de nuevo.") ) ;
+    }
+    if( (error as {code?: string})?.code === "23503" ) {
+      return( fail("Tu sesión referencia una organización inexistente. Cerrá sesión y volvé a ingresar.") ) ;
     }
     logger.error( "Error al registrar entidad en createFinancialEntityAction." , {error: String(error)} ) ;
     return( fail("Error al registrar la entidad financiera en el servidor.") ) ;
@@ -268,6 +274,9 @@ export async function createLedgerTransactionAction(
 
     return( ok(result.value) ) ;
   } catch( error ) {
+    if( (error as {code?: string})?.code === "23503" ) {
+      return( fail("Tu sesión referencia una organización inexistente. Cerrá sesión y volvé a ingresar.") ) ;
+    }
     logger.error( "Error en createLedgerTransactionAction." , {error: String(error)} ) ;
     
     return( fail(((error as Error).message) || "Error al registrar la transacción contable.") ) ;
@@ -294,6 +303,9 @@ export async function deleteLedgerTransactionAction( transactionId: string ): Pr
 
     return( ok(true) ) ;
   } catch( error ) {
+    if( (error as {code?: string})?.code === "23503" ) {
+      return( fail("Tu sesión referencia una organización inexistente. Cerrá sesión y volvé a ingresar.") ) ;
+    }
     logger.error( "Error al eliminar transacción en deleteLedgerTransactionAction." , {error: String(error)} ) ;
     
     return( fail("Error al intentar eliminar la transacción contable.") ) ;

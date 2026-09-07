@@ -2,7 +2,15 @@
 import { describe , it , expect } from "vitest" ;
 
 // Feature: Auth
-import { hashPassword , verifyPassword } from "./authService" ;
+import {
+  hashPassword ,
+  verifyPassword ,
+  serializarParams ,
+  parsearParams ,
+  necesitaRehash ,
+  PARAMS_ACTUALES ,
+  PARAMS_LEGADO
+} from "./authService" ;
 
 /**
  * Suite de pruebas unitarias para el servicio de autenticación y hashing.
@@ -46,9 +54,9 @@ describe( "authService" , () => {
   it( "debería verificar la contraseña de forma exitosa con el hash y salt correctos" , async () => {
     const contrasenia = "PasswordSeguro2026!" ;
     
-    const { hash , salt } = await hashPassword( contrasenia ) ;
+    const { hash , salt , params } = await hashPassword( contrasenia ) ;
 
-    const esValido = await verifyPassword( contrasenia , hash , salt ) ;
+    const esValido = await verifyPassword( contrasenia , hash , salt , params ) ;
     
     expect( esValido ).toBe( true ) ;
   } ) ;
@@ -61,9 +69,9 @@ describe( "authService" , () => {
     const contraseniaCorrecta   = "PasswordSeguro2026!" ;
     const contraseniaIncorrecta = "PasswordErroneo!" ;
 
-    const { hash , salt } = await hashPassword( contraseniaCorrecta ) ;
+    const { hash , salt , params } = await hashPassword( contraseniaCorrecta ) ;
 
-    const esValido = await verifyPassword( contraseniaIncorrecta , hash , salt ) ;
+    const esValido = await verifyPassword( contraseniaIncorrecta , hash , salt , params ) ;
 
     expect( esValido ).toBe( false ) ;
   } ) ;
@@ -75,11 +83,76 @@ describe( "authService" , () => {
    */
   it( "debería retornar false sin lanzar excepción si el hash almacenado tiene longitud distinta" , async () => {
     const contrasenia = "PasswordSeguro2026!" ;
-    const { salt } = await hashPassword( contrasenia ) ;
-    const hashCorto = "abcd1234" ;
+    const { salt , params } = await hashPassword( contrasenia ) ;
+    const hashCorto         = "abcd1234" ;
 
-    const esValido = await verifyPassword( contrasenia , hashCorto , salt ) ;
+    const esValido = await verifyPassword( contrasenia , hashCorto , salt , params ) ;
 
     expect( esValido ).toBe( false ) ;
+  } ) ;
+} ) ;
+/**
+ * Suite de pruebas para la persistencia de parámetros de costo y la migración de hashes.
+ * Verifica que una contraseña derivada con parámetros viejos siga verificando, que se detecte
+ * cuándo hay que regenerarla, y que un valor corrupto no rompa el login.
+ */
+describe( "authService — parámetros de costo" , () => {
+
+  /**
+   * Caso de prueba: ida y vuelta de la serialización.
+   */
+  it( "debería serializar y volver a parsear los mismos parámetros" , () => {
+    const serializado = serializarParams( PARAMS_ACTUALES ) ;
+
+    expect( serializado ).toBe( `scrypt$${PARAMS_ACTUALES.N}$${PARAMS_ACTUALES.r}$${PARAMS_ACTUALES.p}$${PARAMS_ACTUALES.keylen}` ) ;
+    expect( parsearParams( serializado ) ).toEqual( PARAMS_ACTUALES ) ;
+  } ) ;
+
+  /**
+   * Caso de prueba: filas anteriores a la columna hash_params.
+   * Sin este comportamiento, todas las contraseñas creadas antes de la migración dejarían de verificar.
+   */
+  it( "debería asumir los parámetros de legado cuando el valor es nulo o ilegible" , () => {
+    expect( parsearParams( null ) ).toEqual( PARAMS_LEGADO ) ;
+    expect( parsearParams( undefined ) ).toEqual( PARAMS_LEGADO ) ;
+    expect( parsearParams( "" ) ).toEqual( PARAMS_LEGADO ) ;
+    expect( parsearParams( "bcrypt$10" ) ).toEqual( PARAMS_LEGADO ) ;
+    expect( parsearParams( "scrypt$abc$8$1$64" ) ).toEqual( PARAMS_LEGADO ) ;
+    expect( parsearParams( "scrypt$16384$8$1" ) ).toEqual( PARAMS_LEGADO ) ;
+  } ) ;
+
+  /**
+   * Caso de prueba: detección de hashes que quedaron con parámetros débiles.
+   */
+  it( "debería marcar para rehash sólo los parámetros distintos de los vigentes" , () => {
+    expect( necesitaRehash( serializarParams( PARAMS_ACTUALES ) ) ).toBe( false ) ;
+    expect( necesitaRehash( null ) ).toBe( necesitaRehash( serializarParams( PARAMS_LEGADO ) ) ) ;
+    expect( necesitaRehash( "scrypt$1024$8$1$64" ) ).toBe( true ) ;
+  } ) ;
+
+  /**
+   * Caso de prueba: verificación con parámetros de legado.
+   * Es el escenario que hace posible migrar el costo criptográfico sin resetear contraseñas.
+   */
+  it( "debería verificar una contraseña derivada con los parámetros de legado" , async () => {
+    const password = "ClaveHistorica123" ;
+    const salt     = "0123456789abcdef0123456789abcdef" ;
+
+    // Derivación manual con los parámetros viejos, imitando una fila anterior a la migración
+    const { scrypt } = await import( "crypto" ) ;
+    const derivada = await new Promise< Buffer >( ( resolve , reject ) => {
+      scrypt(
+        password ,
+        salt ,
+        PARAMS_LEGADO.keylen ,
+        {N: PARAMS_LEGADO.N , r: PARAMS_LEGADO.r , p: PARAMS_LEGADO.p , maxmem: (256 * PARAMS_LEGADO.N * PARAMS_LEGADO.r)} ,
+        ( err , key ) => ( err ? reject( err ) : resolve( key ) )
+      ) ;
+    } ) ;
+
+    const hashLegado = derivada.toString( "hex" ) ;
+
+    expect( await verifyPassword( password , hashLegado , salt , null ) ).toBe( true ) ;
+    expect( await verifyPassword( "otraClave" , hashLegado , salt , null ) ).toBe( false ) ;
   } ) ;
 } ) ;

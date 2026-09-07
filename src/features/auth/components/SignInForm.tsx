@@ -6,9 +6,12 @@
 "use client" ;
 
 // Librerías externas
-import { useRouter } from "next/navigation" ;
-import { signIn }    from "next-auth/react" ;
+import { useRouter , useSearchParams } from "next/navigation" ;
+import { signIn }            from "next-auth/react" ;
 import React , { useState }  from "react" ;
+
+// Feature: Auth
+import { ERROR_DEMASIADOS_INTENTOS } from "@/features/auth/constants" ;
 
 // Shared UI
 import { PasswordInput } from "@/shared/ui/forms/Form/PasswordInput" ;
@@ -31,7 +34,39 @@ interface SignInFormProps {
     loadingBtn:      string ;
     errorMsg:        string ;
     unexpectedError: string ;
+    tooManyAttempts?: string ;
   } ;
+}
+
+/**
+ * Valida el destino posterior al login para no convertir el formulario en un redirector abierto.
+ * Sólo se acepta una ruta interna: cualquier URL absoluta a otro origen se descarta.
+ *
+ * @param callbackUrl - Valor recibido por query string, controlado por quien arma el enlace.
+ * @param lang - Idioma vigente, usado como destino de reserva.
+ * @returns Una ruta interna segura a la que navegar.
+ */
+function resolverDestino( callbackUrl: string | null , lang: string ): string {
+  const porDefecto = `/${lang}` ;
+
+  if( !callbackUrl ) { return( porDefecto ) ; }
+
+  // Una ruta relativa propia empieza con "/" y no con "//" (que el navegador lee como otro host).
+  if( callbackUrl.startsWith( "/" ) && !callbackUrl.startsWith( "//" ) ) {
+    return( callbackUrl ) ;
+  }
+
+  try {
+    const destino = new URL( callbackUrl ) ;
+
+    if( destino.origin === window.location.origin ) {
+      return( `${destino.pathname}${destino.search}` ) ;
+    }
+  } catch {
+    // Valor ilegible como URL: se ignora y se usa el destino por defecto.
+  }
+
+  return( porDefecto ) ;
 }
 
 /**
@@ -39,6 +74,7 @@ interface SignInFormProps {
  */
 export function SignInForm( { dict , lang }: SignInFormProps ) {
   const router               = useRouter() ;
+  const searchParams         = useSearchParams() ;
   const [ email , setEmail ] = useState( "" ) ;
   const [ password , setPassword ] = useState( "" ) ;
   const [ error , setError ] = useState( "" ) ;
@@ -58,9 +94,15 @@ export function SignInForm( { dict , lang }: SignInFormProps ) {
       const result = await signIn( "credentials" , { email , password , redirect: false } ) ;
 
       if( result?.error ) {
-        setError( dict.errorMsg ) ;
+        // El bloqueo por fuerza bruta es la única causa que se distingue: decir "demasiados
+        // intentos" no revela si la cuenta existe, y sin ese aviso el usuario legítimo repetiría
+        // su contraseña correcta creyendo que se equivoca.
+        const esBloqueo = result.error.includes( ERROR_DEMASIADOS_INTENTOS ) ;
+
+        setError( esBloqueo ? ( dict.tooManyAttempts || dict.errorMsg ) : dict.errorMsg ) ;
       } else {
-        router.push( `/${lang}` ) ;
+        // Volver a donde el usuario quería ir, que el proxy dejó en `callbackUrl` al interceptarlo.
+        router.push( resolverDestino( searchParams.get( "callbackUrl" ) , lang ) ) ;
         router.refresh() ;
       }
     } catch {

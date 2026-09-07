@@ -46,7 +46,8 @@
     "submitBtn": "Sign In",
     "loadingBtn": "Loading...",
     "errorMsg": "Invalid credentials. Please try again.",
-    "unexpectedError": "An unexpected error occurred during sign in."
+    "unexpectedError": "An unexpected error occurred during sign in.",
+    "tooManyAttempts": "Too many failed attempts. Please wait a few minutes before trying again."
   },
   "accountsPage": {
     "title": "Financial Accounts",
