@@ -213,8 +213,7 @@ export default async function HomePage( {params , searchParams}: HomePageProps )
             isPositive: tendenciaBalance.isPositive ,
             isRising:   tendenciaBalance.isRising ,
             label:      dict.dashboard.savingTrend
-          } : undefined ,
-          referenceDate:   fromDate
+          } : undefined
         }}
       >
         {/* Tarjeta 1: Ingresos */}

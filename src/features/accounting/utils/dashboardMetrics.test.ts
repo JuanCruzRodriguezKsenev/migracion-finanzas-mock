@@ -251,29 +251,18 @@ describe( "dashboardMetrics" , () => {
 
   describe( "calcularTendenciaDesdeSparkline" , () => {
     it( "debería retornar undefined con menos de 2 puntos de datos" , () => {
-      expect( calcularTendenciaDesdeSparkline([]) ).toBeUndefined() ;
-      expect( calcularTendenciaDesdeSparkline([ { value: 100 , monthKey: "2026-01" } ]) ).toBeUndefined() ;
-      expect( calcularTendenciaDesdeSparkline([ 100 ]) ).toBeUndefined() ;
+      expect( calcularTendenciaDesdeSparkline( [] ) ).toBeUndefined() ;
+      expect( calcularTendenciaDesdeSparkline( [ { value: 100 , monthKey: "2026-01" } ] ) ).toBeUndefined() ;
     } ) ;
 
     it( "debería retornar undefined cuando el punto anterior es cero para evitar porcentajes inventados" , () => {
-      expect( calcularTendenciaDesdeSparkline([ 0 , 100 ]) ).toBeUndefined() ;
-      expect( calcularTendenciaDesdeSparkline([
+      expect( calcularTendenciaDesdeSparkline( [
         { value: 0 , monthKey: "2026-01" } ,
         { value: 100 , monthKey: "2026-02" }
-      ]) ).toBeUndefined() ;
+      ] ) ).toBeUndefined() ;
     } ) ;
 
     it( "debería calcular el porcentaje de cambio entre los dos últimos puntos" , () => {
-      const resultado = calcularTendenciaDesdeSparkline( [ 100 , 150 ] ) ;
-
-      expect( resultado ).toBeDefined() ;
-      expect( resultado?.value ).toBe( "50.0%" ) ;
-      expect( resultado?.isPositive ).toBe( true ) ;
-      expect( resultado?.isRising ).toBe( true ) ;
-    } ) ;
-
-    it( "debería funcionar idéntico con SparklinePoint[]" , () => {
       const resultado = calcularTendenciaDesdeSparkline( [
         { value: 100 , monthKey: "2026-01" } ,
         { value: 150 , monthKey: "2026-02" }
@@ -286,7 +275,10 @@ describe( "dashboardMetrics" , () => {
     } ) ;
 
     it( "debería invertir la interpretación de positivo/negativo cuando isInverted es true" , () => {
-      const resultado = calcularTendenciaDesdeSparkline( [ 100 , 150 ] , true ) ;
+      const resultado = calcularTendenciaDesdeSparkline( [
+        { value: 100 , monthKey: "2026-01" } ,
+        { value: 150 , monthKey: "2026-02" }
+      ] , true ) ;
 
       expect( resultado ).toBeDefined() ;
       expect( resultado?.isRising ).toBe( true ) ;
@@ -294,7 +286,10 @@ describe( "dashboardMetrics" , () => {
     } ) ;
 
     it( "debería calcular correctamente una caída (valor negativo)" , () => {
-      const resultado = calcularTendenciaDesdeSparkline( [ 200 , 100 ] ) ;
+      const resultado = calcularTendenciaDesdeSparkline( [
+        { value: 200 , monthKey: "2026-01" } ,
+        { value: 100 , monthKey: "2026-02" }
+      ] ) ;
 
       expect( resultado ).toBeDefined() ;
       expect( resultado?.value ).toBe( "50.0%" ) ;

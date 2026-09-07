@@ -10,10 +10,10 @@
 import React from "react" ;
 
 // Shared
-import { MetricsVisibilityContext , MetricsVisibilityProvider , useMetricsVisibility } from "./MetricsVisibilityContext" ;
-import { Sparkline , SparklinePoint }                                 from "@/shared/ui/display/RechartsSparkline/Sparkline" ;
-import { MetricCard }                                                 from "@/shared/ui/MetricCard/MetricCard" ;
-import styles                                                         from "./MetricsSection.module.css" ;
+import { MetricsVisibilityContext , useMetricsVisibility } from "./MetricsVisibilityContext" ;
+import { Sparkline , SparklinePoint }                      from "@/shared/ui/display/RechartsSparkline/Sparkline" ;
+import { MetricCard }                                      from "@/shared/ui/MetricCard/MetricCard" ;
+import styles                                              from "./MetricsSection.module.css" ;
 
 export interface HeroProps {
   label:            string ;
@@ -29,13 +29,11 @@ export interface HeroProps {
     isRising?:  boolean ;
     label?:     string ;
   } ;
-  sparklineData?:   number[] ;
   sparklinePoints?: SparklinePoint[] ;
   lang?:            string ;
   isInverted?:      boolean ;
   icon?:            React.ReactNode ;
   isMuted?:         boolean ;
-  referenceDate?:   Date ;
 }
 
 interface MetricsSectionProps {
@@ -95,16 +93,6 @@ function MetricsSectionInner( {
               lang={hero.lang}
               isInverted={hero.isInverted}
               fullWidth={true}
-            />
-          ) : ( hero.sparklineData && ( hero.sparklineData.length > 0 ) ) ? (
-            <Sparkline
-              data={hero.sparklineData}
-              color="rgba(255, 255, 255, 0.8)"
-              height="100%"
-              lang={hero.lang}
-              isInverted={hero.isInverted}
-              fullWidth={true}
-              referenceDate={hero.referenceDate}
             />
           ) : undefined
         }

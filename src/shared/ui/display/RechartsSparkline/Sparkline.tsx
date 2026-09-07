@@ -102,25 +102,21 @@ function CustomMiniTooltip( { active , payload , lang , isContentVisible = true 
 }
 
 export interface SparklineProps {
-  points?:        SparklinePoint[] ;
-  data?:          number[] ;
-  color:          string ;
-  height?:        number | string ;
-  lang?:          string ;
-  isInverted?:    boolean ;
-  fullWidth?:     boolean ;
-  referenceDate?: Date ;
+  points:      SparklinePoint[] ;
+  color:       string ;
+  height?:     number | string ;
+  lang?:       string ;
+  isInverted?: boolean ;
+  fullWidth?:  boolean ;
 }
 
 export function Sparkline( {
   points ,
-  data ,
   color ,
   height = "100%" ,
   lang = "es" ,
   isInverted = false ,
-  fullWidth = false ,
-  referenceDate
+  fullWidth = false
 }: SparklineProps ) {
   const id = useId() ;
   const [ mounted , setMounted ] = useState( false ) ;
@@ -133,24 +129,12 @@ export function Sparkline( {
     return( () => cancelAnimationFrame( handle ) ) ;
   } , [] ) ;
 
-  // Resolver los puntos efectivos: si viene points se usa directamente; si viene data se deriva
-  const resolvedPoints: SparklinePoint[] = ( points && ( points.length > 0 ) )
-    ? points
-    : ( data && ( data.length > 0 ) )
-    ? data.map( ( val , i ) => {
-        const ref = referenceDate ? new Date( referenceDate ) : new Date() ;
-        const d   = new Date( ref.getFullYear() , ref.getMonth() - (data.length - 1 - i) , 1 ) ;
-        const mk  = `${d.getFullYear()}-${String( d.getMonth() + 1 ).padStart( 2 , "0" )}` ;
-        return( { value: val , monthKey: mk } ) ;
-      } )
-    : [] ;
-
-  if( !mounted || ( resolvedPoints.length === 0 ) ) {
+  if( !mounted || !points || ( points.length === 0 ) ) {
     return( <div className={styles.sparklineWrapper} style={{height}} /> ) ;
   }
 
   // Si hay un solo punto, duplicamos para que el AreaChart de Recharts pueda trazar la línea horizontal
-  const effectivePoints = resolvedPoints.length === 1 ? [ resolvedPoints[0] , resolvedPoints[0] ] : resolvedPoints ;
+  const effectivePoints = points.length === 1 ? [ points[0] , points[0] ] : points ;
 
   const chartData: SparklineDataPoint[] = effectivePoints.map( ( pt , i ) => {
     let pctChange: number | null = null ;

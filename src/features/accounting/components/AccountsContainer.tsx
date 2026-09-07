@@ -13,7 +13,6 @@ import type { getDictionary }   from "@/shared/lib/dictionary" ;
 import { useMetricsVisibility } from "@/shared/ui/layout/MetricsSection/MetricsVisibilityContext" ;
 import { InstitutionLogo }      from "@/shared/ui/display/InstitutionLogo/InstitutionLogo" ;
 import { MetricsSection }       from "@/shared/ui/layout/MetricsSection/MetricsSection" ;
-import { Sparkline }            from "@/shared/ui/display/RechartsSparkline/Sparkline" ;
 import { EmptyState }           from "@/shared/ui/feedback/EmptyState/EmptyState" ;
 import { MetricCard }           from "@/shared/ui/MetricCard/MetricCard" ;
 import { Button }               from "@/shared/ui/display/Button/Button" ;
@@ -22,7 +21,12 @@ import { Card }                 from "@/shared/ui/display/Card/Card" ;
 import { Tabs }                 from "@/shared/ui/display/Tabs/Tabs" ;
 
 // Feature: Accounting
-import { formatCents , calcularTendenciaDesdeSparkline }        from "../utils/dashboardMetrics" ;
+import {
+  formatCents ,
+  formatMonthKey ,
+  SparklinePoint ,
+  calcularTendenciaDesdeSparkline
+} from "../utils/dashboardMetrics" ;
 import { CreateFinancialEntityForm }                             from "./CreateFinancialEntityForm" ;
 import styles                                                   from "./AccountsContainer.module.css" ;
 import { CreateAccountForm }                                    from "./CreateAccountForm" ;
@@ -82,20 +86,14 @@ export function AccountsContainer( {
   const totalLiabs  = walletAccounts.filter( ( a ) => a.type === "liability" ).reduce( ( sum , a ) => (sum + a.balance) , 0 ) ;
   const netWorth    = ( totalAssets - totalLiabs ) ;
 
-  // Procesar series temporales para Sparklines
-  const sparklineDataNetWorth = summaries.map( ( s ) => s.balanceSnapshot / 100 ).reverse() ;
-  const sparklineDataAssets   = summaries.map( ( s ) => (s.balanceSnapshot + 300000) / 100 ).reverse() ;
-  const sparklineDataLiabs    = summaries.map( ( s ) => s.totalExpense / 100 ).reverse() ;
+  // Procesar serie temporal real para Patrimonio Neto (Hero)
+  const sparklinePointsNetWorth: SparklinePoint[] = summaries.map( ( s ) => ( {
+    value:    s.balanceSnapshot / 100 ,
+    monthKey: formatMonthKey( s.year , s.month )
+  } ) ).reverse() ;
 
-  // Rellenar con ceros si es necesario
-  while( sparklineDataNetWorth.length < 12 ) { sparklineDataNetWorth.unshift( 0 ) ; }
-  while( sparklineDataAssets.length < 12 ) { sparklineDataAssets.unshift( 0 ) ; }
-  while( sparklineDataLiabs.length < 12 ) { sparklineDataLiabs.unshift( 0 ) ; }
-
-  // Calcular tendencias dinámicas
-  const tendenciaNetWorth = calcularTendenciaDesdeSparkline( sparklineDataNetWorth ) ;
-  const tendenciaAssets   = calcularTendenciaDesdeSparkline( sparklineDataAssets ) ;
-  const tendenciaLiabs    = calcularTendenciaDesdeSparkline( sparklineDataLiabs , true ) ; // Invertida para pasivos
+  // Calcular tendencia dinámica de Patrimonio Neto
+  const tendenciaNetWorth = calcularTendenciaDesdeSparkline( sparklinePointsNetWorth ) ;
 
   const labelTrend = ( dict.dashboard?.savingTrend || "vs mes anterior" ) ;
 
@@ -132,11 +130,11 @@ export function AccountsContainer( {
       <MetricsSection
         allowVisibilityToggle={true}
         hero={ {
-          label:         accountsPageDict.netWorth ,
-          value:         formatCents( netWorth ) ,
-          sparklineData: sparklineDataNetWorth ,
-          lang:          lang ,
-          trend:         tendenciaNetWorth ? {
+          label:           accountsPageDict.netWorth ,
+          value:           formatCents( netWorth ) ,
+          sparklinePoints: sparklinePointsNetWorth ,
+          lang:            lang ,
+          trend:           tendenciaNetWorth ? {
             value:      tendenciaNetWorth.value ,
             isPositive: tendenciaNetWorth.isPositive ,
             isRising:   tendenciaNetWorth.isRising ,
@@ -150,41 +148,12 @@ export function AccountsContainer( {
           iconBg="rgba( 16 , 185 , 129 , 0.1 )"
           iconColor="#10b981"
           isSensitive={true}
-          trend={ tendenciaAssets ? {
-            value:      tendenciaAssets.value ,
-            isPositive: tendenciaAssets.isPositive ,
-            isRising:   tendenciaAssets.isRising ,
-            label:      labelTrend
-          } : undefined }
-          sparkline={
-            <Sparkline
-              data={sparklineDataAssets}
-              color="#10b981"
-              height={26}
-              lang={lang}
-            />
-          }
         />
         <MetricCard
           title={accountsPageDict.totalLiabilities}
           value={formatCents( totalLiabs )}
           isDanger={true}
           isSensitive={true}
-          trend={ tendenciaLiabs ? {
-            value:      tendenciaLiabs.value ,
-            isPositive: tendenciaLiabs.isPositive ,
-            isRising:   tendenciaLiabs.isRising ,
-            label:      labelTrend
-          } : undefined }
-          sparkline={
-            <Sparkline
-              data={sparklineDataLiabs}
-              color="#ef4444"
-              height={26}
-              lang={lang}
-              isInverted={true}
-            />
-          }
         />
       </MetricsSection>
 

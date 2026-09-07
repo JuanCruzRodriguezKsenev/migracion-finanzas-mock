@@ -8,13 +8,21 @@
 import React , { useState , useMemo } from "react" ;
 
 // Shared
+import {
+  SparklinePoint ,
+  formatMonthKeyLabel
+} from "@/shared/ui/display/RechartsSparkline/sparklineUtils" ;
 import { MetricsSection } from "@/shared/ui/layout/MetricsSection/MetricsSection" ;
 import { Sparkline }      from "@/shared/ui/display/RechartsSparkline/Sparkline" ;
 import { MetricCard }     from "@/shared/ui/MetricCard/MetricCard" ;
 import { Card }           from "@/shared/ui/display/Card/Card" ;
 
 // Feature: Accounting
-import { formatCents , calcularTendenciaDesdeSparkline } from "@/features/accounting/utils/dashboardMetrics" ;
+import {
+  formatCents ,
+  formatMonthKey ,
+  calcularTendenciaDesdeSparkline
+} from "@/features/accounting/utils/dashboardMetrics" ;
 
 // Shared
 import type { getDictionary } from "@/shared/lib/dictionary" ;
@@ -24,9 +32,10 @@ import styles from "./DashboardSandbox.module.css" ;
 
 
 interface SandboxMonth {
-  label:   string ;
-  revenue: number ;
-  expense: number ;
+  monthKey: string ;
+  label:    string ;
+  revenue:  number ;
+  expense:  number ;
 }
 
 interface DashboardSandboxProps {
@@ -35,20 +44,23 @@ interface DashboardSandboxProps {
 }
 
 /**
- * Obtiene la secuencia de nombres de meses en el idioma actual.
+ * Inicializa los meses del sandbox con su clave canónica "YYYY-MM" y etiqueta localizada.
  */
-function getMonthsLabelSequence( length: number , langStr: string = "es" ) {
-  const labels = [] ;
+function getInitialSandboxMonths( length: number , langStr: string = "es" ): SandboxMonth[] {
+  const list: SandboxMonth[] = [] ;
   const currentDate = new Date() ;
   for( let i = 0 ; i < length ; i++ ) {
-    const date = new Date( currentDate.getFullYear() , currentDate.getMonth() - ( (length - 1) - i ) , 1 ) ;
-    const monthStr = date.toLocaleDateString( langStr === "en" ? "en-US" : "es-ES" , {month: "short"} ) ;
-    const yearStr = date.toLocaleDateString( langStr === "en" ? "en-US" : "es-ES" , {year: "2-digit"} ) ;
-    const cleanMonth = monthStr.replace( "." , "" ) ;
-    const formattedMonth = ( cleanMonth.charAt( 0 ).toUpperCase() + cleanMonth.slice( 1 ) ) ;
-    labels.push( `${formattedMonth} ${yearStr}` ) ;
+    const d        = new Date( currentDate.getFullYear() , currentDate.getMonth() - ( (length - 1) - i ) , 1 ) ;
+    const monthKey = formatMonthKey( d.getFullYear() , d.getMonth() ) ;
+    const label    = formatMonthKeyLabel( monthKey , langStr ) ;
+    list.push( {
+      monthKey ,
+      label ,
+      revenue: 4200 + ( i * 120 ) ,
+      expense: 3100 + ( i * 80 )
+    } ) ;
   }
-  return( labels ) ;
+  return( list ) ;
 }
 
 /**
@@ -56,15 +68,7 @@ function getMonthsLabelSequence( length: number , langStr: string = "es" ) {
  */
 export function DashboardSandbox( {dict , lang}: DashboardSandboxProps ) {
   // Estado para los 12 meses, inicializado de forma perezosa
-  const [ months , setMonths ]                 = useState< SandboxMonth[] >( () => {
-    const labels = getMonthsLabelSequence( 12 , lang ) ;
-    return( labels.map( ( label , index ) => ( {
-      label ,
-      revenue: 4200 + ( index * 120 ) ,
-      expense: 3100 + ( index * 80 )
-    } ) ) ) ;
-  } ) ;
-
+  const [ months , setMonths ]                 = useState< SandboxMonth[] >( () => getInitialSandboxMonths( 12 , lang ) ) ;
   const [ selectedIndex , setSelectedIndex ]   = useState< number >( 11 ) ;
   const [ activePreset , setActivePreset ]     = useState< string >( "positivo" ) ;
   const [ limitTo6Months , setLimitTo6Months ] = useState< boolean >( false ) ;
@@ -125,18 +129,18 @@ export function DashboardSandbox( {dict , lang}: DashboardSandboxProps ) {
   const metrics = useMemo( () => {
     if( months.length === 0 ) {
       return( {
-        ingresosMes:           0 ,
-        gastosMes:             0 ,
-        ahorro:                0 ,
-        liquidezTotal:         0 ,
-        sparklineDataIngresos: [] ,
-        sparklineDataGastos:   [] ,
-        sparklineDataAhorro:   [] ,
-        sparklineDataLiquidez: [] ,
-        tendenciaIngresos:     {value: "0.0%" , isPositive: true , isRising: true} ,
-        tendenciaGastos:       {value: "0.0%" , isPositive: true , isRising: true} ,
-        tendenciaAhorro:       {value: "0.0%" , isPositive: true , isRising: true} ,
-        tendenciaLiquidez:     {value: "0.0%" , isPositive: true , isRising: true}
+        ingresosMes:             0 ,
+        gastosMes:               0 ,
+        ahorro:                  0 ,
+        liquidezTotal:           0 ,
+        sparklinePointsIngresos: [] as SparklinePoint[] ,
+        sparklinePointsGastos:   [] as SparklinePoint[] ,
+        sparklinePointsAhorro:   [] as SparklinePoint[] ,
+        sparklinePointsLiquidez: [] as SparklinePoint[] ,
+        tendenciaIngresos:       {value: "0.0%" , isPositive: true , isRising: true} ,
+        tendenciaGastos:         {value: "0.0%" , isPositive: true , isRising: true} ,
+        tendenciaAhorro:         {value: "0.0%" , isPositive: true , isRising: true} ,
+        tendenciaLiquidez:       {value: "0.0%" , isPositive: true , isRising: true}
       } ) ;
     }
 
@@ -156,33 +160,58 @@ export function DashboardSandbox( {dict , lang}: DashboardSandboxProps ) {
     const liquidezTotal = ( liquidityHistory[selectedIndex] * 100 ) ;
 
     // Obtener la porción histórica de Sparkline según el filtro (6 o 12 meses)
-    const activeSlice = limitTo6Months ? months.slice( 6 ) : months ;
+    const activeSlice          = limitTo6Months ? months.slice( 6 ) : months ;
+    const activeLiquiditySlice = limitTo6Months ? liquidityHistory.slice( 6 ) : liquidityHistory ;
 
-    const sparklineDataIngresos = activeSlice.map( ( m ) => m.revenue ) ;
-    const sparklineDataGastos   = activeSlice.map( ( m ) => m.expense ) ;
-    const sparklineDataAhorro   = activeSlice.map( ( m ) => m.revenue - m.expense ) ;
-    const sparklineDataLiquidez = limitTo6Months ? liquidityHistory.slice( 6 ) : liquidityHistory ;
+    const sparklinePointsIngresos: SparklinePoint[] = activeSlice.map( ( m ) => ( {
+      value:    m.revenue ,
+      monthKey: m.monthKey
+    } ) ) ;
+    const sparklinePointsGastos: SparklinePoint[] = activeSlice.map( ( m ) => ( {
+      value:    m.expense ,
+      monthKey: m.monthKey
+    } ) ) ;
+    const sparklinePointsAhorro: SparklinePoint[] = activeSlice.map( ( m ) => ( {
+      value:    m.revenue - m.expense ,
+      monthKey: m.monthKey
+    } ) ) ;
+    const sparklinePointsLiquidez: SparklinePoint[] = activeSlice.map( ( m , idx ) => ( {
+      value:    activeLiquiditySlice[idx] ,
+      monthKey: m.monthKey
+    } ) ) ;
 
     // Slices para calcular la tendencia (siempre comparando con el mes anterior inmediato)
-    const sliceTrendIngresos = months.slice( 0 , selectedIndex + 1 ).map( ( m ) => m.revenue ) ;
-    const sliceTrendGastos   = months.slice( 0 , selectedIndex + 1 ).map( ( m ) => m.expense ) ;
-    const sliceTrendAhorro   = months.slice( 0 , selectedIndex + 1 ).map( ( m ) => m.revenue - m.expense ) ;
-    const sliceTrendLiquidez = liquidityHistory.slice( 0 , selectedIndex + 1 ) ;
+    const sliceTrendIngresos: SparklinePoint[] = months.slice( 0 , selectedIndex + 1 ).map( ( m ) => ( {
+      value:    m.revenue ,
+      monthKey: m.monthKey
+    } ) ) ;
+    const sliceTrendGastos: SparklinePoint[] = months.slice( 0 , selectedIndex + 1 ).map( ( m ) => ( {
+      value:    m.expense ,
+      monthKey: m.monthKey
+    } ) ) ;
+    const sliceTrendAhorro: SparklinePoint[] = months.slice( 0 , selectedIndex + 1 ).map( ( m ) => ( {
+      value:    m.revenue - m.expense ,
+      monthKey: m.monthKey
+    } ) ) ;
+    const sliceTrendLiquidez: SparklinePoint[] = months.slice( 0 , selectedIndex + 1 ).map( ( m , idx ) => ( {
+      value:    liquidityHistory[idx] ,
+      monthKey: m.monthKey
+    } ) ) ;
 
     const tendenciaIngresos = calcularTendenciaDesdeSparkline( sliceTrendIngresos ) ;
     const tendenciaGastos   = calcularTendenciaDesdeSparkline( sliceTrendGastos , true ) ;
     const tendenciaAhorro   = calcularTendenciaDesdeSparkline( sliceTrendAhorro ) ;
-    const tendenciaLiquidez  = calcularTendenciaDesdeSparkline( sliceTrendLiquidez ) ;
+    const tendenciaLiquidez = calcularTendenciaDesdeSparkline( sliceTrendLiquidez ) ;
 
     return( {
       ingresosMes ,
       gastosMes ,
       ahorro ,
       liquidezTotal ,
-      sparklineDataIngresos ,
-      sparklineDataGastos ,
-      sparklineDataAhorro ,
-      sparklineDataLiquidez ,
+      sparklinePointsIngresos ,
+      sparklinePointsGastos ,
+      sparklinePointsAhorro ,
+      sparklinePointsLiquidez ,
       tendenciaIngresos ,
       tendenciaGastos ,
       tendenciaAhorro ,
@@ -313,12 +342,12 @@ export function DashboardSandbox( {dict , lang}: DashboardSandboxProps ) {
       <MetricsSection
         allowVisibilityToggle={true}
         hero={{
-          label:         dict.dashboard.balanceLabel ,
-          value:         formatCents( metrics.liquidezTotal ) ,
-          sparklineData: metrics.sparklineDataLiquidez.length >= 2 ? metrics.sparklineDataLiquidez : undefined ,
-          lang:          lang ,
-          isInverted:    false ,
-          trend:         metrics.tendenciaLiquidez ? {
+          label:           dict.dashboard.balanceLabel ,
+          value:           formatCents( metrics.liquidezTotal ) ,
+          sparklinePoints: metrics.sparklinePointsLiquidez.length >= 2 ? metrics.sparklinePointsLiquidez : undefined ,
+          lang:            lang ,
+          isInverted:      false ,
+          trend:           metrics.tendenciaLiquidez ? {
             value:      metrics.tendenciaLiquidez.value ,
             isPositive: metrics.tendenciaLiquidez.isPositive ,
             isRising:   metrics.tendenciaLiquidez.isRising ,
@@ -341,7 +370,7 @@ export function DashboardSandbox( {dict , lang}: DashboardSandboxProps ) {
           iconColor="var(--color-success)"
           sparkline={
             <Sparkline
-              data={metrics.sparklineDataIngresos.length >= 2 ? metrics.sparklineDataIngresos : [ 0 , 0 ]}
+              points={metrics.sparklinePointsIngresos}
               color={colorIngresos}
               height={ 26 }
               lang={lang}
@@ -365,7 +394,7 @@ export function DashboardSandbox( {dict , lang}: DashboardSandboxProps ) {
           iconColor="var(--color-danger)"
           sparkline={
             <Sparkline
-              data={metrics.sparklineDataGastos.length >= 2 ? metrics.sparklineDataGastos : [ 0 , 0 ]}
+              points={metrics.sparklinePointsGastos}
               color={colorGastos}
               height={ 26 }
               lang={lang}
@@ -389,7 +418,7 @@ export function DashboardSandbox( {dict , lang}: DashboardSandboxProps ) {
           iconColor="var(--color-purple)"
           sparkline={
             <Sparkline
-              data={metrics.sparklineDataAhorro.length >= 2 ? metrics.sparklineDataAhorro : [ 0 , 0 ]}
+              points={metrics.sparklinePointsAhorro}
               color={colorAhorro}
               height={ 26 }
               lang={lang}

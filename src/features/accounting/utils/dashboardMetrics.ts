@@ -124,7 +124,7 @@ export function calcularSparklineBalance(
  * Utiliza exactamente la misma lógica que el tooltip del Sparkline (sin porcentajes inventados).
  */
 export function calcularTendenciaDesdeSparkline(
-  points?:    SparklinePoint[] | number[] ,
+  points?:    SparklinePoint[] ,
   isInverted: boolean = false
 ): { value: string ; isPositive: boolean ; isRising: boolean } | undefined {
   if( !points || ( points.length < 2 ) ) {
@@ -133,8 +133,8 @@ export function calcularTendenciaDesdeSparkline(
 
   const pLast    = points[points.length - 1] ;
   const pPrev    = points[points.length - 2] ;
-  const actual   = typeof pLast === "number" ? pLast : pLast.value ;
-  const anterior = typeof pPrev === "number" ? pPrev : pPrev.value ;
+  const actual   = pLast.value ;
+  const anterior = pPrev.value ;
   const pct      = calcularCambioPorcentual( actual , anterior ) ;
 
   if( pct === null ) {

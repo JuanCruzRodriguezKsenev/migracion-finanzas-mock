@@ -72,4 +72,17 @@ describe( "Sparkline component" , () => {
 
     expect( container.firstChild ).toBeDefined() ;
   } ) ;
+
+  it( "debería renderizar la serie de puntos mapeando sus etiquetas desde monthKey" , () => {
+    const points = [
+      { value: 1000 , monthKey: "2026-01" } ,
+      { value: 1200 , monthKey: "2026-02" }
+    ] ;
+
+    const { container } = render(
+      <Sparkline points={points} color="#10b981" lang="es" />
+    ) ;
+
+    expect( container.firstChild ).toBeDefined() ;
+  } ) ;
 } ) ;
