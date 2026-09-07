@@ -12,18 +12,30 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `chore/gobernanza-reglas-neutrales` (sale de `feat/contacts-management`, no de master, porque `.claude/CLAUDE.md` nació en `677a337`). Gobernanza de agentes y reglas neutrales: `AGENTS.md` router en la raíz, `CLAUDE.md` reducido a puntero, `docs/planes/` y el agente ejecutor `obra`.
+**Rama activa:** `fix/entidades-financieras` (sale de `chore/gobernanza-reglas-neutrales`). Ejecuta [`planes/fix-entidades-financieras.md`](planes/fix-entidades-financieras.md): partir el alta de entidades, asiento de apertura contra `3.1.01.01`, columna `brand_domain` y variante del formulario para el flujo de contactos.
 
-**Rama pendiente de merge:** `feat/contacts-management` (Módulo de Contactos y Cuentas de Cobro — RFC 006 completado integralmente con pruebas y build de producción exitoso).
+**Ramas pendientes de merge, en este orden:** `feat/contacts-management` → `chore/gobernanza-reglas-neutrales` → `fix/entidades-financieras`. Cada una es ancestro de la siguiente, y `master` todavía no recibió ninguna.
 
 **Estado:** 🟢 **Módulo `/contacts` y Métodos de Cobro (RFC 006) finalizados. Enmiendas arquitectónicas aplicadas y RFC 006 en APPROVED; decisión de cotizaciones registrada en RFC 015 (DRAFT). Esquema Drizzle (`contacts`, `contact_payment_methods`, y extensión con `cbu_cvu`/`alias` en `accounts`) con migración `0019_tidy_piledriver.sql` aplicada. Validadores puros de identificadores argentinos (CBU con doble dígito verificador BCRA, Alias AFIP 6-20 caracteres y CUIT módulo 11). DAL `contactsRepository.ts` con aislamiento multi-tenant transitivo obligatorio, búsqueda por texto, baja lógica (`archived_at`) y actualización transaccional de predeterminado. Server Actions (`contactsActions.ts`) tipadas con Result pattern y esquemas Zod. UI reactiva en `/contacts` (`ContactsContainer`, `ContactsTable`, `ContactFormModal`, `PaymentMethodsPanel` con alta al vuelo reutilizando `CreateFinancialEntityForm`). Integración en navegación (`Navbar`, `BottomNav`, `IconContacts`) y diccionarios i18n (`es`, `en`, `br`). 39 suites de test (298 pruebas) pasando en verde, 0 advertencias ESLint y build de producción exitoso.**
 
 **Próximo paso de desarrollo:**
-Mergear `chore/gobernanza-reglas-neutrales` y `feat/contacts-management` a master (en ese orden, la segunda es ancestro de la primera), y seguir con el próximo módulo financiero del roadmap (Tarjetas `/cards` — RFC 007 o Metas `/goals` — RFC 011).
+Ejecutar el plan de corrección de entidades, mergear las tres ramas a master en el orden de arriba y
+retomar la **Fase 1**, que no está cerrada: falta el **RFC 015 — perfil, preferencias y consolidación
+multimoneda**, hoy el único RFC en `DRAFT` y el único bloqueo formal del proyecto. Tarjetas (RFC 007)
+es Fase 2 y va después; **Metas (RFC 011) es Fase 3**, no un candidato inmediato: su saldo libre resta
+compromisos que todavía no existen. La hoja de ruta vigente es el artifact, no `ROADMAP.md`.
 
-**Pendiente de la gobernanza:** estrenar `obra` con un plan corto para ver si realmente frena cuando el
-código no coincide con el plan; evaluar `model: sonnet` en `verificador`; y revisar la duplicación
+> **Corrección de rumbo (2026-09-07):** este documento venía proponiendo Tarjetas o Metas como próximo
+> módulo, en contra del artifact. Metas en la primera fase es justamente el error que el artifact
+> documenta del `ROADMAP.md` viejo.
+
+**Pendiente de la gobernanza:** evaluar `model: sonnet` en `verificador`; y revisar la duplicación
 entre `ARCHITECTURE.md` y `.agents/AGENTS.md` §2–§5.
+
+**Estreno de `obra` (2026-09-07):** frenó como se esperaba. Ante el árbol sucio y sin permiso para
+cambiar de rama, devolvió un informe de factibilidad en vez de improvisar. El protocolo de arranque
+funciona; la preparación del entorno (commit de la planificación y creación de la rama) es trabajo
+previo de `tanda`, no suyo.
 
 ---
 
