@@ -5,7 +5,7 @@
  * recuperación de eventos en PROCESSING huérfanos, reintentos con backoff y purga periódica.
  */
 // Librerías externas
-import { eq , and , lte , inArray , asc , isNull , or } from "drizzle-orm" ;
+import { eq , and , lte , inArray , asc , isNull , or , sql } from "drizzle-orm" ;
 
 // Shared
 import { logger } from "@/shared/lib/logger" ;
@@ -132,7 +132,8 @@ export async function recoverStaleProcessing( ttlMs: number = PROCESSING_TTL_MS 
   await db
     .update( outboxEvents )
     .set( {
-      status:      "PENDING" ,
+      status:      sql`case when attempts + 1 >= ${MAX_ATTEMPTS} then 'FAILED' else 'PENDING' end` ,
+      attempts:    sql`attempts + 1` ,
       processedAt: null ,
     } )
     .where( inArray( outboxEvents.id , ids ) ) ;
@@ -242,7 +243,12 @@ export async function dispatchPendingEvents( options: DispatchOptions = {} ): Pr
         status:      "SENT" ,
         processedAt: new Date() ,
       } )
-      .where( inArray( outboxEvents.id , successIds ) ) ;
+      .where(
+        and(
+          inArray( outboxEvents.id , successIds ) ,
+          eq( outboxEvents.status , "PROCESSING" )
+        )
+      ) ;
   }
 
   // Actualizar individualmente los fallidos para calcular el nuevo estado de reintento
@@ -261,7 +267,12 @@ export async function dispatchPendingEvents( options: DispatchOptions = {} ): Pr
         attempts:    newAttempts ,
         processedAt: null ,
       } )
-      .where( eq( outboxEvents.id , failedItem.id ) ) ;
+      .where(
+        and(
+          eq( outboxEvents.id , failedItem.id ) ,
+          eq( outboxEvents.status , "PROCESSING" )
+        )
+      ) ;
   }
 
   return( {

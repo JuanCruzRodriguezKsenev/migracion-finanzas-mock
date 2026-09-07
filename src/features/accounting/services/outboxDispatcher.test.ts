@@ -188,6 +188,7 @@ describe( "outboxDispatcher" , () => {
       .where( eq(outboxEvents.id , huerfano.id) ) ;
 
     expect( dbHuerfano.status ).toBe( "PENDING" ) ;
+    expect( dbHuerfano.attempts ).toBe( 1 ) ;
     expect( dbHuerfano.processedAt ).toBeNull() ;
 
     const [ dbActivo ] = await db
@@ -196,6 +197,35 @@ describe( "outboxDispatcher" , () => {
       .where( eq(outboxEvents.id , activo.id) ) ;
 
     expect( dbActivo.status ).toBe( "PROCESSING" ) ;
+  } ) ;
+
+  it( "debería marcar como FAILED un evento huérfano que alcance MAX_ATTEMPTS al ser recuperado" , async () => {
+    const diezMinutosAtras = new Date( Date.now() - (10 * 60 * 1000) ) ;
+
+    const [ huerfanoLimite ] = await db
+      .insert( outboxEvents )
+      .values( {
+        organizationId: orgId ,
+        eventType:      "TRANSACTION_CREATED" ,
+        payload:        { test: "limite" } ,
+        status:         "PROCESSING" ,
+        attempts:       MAX_ATTEMPTS - 1 ,
+        processedAt:    diezMinutosAtras ,
+      } )
+      .returning() ;
+
+    const recoveredCount = await recoverStaleProcessing( PROCESSING_TTL_MS ) ;
+
+    expect( recoveredCount ).toBe( 1 ) ;
+
+    const [ dbEvt ] = await db
+      .select()
+      .from( outboxEvents )
+      .where( eq(outboxEvents.id , huerfanoLimite.id) ) ;
+
+    expect( dbEvt.status ).toBe( "FAILED" ) ;
+    expect( dbEvt.attempts ).toBe( MAX_ATTEMPTS ) ;
+    expect( dbEvt.processedAt ).toBeNull() ;
   } ) ;
 
   it( "debería prevenir procesamiento duplicado concurrente mediante SKIP LOCKED" , async () => {
@@ -302,5 +332,41 @@ describe( "outboxDispatcher" , () => {
 
     expect( result.successful ).toBe( 1 ) ;
     expect( payloadRecibido ).toEqual( { reversalId: "rev-123" , reason: "Error de monto" } ) ;
+  } ) ;
+
+  it( "debería evitar que un asentamiento tardío pise un evento que ya no esté en PROCESSING" , async () => {
+    // Simulamos un worker rezagado: durante el despacho, otro proceso concurrente marca el evento como SENT
+    const [ inserted ] = await db
+      .insert( outboxEvents )
+      .values( {
+        organizationId: orgId ,
+        eventType:      "TRANSACTION_CREATED" ,
+        payload:        { test: "concurrencia" } ,
+        status:         "PENDING" ,
+      } )
+      .returning() ;
+
+    registerEventHandler( "TRANSACTION_CREATED" , async ( event ) => {
+      // Simular que otro worker intervino y ya asentó este evento a SENT
+      await db
+        .update( outboxEvents )
+        .set( { status: "SENT" , processedAt: new Date() } )
+        .where( eq(outboxEvents.id , event.id) ) ;
+
+      // Y este worker falla en su llamada
+      throw new Error( "Fallo tardío en worker rezagado." ) ;
+    } ) ;
+
+    const result = await dispatchPendingEvents( { skipRecovery: true } ) ;
+
+    expect( result.failed ).toBe( 1 ) ;
+
+    // El evento en DB debe continuar como SENT y NO haber sido retrocedido a PENDING
+    const [ dbEvt ] = await db
+      .select()
+      .from( outboxEvents )
+      .where( eq(outboxEvents.id , inserted.id) ) ;
+
+    expect( dbEvt.status ).toBe( "SENT" ) ;
   } ) ;
 } ) ;
