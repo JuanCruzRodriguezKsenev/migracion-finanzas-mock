@@ -49,6 +49,9 @@ Este documento registra los puntos de deuda técnica del repositorio, distinguie
 ### Despachador de Eventos Outbox (RFC 020)
 *   [x] **Despachador desacoplado, índice y purga en `outbox_events`:** Implementación de `outboxDispatcher.ts` con ciclo en 3 pasos (reclamo atómico con `SKIP LOCKED` a `PROCESSING`, despacho fuera de transacción de BD, y asentamiento final a `SENT` o reintento con backoff hasta `MAX_ATTEMPTS = 5`). Recuperación automática de eventos `PROCESSING` colgados con TTL de 5 minutos (`recoverStaleProcessing`), purga periódica de eventos `SENT` con más de 30 días (`purgeOldSentEvents`), script CLI `db:outbox` (`dispatchOutbox.ts`) e índice `outbox_status_created_idx` sobre `(status, created_at)` con migración `0016_eminent_roxanne_simpson.sql`.
 
+### Rendimiento y Optimización de Base de Datos
+*   [x] **Índice compuesto único en `monthly_summaries`:** Creación de índice único `monthly_summaries_org_year_month_unique` sobre `(organization_id, year, month)` con migración `0017_free_iron_monger.sql`, acelerando consultas de rangos históricos `findRecent` e impidiendo duplicados de resumen para un mismo período contable.
+
 ## § Abierto (Pendiente de Refactorización)
 
 ### 1. Visualización y Gráficos
@@ -56,6 +59,3 @@ Este documento registra los puntos de deuda técnica del repositorio, distinguie
 
 ### 2. Persistencia y Modelado de Datos
 *   [ ] **Vincular suscripciones recurrentes con asientos de `ledgerTransactions`:** El módulo de suscripciones persiste en Postgres vía Drizzle, pero opera de forma aislada sin emitir asientos contables ni débitos automáticos en el libro mayor.
-
-### 3. Rendimiento de Base de Datos
-*   [ ] **Índice compuesto en `monthly_summaries`:** Agregar índice sobre `(organization_id, year, month)` para acelerar consultas de rangos históricos `findRecent`.

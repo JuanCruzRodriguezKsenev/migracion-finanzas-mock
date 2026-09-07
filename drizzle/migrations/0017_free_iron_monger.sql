@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "monthly_summaries_org_year_month_unique" ON "monthly_summaries" USING btree ("organization_id","year","month");

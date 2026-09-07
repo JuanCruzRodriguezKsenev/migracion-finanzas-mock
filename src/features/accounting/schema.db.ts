@@ -130,5 +130,7 @@ export const monthlySummaries = pgTable( "monthly_summaries" , {
   assetsSnapshot:      integer( "assets_snapshot"   ).default( 0 ).notNull() ,
   liabilitiesSnapshot: integer( "liabilities_snapshot" ).default( 0 ).notNull() ,
   createdAt:           timestamp( "created_at"      , {withTimezone: true} ).defaultNow().notNull() ,
-} ) ;
+} , ( table ) => { return( {
+  uniqueOrgYearMonth: uniqueIndex( "monthly_summaries_org_year_month_unique" ).on( table.organizationId , table.year , table.month ) ,
+} ) ; } ) ;
 
