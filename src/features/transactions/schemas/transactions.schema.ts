@@ -18,6 +18,7 @@ export const createTransactionFormSchema = z.object( {
   categoryId:           z.string().uuid( "La categoría seleccionada no es válida." ).optional().nullable() ,
   merchantName:         z.string().max( 150 , "El nombre del comercio no puede superar los 150 caracteres." ).optional().nullable() ,
   occurredAt:           z.coerce.date().optional() ,
+  currency:             z.string().max( 10 ).optional() ,
 } ).refine(
   ( data ) => {
     if( data.type === "transfer" ) {

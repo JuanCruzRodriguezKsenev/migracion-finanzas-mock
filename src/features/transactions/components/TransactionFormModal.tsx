@@ -45,6 +45,7 @@ export function TransactionFormModal( {
   const [ type , setType ]                                 = useState< TransactionType >( "expense" ) ;
   const [ description , setDescription ]                   = useState( "" ) ;
   const [ amount , setAmount ]                             = useState( "" ) ;
+  const [ currency , setCurrency ]                         = useState( "ARS" ) ;
   const [ sourceAccountId , setSourceAccountId ]           = useState( "" ) ;
   const [ destinationAccountId , setDestinationAccountId ] = useState( "" ) ;
   const [ categoryId , setCategoryId ]                     = useState( "" ) ;
@@ -58,6 +59,7 @@ export function TransactionFormModal( {
   const handleReset = () => {
     setDescription( "" ) ;
     setAmount( "" ) ;
+    setCurrency( "ARS" ) ;
     setSourceAccountId( "" ) ;
     setDestinationAccountId( "" ) ;
     setCategoryId( "" ) ;
@@ -65,6 +67,14 @@ export function TransactionFormModal( {
     setOccurredAt( todayStr ) ;
     setErrorMessage( "" ) ;
     setType( "expense" ) ;
+  } ;
+
+  const handleSourceAccountChange = ( id: string ) => {
+    setSourceAccountId( id ) ;
+    const acc = accounts.find( ( a ) => a.id === id ) ;
+    if( acc?.currency ) {
+      setCurrency( acc.currency ) ;
+    }
   } ;
 
   const handleSubmit = ( e: React.FormEvent ) => {
@@ -97,6 +107,7 @@ export function TransactionFormModal( {
         description ,
         type ,
         amount:               parsedAmount ,
+        currency ,
         sourceAccountId ,
         destinationAccountId: (type === "transfer") ? destinationAccountId : undefined ,
         categoryId:           categoryId || null ,
@@ -151,15 +162,26 @@ export function TransactionFormModal( {
 
         {errorMessage && <FormError error={errorMessage} />}
 
-        <FormInput
-          label="Monto ($)"
-          type="number"
-          step="0.01"
-          placeholder="0.00"
-          value={amount}
-          onChange={ ( e ) => setAmount( e.target.value ) }
-          required
-        />
+        <div className={styles.amountCurrencyRow}>
+          <FormInput
+            label="Monto"
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            value={amount}
+            onChange={ ( e ) => setAmount( e.target.value ) }
+            required
+          />
+          <FormSelect
+            label="Moneda"
+            value={currency}
+            onChange={ ( e ) => setCurrency( e.target.value ) }
+          >
+            <option value="ARS">ARS ($)</option>
+            <option value="USD">USD (US$)</option>
+            <option value="EUR">EUR (€)</option>
+          </FormSelect>
+        </div>
 
         <FormInput
           label="Descripción"
@@ -180,7 +202,7 @@ export function TransactionFormModal( {
         <FormSelect
           label={ (type === "income") ? "Cuenta de depósito" : "Cuenta de pago / origen" }
           value={sourceAccountId}
-          onChange={ ( e ) => setSourceAccountId( e.target.value ) }
+          onChange={ ( e ) => handleSourceAccountChange( e.target.value ) }
           required
         >
           <option value="">Seleccionar cuenta...</option>

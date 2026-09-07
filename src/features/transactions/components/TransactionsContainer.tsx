@@ -10,19 +10,24 @@ import { useSearchParams }                                             from "nex
 
 // Shared
 import { Button } from "@/shared/ui/display/Button/Button" ;
+import { Column } from "@/shared/ui/display/Toolbar/ColumnSelector" ;
 
 // Feature: Accounting
-import { TransactionWithEntries } from "@/features/accounting/repositories/ledgerRepository" ;
-import { Account , Category }     from "@/features/accounting/types" ;
+import { TransactionWithEntries }                      from "@/features/accounting/repositories/ledgerRepository" ;
+import { Account , Category , FinancialEntity }         from "@/features/accounting/types" ;
 
 // Feature: Transactions
-import { getTransactionsPageAction } from "../actions/transactionsActions" ;
-import { TransactionsControls }      from "./TransactionsControls" ;
-import { TransactionsTable }         from "./TransactionsTable" ;
-import { TransactionFormModal }      from "./TransactionFormModal" ;
-import { TransactionDetailModal }    from "./TransactionDetailModal" ;
-import { derivarTipoTransaccion }    from "../utils/derivarTipo" ;
-import styles                        from "./Transactions.module.css" ;
+import {
+  TransactionsControls ,
+  TransactionTableColumns ,
+  TransactionColumnKey
+} from "./TransactionsControls" ;
+import { TransactionsTable }                                   from "./TransactionsTable" ;
+import { TransactionFormModal }                                from "./TransactionFormModal" ;
+import { TransactionDetailModal }                              from "./TransactionDetailModal" ;
+import { derivarTipoTransaccion , calcularResumenTransaccion } from "../utils/derivarTipo" ;
+import { getTransactionsPageAction }                           from "../actions/transactionsActions" ;
+import styles                                                  from "./Transactions.module.css" ;
 
 
 interface TransactionsContainerProps {
@@ -31,8 +36,29 @@ interface TransactionsContainerProps {
   initialHasMore:      boolean ;
   accounts:            Account[] ;
   categories:          Category[] ;
+  financialEntities?:  FinancialEntity[] ;
   lang?:               string ;
 }
+
+const ALL_COLUMNS: Column< TransactionTableColumns >[] = [
+  { key: "occurredAt"  , label: "Fecha" } ,
+  { key: "description" , label: "Descripción" } ,
+  { key: "category"    , label: "Categoría" } ,
+  { key: "account"     , label: "Cuenta" } ,
+  { key: "type"        , label: "Tipo" } ,
+  { key: "amount"      , label: "Monto" } ,
+  { key: "actions"     , label: "Acciones" } ,
+] ;
+
+const DEFAULT_COLUMNS: TransactionColumnKey[] = [
+  "occurredAt" ,
+  "description" ,
+  "category" ,
+  "account" ,
+  "type" ,
+  "amount" ,
+  "actions" ,
+] ;
 
 export function TransactionsContainer( {
   initialTransactions ,
@@ -40,6 +66,7 @@ export function TransactionsContainer( {
   initialHasMore ,
   accounts ,
   categories ,
+  financialEntities = [] ,
 }: TransactionsContainerProps ) {
   const searchParams = useSearchParams() ;
   const monthParam   = searchParams?.get( "month" ) ;
@@ -56,10 +83,19 @@ export function TransactionsContainer( {
   const [ selectedAccount , setSelectedAccount ]   = useState( "" ) ;
   const [ selectedCategory , setSelectedCategory ] = useState( "" ) ;
   const [ selectedType , setSelectedType ]         = useState( "" ) ;
+  const [ selectedCurrency , setSelectedCurrency ] = useState( "" ) ;
+
+  // Selector de columnas visibles
+  const [ visibleColumns , setVisibleColumns ] = useState< TransactionColumnKey[] >( DEFAULT_COLUMNS ) ;
+
+  // Lista de monedas disponibles
+  const availableCurrencies = Array.from(
+    new Set( [ "ARS" , ...accounts.map( ( a ) => a.currency ).filter( Boolean ) ] )
+  ) ;
 
   // Modales
-  const [ isFormModalOpen , setIsFormModalOpen ]         = useState( false ) ;
-  const [ selectedTxDetail , setSelectedTxDetail ]       = useState< TransactionWithEntries | null >( null ) ;
+  const [ isFormModalOpen , setIsFormModalOpen ]   = useState( false ) ;
+  const [ selectedTxDetail , setSelectedTxDetail ] = useState< TransactionWithEntries | null >( null ) ;
 
   // Calcular rango de mes si viene por URL
   const getMonthDateRange = useCallback( () => {
@@ -142,33 +178,47 @@ export function TransactionsContainer( {
     setLoadingMore( false ) ;
   } ;
 
+  const handleToggleColumn = ( key: TransactionColumnKey ) => {
+    setVisibleColumns( ( prev ) => {
+      if( prev.includes( key ) ) {
+        if( prev.length <= 1 ) { return( prev ) ; }
+        return( prev.filter( ( k ) => k !== key ) ) ;
+      }
+      return( [ ...prev , key ] ) ;
+    } ) ;
+  } ;
+
+  const handleShowAllColumns = () => {
+    setVisibleColumns( DEFAULT_COLUMNS ) ;
+  } ;
+
+  const handleHideAllColumns = () => {
+    setVisibleColumns( [ "description" , "amount" ] ) ;
+  } ;
+
   const handleDataMutated = () => {
     fetchPage( true , null ) ;
   } ;
 
-  // Filtrado de tipo en memoria (derivación pura de partida doble)
-  const displayedTransactions = selectedType
-    ? transactions.filter( ( tx ) => {
-        const derived = derivarTipoTransaccion( tx.entries , accounts ) ;
-        return( derived === selectedType ) ;
-      } )
-    : transactions ;
+  // Filtrado de tipo y moneda en memoria
+  const displayedTransactions = transactions.filter( ( tx ) => {
+    if( selectedType ) {
+      const derived = derivarTipoTransaccion( tx.entries , accounts ) ;
+      if( derived !== selectedType ) { return( false ) ; }
+    }
+    if( selectedCurrency ) {
+      const resumen = calcularResumenTransaccion( tx.entries , accounts ) ;
+      if( (resumen.currency || "ARS") !== selectedCurrency ) { return( false ) ; }
+    }
+    return( true ) ;
+  } ) ;
 
   return(
     <div className={styles.container}>
-      <div className={styles.headerBar}>
-        <div className={styles.titleArea}>
-          <h1 className={styles.pageTitle}>Libro Diario</h1>
-          <p className={styles.pageSubtitle}>
-            Historial de movimientos y asientos contables de partida doble.
-          </p>
-        </div>
-
-        <div className={styles.actionsArea}>
-          <Button variant="primary" onClick={ () => setIsFormModalOpen(true) }>
-            + Nueva Transacción
-          </Button>
-        </div>
+      <div className={styles.actionBar}>
+        <Button variant="primary" onClick={ () => setIsFormModalOpen( true ) }>
+          + Nueva Transacción
+        </Button>
       </div>
 
       <TransactionsControls
@@ -180,8 +230,16 @@ export function TransactionsContainer( {
         setSelectedCategory={setSelectedCategory}
         selectedType={selectedType}
         setSelectedType={setSelectedType}
+        selectedCurrency={selectedCurrency}
+        setSelectedCurrency={setSelectedCurrency}
+        currencies={availableCurrencies}
         accounts={accounts}
         categories={categories}
+        columns={ALL_COLUMNS}
+        visibleColumns={visibleColumns}
+        onToggleColumn={handleToggleColumn}
+        onShowAllColumns={handleShowAllColumns}
+        onHideAllColumns={handleHideAllColumns}
         onClear={handleClearFilters}
       />
 
@@ -189,8 +247,10 @@ export function TransactionsContainer( {
         transactions={displayedTransactions}
         accounts={accounts}
         categories={categories}
+        financialEntities={financialEntities}
+        visibleColumns={visibleColumns}
         loading={isPending}
-        onSelectTransaction={ ( tx ) => setSelectedTxDetail(tx) }
+        onSelectTransaction={ ( tx ) => setSelectedTxDetail( tx ) }
       />
 
       {hasMore && (

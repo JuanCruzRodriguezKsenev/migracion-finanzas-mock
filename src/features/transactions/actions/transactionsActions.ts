@@ -84,6 +84,8 @@ export async function createTransactionFromFormAction(
 
   try {
     const allAccounts = await accountRepository.findAll( organizationId ) ;
+    const sourceAcc   = allAccounts.find( ( a ) => a.id === data.sourceAccountId ) ;
+    const currency    = data.currency || sourceAcc?.currency || "ARS" ;
 
     const entries: {
       accountId: string ;
@@ -98,11 +100,14 @@ export async function createTransactionFromFormAction(
         accountId: data.sourceAccountId ,
         debit:     0 ,
         credit:    amountInCents ,
-        currency:  "ARS" ,
+        currency ,
       } ) ;
 
       // Cuenta de gasto (entra gasto: Débito)
-      let expenseAccount = allAccounts.find( ( a ) => a.type === "expense" ) ;
+      let expenseAccount = allAccounts.find( ( a ) => (a.type === "expense") && (a.currency === currency) ) ;
+      if( !expenseAccount ) {
+        expenseAccount = allAccounts.find( ( a ) => a.type === "expense" ) ;
+      }
       if( !expenseAccount ) {
         expenseAccount = await accountRepository.create( {
           organizationId ,
@@ -110,7 +115,7 @@ export async function createTransactionFromFormAction(
           name:     "Gastos Generales" ,
           type:     "expense" ,
           balance:  0 ,
-          currency: "ARS" ,
+          currency ,
         } ) ;
       }
 
@@ -118,7 +123,7 @@ export async function createTransactionFromFormAction(
         accountId: expenseAccount.id ,
         debit:     amountInCents ,
         credit:    0 ,
-        currency:  "ARS" ,
+        currency ,
       } ) ;
     } else if( data.type === "income" ) {
       // Cuenta de depósito (entra plata: Débito)
@@ -126,11 +131,14 @@ export async function createTransactionFromFormAction(
         accountId: data.sourceAccountId ,
         debit:     amountInCents ,
         credit:    0 ,
-        currency:  "ARS" ,
+        currency ,
       } ) ;
 
       // Cuenta de ingreso (origen: Crédito)
-      let revenueAccount = allAccounts.find( ( a ) => a.type === "revenue" ) ;
+      let revenueAccount = allAccounts.find( ( a ) => (a.type === "revenue") && (a.currency === currency) ) ;
+      if( !revenueAccount ) {
+        revenueAccount = allAccounts.find( ( a ) => a.type === "revenue" ) ;
+      }
       if( !revenueAccount ) {
         revenueAccount = await accountRepository.create( {
           organizationId ,
@@ -138,7 +146,7 @@ export async function createTransactionFromFormAction(
           name:     "Ingresos Varios" ,
           type:     "revenue" ,
           balance:  0 ,
-          currency: "ARS" ,
+          currency ,
         } ) ;
       }
 
@@ -146,7 +154,7 @@ export async function createTransactionFromFormAction(
         accountId: revenueAccount.id ,
         debit:     0 ,
         credit:    amountInCents ,
-        currency:  "ARS" ,
+        currency ,
       } ) ;
     } else {
       // Transferencia entre cuentas de balance
@@ -159,7 +167,7 @@ export async function createTransactionFromFormAction(
         accountId: data.sourceAccountId ,
         debit:     0 ,
         credit:    amountInCents ,
-        currency:  "ARS" ,
+        currency ,
       } ) ;
 
       // Cuenta destino (entra plata: Débito)
@@ -167,7 +175,7 @@ export async function createTransactionFromFormAction(
         accountId: data.destinationAccountId ,
         debit:     amountInCents ,
         credit:    0 ,
-        currency:  "ARS" ,
+        currency ,
       } ) ;
     }
 

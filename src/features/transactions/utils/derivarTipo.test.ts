@@ -110,6 +110,21 @@ describe( "derivarTipo" , () => {
       expect( resumen.amountInCents ).toBe( 5000 ) ;
       expect( resumen.primaryAccountId ).toBe( "acc-bank" ) ;
       expect( resumen.counterpartAccountId ).toBe( "acc-cash" ) ;
+      expect( resumen.currency ).toBe( "ARS" ) ;
+    } ) ;
+
+    it( "debería heredar la divisa de una cuenta en USD" , () => {
+      const usdAccounts: Account[] = [
+        makeAccount( { id: "acc-usd" , type: "asset" , name: "Caja Ahorro USD" , currency: "USD" } ) ,
+        makeAccount( { id: "acc-exp" , type: "expense" , name: "Software USD" , currency: "USD" } ) ,
+      ] ;
+      const entries = [
+        { accountId: "acc-exp" , debit: 2000 , credit: 0 } ,
+        { accountId: "acc-usd" , debit: 0 , credit: 2000 } ,
+      ] ;
+
+      const resumen = calcularResumenTransaccion( entries , usdAccounts ) ;
+      expect( resumen.currency ).toBe( "USD" ) ;
     } ) ;
   } ) ;
 } ) ;

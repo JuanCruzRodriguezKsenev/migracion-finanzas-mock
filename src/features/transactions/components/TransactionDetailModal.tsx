@@ -12,9 +12,9 @@ import { Modal }       from "@/shared/ui/feedback/Modal/Modal" ;
 import { FormInput }   from "@/shared/ui/forms/Form/FormInput" ;
 import { FormSelect }  from "@/shared/ui/forms/Form/FormSelect" ;
 import { FormError }   from "@/shared/ui/forms/Form/FormError" ;
-import { FormActions } from "@/shared/ui/forms/Form/FormActions" ;
-import { Button }      from "@/shared/ui/display/Button/Button" ;
-import { formatCents } from "@/features/accounting/utils/dashboardMetrics" ;
+import { FormActions }  from "@/shared/ui/forms/Form/FormActions" ;
+import { Button }       from "@/shared/ui/display/Button/Button" ;
+import { formatCurrency } from "@/shared/lib/currencyFormatter" ;
 
 // Feature: Accounting
 import { TransactionWithEntries } from "@/features/accounting/repositories/ledgerRepository" ;
@@ -178,10 +178,10 @@ function TransactionDetailContent( {
                 <tr key={entry.id || `entry-${index}`}>
                   <td>{acc ? `${acc.name} (${acc.type})` : entry.accountId.slice( 0 , 8 )}</td>
                   <td className={styles.alignRight}>
-                    {entry.debit > 0 ? formatCents( entry.debit ) : "—"}
+                    {entry.debit > 0 ? formatCurrency( entry.debit , entry.currency || "ARS" , "es-AR" ) : "—"}
                   </td>
                   <td className={styles.alignRight}>
-                    {entry.credit > 0 ? formatCents( entry.credit ) : "—"}
+                    {entry.credit > 0 ? formatCurrency( entry.credit , entry.currency || "ARS" , "es-AR" ) : "—"}
                   </td>
                 </tr>
               ) ;

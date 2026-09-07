@@ -7,7 +7,7 @@
 import styles from "./page.module.css" ;
 
 // Feature: Accounting
-import { getAccountsAction } from "@/features/accounting/actions/accountingActions" ;
+import { getAccountsAction , getFinancialEntitiesAction } from "@/features/accounting/actions/accountingActions" ;
 
 // Feature: Transactions
 import { getTransactionsPageAction , getCategoriesAction } from "@/features/transactions/actions/transactionsActions" ;
@@ -37,9 +37,10 @@ export default async function TransactionsPage( {params , searchParams}: Transac
   }
 
   // Carga concurrente en el servidor
-  const [ accountsRes , categoriesRes , transactionsPageRes ] = await Promise.all( [
+  const [ accountsRes , categoriesRes , entitiesRes , transactionsPageRes ] = await Promise.all( [
     getAccountsAction() ,
     getCategoriesAction() ,
+    getFinancialEntitiesAction() ,
     getTransactionsPageAction( {
       limit: 20 ,
       fromDate ,
@@ -49,6 +50,7 @@ export default async function TransactionsPage( {params , searchParams}: Transac
 
   const accounts            = ( accountsRes.success         ? accountsRes.value                   : [] ) ;
   const categories          = ( categoriesRes.success       ? categoriesRes.value                 : [] ) ;
+  const financialEntities   = ( entitiesRes.success         ? entitiesRes.value                   : [] ) ;
   const initialTransactions = ( transactionsPageRes.success ? transactionsPageRes.value.items      : [] ) ;
   const initialNextCursor   = ( transactionsPageRes.success ? transactionsPageRes.value.nextCursor : null ) ;
   const initialHasMore      = ( transactionsPageRes.success ? transactionsPageRes.value.hasMore    : false ) ;
@@ -61,6 +63,7 @@ export default async function TransactionsPage( {params , searchParams}: Transac
         initialHasMore={initialHasMore}
         accounts={accounts}
         categories={categories}
+        financialEntities={financialEntities}
         lang={lang}
       />
     </div>

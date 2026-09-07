@@ -5,38 +5,12 @@
   width: 100%;
 }
 
-.headerBar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.titleArea {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.pageTitle {
-  font-family: var(--font-display);
-  font-size: var(--fs-xl);
-  font-weight: 700;
-  color: var(--text-main);
-  margin: 0;
-}
-
-.pageSubtitle {
-  font-size: var(--fs-sm);
-  color: var(--text-muted);
-  margin: 0;
-}
-
-.actionsArea {
+.actionBar {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.75rem;
+  width: 100%;
 }
 
 /* ── Barra de Filtros ─────────────────────────────────────────── */
@@ -102,7 +76,30 @@
 }
 
 /* ── Badges y Formatos de Celdas ───────────────────────────────── */
+.colSelectorWrapper {
+  position: relative;
+}
+
 .descCell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.txnLogoCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: var(--border-subtle);
+  flex-shrink: 0;
+  overflow: hidden;
+  font-size: 0.95rem;
+}
+
+.txnTextGroup {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
@@ -116,6 +113,45 @@
 .descMerchant {
   font-size: var(--fs-xs);
   color: var(--text-muted);
+}
+
+.accountCell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.accountName {
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.categoryBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--fs-xs);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-xs);
+  background-color: var(--border-subtle);
+  color: var(--text-muted);
+}
+
+.currencyBadge {
+  display: inline-block;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-xs);
+  background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+  margin-left: 0.35rem;
+}
+
+.amountCurrencyRow {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 0.75rem;
 }
 
 .dateCell {

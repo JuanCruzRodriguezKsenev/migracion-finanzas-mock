@@ -14,6 +14,7 @@ export interface TransactionSummaryDerived {
   amountInCents:         number ;
   primaryAccountId?:     string ;
   counterpartAccountId?: string ;
+  currency?:             string ;
 }
 
 /**
@@ -54,10 +55,10 @@ export function derivarTipoTransaccion(
  * 
  * @param entries - Asientos de la transacción.
  * @param accounts - Cuentas de la organización.
- * @returns Resumen con tipo, importe en centavos y cuenta principal.
+ * @returns Resumen con tipo, importe en centavos, cuenta principal y divisa.
  */
 export function calcularResumenTransaccion(
-  entries:  LedgerEntry[] | { accountId: string ; debit: number ; credit: number }[] ,
+  entries:  LedgerEntry[] | { accountId: string ; debit: number ; credit: number ; currency?: string }[] ,
   accounts: Account[] | Map< string , Account >
 ): TransactionSummaryDerived {
   const accountsMap = ( accounts instanceof Map )
@@ -81,10 +82,16 @@ export function calcularResumenTransaccion(
       return( (acc?.type === "asset") && (e.debit > 0) ) ;
     } ) ;
 
+    const primaryAccountId = assetEntry?.accountId || revenueEntries[0]?.accountId ;
+    const primaryAcc = primaryAccountId ? accountsMap.get( primaryAccountId ) : null ;
+    const entryCurrency = entries.find( ( e ) => e.currency )?.currency ;
+    const currency = primaryAcc?.currency || entryCurrency || "ARS" ;
+
     return( {
       type ,
       amountInCents ,
-      primaryAccountId: assetEntry?.accountId || revenueEntries[0]?.accountId ,
+      primaryAccountId ,
+      currency ,
     } ) ;
   }
 
@@ -103,10 +110,16 @@ export function calcularResumenTransaccion(
       return( ( (acc?.type === "asset") || (acc?.type === "liability") ) && (e.credit > 0) ) ;
     } ) ;
 
+    const primaryAccountId = assetEntry?.accountId || expenseEntries[0]?.accountId ;
+    const primaryAcc = primaryAccountId ? accountsMap.get( primaryAccountId ) : null ;
+    const entryCurrency = entries.find( ( e ) => e.currency )?.currency ;
+    const currency = primaryAcc?.currency || entryCurrency || "ARS" ;
+
     return( {
       type ,
       amountInCents ,
-      primaryAccountId: assetEntry?.accountId || expenseEntries[0]?.accountId ,
+      primaryAccountId ,
+      currency ,
     } ) ;
   }
 
@@ -124,10 +137,16 @@ export function calcularResumenTransaccion(
     ? debitAsset.debit
     : entries.reduce( ( max , e ) => Math.max( max , e.debit ) , 0 ) ;
 
+  const primaryAccountId = creditAsset?.accountId ;
+  const primaryAcc = primaryAccountId ? accountsMap.get( primaryAccountId ) : null ;
+  const entryCurrency = entries.find( ( e ) => e.currency )?.currency ;
+  const currency = primaryAcc?.currency || entryCurrency || "ARS" ;
+
   return( {
     type:                 "transfer" ,
     amountInCents ,
-    primaryAccountId:     creditAsset?.accountId ,
+    primaryAccountId ,
     counterpartAccountId: debitAsset?.accountId ,
+    currency ,
   } ) ;
 }
