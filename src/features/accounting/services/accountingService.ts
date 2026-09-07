@@ -14,6 +14,10 @@ import { ledgerRepository } from "../repositories/ledgerRepository" ;
 import { outboxEvents } from "../schema.db" ;
 
 
+/** Moneda que se asume cuando un asiento no declara la suya y la cuenta tampoco pudo resolverse. */
+export const MONEDA_POR_DEFECTO = "ARS" ;
+
+
 /**
  * Crea una transacción contable de partida doble de manera transaccional.
  * Valida que los débitos y créditos sumen cero (balance cero) y pertenezcan al inquilino.
@@ -32,19 +36,10 @@ export async function createLedgerTransaction(
     return( fail("Una transacción de partida doble requiere al menos dos entradas contables.") ) ;
   }
 
-  // 2. Validar regla de Balance Cero (Débitos = Créditos)
-  let totalDebit  = 0 ;
-  let totalCredit = 0 ;
-
-  for( const entry of entries ){
-    totalDebit  += entry.debit ;
-    totalCredit += entry.credit ;
-  }
-
-  if( totalDebit !== totalCredit ){
-    return( fail(`La transacción contable está desbalanceada. Débitos: ${totalDebit}, Créditos: ${totalCredit}. La diferencia debe ser cero.`) ) ;
-  }
-
+  // La regla de Balance Cero se valida **por moneda** y **dentro** de la transacción, en el paso B:
+  // la divisa de un asiento la define la cuenta a la que impacta, así que no se puede comprobar
+  // antes de leer las cuentas. Validarlo acá afuera obligaría a asumir una moneda y a repetir la
+  // regla en dos lugares, que es precisamente lo que este repositorio cobra caro.
   try {
     // 3. Ejecutar operaciones dentro de una transacción ACID de base de datos
     return( await db.transaction( async (tx) => {
@@ -60,8 +55,13 @@ export async function createLedgerTransaction(
       } , tx ) ;
 
       const entriesToInsert: InsertLedgerEntry[] = [] ;
+      const balancePorMoneda = new Map< string , number >() ;
 
-      // B. Procesar cada asiento y actualizar el saldo acumulado en su cuenta respectiva
+      // B. Resolver la cuenta de cada asiento, fijar su moneda y acumular el balance por divisa.
+      //    Se bloquean todas las filas antes de tocar un solo saldo: si la transacción está
+      //    desbalanceada, no se escribió nada todavía.
+      const resueltos: { entry: typeof entries[number] ; account: NonNullable< Awaited< ReturnType< typeof accountRepository.findByIdForUpdate > > > ; moneda: string }[] = [] ;
+
       for( const entry of entries ){
         // Bloquear la fila de la cuenta para evitar colisiones de concurrencia (SELECT FOR UPDATE)
         const account = await accountRepository.findByIdForUpdate( entry.accountId , organizationId , tx ) ;
@@ -75,6 +75,41 @@ export async function createLedgerTransaction(
           throw new Error( `Acceso no autorizado: la cuenta ${account.name} no pertenece a la organización solicitante.` ) ;
         }
 
+        // La moneda del asiento la manda la cuenta, no quien llama.
+        //
+        // El saldo de una cuenta es un entero en su propia divisa: aceptar un asiento en otra
+        // moneda le sumaría centavos de dólar a un saldo en pesos, y el saldo dejaría de significar
+        // nada. Se rechaza acá, en el motor, y no en el formulario, para que ninguna vía de entrada
+        // —acción, seed, script o importador futuro— pueda saltearlo.
+        const monedaAsiento = ( entry.currency || account.currency ) ;
+
+        if( monedaAsiento !== account.currency ){
+          throw new Error( `La cuenta ${account.name} opera en ${account.currency} y el asiento vino en ${monedaAsiento}. Para mover valor entre monedas usá una transacción de cambio.` ) ;
+        }
+
+        balancePorMoneda.set(
+          monedaAsiento ,
+          (balancePorMoneda.get( monedaAsiento ) || 0) + entry.debit - entry.credit
+        ) ;
+
+        resueltos.push( {entry , account , moneda: monedaAsiento} ) ;
+      }
+
+      // C. Regla de Balance Cero, una moneda por vez.
+      //
+      //    Sumar todos los asientos sin mirar la divisa daba por balanceada una transacción con
+      //    100.000 centavos de peso contra 100.000 de dólar. Cada moneda es un libro propio y
+      //    tiene que cerrar por separado; es además lo que hace válido un cambio de divisas como
+      //    una sola transacción: dos grupos de moneda, cada uno neteando a cero contra su cuenta
+      //    de posición.
+      for( const [ moneda , diferencia ] of balancePorMoneda ){
+        if( diferencia !== 0 ){
+          throw new Error( `La transacción contable está desbalanceada en ${moneda}: la diferencia entre débitos y créditos es de ${diferencia} centavos. Cada moneda debe cerrar en cero por separado.` ) ;
+        }
+      }
+
+      // D. Aplicar los saldos, ya con la certeza de que la transacción cierra.
+      for( const { entry , account , moneda: monedaAsiento } of resueltos ){
         // Calcular el nuevo saldo según el tipo de cuenta financiera
         let nuevoSaldo = account.balance ;
         const tipo     = account.type ;
@@ -99,21 +134,28 @@ export async function createLedgerTransaction(
           accountId:      entry.accountId ,
           debit:          entry.debit ,
           credit:         entry.credit ,
-          currency:       entry.currency || "ARS" ,
+          currency:       monedaAsiento ,
         } ) ;
       }
 
-      // C. Insertar asientos en lote
+      // E. Insertar asientos en lote
       await ledgerRepository.createEntries( entriesToInsert , tx ) ;
 
-      // D. Registrar evento en la tabla Outbox para webhooks
+      // F. Registrar evento en la tabla Outbox para webhooks
       await tx.insert( outboxEvents ).values( {
         organizationId ,
         eventType: "TRANSACTION_CREATED" ,
         payload: {
           transactionId: insertedTx.id ,
           description ,
-          totalAmount: totalDebit ,
+          // Un total por moneda: con divisas mezcladas, un único número no significaría nada.
+          totalsPorMoneda: Object.fromEntries(
+            entriesToInsert.reduce( ( acc , e ) => {
+              const moneda = ( e.currency || MONEDA_POR_DEFECTO ) ;
+              acc.set( moneda , (acc.get( moneda ) || 0) + (e.debit || 0) ) ;
+              return( acc ) ;
+            } , new Map< string , number >() )
+          ) ,
         } ,
       } ) ;
 
@@ -284,10 +326,17 @@ export async function reverseLedgerTransaction(
 ): Promise< Result<LedgerTransaction , string> > {
   try {
     return( await db.transaction( async ( tx ) => {
-      // 1. Obtener transacción original y verificar pertenencia
-      const original = await ledgerRepository.findById( transactionId , organizationId , tx ) ;
+      // 1. Obtener transacción original con su fila bloqueada y verificar pertenencia.
+      //    El bloqueo es lo que hace fiable la guarda del paso 2 ante dos reversiones simultáneas.
+      const original = await ledgerRepository.findByIdForUpdate( transactionId , organizationId , tx ) ;
       if( !original ) {
         return( fail("La transacción contable no existe o no pertenece a la organización.") ) ;
+      }
+
+      // 2. Una transacción se reversa una sola vez. Sin esta guarda, reversar dos veces devolvía
+      //    el importe dos veces a las cuentas: dinero creado de la nada.
+      if( original.reversedAt ) {
+        return( fail("Esta transacción ya fue reversada; no puede reversarse otra vez.") ) ;
       }
 
       // 2. Obtener los asientos contables originales
@@ -322,14 +371,21 @@ export async function reverseLedgerTransaction(
         ? `Reversión: ${original.description} (${reason})`
         : `Reversión: ${original.description}` ;
 
+      const momentoReversion = new Date() ;
+
       const reversalTx = await ledgerRepository.createTransaction( {
         organizationId ,
-        categoryId:     original.categoryId ,
-        description:    reversalDescription.slice( 0 , 255 ) ,
-        merchantName:   original.merchantName ,
-        merchantDomain: original.merchantDomain ,
-        occurredAt:     new Date() ,
+        categoryId:            original.categoryId ,
+        description:           reversalDescription.slice( 0 , 255 ) ,
+        merchantName:          original.merchantName ,
+        merchantDomain:        original.merchantDomain ,
+        occurredAt:            momentoReversion ,
+        reversesTransactionId: original.id ,
       } , tx ) ;
+
+      // Dejar el vínculo en los dos sentidos: la interfaz necesita poder marcar la original como
+      // reversada sin recorrer el outbox, y la guarda del paso 2 se apoya en esta marca.
+      await ledgerRepository.markAsReversed( original.id , momentoReversion , tx ) ;
 
       // 5. Invertir las entradas (débito pasa a crédito y crédito pasa a débito)
       const reversalEntries: InsertLedgerEntry[] = entries.map( ( e ) => ( {

@@ -100,6 +100,48 @@ export const ledgerRepository = {
   } ,
 
   /**
+   * Busca una transacción bloqueando su fila hasta el fin de la transacción de base de datos
+   * (`SELECT ... FOR UPDATE`).
+   *
+   * La usa la reversión: sin el bloqueo, dos clics simultáneos leerían ambos `reversed_at` en nulo,
+   * los dos pasarían la guarda y se generarían dos contra-asientos, devolviendo el doble del
+   * importe a las cuentas. En un motor de partida doble eso es crear dinero de la nada.
+   *
+   * @param id - ID de la transacción.
+   * @param organizationId - Organización dueña.
+   * @param tx - Instancia de transacción; debe existir para que el bloqueo tenga sentido.
+   * @returns La transacción bloqueada, o null si no existe o no pertenece a la organización.
+   */
+  async findByIdForUpdate( id: string , organizationId: string , tx: DBOrTx = db ): Promise< LedgerTransaction | null > {
+    const results = await tx
+      .select()
+      .from( ledgerTransactions )
+      .where(
+        and(
+          eq( ledgerTransactions.id             , id             ) ,
+          eq( ledgerTransactions.organizationId , organizationId ) ,
+        )
+      )
+      .limit( 1 )
+      .for( "update" ) ;
+    return( results[0] || null ) ;
+  } ,
+
+  /**
+   * Marca una transacción como reversada, dejando constancia de cuándo ocurrió.
+   *
+   * @param id - ID de la transacción original.
+   * @param momento - Instante de la reversión.
+   * @param tx - Instancia de transacción opcional.
+   */
+  async markAsReversed( id: string , momento: Date , tx: DBOrTx = db ): Promise< void > {
+    await tx
+      .update( ledgerTransactions )
+      .set( {reversedAt: momento} )
+      .where( eq(ledgerTransactions.id , id) ) ;
+  } ,
+
+  /**
    * Busca todas las entradas individuales de diario asociadas a una transacción.
    * 
    * @param transactionId - ID de la cabecera de transacción.

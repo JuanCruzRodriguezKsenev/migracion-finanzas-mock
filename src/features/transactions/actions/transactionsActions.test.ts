@@ -1,0 +1,175 @@
+// Librerías externas
+import { describe , it , expect , vi , beforeEach } from "vitest" ;
+import { getServerSession }                         from "next-auth" ;
+import { eq }                                       from "drizzle-orm" ;
+
+// Shared
+import { db } from "@/shared/db/client" ;
+
+// Feature: Auth
+import { organizations } from "@/features/auth/schema.db" ;
+
+// Feature: Accounting
+import { accounts , ledgerEntries , ledgerTransactions , idempotencyKeys , outboxEvents , monthlySummaries } from "@/features/accounting/schema.db" ;
+
+// Feature: Transactions
+import { createTransactionFromFormAction } from "./transactionsActions" ;
+
+vi.mock( "next-auth" , () => ( {
+  getServerSession: vi.fn() ,
+} ) ) ;
+
+
+/**
+ * Suite para la traducción de un formulario a asientos de partida doble.
+ * Cubre sobre todo el cruce de monedas: es donde una app de finanzas se rompe en silencio, porque
+ * el saldo de una cuenta es un entero sin unidad y sumarle otra divisa no falla, sólo miente.
+ */
+describe( "createTransactionFromFormAction — monedas" , () => {
+  let orgId:      string ;
+  let cajaArsId:  string ;
+  let cajaUsdId:  string ;
+  let bancoArsId: string ;
+
+  beforeEach( async () => {
+    vi.clearAllMocks() ;
+
+    await db.delete( outboxEvents       ) ;
+    await db.delete( idempotencyKeys    ) ;
+    await db.delete( ledgerEntries      ) ;
+    await db.delete( ledgerTransactions ) ;
+    await db.delete( monthlySummaries   ) ;
+    await db.delete( accounts           ) ;
+    await db.delete( organizations      ) ;
+
+    const [ org ] = await db
+      .insert( organizations )
+      .values( {name: "Org Monedas" , slug: "org-monedas"} )
+      .returning() ;
+
+    orgId = org.id ;
+
+    const [ cajaArs ] = await db
+      .insert( accounts )
+      .values( {organizationId: orgId , code: "1.1.01" , name: "Caja ARS" , type: "asset" , balance: 50000000 , currency: "ARS"} )
+      .returning() ;
+
+    const [ cajaUsd ] = await db
+      .insert( accounts )
+      .values( {organizationId: orgId , code: "1.1.02" , name: "Caja USD" , type: "asset" , balance: 0 , currency: "USD"} )
+      .returning() ;
+
+    const [ bancoArs ] = await db
+      .insert( accounts )
+      .values( {organizationId: orgId , code: "1.1.03" , name: "Banco ARS" , type: "asset" , balance: 0 , currency: "ARS"} )
+      .returning() ;
+
+    cajaArsId  = cajaArs.id ;
+    cajaUsdId  = cajaUsd.id ;
+    bancoArsId = bancoArs.id ;
+
+    vi.mocked( getServerSession ).mockResolvedValue( {
+      user:    {id: "user-1" , organizationId: orgId , role: "owner"} ,
+      expires: new Date().toISOString() ,
+    } ) ;
+  } ) ;
+
+  it( "debería ignorar la moneda del formulario y usar la de la cuenta de origen" , async () => {
+    // El formulario pide USD sobre una caja en pesos: antes esto contaminaba el saldo en ARS.
+    const res = await createTransactionFromFormAction( {
+      description:     "Compra con moneda equivocada" ,
+      type:            "expense" ,
+      amount:          100 ,
+      currency:        "USD" ,
+      sourceAccountId: cajaArsId ,
+    } ) ;
+
+    expect( res.success ).toBe( true ) ;
+
+    const asientos = await db.select().from( ledgerEntries ) ;
+    expect( asientos.length ).toBe( 2 ) ;
+    expect( asientos.every( ( a ) => a.currency === "ARS" ) ).toBe( true ) ;
+  } ) ;
+
+  it( "debería crear la contrapartida de gasto en la moneda de la cuenta" , async () => {
+    const res = await createTransactionFromFormAction( {
+      description:     "Gasto en dólares" ,
+      type:            "expense" ,
+      amount:          20 ,
+      sourceAccountId: cajaUsdId ,
+    } ) ;
+
+    expect( res.success ).toBe( true ) ;
+
+    const gastos = await db.select().from( accounts ).where( eq(accounts.type , "expense") ) ;
+    expect( gastos.length ).toBe( 1 ) ;
+    expect( gastos[0].currency ).toBe( "USD" ) ;
+  } ) ;
+
+  it( "debería rechazar una transferencia entre monedas distintas" , async () => {
+    const res = await createTransactionFromFormAction( {
+      description:          "Transferencia imposible" ,
+      type:                 "transfer" ,
+      amount:               1000 ,
+      sourceAccountId:      cajaArsId ,
+      destinationAccountId: cajaUsdId ,
+    } ) ;
+
+    expect( res.success ).toBe( false ) ;
+    if( !res.success ) {
+      expect( res.error ).toContain( "cambio" ) ;
+    }
+  } ) ;
+
+  it( "debería registrar un cambio de divisas con cuatro asientos en dos monedas" , async () => {
+    // Vendo 100.000 ARS y recibo 100 USD
+    const res = await createTransactionFromFormAction( {
+      description:          "Compra de dólares" ,
+      type:                 "exchange" ,
+      amount:               100000 ,
+      destinationAmount:    100 ,
+      sourceAccountId:      cajaArsId ,
+      destinationAccountId: cajaUsdId ,
+    } ) ;
+
+    expect( res.success ).toBe( true ) ;
+
+    const asientos = await db.select().from( ledgerEntries ) ;
+    expect( asientos.length ).toBe( 4 ) ;
+
+    // Cada moneda cierra en cero por separado: es la regla que hace válido el cruce.
+    const porMoneda = new Map< string , number >() ;
+    for( const a of asientos ) {
+      porMoneda.set( a.currency , (porMoneda.get( a.currency ) || 0) + a.debit - a.credit ) ;
+    }
+
+    expect( porMoneda.get( "ARS" ) ).toBe( 0 ) ;
+    expect( porMoneda.get( "USD" ) ).toBe( 0 ) ;
+
+    const [ caja ]  = await db.select().from( accounts ).where( eq(accounts.id , cajaArsId) ) ;
+    const [ dolar ] = await db.select().from( accounts ).where( eq(accounts.id , cajaUsdId) ) ;
+
+    expect( caja.balance ).toBe( 50000000 - 10000000 ) ;
+    expect( dolar.balance ).toBe( 10000 ) ;
+
+    // Se crearon las dos cuentas de posición, una por divisa.
+    const posiciones = await db.select().from( accounts ).where( eq(accounts.type , "equity") ) ;
+    expect( posiciones.map( ( p ) => p.currency ).sort() ).toEqual( [ "ARS" , "USD" ] ) ;
+  } ) ;
+
+  it( "debería rechazar un cambio entre dos cuentas de la misma moneda" , async () => {
+    const res = await createTransactionFromFormAction( {
+      description:          "Cambio que no cambia nada" ,
+      type:                 "exchange" ,
+      amount:               1000 ,
+      destinationAmount:    1000 ,
+      sourceAccountId:      cajaArsId ,
+      destinationAccountId: bancoArsId ,
+    } ) ;
+
+    expect( res.success ).toBe( false ) ;
+    if( !res.success ) {
+      expect( res.error ).toContain( "transferencia" ) ;
+    }
+  } ) ;
+} ) ;

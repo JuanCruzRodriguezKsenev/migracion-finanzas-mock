@@ -11,7 +11,7 @@ import { z } from "zod" ;
  */
 export const createTransactionFormSchema = z.object( {
   description:          z.string().min( 3 , "La descripción debe tener al menos 3 caracteres." ).max( 255 ) ,
-  type:                 z.enum( [ "income" , "expense" , "transfer" ] ) ,
+  type:                 z.enum( [ "income" , "expense" , "transfer" , "exchange" ] ) ,
   amount:               z.number().positive( "El monto debe ser superior a cero." ) ,
   sourceAccountId:      z.string().uuid( "Seleccioná una cuenta válida." ) ,
   destinationAccountId: z.string().uuid( "Seleccioná una cuenta de destino válida." ).optional() ,
@@ -19,16 +19,33 @@ export const createTransactionFormSchema = z.object( {
   merchantName:         z.string().max( 150 , "El nombre del comercio no puede superar los 150 caracteres." ).optional().nullable() ,
   occurredAt:           z.coerce.date().optional() ,
   currency:             z.string().max( 10 ).optional() ,
+  /**
+   * Importe recibido, en la moneda de la cuenta de destino. Sólo aplica a `exchange`: en un cambio
+   * de divisas los dos lados tienen importes distintos, y la cotización se deduce de su cociente
+   * en vez de guardarse aparte, para que no pueda contradecir a los asientos.
+   */
+  destinationAmount:    z.number().positive( "El importe recibido debe ser superior a cero." ).optional() ,
 } ).refine(
   ( data ) => {
-    if( data.type === "transfer" ) {
+    if( (data.type === "transfer") || (data.type === "exchange") ) {
       return( Boolean( data.destinationAccountId && (data.destinationAccountId !== data.sourceAccountId) ) ) ;
     }
     return( true ) ;
   } ,
   {
-    message: "Para transferencias debe seleccionar dos cuentas distintas." ,
+    message: "Para transferencias y cambios debe seleccionar dos cuentas distintas." ,
     path:    [ "destinationAccountId" ] ,
+  }
+).refine(
+  ( data ) => {
+    if( data.type === "exchange" ) {
+      return( Boolean( data.destinationAmount && (data.destinationAmount > 0) ) ) ;
+    }
+    return( true ) ;
+  } ,
+  {
+    message: "Indicá cuánto recibís en la moneda de destino." ,
+    path:    [ "destinationAmount" ] ,
   }
 ) ;
 

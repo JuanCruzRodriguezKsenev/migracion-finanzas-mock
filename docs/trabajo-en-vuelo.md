@@ -14,14 +14,14 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 **Rama activa:** `feat/transactions-management` (Módulo de Transacciones completado integralmente con pruebas y build de producción exitoso).
 
-**Estado:** 🟢 **Módulo `/transactions` finalizado. Esquema contable con `occurred_at` (migración `0014_real_komodo.sql` con backfill), DAL con paginación por cursor determinístico `(occurred_at, id)`, búsqueda y filtros de cuenta/categoría. Reversión contable ACID e inversión de saldos con evento Outbox. Primitivas compartidas accesibles `DataTable` y `SearchInput` en `shared/ui/`. UI reactiva con Server Actions, modales de alta asistida y detalle/edición/reversión, enlaces de navegación en Navbar y Header, e internacionalización completa (es/en/br). 32 suites de test (230 pruebas) pasando en verde, 0 advertencias ESLint y build exitoso.**
+**Estado:** 🟢 **Módulo `/transactions` finalizado. Esquema contable con `occurred_at` (migración `0014_real_komodo.sql` con backfill), DAL con paginación por cursor determinístico `(occurred_at, id)`, búsqueda y filtros de cuenta/categoría. Soporte multimoneda con balance Debe=Haber validado por divisa y contrapartidas específicas, transacciones de cambio de divisas (4 asientos en 2 libros contra cuentas de posición `3.3.01-<MONEDA>`), y reversión contable ACID irrepetible con bloqueo `SELECT FOR UPDATE`, columnas `reversed_at` y `reverses_transaction_id` (migración `0015_icy_blizzard.sql`) y evento Outbox `TRANSACTION_REVERSED`. Primitivas compartidas accesibles `DataTable` y `SearchInput` en `shared/ui/`. UI reactiva con Server Actions, modales de alta asistida (con selector de divisas y cuentas por moneda), detalle/edición/reversión, selector dinámico de columnas visibles y badges de marcas en transacciones, enlaces de navegación en Navbar y Header, e internacionalización completa (es/en/br). 33 suites de test (246 pruebas) pasando en verde, 0 advertencias ESLint y build exitoso.**
 
 **Próximo paso de desarrollo:**
-Portar siguiente módulo de finanzas según el inventario de RFCs (Tarjetas `/tarjetas` — RFC 007 o Metas `/metas` — RFC 011).
+RFC 020: Transactional Outbox Dispatcher (reclamo con SKIP LOCKED, recuperación de PROCESSING colgados y purga histórica).
 
 ---
 
-## Estado al 2026-09-06
+## Estado al 2026-09-07
 
 ### Plan de punta a punta — FinanzIA
 
@@ -40,6 +40,7 @@ Portar siguiente módulo de finanzas según el inventario de RFCs (Tarjetas `/ta
 | **Regla UI/UX** | `master` | 🟢 **Cerrada** | Prohibición formal de movimientos y escalas en `:hover` (anti-CLS y anti-flicker); saneamiento en 7 archivos CSS |
 | **Saneamiento Previo** | `master` | 🟢 **Cerrada** | S1 definitivo (`SparklinePoint[]` obligatorio, eliminación prop `data`), saneamiento `/accounts`, 23 warnings ESLint a 0 + `--max-warnings 0`, a11y `MonthSelector` (`useId`, sin `aria-modal`), CI verde en remoto. |
 | **Tanda I** | `feat/transactions-management` | 🟢 **Completada** | Módulo de transacciones contables `/transactions`, `occurred_at` con backfill (`0014_real_komodo.sql`), paginación cursor `(occurred_at, id)`, búsqueda/filtros, reversión ACID, primitivas `DataTable` y `SearchInput`, modals de alta y detalle. |
+| **Tanda J** | `feat/transactions-management` | 🟢 **Completada** | Soporte multimoneda (validación Debe=Haber por divisa), cambio de divisas (4 asientos / 2 libros contra `3.3.01-<MONEDA>`), reversión irrepetible con bloqueo `SELECT FOR UPDATE`, columnas `reversed_at` y `reverses_transaction_id` (migración `0015_icy_blizzard.sql`), selector de columnas visibles y badges de marcas. |
 
 ---
 

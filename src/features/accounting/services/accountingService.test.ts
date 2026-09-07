@@ -198,7 +198,8 @@ describe( "accountingService" , () => {
     } ) ;
 
     expect( result.success ).toBe( false ) ;
-    expect( result.error ).toContain( "La transacción contable está desbalanceada." ) ;
+    // El mensaje nombra la moneda: el balance se valida por divisa, no sobre el total mezclado.
+    expect( result.error ).toContain( "desbalanceada en ARS" ) ;
 
     // Verificar que no se insertó nada
     const transacciones = await db.select().from( ledgerTransactions ) ;
@@ -588,6 +589,162 @@ describe( "accountingService" , () => {
         .from( outboxEvents )
         .where( eq(outboxEvents.eventType , "TRANSACTION_REVERSED") ) ;
       expect( eventoRev ).toBeDefined() ;
+    } ) ;
+  } ) ;
+  /**
+   * Reglas que sostienen la integridad multimoneda del libro diario.
+   * Son las que permiten que existan cuentas en cualquier divisa sin que los saldos se contaminen.
+   */
+  describe( "integridad multimoneda" , () => {
+    let ctaUsdId: string ;
+
+    beforeEach( async () => {
+      const [ ctaUsd ] = await db
+        .insert( accounts )
+        .values( {
+          organizationId: orgId ,
+          code:           "1.1.02.01" ,
+          name:           "Caja Dólares" ,
+          type:           "asset" ,
+          balance:        0 ,
+          currency:       "USD" ,
+        } )
+        .returning() ;
+
+      ctaUsdId = ctaUsd.id ;
+    } ) ;
+
+    it( "debería rechazar un asiento cuya moneda no es la de la cuenta" , async () => {
+      const res = await createLedgerTransaction( {
+        organizationId: orgId ,
+        description:    "Gasto en dólares contra una caja en pesos" ,
+        entries: [
+          {accountId: ctaBancoId    , debit: 0     , credit: 10000 , currency: "USD"} ,
+          {accountId: ctaIngresosId , debit: 10000 , credit: 0     , currency: "USD"} ,
+        ] ,
+      } ) ;
+
+      expect( res.success ).toBe( false ) ;
+      expect( res.error ).toContain( "opera en ARS" ) ;
+
+      // El saldo no se tocó: la validación ocurre antes de aplicar nada.
+      const [ ctaBanco ] = await db.select().from( accounts ).where( eq(accounts.id , ctaBancoId) ) ;
+      expect( ctaBanco.balance ).toBe( 0 ) ;
+    } ) ;
+
+    it( "debería rechazar una transacción que sólo cierra si se suman monedas distintas" , async () => {
+      const res = await createLedgerTransaction( {
+        organizationId: orgId ,
+        description:    "Pesos contra dólares por el mismo entero" ,
+        entries: [
+          {accountId: ctaBancoId , debit: 0     , credit: 10000} ,
+          {accountId: ctaUsdId   , debit: 10000 , credit: 0    } ,
+        ] ,
+      } ) ;
+
+      expect( res.success ).toBe( false ) ;
+      expect( res.error ).toContain( "desbalanceada" ) ;
+    } ) ;
+
+    it( "debería aceptar un cambio de divisas: dos monedas, cada una cerrando en cero" , async () => {
+      const [ posArs ] = await db
+        .insert( accounts )
+        .values( {organizationId: orgId , code: "3.3.01-ARS" , name: "Posición de cambio (ARS)" , type: "equity" , balance: 0 , currency: "ARS"} )
+        .returning() ;
+
+      const [ posUsd ] = await db
+        .insert( accounts )
+        .values( {organizationId: orgId , code: "3.3.01-USD" , name: "Posición de cambio (USD)" , type: "equity" , balance: 0 , currency: "USD"} )
+        .returning() ;
+
+      // Vendo 100.000,00 ARS y recibo 100,00 USD
+      const res = await createLedgerTransaction( {
+        organizationId: orgId ,
+        description:    "Compra de dólares" ,
+        entries: [
+          {accountId: ctaBancoId , debit: 0        , credit: 10000000} ,
+          {accountId: posArs.id  , debit: 10000000 , credit: 0       } ,
+          {accountId: ctaUsdId   , debit: 10000    , credit: 0       } ,
+          {accountId: posUsd.id  , debit: 0        , credit: 10000   } ,
+        ] ,
+      } ) ;
+
+      expect( res.success ).toBe( true ) ;
+
+      const [ banco ] = await db.select().from( accounts ).where( eq(accounts.id , ctaBancoId) ) ;
+      const [ dolar ] = await db.select().from( accounts ).where( eq(accounts.id , ctaUsdId) ) ;
+
+      expect( banco.balance ).toBe( -10000000 ) ;
+      expect( dolar.balance ).toBe( 10000 ) ;
+    } ) ;
+
+    it( "debería tomar la moneda de la cuenta cuando el asiento no la declara" , async () => {
+      const res = await createLedgerTransaction( {
+        organizationId: orgId ,
+        description:    "Sueldo sin moneda explícita" ,
+        entries: [
+          {accountId: ctaBancoId    , debit: 10000 , credit: 0    } ,
+          {accountId: ctaIngresosId , debit: 0     , credit: 10000} ,
+        ] ,
+      } ) ;
+
+      expect( res.success ).toBe( true ) ;
+
+      const asientos = await db.select().from( ledgerEntries ) ;
+      expect( asientos.every( ( a ) => a.currency === "ARS" ) ).toBe( true ) ;
+    } ) ;
+  } ) ;
+
+  /**
+   * Guarda contra la doble reversión: sin ella, reversar dos veces devolvía el importe dos veces
+   * a las cuentas, creando dinero de la nada.
+   */
+  describe( "reversión irrepetible" , () => {
+    it( "debería rechazar la segunda reversión y dejar los saldos intactos" , async () => {
+      const creada = await createLedgerTransaction( {
+        organizationId: orgId ,
+        description:    "Cobro a reversar" ,
+        entries: [
+          {accountId: ctaBancoId    , debit: 10000 , credit: 0    } ,
+          {accountId: ctaIngresosId , debit: 0     , credit: 10000} ,
+        ] ,
+      } ) ;
+
+      expect( creada.success ).toBe( true ) ;
+
+      const primera = await reverseLedgerTransaction( creada.value!.id , orgId ) ;
+      expect( primera.success ).toBe( true ) ;
+
+      let [ banco ] = await db.select().from( accounts ).where( eq(accounts.id , ctaBancoId) ) ;
+      expect( banco.balance ).toBe( 0 ) ;
+
+      const segunda = await reverseLedgerTransaction( creada.value!.id , orgId ) ;
+      expect( segunda.success ).toBe( false ) ;
+      expect( segunda.error ).toContain( "ya fue reversada" ) ;
+
+      // Lo importante: el saldo no se movió por el segundo intento.
+      [ banco ] = await db.select().from( accounts ).where( eq(accounts.id , ctaBancoId) ) ;
+      expect( banco.balance ).toBe( 0 ) ;
+    } ) ;
+
+    it( "debería dejar el vínculo consultable en los dos sentidos" , async () => {
+      const creada = await createLedgerTransaction( {
+        organizationId: orgId ,
+        description:    "Cobro con vínculo" ,
+        entries: [
+          {accountId: ctaBancoId    , debit: 10000 , credit: 0    } ,
+          {accountId: ctaIngresosId , debit: 0     , credit: 10000} ,
+        ] ,
+      } ) ;
+
+      const reversion = await reverseLedgerTransaction( creada.value!.id , orgId ) ;
+      expect( reversion.success ).toBe( true ) ;
+
+      const [ original ] = await db.select().from( ledgerTransactions ).where( eq(ledgerTransactions.id , creada.value!.id) ) ;
+      const [ espejo ]   = await db.select().from( ledgerTransactions ).where( eq(ledgerTransactions.id , reversion.value!.id) ) ;
+
+      expect( original.reversedAt ).toBeInstanceOf( Date ) ;
+      expect( espejo.reversesTransactionId ).toBe( original.id ) ;
     } ) ;
   } ) ;
 } ) ;

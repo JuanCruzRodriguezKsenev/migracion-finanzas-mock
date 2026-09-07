@@ -312,3 +312,30 @@
   align-items: center;
   margin-top: 0.5rem;
 }
+
+/* Aviso de asiento ya reversado, en el modal de detalle */
+.reversedNotice {
+    font-size:     var(--fs-xs) ;
+    color:         var(--text-muted) ;
+    line-height:   1.4 ;
+    flex:          1 1 0 ;
+    min-width:     0 ;
+}
+
+/* Celda de tipo: la insignia de la operación y, si corresponde, la de reversada */
+.tipoCell {
+    display:     inline-flex ;
+    align-items: center ;
+    gap:         0.25rem ;
+    flex-wrap:   wrap ;
+}
+
+.badgeExchange {
+    background-color: var(--color-primary-light) ;
+    color:            var(--color-primary) ;
+}
+
+.badgeReversed {
+    background-color: var(--bg-inset) ;
+    color:            var(--text-muted) ;
+}

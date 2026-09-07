@@ -204,15 +204,28 @@ export function TransactionsTable( {
           ? styles.badgeIncome
           : ( resumen.type === "expense" )
           ? styles.badgeExpense
+          : ( resumen.type === "exchange" )
+          ? styles.badgeExchange
           : styles.badgeTransfer ;
 
         const label = ( resumen.type === "income" )
           ? "Ingreso"
           : ( resumen.type === "expense" )
           ? "Gasto"
+          : ( resumen.type === "exchange" )
+          ? "Cambio"
           : "Transferencia" ;
 
-        return( <span className={ `${styles.badge} ${badgeClass}` }>{label}</span> ) ;
+        return(
+          <span className={styles.tipoCell}>
+            <span className={ `${styles.badge} ${badgeClass}` }>{label}</span>
+            {tx.reversedAt && (
+              <span className={ `${styles.badge} ${styles.badgeReversed}` } title="Anulada mediante contra-asiento">
+                Reversada
+              </span>
+            )}
+          </span>
+        ) ;
       } ,
     } ,
     {
@@ -223,6 +236,21 @@ export function TransactionsTable( {
         const resumen  = calcularResumenTransaccion( tx.entries , accountsMap ) ;
         const currency = resumen.currency || "ARS" ;
         const formatted = formatCurrency( Math.abs( resumen.amountInCents ) , currency , "es-AR" ) ;
+
+        // Un cambio tiene dos importes en dos monedas: mostrar uno solo escondería la operación.
+        if( resumen.type === "exchange" ) {
+          const recibido = formatCurrency(
+            Math.abs( resumen.destinationAmountInCents || 0 ) ,
+            resumen.destinationCurrency || currency ,
+            "es-AR"
+          ) ;
+
+          return(
+            <span className={ `${styles.amountCell} ${styles.amountTransfer}` }>
+              {formatted} → {recibido}
+            </span>
+          ) ;
+        }
 
         const amountClass = ( resumen.type === "income" )
           ? styles.amountIncome

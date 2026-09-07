@@ -22,7 +22,7 @@ import {
 } from "@/features/accounting/actions/accountingActions" ;
 import { categoryRepository }        from "@/features/accounting/repositories/categoryRepository" ;
 import { accountRepository }         from "@/features/accounting/repositories/accountRepository" ;
-import { Category , LedgerTransaction } from "@/features/accounting/types" ;
+import { Account , Category , LedgerTransaction } from "@/features/accounting/types" ;
 
 // Feature: Transactions
 import {
@@ -58,6 +58,40 @@ export async function getCategoriesAction(): Promise< Result<Category[] , string
 }
 
 /**
+ * Obtiene —o crea— la cuenta del plan contable que corresponde a un tipo y una moneda.
+ *
+ * Existe una cuenta por divisa a propósito: el saldo de una cuenta es un entero en su propia
+ * moneda, así que "Gastos Generales" en pesos y en dólares no pueden ser la misma fila. El código
+ * contable lleva la moneda como sufijo porque `(organization_id, code)` es único.
+ *
+ * @param params - Cuentas ya cargadas, organización, moneda, tipo contable y código/nombre base.
+ * @returns La cuenta existente para esa moneda, o la recién creada.
+ */
+async function obtenerCuentaPorMoneda( params: {
+  allAccounts:    Account[] ;
+  organizationId: string ;
+  currency:       string ;
+  type:           "expense" | "revenue" | "equity" ;
+  codigoBase:     string ;
+  nombreBase:     string ;
+} ): Promise< Account > {
+  const { allAccounts , organizationId , currency , type , codigoBase , nombreBase } = params ;
+
+  const existente = allAccounts.find( ( a ) => (a.type === type) && (a.currency === currency) ) ;
+
+  if( existente ) { return( existente ) ; }
+
+  return( await accountRepository.create( {
+    organizationId ,
+    code:    `${codigoBase}-${currency}` ,
+    name:    `${nombreBase} (${currency})` ,
+    type ,
+    balance: 0 ,
+    currency ,
+  } ) ) ;
+}
+
+/**
  * Crea una transacción contable a partir de los datos del formulario de UI,
  * generando automáticamente las partidas contables balanceadas (Debe = Haber).
  */
@@ -85,7 +119,14 @@ export async function createTransactionFromFormAction(
   try {
     const allAccounts = await accountRepository.findAll( organizationId ) ;
     const sourceAcc   = allAccounts.find( ( a ) => a.id === data.sourceAccountId ) ;
-    const currency    = data.currency || sourceAcc?.currency || "ARS" ;
+
+    if( !sourceAcc ) {
+      return( fail("La cuenta de origen no existe o no pertenece a tu organización.") ) ;
+    }
+
+    // La moneda la define la cuenta, nunca el formulario. Antes ganaba `data.currency`, así que
+    // elegir USD sobre una caja en pesos le sumaba centavos de dólar a un saldo en pesos.
+    const currency = sourceAcc.currency ;
 
     const entries: {
       accountId: string ;
@@ -104,20 +145,16 @@ export async function createTransactionFromFormAction(
       } ) ;
 
       // Cuenta de gasto (entra gasto: Débito)
-      let expenseAccount = allAccounts.find( ( a ) => (a.type === "expense") && (a.currency === currency) ) ;
-      if( !expenseAccount ) {
-        expenseAccount = allAccounts.find( ( a ) => a.type === "expense" ) ;
-      }
-      if( !expenseAccount ) {
-        expenseAccount = await accountRepository.create( {
-          organizationId ,
-          code:     "5.1.01.99" ,
-          name:     "Gastos Generales" ,
-          type:     "expense" ,
-          balance:  0 ,
-          currency ,
-        } ) ;
-      }
+      // La contrapartida tiene que estar en la misma moneda. El fallback anterior tomaba cualquier
+      // cuenta de gasto y le estampaba otra divisa, que es la misma mezcla por otra puerta.
+      const expenseAccount = await obtenerCuentaPorMoneda( {
+        allAccounts ,
+        organizationId ,
+        currency ,
+        type:       "expense" ,
+        codigoBase: "5.1.01.99" ,
+        nombreBase: "Gastos Generales" ,
+      } ) ;
 
       entries.push( {
         accountId: expenseAccount.id ,
@@ -135,20 +172,14 @@ export async function createTransactionFromFormAction(
       } ) ;
 
       // Cuenta de ingreso (origen: Crédito)
-      let revenueAccount = allAccounts.find( ( a ) => (a.type === "revenue") && (a.currency === currency) ) ;
-      if( !revenueAccount ) {
-        revenueAccount = allAccounts.find( ( a ) => a.type === "revenue" ) ;
-      }
-      if( !revenueAccount ) {
-        revenueAccount = await accountRepository.create( {
-          organizationId ,
-          code:     "4.1.01.99" ,
-          name:     "Ingresos Varios" ,
-          type:     "revenue" ,
-          balance:  0 ,
-          currency ,
-        } ) ;
-      }
+      const revenueAccount = await obtenerCuentaPorMoneda( {
+        allAccounts ,
+        organizationId ,
+        currency ,
+        type:       "revenue" ,
+        codigoBase: "4.1.01.99" ,
+        nombreBase: "Ingresos Varios" ,
+      } ) ;
 
       entries.push( {
         accountId: revenueAccount.id ,
@@ -156,10 +187,74 @@ export async function createTransactionFromFormAction(
         credit:    amountInCents ,
         currency ,
       } ) ;
+    } else if( data.type === "exchange" ) {
+      // Cambio de divisas: dos monedas, dos libros que cierran por separado.
+      //
+      // No hay un asiento que cruce monedas —eso no existe en partida doble—. Cada lado cierra
+      // contra su cuenta de posición de cambio: la de la moneda vendida queda en negativo, la de
+      // la comprada en positivo, y el par refleja la posición tomada. La cotización no se guarda:
+      // es el cociente entre los dos importes, y un dato duplicado podría contradecir los asientos.
+      if( !data.destinationAccountId ) {
+        return( fail("Indicá en qué cuenta entra el dinero cambiado.") ) ;
+      }
+
+      const destinoAcc = allAccounts.find( ( a ) => a.id === data.destinationAccountId ) ;
+
+      if( !destinoAcc ) {
+        return( fail("La cuenta de destino no existe o no pertenece a tu organización.") ) ;
+      }
+
+      if( destinoAcc.currency === currency ) {
+        return( fail(`Ambas cuentas operan en ${currency}. Para mover dinero entre cuentas de la misma moneda usá una transferencia.`) ) ;
+      }
+
+      const destinoEnCentavos = Math.round( (data.destinationAmount || 0) * 100 ) ;
+
+      if( destinoEnCentavos <= 0 ) {
+        return( fail("Indicá cuánto recibís en la moneda de destino.") ) ;
+      }
+
+      const posicionOrigen = await obtenerCuentaPorMoneda( {
+        allAccounts ,
+        organizationId ,
+        currency ,
+        type:       "equity" ,
+        codigoBase: "3.3.01" ,
+        nombreBase: "Posición de cambio" ,
+      } ) ;
+
+      const posicionDestino = await obtenerCuentaPorMoneda( {
+        allAccounts:    [ ...allAccounts , posicionOrigen ] ,
+        organizationId ,
+        currency:       destinoAcc.currency ,
+        type:           "equity" ,
+        codigoBase:     "3.3.01" ,
+        nombreBase:     "Posición de cambio" ,
+      } ) ;
+
+      // Libro de la moneda que sale
+      entries.push( {accountId: data.sourceAccountId , debit: 0 , credit: amountInCents , currency} ) ;
+      entries.push( {accountId: posicionOrigen.id    , debit: amountInCents , credit: 0 , currency} ) ;
+
+      // Libro de la moneda que entra
+      entries.push( {accountId: data.destinationAccountId , debit: destinoEnCentavos , credit: 0 , currency: destinoAcc.currency} ) ;
+      entries.push( {accountId: posicionDestino.id        , debit: 0 , credit: destinoEnCentavos , currency: destinoAcc.currency} ) ;
     } else {
       // Transferencia entre cuentas de balance
       if( !data.destinationAccountId ) {
         return( fail("Debe especificar la cuenta de destino para una transferencia.") ) ;
+      }
+
+      const destinoAcc = allAccounts.find( ( a ) => a.id === data.destinationAccountId ) ;
+
+      if( !destinoAcc ) {
+        return( fail("La cuenta de destino no existe o no pertenece a tu organización.") ) ;
+      }
+
+      // Una transferencia mueve el mismo importe entre dos cuentas: si las monedas difieren, lo
+      // que el usuario quiere es un cambio, no una transferencia.
+      if( destinoAcc.currency !== currency ) {
+        return( fail(`No se puede transferir de ${currency} a ${destinoAcc.currency}. Usá una transacción de cambio para convertir entre monedas.`) ) ;
       }
 
       // Cuenta origen (sale plata: Crédito)

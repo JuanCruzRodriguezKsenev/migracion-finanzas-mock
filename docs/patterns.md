@@ -15,17 +15,39 @@ FinanzIA implementa un libro mayor contable balanceado en el que cada movimiento
 
 ### Reglas e Invariantes
 1.  **Montos en centavos enteros (`integer`):** No se utiliza punto flotante (`float`/`double`) para cálculos monetarios. Todo monto `M` se almacena como `M * 100` centavos.
-2.  **Invariante de balance cero:** Para cualquier transacción en `ledgerTransactions`, la suma de todos los débitos debe ser exactamente igual a la suma de todos los créditos:
-    $$\sum \text{debit} = \sum \text{credit}$$
-3.  **No negatividad en líneas:** Las columnas `debit` y `credit` son enteros $\ge 0$. La dirección del saldo se determina por el tipo de cuenta:
+2.  **Invariante de balance cero, por moneda:** Para cualquier transacción en `ledgerTransactions`, y **para cada divisa por separado**, la suma de los débitos debe ser exactamente igual a la suma de los créditos:
+    $$\forall c \in \text{monedas}: \sum \text{debit}_c = \sum \text{credit}_c$$
+    Validar el total sin distinguir divisa daba por balanceada una transacción de 100.000 centavos de peso contra 100.000 de dólar. Cada moneda es un libro propio.
+3.  **La moneda de un asiento la define su cuenta.** `ledger_entries.currency` no puede diferir de `accounts.currency`; el motor rechaza el asiento antes de tocar ningún saldo. Un saldo es un entero sin unidad, así que aceptar otra divisa no falla: sólo miente.
+4.  **No negatividad en líneas:** Las columnas `debit` y `credit` son enteros $\ge 0$. La dirección del saldo se determina por el tipo de cuenta:
     *   **Activos / Gastos:** Aumentan por el Débito (Debe), disminuyen por el Crédito (Haber).
     *   **Pasivos / Patrimonio / Ingresos:** Aumentan por el Crédito (Haber), disminuyen por el Débito (Debe).
-4.  **Cálculo de Patrimonio Neto (Net Worth):**
+5.  **Cálculo de Patrimonio Neto (Net Worth):**
     $$\text{Patrimonio Neto} = \text{Activos} - \text{Pasivos}$$
+
+### Cambio de divisas
+Un cambio de moneda **no es un asiento que cruza divisas** —eso no existe en partida doble—. Se registra como una única transacción con cuatro asientos en dos libros, cada uno cerrando en cero contra su **cuenta de posición de cambio** (`3.3.01-<MONEDA>`, tipo `equity`):
+
+| Libro | Cuenta | Debe | Haber |
+|---|---|---|---|
+| ARS | Caja ARS | | 100.000,00 |
+| ARS | Posición de cambio (ARS) | 100.000,00 | |
+| USD | Caja USD | 100,00 | |
+| USD | Posición de cambio (USD) | | 100,00 |
+
+El par de cuentas de posición refleja la posición tomada. **La cotización no se guarda**: es el cociente entre los dos importes, y un campo aparte podría contradecir a los asientos. Son de tipo `equity` para no distorsionar la liquidez, que suma sólo cuentas `asset`.
+
+**Regla**: para mover valor entre monedas se usa una transacción de cambio. Una transferencia exige que ambas cuentas compartan divisa, y el motor rechaza cualquier otra vía.
+
+### Reversión
+El libro diario es inmutable: una transacción equivocada no se edita ni se borra, se contra-asienta. `reverseLedgerTransaction` bloquea la fila original (`SELECT ... FOR UPDATE`), rechaza la operación si `reversed_at` ya está seteado, y deja el vínculo en los dos sentidos (`reversed_at` en la original, `reverses_transaction_id` en el espejo).
+
+**Regla**: sin el bloqueo y la marca, dos reversiones simultáneas devolvían el importe dos veces a las cuentas — dinero creado de la nada.
 
 ### Implementación
 *   Servicio central: [`accountingService.ts`](../src/features/accounting/services/accountingService.ts).
-*   Validación de balance en runtime: [`accountingService.ts`](../src/features/accounting/services/accountingService.ts) rechaza la transacción si $\sum \text{debit} \neq \sum \text{credit}$ antes de persistir.
+*   Validación de balance en runtime: ocurre **dentro** de la transacción ACID, después de resolver la moneda de cada cuenta; antes no se sabe en qué divisa está cada asiento.
+*   Traducción de formulario a asientos (incluido el cambio): [`transactionsActions.ts`](../src/features/transactions/actions/transactionsActions.ts).
 
 ---
 

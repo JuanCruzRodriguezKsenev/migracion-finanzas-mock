@@ -7,7 +7,7 @@
 import { Account , LedgerEntry } from "@/features/accounting/types" ;
 
 
-export type TransactionType = "income" | "expense" | "transfer" ;
+export type TransactionType = "income" | "expense" | "transfer" | "exchange" ;
 
 export interface TransactionSummaryDerived {
   type:                  TransactionType ;
@@ -15,6 +15,9 @@ export interface TransactionSummaryDerived {
   primaryAccountId?:     string ;
   counterpartAccountId?: string ;
   currency?:             string ;
+  /** Sólo en `exchange`: importe recibido y su moneda, para poder mostrar "de X a Y". */
+  destinationAmountInCents?: number ;
+  destinationCurrency?:      string ;
 }
 
 /**
@@ -25,12 +28,25 @@ export interface TransactionSummaryDerived {
  * @returns 'income' | 'expense' | 'transfer'.
  */
 export function derivarTipoTransaccion(
-  entries:  { accountId: string ; debit: number ; credit: number }[] ,
+  entries:  { accountId: string ; debit: number ; credit: number ; currency?: string }[] ,
   accounts: Account[] | Map< string , Account >
 ): TransactionType {
   const accountsMap = ( accounts instanceof Map )
     ? accounts
     : new Map( accounts.map( ( a ) => [ a.id , a ] ) ) ;
+
+  // Un cambio de divisas se reconoce por el dato, no por una etiqueta guardada: es la única
+  // transacción cuyos asientos viven en más de una moneda. La moneda se lee de la cuenta cuando el
+  // asiento no la trae, que es la misma regla que aplica el motor al registrarla.
+  const monedas = new Set< string >() ;
+
+  for( const entry of entries ) {
+    const acc = accountsMap.get( entry.accountId ) ;
+    const moneda = ( entry.currency || acc?.currency ) ;
+    if( moneda ) { monedas.add( moneda ) ; }
+  }
+
+  if( monedas.size > 1 ) { return( "exchange" ) ; }
 
   let hasRevenue = false ;
   let hasExpense = false ;
@@ -66,6 +82,33 @@ export function calcularResumenTransaccion(
     : new Map( accounts.map( ( a ) => [ a.id , a ] ) ) ;
 
   const type = derivarTipoTransaccion( entries , accountsMap ) ;
+
+  if( type === "exchange" ) {
+    // Las cuentas de posición de cambio son de patrimonio; filtrar por 'asset' deja sólo los dos
+    // lados que le interesan al usuario: de qué cuenta salió el dinero y en cuál entró.
+    const salida = entries.find( ( e ) => {
+      const acc = accountsMap.get( e.accountId ) ;
+      return( (acc?.type === "asset") && (e.credit > 0) ) ;
+    } ) ;
+
+    const entrada = entries.find( ( e ) => {
+      const acc = accountsMap.get( e.accountId ) ;
+      return( (acc?.type === "asset") && (e.debit > 0) ) ;
+    } ) ;
+
+    const cuentaSalida  = salida  ? accountsMap.get( salida.accountId )  : undefined ;
+    const cuentaEntrada = entrada ? accountsMap.get( entrada.accountId ) : undefined ;
+
+    return( {
+      type ,
+      amountInCents:            ( salida?.credit || 0 ) ,
+      primaryAccountId:         salida?.accountId ,
+      counterpartAccountId:     entrada?.accountId ,
+      currency:                 ( salida?.currency || cuentaSalida?.currency ) ,
+      destinationAmountInCents: ( entrada?.debit || 0 ) ,
+      destinationCurrency:      ( entrada?.currency || cuentaEntrada?.currency ) ,
+    } ) ;
+  }
 
   if( type === "income" ) {
     const revenueEntries = entries.filter( ( e ) => {

@@ -55,6 +55,10 @@ function TransactionDetailContent( {
 }: TransactionDetailContentProps ) {
   const [ isPending , startTransition ] = useTransition() ;
 
+  // Una transacción ya reversada no vuelve a reversarse: el servicio lo rechaza, y ofrecer el botón
+  // sólo llevaría al usuario a un error evitable.
+  const yaReversada = Boolean( transaction.reversedAt ) ;
+
   const [ description , setDescription ]       = useState( transaction.description ) ;
   const [ categoryId , setCategoryId ]         = useState( transaction.categoryId || "" ) ;
   const [ merchantName , setMerchantName ]     = useState( transaction.merchantName || "" ) ;
@@ -206,6 +210,21 @@ function TransactionDetailContent( {
               Cancelar
             </Button>
           </div>
+        </div>
+      ) : yaReversada ? (
+        <div className={styles.dangerActions}>
+          <span className={styles.reversedNotice}>
+            Asiento reversado el { new Intl.DateTimeFormat( "es-AR" , {dateStyle: "medium" , timeStyle: "short"} ).format( new Date( transaction.reversedAt as Date ) ) }.
+            El contra-asiento ya devolvió los importes a sus cuentas.
+          </span>
+          <Button
+            variant="danger"
+            type="button"
+            onClick={handleDelete}
+            disabled={isPending}
+          >
+            Eliminar
+          </Button>
         </div>
       ) : (
         <div className={styles.dangerActions}>

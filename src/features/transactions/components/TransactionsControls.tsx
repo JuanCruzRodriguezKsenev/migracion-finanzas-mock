@@ -141,6 +141,7 @@ export function TransactionsControls( {
           <option value="expense">Gasto</option>
           <option value="income">Ingreso</option>
           <option value="transfer">Transferencia</option>
+          <option value="exchange">Cambio</option>
         </select>
 
         <select

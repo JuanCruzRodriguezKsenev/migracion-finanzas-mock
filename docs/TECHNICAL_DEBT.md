@@ -41,7 +41,10 @@ Este documento registra los puntos de deuda técnica del repositorio, distinguie
 *   [x] **Compuerta CI en GitHub Actions:** Pipeline `.github/workflows/compuerta.yml` con contenedor de servicio PostgreSQL, Node 26, pnpm 11.3.0, typecheck, lint (`--max-warnings 0`), 184 tests unitarios y build de producción. Verificada en ejecución remota.
 *   [x] **Módulo de Transacciones Contables (`/transactions`):** Soporte integral de partida doble, fecha de ocurrencia `occurred_at` indexada con migración `0014_real_komodo.sql`, paginación por cursor determinístico `(occurred_at, id)` previniendo desfases por inserciones concurrentes, reversión contable atómica (ACID) con Outbox Pattern (`TRANSACTION_REVERSED`), componentes accesibles `DataTable` y `SearchInput` en `shared/ui/`, y modales de alta/edición integrados.
 
----
+### Integridad Contable Multimoneda y Reversión
+*   [x] **Integridad multimoneda y cambio de divisas:** El balance Debe = Haber se valida por moneda y dentro de la transacción ACID; la moneda de un asiento la impone su cuenta (`accountingService.ts`), lo que impedía que un saldo en pesos acumulara centavos de dólar. Las contrapartidas de gasto e ingreso se crean por divisa (`5.1.01.99-<MONEDA>`). Nuevo tipo de transacción **cambio**: cuatro asientos en dos libros contra cuentas de posición `3.3.01-<MONEDA>`, con la cotización deducida del cociente en vez de almacenada.
+*   [x] **Reversión irrepetible y consultable:** Bloqueo de la fila original, guarda sobre `reversed_at` y vínculo bidireccional (`reverses_transaction_id`). Antes se podía reversar dos veces y duplicar la devolución de saldos; el nexo sólo vivía en el payload del outbox, así que la interfaz no podía marcar una transacción como reversada.
+*   [x] **Índice redundante eliminado:** `ledger_tx_org_occurred_idx` estaba cubierto por prefijo por `ledger_tx_org_occurred_id_idx` y sólo costaba escrituras (migración `0015`).
 
 ## § Abierto (Pendiente de Refactorización)
 
@@ -49,7 +52,8 @@ Este documento registra los puntos de deuda técnica del repositorio, distinguie
 *   [ ] **Limitación de escala categórica en Recharts Sparkline:** En gráficos de línea categóricos sin eje X continuo, Recharts reserva padding discreto en bandas laterales, lo que evita que el trazo toque los bordes exactos del contenedor (a diferencia de un path SVG manual directo). Si a futuro se requiere renderizado borde a borde absoluto, evaluar cálculo directo de coordenadas SVG o escala continua.
 
 ### 2. Persistencia y Modelado de Datos
-*   [ ] **Desacoplar suscripciones de memoria mock:** El repositorio `subscriptionRepository.ts` actualmente opera con datos simulados y debe migrarse a las tablas de suscripciones vinculadas a `ledgerTransactions`.
+*   [ ] **Vincular suscripciones recurrentes con asientos de `ledgerTransactions`:** El módulo de suscripciones persiste en Postgres vía Drizzle, pero opera de forma aislada sin emitir asientos contables ni débitos automáticos en el libro mayor.
 
 ### 3. Rendimiento de Base de Datos
 *   [ ] **Índice compuesto en `monthly_summaries`:** Agregar índice sobre `(organization_id, year, month)` para acelerar consultas de rangos históricos `findRecent`.
+*   [ ] **Índice para polling en `outbox_events`:** La tabla `outbox_events` no cuenta con índice sobre `status` o `(status, created_at)`. Las consultas del futuro dispatcher realizarían un sequential scan sobre una tabla en crecimiento continuo.

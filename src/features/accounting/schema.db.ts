@@ -63,9 +63,17 @@ export const ledgerTransactions = pgTable( "ledger_transactions" , {
   merchantName:   varchar( "merchant_name"   , {length: 150} ) ,
   merchantDomain: varchar( "merchant_domain" , {length: 100} ) ,
   occurredAt:     timestamp( "occurred_at" , {withTimezone: true} ).defaultNow().notNull() ,
+  // Enlace de reversión, en los dos sentidos. El libro diario es inmutable: una transacción
+  // equivocada no se borra, se contra-asienta. Sin estas dos columnas el vínculo sólo existiría en
+  // el payload del outbox —un flujo de eventos, no una relación consultable—, así que la interfaz
+  // no podría marcar una transacción como reversada ni el servicio impedir que se reverse dos veces.
+  reversesTransactionId: uuid( "reverses_transaction_id" ) , // En el contra-asiento: apunta a la original
+  reversedAt:            timestamp( "reversed_at" , {withTimezone: true} ) , // En la original: cuándo se reversó
   createdAt:      timestamp( "created_at"  , {withTimezone: true} ).defaultNow().notNull() ,
 } , ( table ) => { return( {
-  orgOccurredIdx:   index( "ledger_tx_org_occurred_idx"    ).on( table.organizationId , table.occurredAt ) ,
+  // Un único índice para la paginación por cursor, que ordena por (occurred_at, id). El índice
+  // sobre (organization_id, occurred_at) que existía antes era redundante: este lo cubre por
+  // prefijo, y mantener los dos sólo costaba escrituras.
   orgOccurredIdIdx: index( "ledger_tx_org_occurred_id_idx" ).on( table.organizationId , table.occurredAt , table.id ) ,
 } ) ; } ) ;
 

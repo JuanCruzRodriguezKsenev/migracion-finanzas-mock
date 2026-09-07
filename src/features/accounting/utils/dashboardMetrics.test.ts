@@ -58,6 +58,8 @@ function makeTransaction( overrides: Partial<TransactionWithEntries> ): Transact
     merchantDomain: null ,
     createdAt:      date ,
     occurredAt:     date ,
+    reversesTransactionId: null ,
+    reversedAt:            null ,
     entries:        [] ,
     ...overrides ,
   } ) ;

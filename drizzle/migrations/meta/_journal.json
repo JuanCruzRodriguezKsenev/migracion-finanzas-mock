@@ -106,6 +106,13 @@
       "when": 1788749278610,
       "tag": "0014_real_komodo",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1788754841856,
+      "tag": "0015_icy_blizzard",
+      "breakpoints": true
     }
   ]
 }

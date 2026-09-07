@@ -128,3 +128,76 @@ describe( "derivarTipo" , () => {
     } ) ;
   } ) ;
 } ) ;
+
+/**
+ * Suite para el reconocimiento de cambios de divisa.
+ * Un cambio no se marca con una etiqueta guardada: se reconoce porque sus asientos viven en más de
+ * una moneda, que es el único caso en que eso ocurre.
+ */
+describe( "derivarTipo — cambios de moneda" , () => {
+  const cajaArs: Account = {
+    id: "acc-ars" , organizationId: "org-1" , code: "1.1.01" , name: "Caja ARS" ,
+    type: "asset" , balance: 0 , currency: "ARS" , entityId: null , createdAt: new Date() ,
+  } ;
+
+  const cajaUsd: Account = {
+    id: "acc-usd" , organizationId: "org-1" , code: "1.1.02" , name: "Caja USD" ,
+    type: "asset" , balance: 0 , currency: "USD" , entityId: null , createdAt: new Date() ,
+  } ;
+
+  const posicionArs: Account = {
+    id: "pos-ars" , organizationId: "org-1" , code: "3.3.01-ARS" , name: "Posición de cambio (ARS)" ,
+    type: "equity" , balance: 0 , currency: "ARS" , entityId: null , createdAt: new Date() ,
+  } ;
+
+  const posicionUsd: Account = {
+    id: "pos-usd" , organizationId: "org-1" , code: "3.3.01-USD" , name: "Posición de cambio (USD)" ,
+    type: "equity" , balance: 0 , currency: "USD" , entityId: null , createdAt: new Date() ,
+  } ;
+
+  const cuentas = [ cajaArs , cajaUsd , posicionArs , posicionUsd ] ;
+
+  // Vendo 100.000,00 ARS y recibo 100,00 USD
+  const asientosCambio = [
+    {accountId: "acc-ars" , debit: 0        , credit: 10000000 , currency: "ARS"} ,
+    {accountId: "pos-ars" , debit: 10000000 , credit: 0        , currency: "ARS"} ,
+    {accountId: "acc-usd" , debit: 10000    , credit: 0        , currency: "USD"} ,
+    {accountId: "pos-usd" , debit: 0        , credit: 10000    , currency: "USD"} ,
+  ] ;
+
+  it( "debería reconocer un cambio por tener asientos en más de una moneda" , () => {
+    expect( derivarTipoTransaccion( asientosCambio , cuentas ) ).toBe( "exchange" ) ;
+  } ) ;
+
+  it( "debería resumir el cambio como 'de la cuenta que sale a la que entra'" , () => {
+    const resumen = calcularResumenTransaccion( asientosCambio , cuentas ) ;
+
+    expect( resumen.type ).toBe( "exchange" ) ;
+    expect( resumen.amountInCents ).toBe( 10000000 ) ;
+    expect( resumen.currency ).toBe( "ARS" ) ;
+    expect( resumen.primaryAccountId ).toBe( "acc-ars" ) ;
+    expect( resumen.destinationAmountInCents ).toBe( 10000 ) ;
+    expect( resumen.destinationCurrency ).toBe( "USD" ) ;
+    expect( resumen.counterpartAccountId ).toBe( "acc-usd" ) ;
+  } ) ;
+
+  it( "no debería confundir una transferencia entre cuentas de la misma moneda con un cambio" , () => {
+    const asientosTransferencia = [
+      {accountId: "acc-ars" , debit: 0       , credit: 5000 , currency: "ARS"} ,
+      {accountId: "otra"    , debit: 5000    , credit: 0    , currency: "ARS"} ,
+    ] ;
+
+    const otraArs: Account = { ...cajaArs , id: "otra" , name: "Banco ARS" } ;
+
+    expect( derivarTipoTransaccion( asientosTransferencia , [ cajaArs , otraArs ] ) ).toBe( "transfer" ) ;
+  } ) ;
+
+  it( "debería deducir la moneda de la cuenta cuando el asiento no la declara" , () => {
+    const sinMoneda = [
+      {accountId: "acc-ars" , debit: 0     , credit: 5000} ,
+      {accountId: "acc-usd" , debit: 10    , credit: 0   } ,
+    ] ;
+
+    expect( derivarTipoTransaccion( sinMoneda , cuentas ) ).toBe( "exchange" ) ;
+  } ) ;
+} ) ;
