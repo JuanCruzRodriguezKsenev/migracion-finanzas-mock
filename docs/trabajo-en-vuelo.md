@@ -12,17 +12,12 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `master` (Plan de punta a punta finalizado y consolidado).
+**Rama activa:** `master` (Saneamiento integral completado; terreno limpio para Transacciones).
 
-**Estado:** 🟢 **Todas las tandas (0 a H) han sido completadas, verificadas y mergeadas a `master`.**
-1. `docs/patterns.md`: Documentación canónica de los 4 patrones de arquitectura centrales (Partida Doble Real, Transactional Outbox, Idempotencia y Circuit Breaker) con referencias al código.
-2. `docs/TECHNICAL_DEBT.md`: Registro de deudas resueltas en el sprint y puntos abiertos reales pendientes de refactorización sobre código existente.
-3. `docs/ROADMAP.md`: Hoja de ruta de producto con catálogo de módulos y fases a construir referenciadas a las propuestas de `docs/proposals/`.
-4. `docs/adr/`: Inicialización de registros de decisiones arquitectónicas con `README.md`, plantilla `template.md` y `0001-registro-de-decisiones-arquitectonicas.md`.
-5. `docs/registro/`: Congelamiento formal del plan en `2026-09-06-cierre-tandas-0-a-g.md`.
+**Estado:** 🟢 **Pipeline de CI inaugurado y verificado en verde en GitHub Actions (`calidad` exitosa en 2m5s). Cero errores y cero warnings en ESLint con `--max-warnings 0` en compuerta. Contrato `SparklinePoint[]` obligatorio en los 7 gráficos de la aplicación. Datos inventados eliminados en `/accounts`. Accesibilidad e internacionalización de `MonthSelector` completadas con `useId()` y traducciones de año.**
 
 **Próximo paso de desarrollo:**
-Seleccionar el primer módulo de la Fase 1 del Roadmap ([`docs/ROADMAP.md`](ROADMAP.md)) para iniciar su desarrollo (ej: Tarjetas de Crédito `/tarjetas` según RFC 007).
+Construcción del módulo de Transacciones / Libro Diario (`/transactions`), conectando la UI con `accountingService.ts`, `ledgerRepository.ts` y el modelo de partida doble (`ledgerTransactions`, `ledgerEntries`).
 
 ---
 
@@ -43,6 +38,7 @@ Seleccionar el primer módulo de la Fase 1 del Roadmap ([`docs/ROADMAP.md`](ROAD
 | **Tanda H** | `docs/canonicos` | 🟢 **Completada** | `patterns.md`, `TECHNICAL_DEBT.md`, `ROADMAP.md`, `docs/adr/`, `docs/registro/` |
 | **Hotfix RSC** | `master` | 🟢 **Cerrada** | Separación isomórfica de `sparklineUtils.ts` (evita límite Server/Client Component en `calcularCambioPorcentual`) |
 | **Regla UI/UX** | `master` | 🟢 **Cerrada** | Prohibición formal de movimientos y escalas en `:hover` (anti-CLS y anti-flicker); saneamiento en 7 archivos CSS |
+| **Saneamiento Previo** | `master` | 🟢 **Cerrada** | S1 definitivo (`SparklinePoint[]` obligatorio, eliminación prop `data`), saneamiento `/accounts`, 23 warnings ESLint a 0 + `--max-warnings 0`, a11y `MonthSelector` (`useId`, sin `aria-modal`), CI verde en remoto. |
 
 ---
 
