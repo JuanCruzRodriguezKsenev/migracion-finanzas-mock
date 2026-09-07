@@ -2,7 +2,7 @@
 
 *   **ID de la Propuesta:** 018
 *   **Título:** Core Contable de Partida Doble: Esquema de BD, Relaciones Multi-Tenant y Servicio Transaccional
-*   **Estado:** `DRAFT` (Borrador - 2026-06-24)
+*   **Estado:** `APPROVED` (Implementado y consolidado - 2026-09-07)
 *   **Fecha de Creación:** 2026-06-24
 *   **Autor:** Antigravity (AI Coding Assistant)
 
@@ -118,3 +118,22 @@ Para validar el motor contable de partida doble, se creará el archivo de prueba
 2.  **Rechazo de Transacción Desbalanceada:** Intentar registrar un asiento donde los débitos y créditos difieran (ej. Debe: \$100, Haber: \$90). Verificar que la transacción sea abortada, se lance una excepción y no se persista ningún registro en base de datos.
 3.  **Rollback ante Fallo Físico:** Provocar un fallo controlado (por ejemplo, referenciando una cuenta inexistente en el segundo movimiento contable) y verificar que el primer movimiento no se considere en base de datos.
 4.  **Auditoría Contable de Balance Cero:** Escribir un test de integración que consulte la tabla `ledger_entries` y valide que la suma agregada de todas las entradas del libro diario arroje balance cero para cada ID de transacción.
+
+---
+
+## 5. Estado de implementación (2026-09-07)
+
+### A. Construido según la propuesta original
+*   **Esquema y relaciones:** Tablas `categories`, `accounts`, `ledger_transactions` y `ledger_entries` en `src/features/accounting/schema.db.ts` con aislamiento multi-tenant estricto (`organization_id`), claves foráneas y cascadas / restricciones de integridad referencial.
+*   **Servicio Contable Transaccional:** `src/features/accounting/services/accountingService.ts` implementa la validación aritmética de balance cero (Debe = Haber en centavos enteros) y mutación atómica dentro de una transacción nativa (`db.transaction()`).
+*   **Actualización de saldos por tipo de cuenta:** Regla algebraica de Débito/Crédito según naturaleza contable (`asset`/`expense` incrementan con débitos y decrementan con créditos; `liability`/`equity`/`revenue` incrementan con créditos y decrementan con débitos).
+*   **Suite de pruebas de integración:** `src/features/accounting/services/accountingService.test.ts` valida balance cero, rechazo de asientos desbalanceados y rollback automático ante errores.
+
+### B. Extensiones y evoluciones posteriores no contempladas en el RFC original
+A lo largo de las tandas de desarrollo e integración contable (migraciones `0012` a `0016`), el core contable se extendió con los siguientes componentes:
+1.  **Entidades Financieras (`financial_entities`):** Abstracción de bancos, billeteras virtuales y efectivo físico vinculadas a cuentas contables individuales para soporte UI/UX institucional (migración `0010_clear_zaran.sql`).
+2.  **Resúmenes Mensuales Históricos (`monthly_summaries`):** Cierres mensuales para agregación temporal y visualización de métricas en dashboard, incorporando snapshots de balance general, desglose de activos (`assets_snapshot`) y pasivos (`liabilities_snapshot`) (migración `0012_tranquil_luckman.sql` e índice único en `0017_free_iron_monger.sql`).
+3.  **Fecha de Ocurrencia Indexada (`occurred_at`):** Soporte para fecha de devengamiento contable de transacciones independiente de `created_at`, con índice compuesto determinante para paginación por cursor `(occurred_at, id)` (migración `0014_real_komodo.sql`).
+4.  **Integridad Multimoneda y Cuentas de Posición:** Validación del balance Debe = Haber segregado por divisa. Soporte nativo para transacciones de tipo **cambio** (4 asientos en 2 libros contra cuentas técnicas de posición `3.3.01-<MONEDA>`), con tipo de cambio deducido del cociente aritmético sin almacenar floats (migración `0015_icy_blizzard.sql`).
+5.  **Reversión Contable ACID Irrepetible:** Bloqueo de fila original con `SELECT ... FOR UPDATE`, registro de auditoría con columnas `reversed_at` y `reverses_transaction_id` (migración `0015_icy_blizzard.sql`) y emisión de contra-asientos automáticos que devuelven los saldos a las cuentas de origen.
+6.  **Patrón Outbox Desacoplado (RFC 020):** Emisión transaccional de eventos en `outbox_events` (`TRANSACTION_CREATED`, `TRANSACTION_REVERSED`) con worker asíncrono desacoplado en 3 pasos con `SKIP LOCKED`, índice de polling `outbox_status_created_idx` (migración `0016_eminent_roxanne_simpson.sql`), reintentos exponenciales y purga histórica.
