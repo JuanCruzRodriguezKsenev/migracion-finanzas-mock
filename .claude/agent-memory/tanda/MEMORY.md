@@ -47,23 +47,30 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 *   **Nada de `kind` en `financial_entities`.** La especie (banco/billetera/tarjeta) es del instrumento,
     no de la institución: una marca emite varios. Ya vive en `contact_payment_methods.type`.
 
+## Cómo arranca `obra`
+
+*   **`obra` exige árbol limpio y tiene prohibido cambiar de rama.** La preparación del entorno es
+    trabajo de `tanda`, **antes** de pasarle el plan: commitear la ronda de planificación, crear la
+    rama de la ronda (`git checkout -b`) y dejar `trabajo-en-vuelo.md` ya sincronizado y commiteado.
+    Si se le pasa el plan con el árbol sucio, devuelve un informe de factibilidad y no toca nada
+    — verificado el 2026-09-07, funciona como se esperaba.
+
 ## Estado
 
-*   Rama `chore/gobernanza-reglas-neutrales` (sale de `feat/contacts-management`, no de master), limpia,
-    **15 commits por delante de `master`**. Arrastra Tandas I/J/K, Fase 0, Bloque B y la gobernanza.
-    `master` sigue sin recibir nada. 298 tests.
-*   **Dos ramas pendientes de merge a master, en orden**: primero `feat/contacts-management`, después
-    `chore/gobernanza-reglas-neutrales` (la segunda es descendiente de la primera).
-*   Fase 1 del artifact: RFC 006 cerrado; **RFC 015 (perfil, preferencias y consolidación) es el único
-    RFC en `DRAFT`** — falta que Juan Cruz lo apruebe antes de tocar código.
-*   Próximo módulo del roadmap: Tarjetas `/cards` (RFC 007) o Metas `/goals` (RFC 011).
-*   **Plan de corrección de entidades ESCRITO** en `docs/planes/fix-entidades-financieras.md`
-    (2026-09-07), listo para `obra`. Decisiones del usuario: asiento de apertura contra `3.1.01.01`,
-    diagnóstico SQL sin borrar datos, `brand_domain` como columna nueva, y `/accounts` mantiene el
-    combo de un solo submit.
-*   **El `kk` que esta memoria mencionaba no existe**: `grep -rn "\bkk\b" src/ docs/` da cero.
-    Verificado el 2026-09-07; era una nota errónea.
-*   Otros pendientes propios: estrenar `obra`; evaluar `model: sonnet` en `verificador`; revisar
-    duplicación entre `ARCHITECTURE.md` y `.agents/AGENTS.md` §2–§5.
-*   El artifact de la hoja de ruta trae datos viejos en el encabezado (rama `feat/transactions-management`,
-    253 tests, RFC 019 en DRAFT, RFC 015 pintado APPROVED). Corregir cuando se lo edite.
+*   Rama `fix/entidades-financieras`, limpia, sale de `chore/gobernanza-reglas-neutrales`.
+    **`obra` está ejecutando `docs/planes/fix-entidades-financieras.md`.**
+*   **Tres ramas encadenadas pendientes de merge a master, en este orden**:
+    `feat/contacts-management` → `chore/gobernanza-reglas-neutrales` → `fix/entidades-financieras`.
+    `master` no recibió ninguna. 298 tests al empezar la ronda.
+*   **La Fase 1 NO está cerrada.** RFC 006 entregado; falta el **RFC 015 (perfil, preferencias y
+    consolidación multimoneda)**, único RFC en `DRAFT` de los 21 y único bloqueo formal. Verificado
+    archivo por archivo, no de memoria. No hay una sola línea de consolidación en `src/`
+    (`grep exchange_rate|baseCurrency|consolidat` → cero).
+*   **Tarjetas (007) es Fase 2 y Metas (011) es Fase 3.** `trabajo-en-vuelo.md` proponía cualquiera de
+    las dos como próximo módulo, contra el artifact; corregido el 2026-09-07. Metas en fase temprana
+    es justo el error que el artifact le señala al `ROADMAP.md` viejo.
+*   **El artifact ya está sincronizado** (2026-09-07): 18 ítems pendientes, 5 de 17 rutas, 298 tests,
+    RFC 015 como único DRAFT, Fase 0 completa y estado por fase. Tiene vocabulario de estado nuevo
+    (`.ph-status`, filas `.done` con ✓). Releerlo con `action: "read"` antes de volver a editarlo.
+*   Pendientes propios: evaluar `model: sonnet` en `verificador`; revisar duplicación entre
+    `ARCHITECTURE.md` y `.agents/AGENTS.md` §2–§5.
