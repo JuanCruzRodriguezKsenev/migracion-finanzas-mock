@@ -5,7 +5,7 @@
  * a cuentas contables para el débito automático (worker pendiente según RFC).
  */
 // Librerías externas
-import { pgTable , uuid , varchar , integer , boolean , timestamp , text } from "drizzle-orm/pg-core" ;
+import { pgTable , uuid , varchar , integer , bigint , boolean , timestamp , text } from "drizzle-orm/pg-core" ;
 
 // Feature: Accounting
 import { accounts } from "@/features/accounting/schema.db" ;
@@ -24,7 +24,7 @@ export const subscriptions = pgTable( "subscriptions" , {
   organizationId:  uuid( "organization_id" ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
   name:            varchar( "name" , {length: 150} ).notNull() ,
   description:     text( "description" ) ,
-  amount:          integer( "amount" ).notNull() , // Monto exacto en centavos (ej: $15.99 = 1599)
+  amount:          bigint( "amount" , {mode: "number"} ).notNull() , // Monto exacto en centavos (ej: $15.99 = 1599)
   currency:        varchar( "currency" , {length: 10} ).default( "ARS" ).notNull() ,
 
   // Frecuencia del ciclo de cobro

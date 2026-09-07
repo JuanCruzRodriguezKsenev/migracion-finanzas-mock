@@ -51,6 +51,7 @@ Este documento registra los puntos de deuda técnica del repositorio, distinguie
 
 ### Rendimiento y Optimización de Base de Datos
 *   [x] **Índice compuesto único en `monthly_summaries`:** Creación de índice único `monthly_summaries_org_year_month_unique` sobre `(organization_id, year, month)` con migración `0017_free_iron_monger.sql`, acelerando consultas de rangos históricos `findRecent` e impidiendo duplicados de resumen para un mismo período contable.
+*   [x] **Migración de columnas monetarias a `bigint` (RFC 019):** Ensanchamiento de 9 columnas que manejan dinero en centavos (`accounts.balance`, `ledger_entries.debit/credit`, `monthly_summaries.total_revenue/total_expense/balance_snapshot/assets_snapshot/liabilities_snapshot`, `subscriptions.amount`) a `bigint(..., { mode: "number" })` con migración `0018_slimy_wiccan.sql`. Previene el desbordamiento aritmético de runtime en PostgreSQL ($2^{31} - 1 \approx \$21.4\text{M}$) manteniendo compatibilidad transparente con `number` en JS/TS hasta $2^{53} - 1$.
 
 ## § Abierto (Pendiente de Refactorización)
 

@@ -4,7 +4,7 @@
  * Define las tablas de cuentas, categorías contables, transacciones y asientos de diario.
  */
 // Librerías externas
-import { pgTable , uuid , varchar , integer , timestamp , text , jsonb , uniqueIndex , index } from "drizzle-orm/pg-core" ;
+import { pgTable , uuid , varchar , integer , bigint , timestamp , text , jsonb , uniqueIndex , index } from "drizzle-orm/pg-core" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -44,7 +44,7 @@ export const accounts = pgTable( "accounts" , {
   code:           varchar( "code" , {length: 50 } ).notNull() , // Código contable del plan de cuentas
   name:           varchar( "name" , {length: 150} ).notNull() ,
   type:           varchar( "type" , {length: 50 } ).notNull() , // 'asset' | 'liability' | 'equity' | 'revenue' | 'expense'
-  balance:        integer( "balance" ).default( 0 ).notNull() , // Saldo en centavos. Negativo para pasivos o sobregiros
+  balance:        bigint( "balance" , {mode: "number"} ).default( 0 ).notNull() , // Saldo en centavos. Negativo para pasivos o sobregiros
   currency:       varchar( "currency" , {length: 10} ).default( "ARS" ).notNull() ,
   entityId:       uuid( "entity_id" ).references( () => financialEntities.id , {onDelete: "restrict"} ) , // Entidad vinculada
   createdAt:      timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
@@ -84,8 +84,8 @@ export const ledgerEntries = pgTable( "ledger_entries" , {
   id:            uuid( "id"             ).primaryKey().defaultRandom() ,
   transactionId: uuid( "transaction_id" ).references( () => ledgerTransactions.id , {onDelete: "cascade"} ).notNull() ,
   accountId:     uuid( "account_id"     ).references( () => accounts.id           , {onDelete: "restrict"} ).notNull() , // restrict para impedir borrar cuentas con movimientos
-  debit:         integer( "debit"  ).default( 0 ).notNull() , // Monto del Débito (Debe) en centavos
-  credit:        integer( "credit" ).default( 0 ).notNull() , // Monto del Crédito (Haber) en centavos
+  debit:         bigint( "debit"  , {mode: "number"} ).default( 0 ).notNull() , // Monto del Débito (Debe) en centavos
+  credit:        bigint( "credit" , {mode: "number"} ).default( 0 ).notNull() , // Monto del Crédito (Haber) en centavos
   currency:      varchar( "currency" , {length: 10} ).default( "ARS" ).notNull() ,
   createdAt:     timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
 } ) ;
@@ -124,11 +124,11 @@ export const monthlySummaries = pgTable( "monthly_summaries" , {
   organizationId:  uuid( "organization_id"  ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
   year:            integer( "year"          ).notNull() ,
   month:           integer( "month"         ).notNull() , // 0-indexed (0 = Enero ... 11 = Diciembre), igual que Date.getMonth(). Distinto del parámetro 'beforeMonth' de findRecent(), que es 1-indexed por diseño de API pública.
-  totalRevenue:        integer( "total_revenue"     ).default( 0 ).notNull() ,
-  totalExpense:        integer( "total_expense"     ).default( 0 ).notNull() ,
-  balanceSnapshot:     integer( "balance_snapshot"  ).default( 0 ).notNull() ,
-  assetsSnapshot:      integer( "assets_snapshot"   ).default( 0 ).notNull() ,
-  liabilitiesSnapshot: integer( "liabilities_snapshot" ).default( 0 ).notNull() ,
+  totalRevenue:        bigint( "total_revenue"        , {mode: "number"} ).default( 0 ).notNull() ,
+  totalExpense:        bigint( "total_expense"        , {mode: "number"} ).default( 0 ).notNull() ,
+  balanceSnapshot:     bigint( "balance_snapshot"     , {mode: "number"} ).default( 0 ).notNull() ,
+  assetsSnapshot:      bigint( "assets_snapshot"      , {mode: "number"} ).default( 0 ).notNull() ,
+  liabilitiesSnapshot: bigint( "liabilities_snapshot" , {mode: "number"} ).default( 0 ).notNull() ,
   createdAt:           timestamp( "created_at"      , {withTimezone: true} ).defaultNow().notNull() ,
 } , ( table ) => { return( {
   uniqueOrgYearMonth: uniqueIndex( "monthly_summaries_org_year_month_unique" ).on( table.organizationId , table.year , table.month ) ,

@@ -747,4 +747,49 @@ describe( "accountingService" , () => {
       expect( espejo.reversesTransactionId ).toBe( original.id ) ;
     } ) ;
   } ) ;
+
+  /**
+   * RFC 019: Soporte de importes que superan el límite de integer (32 bits con signo: 2.147.483.647 centavos).
+   * Valida que montos mayores a 21.4M (ej. 3.000.000.000 centavos = $30.000.000) se persistan,
+   * actualicen saldos y preserven Debe = Haber sin desbordar.
+   */
+  describe( "soporte de bigint para importes monetarios (RFC 019)" , () => {
+    it( "debería registrar y asentar transacciones con montos superiores al límite de int32 sin overflow" , async () => {
+      // 3.000.000.000 centavos = $30.000.000,00 ARS (excede 2.147.483.647 de int32)
+      const montoGrande = 3000000000 ;
+
+      const resultado = await createLedgerTransaction( {
+        organizationId: orgId ,
+        description:    "Aporte de capital extraordinario" ,
+        entries: [
+          {accountId: ctaBancoId    , debit: montoGrande , credit: 0          } ,
+          {accountId: ctaIngresosId , debit: 0           , credit: montoGrande} ,
+        ] ,
+      } ) ;
+
+      expect( resultado.success ).toBe( true ) ;
+
+      // 1. Verificar que las entradas se persistieron en bigint y retornaron como number
+      const entradas = await db
+        .select()
+        .from( ledgerEntries )
+        .where( eq(ledgerEntries.transactionId , resultado.value!.id) ) ;
+
+      expect( entradas ).toHaveLength( 2 ) ;
+      const entradaDebe  = entradas.find( ( e ) => { return( (e.accountId === ctaBancoId) ) ; } ) ;
+      const entradaHaber = entradas.find( ( e ) => { return( (e.accountId === ctaIngresosId) ) ; } ) ;
+
+      expect( entradaDebe?.debit ).toBe( montoGrande ) ;
+      expect( entradaHaber?.credit ).toBe( montoGrande ) ;
+
+      // 2. Verificar que los saldos de las cuentas se actualizaron correctamente
+      const [ ctaBancoActualizada ] = await db
+        .select()
+        .from( accounts )
+        .where( eq(accounts.id , ctaBancoId) ) ;
+
+      expect( ctaBancoActualizada.balance ).toBe( montoGrande ) ;
+    } ) ;
+  } ) ;
 } ) ;
+

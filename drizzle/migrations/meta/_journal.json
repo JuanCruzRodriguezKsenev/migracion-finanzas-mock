@@ -127,6 +127,13 @@
       "when": 1788808313531,
       "tag": "0017_free_iron_monger",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1788808600758,
+      "tag": "0018_slimy_wiccan",
+      "breakpoints": true
     }
   ]
 }
