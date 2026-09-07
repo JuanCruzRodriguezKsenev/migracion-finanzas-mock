@@ -1,0 +1,278 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 0.8rem + 0.8vw, 1.75rem);
+  width: 100%;
+}
+
+.headerBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.titleArea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pageTitle {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.pageSubtitle {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.actionsArea {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ── Barra de Filtros ─────────────────────────────────────────── */
+.controlsBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: clamp(0.75rem, 0.6rem + 0.4vw, 1.125rem);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+}
+
+.filtersLeft {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.625rem;
+  flex: 1;
+}
+
+.filtersRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.filterSelect {
+  padding: clamp(0.45rem, 0.4rem + 0.1vw, 0.6rem) clamp(0.75rem, 0.6rem + 0.3vw, 1rem);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  color: var(--text-main);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.filterSelect:focus {
+  border-color: var(--color-primary);
+}
+
+.clearBtn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-xs);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.clearBtn:hover {
+  background-color: var(--color-primary-light);
+}
+
+/* ── Badges y Formatos de Celdas ───────────────────────────────── */
+.descCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.descTitle {
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.descMerchant {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.dateCell {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+}
+
+.badgeIncome {
+  background-color: var(--color-success-light);
+  color: var(--color-success-text);
+}
+
+.badgeExpense {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger-text);
+}
+
+.badgeTransfer {
+  background-color: var(--color-purple-light);
+  color: var(--color-purple-text);
+}
+
+.amountCell {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.amountIncome {
+  color: var(--color-success);
+}
+
+.amountExpense {
+  color: var(--text-main);
+}
+
+.amountTransfer {
+  color: var(--color-purple);
+}
+
+.btnAction {
+  background: none;
+  border: 1px solid var(--border-card);
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.btnAction:hover {
+  background-color: var(--bg-inset);
+  color: var(--text-main);
+  border-color: var(--border-strong);
+}
+
+/* ── Paginación y Cargar Más ───────────────────────────────────── */
+.loadMoreWrapper {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+/* ── Estilos de Modales y Asientos Contables ────────────────────── */
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.875rem, 0.75rem + 0.4vw, 1.25rem);
+}
+
+.typeTabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+  background-color: var(--bg-inset);
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.typeTabBtn {
+  padding: 0.45rem 0.5rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.typeTabBtnActive {
+  background-color: var(--bg-card);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-xs);
+}
+
+.entriesTableWrapper {
+  margin-top: 0.5rem;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.entriesTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-xs);
+}
+
+.entriesTable th {
+  background-color: var(--bg-inset);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.entriesTable td {
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-main);
+}
+
+.alignRight {
+  text-align: right;
+}
+
+.reversalBox {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reversalActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dangerActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}

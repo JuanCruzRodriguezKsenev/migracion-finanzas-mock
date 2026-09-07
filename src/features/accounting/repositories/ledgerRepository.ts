@@ -3,14 +3,14 @@
  * Repositorio de Libro Mayor y Asientos de Diario (Capa de Acceso a Datos - DAL).
  */
 // Librerías externas
-import { eq , and , desc , inArray , gte , lte } from "drizzle-orm" ;
+import { eq , and , desc , inArray , gte , lte , lt , or , ilike } from "drizzle-orm" ;
 
 // Shared
 import { db , DBOrTx } from "@/shared/db/client" ;
 
 // Feature: Accounting
 import { LedgerTransaction , InsertLedgerTransaction , LedgerEntry , InsertLedgerEntry } from "../types" ;
-import { ledgerTransactions , ledgerEntries } from "../schema.db" ;
+import { ledgerTransactions , ledgerEntries }                                            from "../schema.db" ;
 
 
 /**
@@ -21,8 +21,31 @@ export type TransactionWithEntries = LedgerTransaction & {
 } ;
 
 /**
+ * Parámetros para la consulta paginada y filtrada de transacciones contables.
+ */
+export interface QueryTransactionsParams {
+  organizationId: string ;
+  cursor?:        { occurredAt: Date ; id: string } | null ;
+  limit?:         number ;
+  search?:        string ;
+  categoryId?:    string ;
+  accountId?:     string ;
+  fromDate?:      Date ;
+  toDate?:        Date ;
+}
+
+/**
+ * Resultado estructurado para la paginación por cursor del libro diario.
+ */
+export interface TransactionsPageResult {
+  items:      TransactionWithEntries[] ;
+  nextCursor: { occurredAt: string ; id: string } | null ;
+  hasMore:    boolean ;
+}
+
+/**
  * Repositorio del Libro Diario Contable.
- * Centraliza la creación y lectura de cabeceras de transacciones e individuales asientos.
+ * Centraliza la creación, lectura, actualización de metadatos y paginación de transacciones.
  */
 export const ledgerRepository = {
   /**
@@ -76,7 +99,6 @@ export const ledgerRepository = {
     return( results[0] || null ) ;
   } ,
 
-
   /**
    * Busca todas las entradas individuales de diario asociadas a una transacción.
    * 
@@ -121,14 +143,48 @@ export const ledgerRepository = {
   } ,
 
   /**
+   * Actualiza los metadatos editables de una transacción contable sin alterar los asientos de partida doble.
+   * 
+   * @param id - ID de la transacción.
+   * @param organizationId - ID de la organización.
+   * @param data - Datos parciales de metadatos.
+   * @param tx - Instancia de transacción opcional.
+   * @returns La transacción actualizada o null si no se encuentra.
+   */
+  async updateTransactionMetadata(
+    id:             string ,
+    organizationId: string ,
+    data: {
+      description?:    string ;
+      categoryId?:     string | null ;
+      merchantName?:   string | null ;
+      merchantDomain?: string | null ;
+      occurredAt?:     Date ;
+    } ,
+    tx:             DBOrTx = db
+  ): Promise< LedgerTransaction | null > {
+    const [ updated ] = await tx
+      .update( ledgerTransactions )
+      .set( data )
+      .where(
+        and(
+          eq( ledgerTransactions.id             , id             ) ,
+          eq( ledgerTransactions.organizationId , organizationId ) ,
+        )
+      )
+      .returning() ;
+    return( updated || null ) ;
+  } ,
+
+  /**
    * Consulta el histórico de transacciones contables del libro diario con sus respectivos movimientos asociados.
    * Optimiza el consumo evitando N+1 consultas de base de datos agrupando en memoria.
    * 
    * @param organizationId - ID de la organización.
-   * @param fromDate - Opcional. Límite de fecha inferior.
-   * @param toDate - Opcional. Límite de fecha superior.
+   * @param fromDate - Opcional. Límite de fecha inferior sobre occurredAt.
+   * @param toDate - Opcional. Límite de fecha superior sobre occurredAt.
    * @param tx - Instancia de transacción opcional.
-   * @returns Listado de transacciones con sus líneas asociadas ordenadas por fecha descendente.
+   * @returns Listado de transacciones con sus líneas asociadas ordenadas por occurredAt descendente.
    */
   async findTransactionsWithEntries(
     organizationId: string ,
@@ -139,27 +195,120 @@ export const ledgerRepository = {
     const conditions = [ eq(ledgerTransactions.organizationId , organizationId) ] ;
 
     if( fromDate ){
-      conditions.push( gte(ledgerTransactions.createdAt , fromDate) ) ;
+      conditions.push( gte(ledgerTransactions.occurredAt , fromDate) ) ;
     }
     if( toDate ){
-      conditions.push( lte(ledgerTransactions.createdAt , toDate) ) ;
+      conditions.push( lte(ledgerTransactions.occurredAt , toDate) ) ;
     }
 
     const transactions = await tx
       .select()
       .from( ledgerTransactions )
       .where( and(...conditions) )
-      .orderBy( desc(ledgerTransactions.createdAt) ) ;
+      .orderBy( desc(ledgerTransactions.occurredAt) , desc(ledgerTransactions.id) ) ;
 
     if( transactions.length === 0 ){ return( [] ) ; }
 
     const txIds = transactions.map( (t) => t.id ) ;
     const entries = await this.findEntriesByTransactionIds( txIds , tx ) ;
 
-    return( transactions.map( (tx) => ( {
-      ...tx ,
-      entries: entries.filter( (e) => e.transactionId === tx.id ) ,
+    return( transactions.map( (t) => ( {
+      ...t ,
+      entries: entries.filter( (e) => e.transactionId === t.id ) ,
     } ) ) ) ;
-  }
-} ;
+  } ,
 
+  /**
+   * Consulta paginada por cursor determinístico con búsqueda de texto y filtros por cuenta y categoría.
+   * 
+   * @param params - Opciones de paginación y filtrado.
+   * @param tx - Instancia de transacción opcional.
+   * @returns Página de transacciones con sus entradas y el próximo cursor si existen más filas.
+   */
+  async findTransactionsPage(
+    params: QueryTransactionsParams ,
+    tx:     DBOrTx = db
+  ): Promise< TransactionsPageResult > {
+    const { organizationId , cursor , limit = 20 , search , categoryId , accountId , fromDate , toDate } = params ;
+    const conditions = [ eq(ledgerTransactions.organizationId , organizationId) ] ;
+
+    if( fromDate ) {
+      conditions.push( gte(ledgerTransactions.occurredAt , fromDate) ) ;
+    }
+    if( toDate ) {
+      conditions.push( lte(ledgerTransactions.occurredAt , toDate) ) ;
+    }
+    if( categoryId ) {
+      conditions.push( eq(ledgerTransactions.categoryId , categoryId) ) ;
+    }
+    if( search && (search.trim() !== "") ) {
+      const pattern = `%${search.trim()}%` ;
+      conditions.push(
+        or(
+          ilike( ledgerTransactions.description  , pattern ) ,
+          ilike( ledgerTransactions.merchantName , pattern ) ,
+        )!
+      ) ;
+    }
+    if( accountId ) {
+      const matchingTxIds = tx
+        .select( { txId: ledgerEntries.transactionId } )
+        .from( ledgerEntries )
+        .where( eq(ledgerEntries.accountId , accountId) ) ;
+
+      conditions.push( inArray(ledgerTransactions.id , matchingTxIds) ) ;
+    }
+    if( cursor ) {
+      conditions.push(
+        or(
+          lt( ledgerTransactions.occurredAt , cursor.occurredAt ) ,
+          and(
+            eq( ledgerTransactions.occurredAt , cursor.occurredAt ) ,
+            lt( ledgerTransactions.id         , cursor.id         ) ,
+          ) ,
+        )!
+      ) ;
+    }
+
+    const queryLimit = limit + 1 ;
+    const fetched = await tx
+      .select()
+      .from( ledgerTransactions )
+      .where( and(...conditions) )
+      .orderBy( desc(ledgerTransactions.occurredAt) , desc(ledgerTransactions.id) )
+      .limit( queryLimit ) ;
+
+    const hasMore  = ( fetched.length > limit ) ;
+    const pageRows = hasMore ? fetched.slice( 0 , limit ) : fetched ;
+
+    if( pageRows.length === 0 ) {
+      return( {
+        items:      [] ,
+        nextCursor: null ,
+        hasMore:    false ,
+      } ) ;
+    }
+
+    const txIds = pageRows.map( ( t ) => t.id ) ;
+    const entries = await this.findEntriesByTransactionIds( txIds , tx ) ;
+
+    const items: TransactionWithEntries[] = pageRows.map( ( txRow ) => ( {
+      ...txRow ,
+      entries: entries.filter( ( e ) => e.transactionId === txRow.id ) ,
+    } ) ) ;
+
+    const lastItem   = pageRows[pageRows.length - 1] ;
+    const nextCursor = hasMore
+      ? {
+          occurredAt: lastItem.occurredAt.toISOString() ,
+          id:         lastItem.id ,
+        }
+      : null ;
+
+    return( {
+      items ,
+      nextCursor ,
+      hasMore ,
+    } ) ;
+  } ,
+} ;

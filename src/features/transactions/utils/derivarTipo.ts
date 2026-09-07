@@ -1,0 +1,133 @@
+/**
+ * @file derivarTipo.ts
+ * Utilidad pura para derivar el tipo de transacción comercial (income, expense, transfer)
+ * a partir de las cuentas contables involucradas en sus asientos de partida doble.
+ */
+// Feature: Accounting
+import { Account , LedgerEntry } from "@/features/accounting/types" ;
+
+
+export type TransactionType = "income" | "expense" | "transfer" ;
+
+export interface TransactionSummaryDerived {
+  type:                  TransactionType ;
+  amountInCents:         number ;
+  primaryAccountId?:     string ;
+  counterpartAccountId?: string ;
+}
+
+/**
+ * Deriva el tipo comercial de una transacción a partir del plan de cuentas de sus entradas contables.
+ * 
+ * @param entries - Asientos contables de la transacción.
+ * @param accounts - Cuentas de la organización.
+ * @returns 'income' | 'expense' | 'transfer'.
+ */
+export function derivarTipoTransaccion(
+  entries:  { accountId: string ; debit: number ; credit: number }[] ,
+  accounts: Account[] | Map< string , Account >
+): TransactionType {
+  const accountsMap = ( accounts instanceof Map )
+    ? accounts
+    : new Map( accounts.map( ( a ) => [ a.id , a ] ) ) ;
+
+  let hasRevenue = false ;
+  let hasExpense = false ;
+
+  for( const entry of entries ) {
+    const acc = accountsMap.get( entry.accountId ) ;
+    if( !acc ) { continue ; }
+    if( acc.type === "revenue" ) {
+      hasRevenue = true ;
+    } else if( acc.type === "expense" ) {
+      hasExpense = true ;
+    }
+  }
+
+  if( hasRevenue ) { return( "income" ) ; }
+  if( hasExpense ) { return( "expense" ) ; }
+  return( "transfer" ) ;
+}
+
+/**
+ * Calcula el resumen representativo para visualización (tipo comercial, importe principal y cuentas).
+ * 
+ * @param entries - Asientos de la transacción.
+ * @param accounts - Cuentas de la organización.
+ * @returns Resumen con tipo, importe en centavos y cuenta principal.
+ */
+export function calcularResumenTransaccion(
+  entries:  LedgerEntry[] | { accountId: string ; debit: number ; credit: number }[] ,
+  accounts: Account[] | Map< string , Account >
+): TransactionSummaryDerived {
+  const accountsMap = ( accounts instanceof Map )
+    ? accounts
+    : new Map( accounts.map( ( a ) => [ a.id , a ] ) ) ;
+
+  const type = derivarTipoTransaccion( entries , accountsMap ) ;
+
+  if( type === "income" ) {
+    const revenueEntries = entries.filter( ( e ) => {
+      const acc = accountsMap.get( e.accountId ) ;
+      return( acc?.type === "revenue" ) ;
+    } ) ;
+
+    const amountInCents = ( revenueEntries.length > 0 )
+      ? revenueEntries.reduce( ( sum , e ) => ( sum + e.credit ) , 0 )
+      : entries.reduce( ( max , e ) => Math.max( max , e.debit ) , 0 ) ;
+
+    const assetEntry = entries.find( ( e ) => {
+      const acc = accountsMap.get( e.accountId ) ;
+      return( (acc?.type === "asset") && (e.debit > 0) ) ;
+    } ) ;
+
+    return( {
+      type ,
+      amountInCents ,
+      primaryAccountId: assetEntry?.accountId || revenueEntries[0]?.accountId ,
+    } ) ;
+  }
+
+  if( type === "expense" ) {
+    const expenseEntries = entries.filter( ( e ) => {
+      const acc = accountsMap.get( e.accountId ) ;
+      return( acc?.type === "expense" ) ;
+    } ) ;
+
+    const amountInCents = ( expenseEntries.length > 0 )
+      ? expenseEntries.reduce( ( sum , e ) => ( sum + e.debit ) , 0 )
+      : entries.reduce( ( max , e ) => Math.max( max , e.credit ) , 0 ) ;
+
+    const assetEntry = entries.find( ( e ) => {
+      const acc = accountsMap.get( e.accountId ) ;
+      return( ( (acc?.type === "asset") || (acc?.type === "liability") ) && (e.credit > 0) ) ;
+    } ) ;
+
+    return( {
+      type ,
+      amountInCents ,
+      primaryAccountId: assetEntry?.accountId || expenseEntries[0]?.accountId ,
+    } ) ;
+  }
+
+  const debitAsset = entries.find( ( e ) => {
+    const acc = accountsMap.get( e.accountId ) ;
+    return( (acc?.type === "asset") && (e.debit > 0) ) ;
+  } ) ;
+
+  const creditAsset = entries.find( ( e ) => {
+    const acc = accountsMap.get( e.accountId ) ;
+    return( (acc?.type === "asset") && (e.credit > 0) ) ;
+  } ) ;
+
+  const amountInCents = debitAsset
+    ? debitAsset.debit
+    : entries.reduce( ( max , e ) => Math.max( max , e.debit ) , 0 ) ;
+
+  return( {
+    type:                 "transfer" ,
+    amountInCents ,
+    primaryAccountId:     creditAsset?.accountId ,
+    counterpartAccountId: debitAsset?.accountId ,
+  } ) ;
+}

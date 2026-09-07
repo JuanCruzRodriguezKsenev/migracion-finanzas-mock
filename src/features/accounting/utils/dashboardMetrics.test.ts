@@ -48,6 +48,7 @@ function makeEntry( overrides: Partial<LedgerEntry> ): LedgerEntry {
 }
 
 function makeTransaction( overrides: Partial<TransactionWithEntries> ): TransactionWithEntries {
+  const date = overrides.occurredAt ?? overrides.createdAt ?? new Date() ;
   return( {
     id:             "tx-1" ,
     organizationId: "org-1" ,
@@ -55,7 +56,8 @@ function makeTransaction( overrides: Partial<TransactionWithEntries> ): Transact
     description:    "Transacción de prueba" ,
     merchantName:   null ,
     merchantDomain: null ,
-    createdAt:      new Date() ,
+    createdAt:      date ,
+    occurredAt:     date ,
     entries:        [] ,
     ...overrides ,
   } ) ;

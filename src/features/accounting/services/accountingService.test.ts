@@ -11,7 +11,12 @@ import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
 import { accounts , ledgerTransactions , ledgerEntries , idempotencyKeys , outboxEvents } from "../schema.db" ;
-import { createLedgerTransaction , deleteLedgerTransaction } from "./accountingService" ;
+import {
+  createLedgerTransaction ,
+  deleteLedgerTransaction ,
+  updateLedgerTransactionMetadata ,
+  reverseLedgerTransaction
+} from "./accountingService" ;
 import { createTransactionSchema } from "../schemas/accounting.schema" ;
 
 
@@ -487,5 +492,102 @@ describe( "accountingService" , () => {
     const resConflicto = await executeIdempotent( keyConflicto , runOperation ) ;
     expect( resConflicto.success ).toBe( false ) ;
     expect( resConflicto.error ).toBe( "CONFLICT_PROCESSING" ) ;
+  } ) ;
+
+  describe( "occurredAt y retroactividad" , () => {
+    it( "debería persistir una fecha de ocurrencia retroactiva correctamente" , () => {
+      return( new Promise<void>( async ( resolve ) => {
+        const fechaPasada = new Date( "2026-01-15T10:00:00.000Z" ) ;
+
+        const result = await createLedgerTransaction( {
+          organizationId: orgId ,
+          description:    "Gasto retroactivo" ,
+          occurredAt:     fechaPasada ,
+          entries: [
+            { accountId: ctaBancoId    , debit: 5000 , credit: 0    } ,
+            { accountId: ctaIngresosId , debit: 0    , credit: 5000 } ,
+          ] ,
+        } ) ;
+
+        expect( result.success ).toBe( true ) ;
+        expect( new Date(result.value!.occurredAt).toISOString() ).toBe( fechaPasada.toISOString() ) ;
+        resolve() ;
+      } ) ) ;
+    } ) ;
+  } ) ;
+
+  describe( "updateLedgerTransactionMetadata" , () => {
+    it( "debería actualizar la descripción y comercio sin alterar saldos ni asientos" , async () => {
+      const creacion = await createLedgerTransaction( {
+        organizationId: orgId ,
+        description:    "Gasto original" ,
+        entries: [
+          { accountId: ctaBancoId    , debit: 3000 , credit: 0    } ,
+          { accountId: ctaIngresosId , debit: 0    , credit: 3000 } ,
+        ] ,
+      } ) ;
+
+      expect( creacion.success ).toBe( true ) ;
+      const txId = creacion.value!.id ;
+
+      const updateRes = await updateLedgerTransactionMetadata( {
+        transactionId: txId ,
+        organizationId: orgId ,
+        description:   "Gasto modificado con nuevo comercio" ,
+        merchantName:  "Comercio ABC" ,
+      } ) ;
+
+      expect( updateRes.success ).toBe( true ) ;
+      expect( updateRes.value!.description ).toBe( "Gasto modificado con nuevo comercio" ) ;
+      expect( updateRes.value!.merchantName ).toBe( "Comercio ABC" ) ;
+
+      // Verificar que el saldo de la cuenta no se alteró
+      const [ ctaBanco ] = await db.select().from( accounts ).where( eq(accounts.id , ctaBancoId) ) ;
+      expect( ctaBanco.balance ).toBe( 3000 ) ;
+
+      // Verificar que se emitió el evento outbox
+      const [ evento ] = await db
+        .select()
+        .from( outboxEvents )
+        .where( eq(outboxEvents.eventType , "TRANSACTION_METADATA_UPDATED") ) ;
+      expect( evento ).toBeDefined() ;
+    } ) ;
+  } ) ;
+
+  describe( "reverseLedgerTransaction" , () => {
+    it( "debería crear el asiento inverso y restaurar saldos a su estado original" , async () => {
+      // 1. Crear transacción: Ingreso de $10.000 ($100.00 ARS)
+      const creacion = await createLedgerTransaction( {
+        organizationId: orgId ,
+        description:    "Cobro a reversar" ,
+        entries: [
+          { accountId: ctaBancoId    , debit: 10000 , credit: 0     } ,
+          { accountId: ctaIngresosId , debit: 0     , credit: 10000 } ,
+        ] ,
+      } ) ;
+
+      expect( creacion.success ).toBe( true ) ;
+      const txId = creacion.value!.id ;
+
+      // Banco tiene 10000 centavos
+      let [ ctaBanco ] = await db.select().from( accounts ).where( eq(accounts.id , ctaBancoId) ) ;
+      expect( ctaBanco.balance ).toBe( 10000 ) ;
+
+      // 2. Ejecutar reversión contable
+      const revRes = await reverseLedgerTransaction( txId , orgId , "Cobro por error" ) ;
+      expect( revRes.success ).toBe( true ) ;
+      expect( revRes.value!.description ).toContain( "Reversión" ) ;
+
+      // 3. Saldo debe haber vuelto a 0
+      [ ctaBanco ] = await db.select().from( accounts ).where( eq(accounts.id , ctaBancoId) ) ;
+      expect( ctaBanco.balance ).toBe( 0 ) ;
+
+      // 4. Se emitió evento Outbox TRANSACTION_REVERSED
+      const [ eventoRev ] = await db
+        .select()
+        .from( outboxEvents )
+        .where( eq(outboxEvents.eventType , "TRANSACTION_REVERSED") ) ;
+      expect( eventoRev ).toBeDefined() ;
+    } ) ;
   } ) ;
 } ) ;

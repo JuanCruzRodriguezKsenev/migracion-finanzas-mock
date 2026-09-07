@@ -12,12 +12,12 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `master` (Saneamiento integral completado; terreno limpio para Transacciones).
+**Rama activa:** `feat/transactions-management` (Módulo de Transacciones completado integralmente con pruebas y build de producción exitoso).
 
-**Estado:** 🟢 **Pipeline de CI inaugurado y verificado en verde en GitHub Actions (`calidad` exitosa en 2m5s). Cero errores y cero warnings en ESLint con `--max-warnings 0` en compuerta. Contrato `SparklinePoint[]` obligatorio en los 7 gráficos de la aplicación. Datos inventados eliminados en `/accounts`. Accesibilidad e internacionalización de `MonthSelector` completadas con `useId()` y traducciones de año.**
+**Estado:** 🟢 **Módulo `/transactions` finalizado. Esquema contable con `occurred_at` (migración `0014_real_komodo.sql` con backfill), DAL con paginación por cursor determinístico `(occurred_at, id)`, búsqueda y filtros de cuenta/categoría. Reversión contable ACID e inversión de saldos con evento Outbox. Primitivas compartidas accesibles `DataTable` y `SearchInput` en `shared/ui/`. UI reactiva con Server Actions, modales de alta asistida y detalle/edición/reversión, enlaces de navegación en Navbar y Header, e internacionalización completa (es/en/br). 32 suites de test (230 pruebas) pasando en verde, 0 advertencias ESLint y build exitoso.**
 
 **Próximo paso de desarrollo:**
-Construcción del módulo de Transacciones / Libro Diario (`/transactions`), conectando la UI con `accountingService.ts`, `ledgerRepository.ts` y el modelo de partida doble (`ledgerTransactions`, `ledgerEntries`).
+Portar siguiente módulo de finanzas según el inventario de RFCs (Tarjetas `/tarjetas` — RFC 007 o Metas `/metas` — RFC 011).
 
 ---
 
@@ -39,6 +39,7 @@ Construcción del módulo de Transacciones / Libro Diario (`/transactions`), con
 | **Hotfix RSC** | `master` | 🟢 **Cerrada** | Separación isomórfica de `sparklineUtils.ts` (evita límite Server/Client Component en `calcularCambioPorcentual`) |
 | **Regla UI/UX** | `master` | 🟢 **Cerrada** | Prohibición formal de movimientos y escalas en `:hover` (anti-CLS y anti-flicker); saneamiento en 7 archivos CSS |
 | **Saneamiento Previo** | `master` | 🟢 **Cerrada** | S1 definitivo (`SparklinePoint[]` obligatorio, eliminación prop `data`), saneamiento `/accounts`, 23 warnings ESLint a 0 + `--max-warnings 0`, a11y `MonthSelector` (`useId`, sin `aria-modal`), CI verde en remoto. |
+| **Tanda I** | `feat/transactions-management` | 🟢 **Completada** | Módulo de transacciones contables `/transactions`, `occurred_at` con backfill (`0014_real_komodo.sql`), paginación cursor `(occurred_at, id)`, búsqueda/filtros, reversión ACID, primitivas `DataTable` y `SearchInput`, modals de alta y detalle. |
 
 ---
 

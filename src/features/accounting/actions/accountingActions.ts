@@ -16,8 +16,17 @@ import { db }                 from "@/shared/db/client" ;
 
 // Feature: Accounting
 import { createTransactionSchema , createAccountSchema , createFinancialEntitySchema } from "../schemas/accounting.schema" ;
-import { createLedgerTransaction , deleteLedgerTransaction }                         from "../services/accountingService" ;
-import { TransactionWithEntries , ledgerRepository }                                 from "../repositories/ledgerRepository" ;
+import {
+  createLedgerTransaction ,
+  deleteLedgerTransaction ,
+  updateLedgerTransactionMetadata ,
+  reverseLedgerTransaction
+} from "../services/accountingService" ;
+import {
+  TransactionWithEntries ,
+  TransactionsPageResult ,
+  ledgerRepository
+} from "../repositories/ledgerRepository" ;
 import { LedgerTransaction , Account , MonthlySummary , FinancialEntity }             from "../types" ;
 import { monthlySummaryRepository }                                                  from "../repositories/monthlySummaryRepository" ;
 import { financialEntityRepository }                                                 from "../repositories/financialEntityRepository" ;
@@ -229,6 +238,7 @@ export async function createLedgerTransactionAction(
     description:     string ;
     merchantName?:   string ;
     merchantDomain?: string ;
+    occurredAt?:     Date | string ;
     entries: {
       accountId: string ;
       debit:     number ;
@@ -349,6 +359,122 @@ export async function getTransactionsAction( params?: {
     logger.error( "Error al obtener transacciones en getTransactionsAction." , {error: String(error)} ) ;
     
     return( fail("Error al consultar el libro diario contable.") ) ;
+  }
+}
+
+/**
+ * Consulta y retorna una página de transacciones con filtros y cursor determinístico.
+ * 
+ * @param params - Opciones de paginación y filtros.
+ * @returns Un objeto Result con las transacciones y próximo cursor.
+ */
+export async function getTransactionsPageAction( params: {
+  cursor?:     { occurredAt: Date | string ; id: string } | null ;
+  limit?:      number ;
+  search?:     string ;
+  categoryId?: string ;
+  accountId?:  string ;
+  fromDate?:   Date | string ;
+  toDate?:     Date | string ;
+} ): Promise< Result<TransactionsPageResult , string> > {
+  const session = await getServerSession( authOptions ) ;
+
+  if( !session?.user?.organizationId ){
+    return( fail("No autorizado para consultar transacciones.") ) ;
+  }
+
+  try {
+    const formattedCursor = params.cursor
+      ? {
+          occurredAt: new Date( params.cursor.occurredAt ) ,
+          id:         params.cursor.id ,
+        }
+      : null ;
+
+    const resultado = await ledgerRepository.findTransactionsPage( {
+      organizationId: session.user.organizationId ,
+      cursor:         formattedCursor ,
+      limit:          params.limit ,
+      search:         params.search ,
+      categoryId:     params.categoryId ,
+      accountId:      params.accountId ,
+      fromDate:       params.fromDate ? new Date( params.fromDate ) : undefined ,
+      toDate:         params.toDate   ? new Date( params.toDate   ) : undefined ,
+    } ) ;
+
+    return( ok(resultado) ) ;
+  } catch( error ) {
+    logger.error( "Error al paginar transacciones en getTransactionsPageAction." , {error: String(error)} ) ;
+    return( fail("Error al consultar la página de transacciones.") ) ;
+  }
+}
+
+/**
+ * Actualiza los metadatos de una transacción contable sin alterar la partida doble.
+ * 
+ * @param params - Metadatos editables de la transacción.
+ * @returns Objeto Result con la transacción actualizada.
+ */
+export async function updateLedgerTransactionMetadataAction( params: {
+  transactionId:   string ;
+  description?:    string ;
+  categoryId?:     string | null ;
+  merchantName?:   string | null ;
+  merchantDomain?: string | null ;
+  occurredAt?:     Date | string ;
+} ): Promise< Result<LedgerTransaction , string> > {
+  const session = await getServerSession( authOptions ) ;
+
+  if( !session?.user?.organizationId ){
+    return( fail("No autorizado para editar transacciones.") ) ;
+  }
+
+  try {
+    const res = await updateLedgerTransactionMetadata( {
+      ...params ,
+      organizationId: session.user.organizationId ,
+    } ) ;
+
+    return( res ) ;
+  } catch( error ) {
+    if( (error as {code?: string})?.code === "23503" ) {
+      return( fail("Tu sesión referencia una organización inexistente. Cerrá sesión y volvé a ingresar.") ) ;
+    }
+    logger.error( "Error en updateLedgerTransactionMetadataAction." , {error: String(error)} ) ;
+    return( fail("Error al actualizar la transacción contable.") ) ;
+  }
+}
+
+/**
+ * Reversa una transacción contable mediante la generación de su asiento espejo compensatorio.
+ * 
+ * @param params - Parámetros de reversión (ID y motivo).
+ * @returns Objeto Result con la transacción de reversión generada.
+ */
+export async function reverseLedgerTransactionAction( params: {
+  transactionId: string ;
+  reason?:       string ;
+} ): Promise< Result<LedgerTransaction , string> > {
+  const session = await getServerSession( authOptions ) ;
+
+  if( !session?.user?.organizationId ){
+    return( fail("No autorizado para reversar transacciones.") ) ;
+  }
+
+  try {
+    const res = await reverseLedgerTransaction(
+      params.transactionId ,
+      session.user.organizationId ,
+      params.reason
+    ) ;
+
+    return( res ) ;
+  } catch( error ) {
+    if( (error as {code?: string})?.code === "23503" ) {
+      return( fail("Tu sesión referencia una organización inexistente. Cerrá sesión y volvé a ingresar.") ) ;
+    }
+    logger.error( "Error en reverseLedgerTransactionAction." , {error: String(error)} ) ;
+    return( fail("Error al reversar la transacción contable.") ) ;
   }
 }
 

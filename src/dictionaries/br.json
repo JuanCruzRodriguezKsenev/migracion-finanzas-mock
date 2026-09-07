@@ -16,6 +16,7 @@
   "sidebar": {
     "dashboard": "Painel",
     "accounts": "Contas",
+    "transactions": "Transações",
     "subscriptions": "Assinaturas",
     "settings": "Configurações",
     "sandbox": "Sandbox",
@@ -177,5 +178,18 @@
     "tabAccounts": "Simulador de Contas (Em breve)",
     "accountsPlaceholderTitle": "Simulador de Contas e Saldos",
     "accountsPlaceholderDescription": "Este sandbox permitirá simular a criação de contas de ativos, passivos e patrimônio, e modelar transferências contábeis de partida dobrada. Em breve disponível!"
+  },
+  "transactionsPage": {
+    "title": "Livro Diário",
+    "subtitle": "Histórico de movimentos e registros contábeis de partidas dobradas.",
+    "btnNew": "Nova Transação",
+    "filterSearch": "Buscar descrição ou comerciante...",
+    "filterAllAccounts": "Todas as contas",
+    "filterAllCategories": "Todas as categorias",
+    "filterAllTypes": "Todos os tipos",
+    "typeIncome": "Receita",
+    "typeExpense": "Despesa",
+    "typeTransfer": "Transferência",
+    "emptyState": "Nenhuma transação encontrada."
   }
 }

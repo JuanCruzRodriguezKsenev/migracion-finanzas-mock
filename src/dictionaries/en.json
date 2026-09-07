@@ -16,6 +16,7 @@
   "sidebar": {
     "dashboard": "Dashboard",
     "accounts": "Accounts",
+    "transactions": "Transactions",
     "subscriptions": "Subscriptions",
     "settings": "Settings",
     "sandbox": "Sandbox",
@@ -177,5 +178,18 @@
     "tabAccounts": "Account Simulator (Coming soon)",
     "accountsPlaceholderTitle": "Account and Balance Simulator",
     "accountsPlaceholderDescription": "This sandbox will allow simulating the creation of asset, liability, and equity accounts, and modeling double-entry accounting transfers. Coming soon!"
+  },
+  "transactionsPage": {
+    "title": "General Ledger",
+    "subtitle": "History of movements and double-entry accounting records.",
+    "btnNew": "New Transaction",
+    "filterSearch": "Search description or merchant...",
+    "filterAllAccounts": "All accounts",
+    "filterAllCategories": "All categories",
+    "filterAllTypes": "All types",
+    "typeIncome": "Income",
+    "typeExpense": "Expense",
+    "typeTransfer": "Transfer",
+    "emptyState": "No transactions found."
   }
 }

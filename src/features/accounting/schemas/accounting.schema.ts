@@ -15,6 +15,7 @@ export const createTransactionSchema = z.object( {
   description:    z.string().min( 3   , "La descripción debe tener al menos 3 caracteres."             ).max( 255 , "La descripción no puede superar los 255 caracteres." ) ,
   merchantName:   z.string().max( 150 , "El nombre del comercio no puede superar los 150 caracteres."  ).optional().nullable() ,
   merchantDomain: z.string().max( 100 , "El dominio del comercio no puede superar los 100 caracteres." ).optional().nullable() ,
+  occurredAt:     z.coerce.date().optional() ,
   
   // Apuntes contables (Mínimo deben ser 2 para cumplir partida doble)
   entries: z.array(

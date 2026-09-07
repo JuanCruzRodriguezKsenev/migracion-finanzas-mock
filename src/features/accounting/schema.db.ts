@@ -4,7 +4,7 @@
  * Define las tablas de cuentas, categorías contables, transacciones y asientos de diario.
  */
 // Librerías externas
-import { pgTable , uuid , varchar , integer , timestamp , text , jsonb , uniqueIndex } from "drizzle-orm/pg-core" ;
+import { pgTable , uuid , varchar , integer , timestamp , text , jsonb , uniqueIndex , index } from "drizzle-orm/pg-core" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -58,12 +58,16 @@ export const accounts = pgTable( "accounts" , {
 export const ledgerTransactions = pgTable( "ledger_transactions" , {
   id:             uuid( "id"              ).primaryKey().defaultRandom() ,
   organizationId: uuid( "organization_id" ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
-  categoryId:     uuid( "category_id"     ).references( () => categories.id , {onDelete: "set null"} ) ,
+  categoryId:     uuid( "category_id"     ).references( () => categories.id     , {onDelete: "set null"} ) ,
   description:    varchar( "description"     , {length: 255} ).notNull() ,
   merchantName:   varchar( "merchant_name"   , {length: 150} ) ,
   merchantDomain: varchar( "merchant_domain" , {length: 100} ) ,
-  createdAt:      timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
-} ) ;
+  occurredAt:     timestamp( "occurred_at" , {withTimezone: true} ).defaultNow().notNull() ,
+  createdAt:      timestamp( "created_at"  , {withTimezone: true} ).defaultNow().notNull() ,
+} , ( table ) => { return( {
+  orgOccurredIdx:   index( "ledger_tx_org_occurred_idx"    ).on( table.organizationId , table.occurredAt ) ,
+  orgOccurredIdIdx: index( "ledger_tx_org_occurred_id_idx" ).on( table.organizationId , table.occurredAt , table.id ) ,
+} ) ; } ) ;
 
 /**
  * Esquema de la tabla para Asientos/Movimientos Contables individuales (partida doble).

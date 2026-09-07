@@ -10,26 +10,35 @@ import { useParams , usePathname } from "next/navigation" ;
 import Link                        from "next/link" ;
 
 // Shared
-import { IconBrand , IconDashboard , IconAccounts , IconRepeat , IconSandbox , IconClose } from "@/shared/ui/display/Icons/Icons" ;
-import { ProfileMenu }                                                                     from "@/shared/ui/feedback/ProfileMenu/ProfileMenu" ;
-import styles                                                                              from "./Navbar.module.css" ;
+import {
+  IconBrand ,
+  IconDashboard ,
+  IconTransactions ,
+  IconAccounts ,
+  IconRepeat ,
+  IconSandbox ,
+  IconClose
+} from "@/shared/ui/display/Icons/Icons" ;
+import { ProfileMenu } from "@/shared/ui/feedback/ProfileMenu/ProfileMenu" ;
+import styles          from "./Navbar.module.css" ;
 
 interface NavbarProps {
   isOpen?:  boolean ;
   onClose?: () => void ;
   dict: {
-    dashboard:     string ;
-    accounts:      string ;
-    subscriptions: string ;
-    settings:      string ;
-    sandbox:       string ;
-    logout:        string ;
-    user:          string ;
-    loading:       string ;
-    planTag:       string ;
-    planBasic:     string ;
-    planPremium:   string ;
-    upgradePlan:   string ;
+    dashboard:      string ;
+    accounts:       string ;
+    transactions?:  string ;
+    subscriptions:  string ;
+    settings:       string ;
+    sandbox:        string ;
+    logout:         string ;
+    user:           string ;
+    loading:        string ;
+    planTag:        string ;
+    planBasic:      string ;
+    planPremium:    string ;
+    upgradePlan:    string ;
   } ;
 }
 
@@ -37,12 +46,13 @@ interface NavbarProps {
  * Componente principal de barra lateral (Navbar).
  */
 export function Navbar( {dict , isOpen , onClose}: NavbarProps ) {
-  const params                = useParams() ;
-  const pathname              = usePathname() ;
-  const lang                  = ( params?.lang || "es" ) ;
-  const isDashboardActive     = ( pathname === `/${lang}` ) ;
-  const isSandboxActive       = ( pathname === `/${lang}/sandbox` ) ;
-  const isAccountsActive      = ( pathname === `/${lang}/accounts` ) ;
+  const params               = useParams() ;
+  const pathname             = usePathname() ;
+  const lang                 = ( params?.lang || "es" ) ;
+  const isDashboardActive    = ( pathname === `/${lang}` ) ;
+  const isSandboxActive      = ( pathname === `/${lang}/sandbox` ) ;
+  const isTransactionsActive = ( pathname === `/${lang}/transactions` ) ;
+  const isAccountsActive     = ( pathname === `/${lang}/accounts` ) ;
   const isSubscriptionsActive = ( pathname === `/${lang}/subscriptions` ) ;
 
   return(
@@ -82,6 +92,12 @@ export function Navbar( {dict , isOpen , onClose}: NavbarProps ) {
         <div className={styles.section}>
           <span className={styles.sectionTitle}>Finanzas</span>
           <ul className={styles.menu}>
+            <li>
+              <Link href={ `/${lang}/transactions` } className={ `${styles.link} ${isTransactionsActive ? styles.active : ""}` }>
+                <IconTransactions size={15} />
+                <span>{dict.transactions || "Transacciones"}</span>
+              </Link>
+            </li>
             <li>
               <Link href={ `/${lang}/accounts` } className={ `${styles.link} ${isAccountsActive ? styles.active : ""}` }>
                 <IconAccounts size={15} />

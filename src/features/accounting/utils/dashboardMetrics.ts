@@ -57,7 +57,7 @@ export function calcularIngresosMes(
 
   return( transactions
     .filter( ( tx ) => {
-      const d = new Date( tx.createdAt ) ;
+      const d = new Date( tx.occurredAt || tx.createdAt ) ;
       return( (d.getMonth() === now.getMonth()) && (d.getFullYear() === now.getFullYear()) ) ;
     } )
     .flatMap( ( tx ) => tx.entries )
@@ -79,7 +79,7 @@ export function calcularGastosMes(
 
   return( transactions
     .filter( ( tx ) => {
-      const d = new Date( tx.createdAt ) ;
+      const d = new Date( tx.occurredAt || tx.createdAt ) ;
       return( (d.getMonth() === now.getMonth()) && (d.getFullYear() === now.getFullYear()) ) ;
     } )
     .flatMap( ( tx ) => tx.entries )

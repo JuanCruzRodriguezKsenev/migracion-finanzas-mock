@@ -38,6 +38,7 @@ export interface CreateTransactionParams {
   description:     string ;
   merchantName?:   string | null ;
   merchantDomain?: string | null ;
+  occurredAt?:     Date | string | null ;
   entries: {
     accountId: string ;
     debit:     number ;

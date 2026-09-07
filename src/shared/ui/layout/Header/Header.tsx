@@ -50,12 +50,15 @@ export function Header( {dict , onMenuClick , lang = "es" , currentMonthKey , mi
   const isAccounts        = pathname.includes( "/accounts" ) ;
   const isSandbox         = pathname.includes( "/sandbox" ) ;
   const isSubscriptions   = pathname.includes( "/subscriptions" ) ;
+  const isTransactions    = pathname.includes( "/transactions" ) ;
   const showMonthSelector = ( !isAccounts && !isSubscriptions ) ;
 
   const titleText = isAccounts
     ? ( dict.accountsPage?.title || "Cuentas Financieras" )
     : isSubscriptions
     ? dict.subscriptionsPage.title
+    : isTransactions
+    ? ( dict.transactionsPage?.title || "Libro Diario" )
     : isSandbox
     ? dict.sandboxPage.title
     : `${dict.header.greeting}, ${primerNombre}` ;
@@ -64,6 +67,8 @@ export function Header( {dict , onMenuClick , lang = "es" , currentMonthKey , mi
     ? ( dict.accountsPage?.subtitle || "Administra tus cuentas bancarias, billeteras virtuales y tarjetas." )
     : isSubscriptions
     ? dict.subscriptionsPage.subtitle
+    : isTransactions
+    ? ( dict.transactionsPage?.subtitle || "Consulta, busca y gestiona tus transacciones contables." )
     : isSandbox
     ? dict.sandboxPage.subtitle
     : dict.header.subtitle ;

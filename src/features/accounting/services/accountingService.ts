@@ -25,7 +25,7 @@ import { outboxEvents } from "../schema.db" ;
 export async function createLedgerTransaction(
   params: CreateTransactionParams
 ): Promise< Result<LedgerTransaction , string> > {
-  const { organizationId , categoryId , description , merchantName , merchantDomain , entries } = params ;
+  const { organizationId , categoryId , description , merchantName , merchantDomain , occurredAt , entries } = params ;
 
   // 1. Validar que la transacción no esté vacía
   if( !entries || (entries.length < 2) ){
@@ -56,6 +56,7 @@ export async function createLedgerTransaction(
         description ,
         merchantName ,
         merchantDomain ,
+        occurredAt: occurredAt ? new Date( occurredAt ) : undefined ,
       } , tx ) ;
 
       const entriesToInsert: InsertLedgerEntry[] = [] ;
@@ -191,5 +192,171 @@ export async function deleteLedgerTransaction(
   } catch( error ) {
     logger.error( "Error crítico al eliminar transacción contable." , { error: String(error) } ) ;
     return( fail(((error as Error).message) || "Error al eliminar la transacción contable.") ) ;
+  }
+}
+
+/**
+ * Actualiza los metadatos editables de una transacción contable sin alterar los asientos de partida doble.
+ * 
+ * @param params - Parámetros de actualización de metadatos.
+ * @returns Objeto Result con la transacción actualizada o error descriptivo.
+ */
+export async function updateLedgerTransactionMetadata( params: {
+  transactionId:   string ;
+  organizationId:  string ;
+  description?:    string ;
+  categoryId?:     string | null ;
+  merchantName?:   string | null ;
+  merchantDomain?: string | null ;
+  occurredAt?:     Date | string ;
+} ): Promise< Result<LedgerTransaction , string> > {
+  const { transactionId , organizationId , description , categoryId , merchantName , merchantDomain , occurredAt } = params ;
+
+  try {
+    return( await db.transaction( async ( tx ) => {
+      const existing = await ledgerRepository.findById( transactionId , organizationId , tx ) ;
+      if( !existing ) {
+        return( fail("La transacción contable no existe o no pertenece a la organización.") ) ;
+      }
+
+      const updateData: {
+        description?:    string ;
+        categoryId?:     string | null ;
+        merchantName?:   string | null ;
+        merchantDomain?: string | null ;
+        occurredAt?:     Date ;
+      } = {} ;
+
+      if( description !== undefined ) {
+        if( description.trim().length < 3 ) {
+          return( fail("La descripción debe tener al menos 3 caracteres.") ) ;
+        }
+        updateData.description = description.trim() ;
+      }
+      if( categoryId !== undefined ) {
+        updateData.categoryId = categoryId ;
+      }
+      if( merchantName !== undefined ) {
+        updateData.merchantName = merchantName ;
+      }
+      if( merchantDomain !== undefined ) {
+        updateData.merchantDomain = merchantDomain ;
+      }
+      if( occurredAt !== undefined ) {
+        updateData.occurredAt = new Date( occurredAt ) ;
+      }
+
+      const updated = await ledgerRepository.updateTransactionMetadata( transactionId , organizationId , updateData , tx ) ;
+      if( !updated ) {
+        return( fail("No se pudo actualizar la transacción contable.") ) ;
+      }
+
+      await tx.insert( outboxEvents ).values( {
+        organizationId ,
+        eventType: "TRANSACTION_METADATA_UPDATED" ,
+        payload: {
+          transactionId ,
+          updatedFields: Object.keys( updateData ) ,
+        } ,
+      } ) ;
+
+      return( ok(updated) ) ;
+    } ) ) ;
+  } catch( error ) {
+    logger.error( "Error al actualizar metadatos de la transacción contable." , { error: String(error) } ) ;
+    return( fail(((error as Error).message) || "Error al actualizar la transacción contable.") ) ;
+  }
+}
+
+/**
+ * Reversa una transacción contable mediante la creación de un asiento espejo inverso en la misma transacción ACID.
+ * No borra la transacción original, preservando la trazabilidad de auditoría contable.
+ * 
+ * @param transactionId - ID de la transacción a reversar.
+ * @param organizationId - ID de la organización.
+ * @param reason - Motivo opcional de la reversión.
+ * @returns Objeto Result con la transacción compensatoria de reversión creada.
+ */
+export async function reverseLedgerTransaction(
+  transactionId:  string ,
+  organizationId: string ,
+  reason?:        string
+): Promise< Result<LedgerTransaction , string> > {
+  try {
+    return( await db.transaction( async ( tx ) => {
+      // 1. Obtener transacción original y verificar pertenencia
+      const original = await ledgerRepository.findById( transactionId , organizationId , tx ) ;
+      if( !original ) {
+        return( fail("La transacción contable no existe o no pertenece a la organización.") ) ;
+      }
+
+      // 2. Obtener los asientos contables originales
+      const entries = await ledgerRepository.findEntriesByTransactionId( transactionId , tx ) ;
+      if( entries.length === 0 ) {
+        return( fail("La transacción contable no tiene asientos asociados para reversar.") ) ;
+      }
+
+      // 3. Revertir saldos en las cuentas (operación inversa)
+      for( const entry of entries ){
+        const account = await accountRepository.findByIdForUpdate( entry.accountId , organizationId , tx ) ;
+        if( !account ){
+          throw new Error( `La cuenta con ID ${entry.accountId} asociada a la entrada no existe.` ) ;
+        }
+
+        let nuevoSaldo = account.balance ;
+        const tipo     = account.type ;
+
+        if( (tipo === "asset") || (tipo === "expense") || (tipo === "liability") ){
+          nuevoSaldo = account.balance - entry.debit + entry.credit ;
+        } else if( (tipo === "equity") || (tipo === "revenue") ){
+          nuevoSaldo = account.balance + entry.debit - entry.credit ;
+        } else {
+          throw new Error( `Tipo de cuenta contable no reconocido: ${tipo}.` ) ;
+        }
+
+        await accountRepository.updateBalance( account.id , nuevoSaldo , tx ) ;
+      }
+
+      // 4. Crear la transacción espejo de reversión
+      const reversalDescription = reason
+        ? `Reversión: ${original.description} (${reason})`
+        : `Reversión: ${original.description}` ;
+
+      const reversalTx = await ledgerRepository.createTransaction( {
+        organizationId ,
+        categoryId:     original.categoryId ,
+        description:    reversalDescription.slice( 0 , 255 ) ,
+        merchantName:   original.merchantName ,
+        merchantDomain: original.merchantDomain ,
+        occurredAt:     new Date() ,
+      } , tx ) ;
+
+      // 5. Invertir las entradas (débito pasa a crédito y crédito pasa a débito)
+      const reversalEntries: InsertLedgerEntry[] = entries.map( ( e ) => ( {
+        transactionId: reversalTx.id ,
+        accountId:     e.accountId ,
+        debit:         e.credit ,
+        credit:        e.debit ,
+        currency:      e.currency ,
+      } ) ) ;
+
+      await ledgerRepository.createEntries( reversalEntries , tx ) ;
+
+      // 6. Registrar evento TRANSACTION_REVERSED en Outbox
+      await tx.insert( outboxEvents ).values( {
+        organizationId ,
+        eventType: "TRANSACTION_REVERSED" ,
+        payload: {
+          originalTransactionId: original.id ,
+          reversalTransactionId: reversalTx.id ,
+          reason:                 reason || null ,
+        } ,
+      } ) ;
+
+      return( ok(reversalTx) ) ;
+    } ) ) ;
+  } catch( error ) {
+    logger.error( "Error crítico al reversar transacción contable." , { error: String(error) } ) ;
+    return( fail(((error as Error).message) || "Error al reversar la transacción contable.") ) ;
   }
 }
