@@ -76,10 +76,11 @@ export const PasswordInput = forwardRef< HTMLInputElement , PasswordInputProps >
   const errorId        = ( error ? `${id}-error` : undefined ) ;
   const requirementsId = `${id}-requirements` ;
 
-  const safeRules     = ( Array.isArray( rules ) ? rules : [] ) ;
-  const activeRules   = safeRules.filter( ( rule ) => rule.enabled !== false ) ;
-  const activeRuleIds = activeRules.map( ( r ) => r.id ).join( "," ) ;
-  
+  const activeRules = useMemo( () => {
+    const safeRules = ( Array.isArray( rules ) ? rules : [] ) ;
+    return( safeRules.filter( ( rule ) => rule.enabled !== false ) ) ;
+  } , [ rules ] ) ;
+
   const results = useMemo( () => {
     return(
       activeRules.reduce< Record< string , boolean > >( ( acc , rule ) => {
@@ -91,7 +92,7 @@ export const PasswordInput = forwardRef< HTMLInputElement , PasswordInputProps >
         return( acc ) ;
       } , {} )
     ) ;
-  } , [ currentValue , activeRuleIds ] ) ;
+  } , [ currentValue , activeRules ] ) ;
 
   const isValid = ( activeRules.length ? Object.values( results ).every( Boolean ) : true ) ;
 

@@ -1,5 +1,4 @@
 // Librerías externas
-import { eq }                                                   from "drizzle-orm" ;
 import { describe , it , expect , beforeEach , afterEach , vi } from "vitest" ;
 
 // Shared

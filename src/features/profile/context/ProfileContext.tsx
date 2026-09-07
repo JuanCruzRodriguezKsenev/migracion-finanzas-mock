@@ -29,19 +29,21 @@ export function ProfileProvider( {children , initialProfile}: {children: React.R
   const [ loading , setLoading ] = useState( false ) ;
   const [ error   , setError   ] = useState< string | null >( null ) ;
 
+  const theme = profile?.theme ;
+
   // Sincroniza el tema en caliente y guarda la preferencia en localStorage para el script de bloqueo
   useEffect( () => {
-    if( !profile || !profile.theme ){ return ; }
+    if( !theme ){ return ; }
 
-    let activeTheme = profile.theme ;
+    let activeTheme = theme ;
 
-    if( profile.theme === "system" ){
+    if( theme === "system" ){
       activeTheme = window.matchMedia( "(prefers-color-scheme: dark)" ).matches ? "dark" : "light" ;
     }
 
     document.documentElement.setAttribute( "data-theme" , activeTheme ) ;
-    localStorage.setItem( "theme" , profile.theme ) ;
-  } , [ profile.theme ] ) ;
+    localStorage.setItem( "theme" , theme ) ;
+  } , [ theme ] ) ;
 
   async function updateProfile( newData: Partial<ProfileData> ): Promise< Result<ProfileData , string> > {
     setLoading( true ) ;

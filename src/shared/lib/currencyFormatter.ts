@@ -28,7 +28,7 @@ export function getCurrencyDecimalPlaces( currencyCode: string ): number {
     decimalPlacesCache[code] = digits ;
     
     return( digits ) ;
-  } catch( error ) {
+  } catch {
     // Si la divisa no es soportada o es inválida, se asume el estándar de 2 decimales
     return( 2 ) ;
   }

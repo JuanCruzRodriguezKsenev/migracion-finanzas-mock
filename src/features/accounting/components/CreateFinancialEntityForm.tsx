@@ -65,7 +65,7 @@ function detectUserCountry(): string {
     if( tzLower.includes( "mexico" ) ) { return( "mx" ) ; }
     if( tzLower.includes( "sao_paulo" ) || tzLower.includes( "brazil" ) ) { return( "br" ) ; }
     if( tzLower.includes( "madrid" ) ) { return( "es" ) ; }
-  } catch( e ) {}
+  } catch {}
 
   return( "ar" ) ;
 }
@@ -85,7 +85,7 @@ function getDomainCountryFlag( domain: string ): string {
         .split( "" )
         .map( ( char ) => 127397 + char.charCodeAt( 0 ) ) ;
       return( String.fromCodePoint( ...codePoints ) ) ;
-    } catch( e ) {
+    } catch {
       return( "🌐" ) ;
     }
   }
@@ -106,9 +106,8 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
 
   const [ selectedCountry , setSelectedCountry ] = useState( () => detectUserCountry() ) ;
 
-  const [ suggestions , setSuggestions ]     = useState< { name: string ; domain: string ; icon?: string }[] >( [] ) ;
-  const [ isSearching , setIsSearching ]     = useState( false ) ;
-  const [ showDropdown , setShowDropdown ]   = useState( false ) ;
+  const [ suggestions , setSuggestions ]       = useState< { name: string ; domain: string ; icon?: string }[] >( [] ) ;
+  const [ showDropdown , setShowDropdown ]     = useState( false ) ;
   const [ isBrandFromApi , setIsBrandFromApi ] = useState( false ) ;
 
   // Autocompletado de Marcas con Debounce, Multiconsulta y Filtro Prioritario del País Seleccionado
@@ -119,7 +118,6 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
 
     const delayDebounceFn = setTimeout( () => {
       const searchBrand = async () => {
-        setIsSearching( true ) ;
         try {
           const clientId = process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || "brandfetch" ;
           const cleanQuery = name.trim() ;
@@ -195,8 +193,6 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
           setShowDropdown( sorted.length > 0 ) ;
         } catch( err ) {
           console.error( "Error querying brand search:" , err ) ;
-        } finally {
-          setIsSearching( false ) ;
         }
       } ;
       searchBrand() ;
@@ -260,6 +256,7 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
     label:    sugg.name ,
     sublabel: sugg.domain ,
     icon:     sugg.icon
+      // eslint-disable-next-line @next/next/no-img-element -- Icono externo de CDN/Brandfetch sin dimensiones fijas conocidas
       ? <img src={sugg.icon} alt={sugg.name} />
       : <span>🌐</span> ,
     trailing: <span>{ getDomainCountryFlag( sugg.domain ) }</span>

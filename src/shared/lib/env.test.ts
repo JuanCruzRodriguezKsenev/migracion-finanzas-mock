@@ -3,7 +3,7 @@
  * Tests unitarios para la validación estricta de variables de entorno con Zod.
  */
 import { describe , it , expect , beforeEach } from "vitest" ;
-import { obtenerEnv , resetEnvCache , envSchema } from "./env" ;
+import { obtenerEnv , resetEnvCache } from "./env" ;
 
 describe( "env validation (obtenerEnv)" , () => {
   beforeEach( () => {

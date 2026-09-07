@@ -156,6 +156,7 @@ export function InstitutionLogo( {institution , logoUrl: propLogoUrl , className
 
   return(
     <div className={ `${styles.logoImageWrapper} ${className}` } style={sizeStyle}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- Logo de institución dinámico cargado vía API o CDN externo */}
       <img
         src={logoUrl}
         alt={`Logo of ${institution}`}

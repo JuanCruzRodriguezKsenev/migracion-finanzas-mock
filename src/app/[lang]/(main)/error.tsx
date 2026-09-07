@@ -34,7 +34,6 @@ export default function DashboardError( { error , reset }: DashboardErrorProps )
   const copy   = ( COPY[lang] || COPY.es ) ;
 
   useEffect( () => {
-    // eslint-disable-next-line no-console
     console.error( "Error capturado por el error boundary del dashboard:" , error ) ;
   } , [ error ] ) ;
 

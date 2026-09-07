@@ -3,7 +3,7 @@
  * Repositorio para la gestión de Resúmenes Mensuales Históricos (Capa de Acceso a Datos - DAL).
  * Optimizado con caché en memoria a nivel de registro para evitar consultas de base de datos redundantes.
  */
-import { eq , and , desc , asc , or , lt , lte } from "drizzle-orm" ;
+import { eq , and , asc , or } from "drizzle-orm" ;
 
 // Shared
 import { db , DBOrTx } from "@/shared/db/client" ;

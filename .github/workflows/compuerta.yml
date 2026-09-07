@@ -63,7 +63,7 @@ jobs:
 
       - name: Verificación de linter ESLint
         if: ${{ !cancelled() }}
-        run: pnpm exec eslint .
+        run: pnpm exec eslint . --max-warnings 0
 
       - name: Ejecutar suite de pruebas unitarias
         if: ${{ !cancelled() }}

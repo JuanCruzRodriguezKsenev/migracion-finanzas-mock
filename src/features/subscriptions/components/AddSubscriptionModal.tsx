@@ -265,7 +265,10 @@ export function AddSubscriptionModal( {
           key:      `brand:${s.domain}` ,
           label:    ( s.name.toLowerCase() === s.domain.toLowerCase() ) ? s.domain : s.name ,
           sublabel: s.domain ,
-          icon:     s.logoKey ? <img src={s.logoKey} alt="" /> : <span>🌐</span> ,
+          icon:     s.logoKey
+            // eslint-disable-next-line @next/next/no-img-element -- Logo externo dinámico de Brandfetch/CDN sin dimensiones fijas conocidas
+            ? <img src={s.logoKey} alt="" />
+            : <span>🌐</span> ,
         } ) ;
       }
 
@@ -765,6 +768,7 @@ export function AddSubscriptionModal( {
                               onClick={ () => setForm( ( f ) => ( {...f , logoKey: logo.src} ) ) }
                               title={ `${logo.type} (${logo.theme})` }
                             >
+                              {/* eslint-disable-next-line @next/next/no-img-element -- Logo externo dinámico de marca obtenido de API externa */}
                               <img
                                 src={logo.src}
                                 alt=""

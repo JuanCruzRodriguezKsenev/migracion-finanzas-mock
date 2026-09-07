@@ -46,12 +46,14 @@ export function SubscriptionIcon( { logoKey , size = 28 , className = "" }: Subs
           className={ `${styles.logoThemeWrapper} ${className}` }
           style={ { "--logo-size": `${size}px` } as React.CSSProperties }
         >
+          {/* eslint-disable-next-line @next/next/no-img-element -- Logo de marca dinámico externo con fallback onError */}
           <img
             src={lightSrc}
             alt="Logo del servicio (tema claro)"
             className={ `${styles.logoImg} ${styles.logoImgLight}` }
             onError={ () => setHasError( true ) }
           />
+          {/* eslint-disable-next-line @next/next/no-img-element -- Logo de marca dinámico externo con fallback onError */}
           <img
             src={darkSrc}
             alt="Logo del servicio (tema oscuro)"
@@ -63,6 +65,7 @@ export function SubscriptionIcon( { logoKey , size = 28 , className = "" }: Subs
     }
 
     return(
+      // eslint-disable-next-line @next/next/no-img-element -- Logo de marca dinámico externo con fallback onError
       <img
         src={logoKey}
         alt="Logo del servicio"

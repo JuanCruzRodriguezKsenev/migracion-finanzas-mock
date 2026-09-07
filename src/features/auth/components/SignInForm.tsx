@@ -63,7 +63,7 @@ export function SignInForm( { dict , lang }: SignInFormProps ) {
         router.push( `/${lang}` ) ;
         router.refresh() ;
       }
-    } catch( err ) {
+    } catch {
       setError( dict.unexpectedError ) ;
     } finally {
       setLoading( false ) ;

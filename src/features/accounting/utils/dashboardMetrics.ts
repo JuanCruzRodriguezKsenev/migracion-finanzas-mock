@@ -21,7 +21,7 @@ import { Account , MonthlySummary } from "../types" ;
  * Formatea centavos a string de moneda.
  * Ejemplo: 1425000 → "$14,250.00"
  */
-export function formatCents( cents: number , currency: string = "ARS" ): string {
+export function formatCents( cents: number ): string {
   const amount = ( cents / 100 ) ;
   const prefix = amount < 0 ? "-$" : "$" ;
   return( `${prefix}${Math.abs( amount ).toLocaleString( "es-AR" , {minimumFractionDigits: 2 , maximumFractionDigits: 2} )}` ) ;

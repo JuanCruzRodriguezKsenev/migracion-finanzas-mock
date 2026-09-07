@@ -48,7 +48,7 @@ export class CircuitBreaker< T , Args extends unknown[] > {
       this.reset() ;
 
       return( result ) ;
-    } catch( error ) {
+    } catch {
       this.handleFailure() ;
       
       return( this.fallbackValue ) ;

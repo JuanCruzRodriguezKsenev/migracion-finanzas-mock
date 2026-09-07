@@ -33,7 +33,7 @@ export async function updateProfileAction( newData: Partial< ProfileData > ): Pr
     const updated = await profileRepository.update( session.user.id , newData ) ;
 
     return( ok(updated) ) ;
-  } catch( error ) {
+  } catch {
     return( fail("Error al actualizar el perfil en la base de datos.") ) ;
   }
 
