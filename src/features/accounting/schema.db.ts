@@ -108,11 +108,13 @@ export const outboxEvents = pgTable( "outbox_events" , {
   organizationId: uuid( "organization_id" ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
   eventType:      varchar( "event_type" , {length: 100} ).notNull() , // ej: 'TRANSACTION_CREATED'
   payload:        jsonb( "payload" ).notNull() ,
-  status:         varchar( "status" , {length: 50} ).default( "PENDING" ).notNull() , // 'PENDING' | 'SENT' | 'FAILED'
+  status:         varchar( "status" , {length: 50} ).default( "PENDING" ).notNull() , // 'PENDING' | 'PROCESSING' | 'SENT' | 'FAILED'
   attempts:       integer( "attempts"      ).default( 0 ).notNull() ,
   createdAt:      timestamp( "created_at"   , {withTimezone: true} ).defaultNow().notNull() ,
   processedAt:    timestamp( "processed_at" , {withTimezone: true} ) ,
-} ) ;
+} , ( table ) => { return( {
+  outboxStatusCreatedIdx: index( "outbox_status_created_idx" ).on( table.status , table.createdAt ) ,
+} ) ; } ) ;
 
 /**
  * Esquema de la tabla para Resúmenes Mensuales Históricos de la organización (Cierre de mes).

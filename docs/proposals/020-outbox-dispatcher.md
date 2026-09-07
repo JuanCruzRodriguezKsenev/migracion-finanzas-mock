@@ -1,106 +1,124 @@
 # RFC 020: Worker Consumidor del Patrón Outbox
 
 *   **ID de la Propuesta:** 020
-*   **Título:** Dispatcher de Eventos Outbox — Consumo, Reintentos y Purga
-*   **Estado:** `DRAFT` (Borrador - 2026-07-08)
-*   **Fecha de Creación:** 2026-07-08
-*   **Autor:** Claude (AI Coding Assistant) — a partir de auditoría de código
+*   **Título:** Dispatcher de Eventos Outbox — Consumo Desacoplado, Reintentos, Recuperación y Purga
+*   **Estado:** `APPROVED` (Aprobado - 2026-09-07)
+*   **Fecha de Creación:** 2026-07-08 (Enmendado: 2026-09-07)
+*   **Autor:** Claude & Antigravity (AI Coding Assistants)
 
 ---
 
 ## 1. Contexto y Problema
 
-El esquema define la tabla `outbox_events` ([schema.db.ts](file:///C:/Users/jcrod/Dev/migracion-finanzas_mock/src/features/accounting/schema.db.ts):94-103) para implementar el patrón *Transactional Outbox*: garantizar que los eventos de negocio (`TRANSACTION_CREATED`, `TRANSACTION_DELETED`) se registren atómicamente junto con la transacción contable que los origina, para luego propagarlos de forma confiable (webhooks, notificaciones, sincronización externa).
+El esquema define la tabla `outbox_events` ([`src/features/accounting/schema.db.ts:106-116`](../src/features/accounting/schema.db.ts)) para implementar el patrón *Transactional Outbox*: garantizar que los eventos de negocio se registren atómicamente junto con las mutaciones contables que los originan, para luego propagarlos de forma confiable hacia el exterior (webhooks, notificaciones, sincronización externa).
 
-`accountingService.ts` ya **escribe** en esta tabla dentro de la misma transacción ACID de creación/eliminación de asientos (líneas 109 y 180). Sin embargo, **no existe ningún proceso que lea y procese estos eventos**. El resultado actual:
+Actualmente, el núcleo contable (`accountingService.ts`) ya **escribe** en esta tabla dentro de las transacciones ACID de negocio, emitiendo 4 tipos de eventos de dominio:
+1. `TRANSACTION_CREATED` (al asentar un asiento de diario contable).
+2. `TRANSACTION_DELETED` (al eliminar un movimiento contable).
+3. `TRANSACTION_METADATA_UPDATED` (al editar descripción, categoría o comercio).
+4. `TRANSACTION_REVERSED` (al emitir una reversión contable espejo).
 
-*   La tabla crece indefinidamente sin límite (cada transacción contable inserta una fila que nunca se marca `SENT` ni se purga).
-*   Las columnas `status`, `attempts` y `processed_at` del esquema están definidas pero jamás se actualizan.
-*   No hay ninguna integración externa (webhook, cola, etc.) que reciba estos eventos — el patrón está a medio implementar.
+Sin embargo, **no existe ningún proceso que lea y procese estos eventos**. Como consecuencia:
+*   La tabla crece indefinidamente sin límite (cada movimiento financiero inserta una fila que nunca se marca `SENT` ni se purga).
+*   Las columnas `status`, `attempts` y `processed_at` jamás se actualizan.
+*   La tabla carece de un índice sobre `status`, lo que causaría sequential scans degradantes a medida que la tabla acumule registros.
+*   El patrón se encuentra a medio implementar.
 
-Este RFC decide si se completa la infraestructura (worker consumidor) o se remueve, evitando dejar código muerto/incompleto en producción.
+Este RFC define la arquitectura del despachador desacoplado, los mecanismos de tolerancia a fallos y la purga histórica para completar la infraestructura sin comprometer el rendimiento de la base de datos.
 
 ---
 
 ## 2. Decisión Propuesta
 
-**Completar el patrón** con un worker de polling, dado que:
-1. El *write path* ya existe y está probado (forma parte del mismo `db.transaction()` que persiste los asientos — ver `accountingService.ts`).
-2. Revertir el *write path* implicaría modificar el core contable ya estable, arriesgando la garantía transaccional actual.
-3. El patrón Outbox es la base necesaria para features futuras ya proyectadas en otros RFCs de este mismo directorio (ej. sincronización con integraciones externas).
+**Completar el patrón** mediante un despachador en tres fases independientes (reclamar $\rightarrow$ despachar $\rightarrow$ asentar), dado que:
+1. El *write path* ya existe y es transaccionalmente seguro.
+2. Revertir el *write path* destruiría la capacidad de emitir eventos confiables hacia integraciones futuras (RFC 012).
+3. Desacoplar el I/O de red de la transacción de base de datos protege los pools de conexiones y previene bloqueos prolongados de filas.
 
 ---
 
-## 3. Propuesta de Diseño
+## 3. Propuesta de Diseño y Arquitectura
 
-### A. Ubicación
+### A. Desacoplamiento de I/O de Red (Ciclo en 3 Pasos)
 
-`src/features/accounting/services/outboxDispatcher.ts`, invocado por un script `src/shared/db/dispatchOutbox.ts` ejecutable vía `pnpm tsx` (análogo a `seed.ts`), o por un cron/endpoint dedicado según la plataforma de despliegue elegida (fuera del alcance de este RFC).
+El algoritmo inicial que envolvía el lote completo y las llamadas de red dentro de un único bloque transaccional largo (`db.transaction`) es rechazado: un webhook lento o caído retendría bloqueos `FOR UPDATE` sobre múltiples filas y agotaría el pool de conexiones de Postgres. Si la transacción abortaba, se perdían además los contadores de intentos (`attempts`).
 
-### B. Algoritmo de Consumo
+Se adopta un **modelo de ejecución en 3 pasos**:
 
-```typescript
-async function dispatchPendingEvents( batchSize: number = 50 ): Promise< void > {
-  await db.transaction( async ( tx ) => {
-    // SKIP LOCKED evita que múltiples instancias del dispatcher compitan por el mismo evento
-    const pending = await tx
-      .select()
-      .from( outboxEvents )
-      .where( eq( outboxEvents.status , "PENDING" ) )
-      .orderBy( outboxEvents.createdAt )
-      .limit( batchSize )
-      .for( "update" , { skipLocked: true } ) ;
+1. **Paso 1: Reclamo atómico en transacción corta:**
+   * Abre una micro-transacción de base de datos.
+   * Selecciona un lote de hasta `batchSize` eventos con `status = 'PENDING'` usando `SELECT ... FOR UPDATE SKIP LOCKED` (garantizando concurrencia segura sin colisiones entre múltiples instancias del worker).
+   * Actualiza inmediatamente el estado de las filas seleccionadas a `PROCESSING` con la marca de tiempo de inicio.
+   * Cierra la transacción de base de datos de inmediato, liberando las conexiones.
 
-    for( const event of pending ) {
-      try {
-        await handleEvent( event ) ; // despacha según event.eventType
-        await tx.update( outboxEvents )
-          .set( { status: "SENT" , processedAt: new Date() } )
-          .where( eq( outboxEvents.id , event.id ) ) ;
-      } catch( error ) {
-        const attempts = event.attempts + 1 ;
-        await tx.update( outboxEvents )
-          .set( {
-            status: attempts >= MAX_ATTEMPTS ? "FAILED" : "PENDING" ,
-            attempts ,
-          } )
-          .where( eq( outboxEvents.id , event.id ) ) ;
-      }
-    }
-  } ) ;
-}
-```
+2. **Paso 2: Despacho asíncrono fuera de transacción de DB:**
+   * Itera sobre el lote reclamado ejecutando los handlers de evento en memoria / red (I/O externo).
+   * Si un handler falla o excede un timeout, se captura el error de forma aislada sin afectar a los demás eventos del lote.
 
-### C. Reintentos y Purga
+3. **Paso 3: Asentamiento final en micro-transacción corta:**
+   * Para eventos exitosos: actualiza `status = 'SENT'`, `processedAt = now()`.
+   * Para eventos fallidos: incrementa `attempts = attempts + 1`. Si `attempts >= MAX_ATTEMPTS` (5), pasa a `status = 'FAILED'`; de lo contrario, retorna a `status = 'PENDING'` para reintento en el siguiente ciclo.
 
-*   `MAX_ATTEMPTS` (ej. 5) antes de marcar `FAILED` definitivamente — un evento `FAILED` requiere intervención manual o reproceso explícito.
-*   Job de limpieza periódico: eliminar eventos `SENT` con `processed_at` mayor a N días (ej. 30), para no acumular historial indefinido.
+### B. Máquina de Estados y Recuperación de Huérfanos
 
-### D. Alcance de `handleEvent`
+Los estados de un evento en `outbox_events.status` son:
+* `PENDING`: Evento nuevo listo para despacho o pendiente de reintento.
+* `PROCESSING`: Evento reclamado temporalmente por un worker activo.
+* `SENT`: Evento entregado y procesado exitosamente.
+* `FAILED`: Evento que agotó el máximo de reintentos (`attempts >= 5`).
 
-Este RFC **no define** los destinos concretos de los eventos (webhooks externos, colas, etc.) — eso corresponde a un RFC de integración posterior (ver referencia a RFC 012 de integraciones y API keys). Aquí solo se especifica el mecanismo de consumo, marcado de estado y reintentos.
+**Barrido de Recuperación de Huérfanos (`recoverStaleProcessing`):**
+Si el proceso del worker muere repentinamente (crash del contenedor, SIGKILL, timeout del sistema) mientras ejecutaba el Paso 2, los eventos quedarían colgados indefinidamente en `PROCESSING`.
+El despachador ejecutará al inicio de cada ciclo un barrido que busque eventos con `status = 'PROCESSING'` cuya antigüedad supere `PROCESSING_TTL_MS` (ej. 5 minutos), devolviéndolos automáticamente a `PENDING` para su reprocesamiento.
 
----
+### C. Registro de Manejadores (`EventHandlerRegistry`) y Alcance Actual
 
-## 4. Impacto
+Este RFC **no implementa los webhooks de negocio definitivos** (los cuales corresponden al RFC 012 de Integraciones y API Keys).
+Para evitar marcar eventos como `SENT` de forma engañosa y a la vez permitir probar el ciclo completo:
+* Se implementa un **Registry tipado de Handlers** que asocia cada uno de los 4 tipos de eventos (`TRANSACTION_CREATED`, `TRANSACTION_DELETED`, `TRANSACTION_METADATA_UPDATED`, `TRANSACTION_REVERSED`) con una función despachadora.
+* En esta fase, los handlers por defecto ejecutan una operación controlada con registro estructurado mediante `logger.info`, validando la integridad del payload.
+* El módulo queda preparado como un punto de extensión desacoplado para que el RFC 012 registre sus listeners HTTP/Webhooks sin tocar el motor de outbox.
 
-*   **Código de aplicación:** nuevo archivo de servicio, sin tocar `accountingService.ts` (el *write path* ya es correcto).
-*   **Operación:** requiere decidir el mecanismo de disparo periódico (cron externo, endpoint invocado por un scheduler, etc.) — decisión de infraestructura fuera del alcance de este RFC.
-*   **Datos existentes:** los eventos `PENDING` ya acumulados en la tabla serán procesados en el primer ciclo del dispatcher.
+### D. Purga Histórica Automática
+
+Para evitar el crecimiento indefinido de la tabla `outbox_events`:
+* Se implementa la función `purgeOldSentEvents( retentionDays: number = 30 )`.
+* Elimina en lotes las filas con `status = 'SENT'` cuyo `processed_at` sea anterior a los últimos 30 días.
 
 ---
 
-## 5. Plan de Testing
+## 4. Impacto en Base de Datos y Código
+
+1. **Esquema de Base de Datos (`src/features/accounting/schema.db.ts`):**
+   * Actualizar documentación del campo `status` para reflejar `'PENDING' | 'PROCESSING' | 'SENT' | 'FAILED'`.
+   * Agregar índice parcial en la definición de la tabla:
+     ```typescript
+     outboxStatusCreatedIdx: index( "outbox_status_created_idx" )
+       .on( table.status , table.createdAt )
+       .where( sql`status IN ('PENDING', 'PROCESSING')` )
+     ```
+     (o índice sobre `status, created_at` optimizado para el filtro del worker).
+2. **Migración Drizzle 0016:** Generación y aplicación de la migración para el nuevo índice de performance.
+3. **Servicio y Script de Ejecución:**
+   * `src/features/accounting/services/outboxDispatcher.ts`: Núcleo de reclamo, despacho, reintentos, recuperación y purga.
+   * `src/shared/db/dispatchOutbox.ts`: Punto de entrada CLI manual ejecutable con `pnpm db:outbox`.
+   * Script `package.json`: `"db:outbox": "pnpm tsx src/shared/db/dispatchOutbox.ts"`.
+
+---
+
+## 5. Plan de Pruebas Unitarias e Integración
 
 `src/features/accounting/services/outboxDispatcher.test.ts`:
-1. Evento `PENDING` se marca `SENT` tras despacho exitoso.
-2. Evento cuyo `handleEvent` lanza error incrementa `attempts` y permanece `PENDING` (si no alcanzó `MAX_ATTEMPTS`).
-3. Evento que agota `MAX_ATTEMPTS` se marca `FAILED`.
-4. Dos ejecuciones concurrentes del dispatcher no procesan el mismo evento dos veces (verificar `SKIP LOCKED`).
+1. **Despacho exitoso:** Evento `PENDING` pasa por `PROCESSING` y finaliza en `SENT` con `processedAt` seteado.
+2. **Reintento ante fallos:** Handler que lanza error incrementa `attempts` y vuelve a `PENDING`.
+3. **Agotamiento de reintentos:** Al alcanzar `MAX_ATTEMPTS = 5`, el evento se marca como `FAILED`.
+4. **Recuperación de huérfanos:** Evento congelado en `PROCESSING` hace más de 5 minutos vuelve a `PENDING`.
+5. **Aislamiento concurrente (SKIP LOCKED):** Dos invocaciones paralelas no reclaman los mismos IDs de evento.
+6. **Purga histórica:** Eventos `SENT` de más de 30 días son eliminados; eventos recientes se conservan.
 
 ---
 
-## 6. Alternativas Consideradas
+## 6. Alternativas Descartadas
 
-*   **Eliminar el *write path* del outbox:** rechazado — perdería la garantía transaccional ya lograda entre asiento contable y evento de negocio, que es exactamente el problema que el patrón Outbox resuelve.
-*   **Cola externa (ej. Redis, SQS) en vez de polling sobre Postgres:** más escalable a largo plazo, pero agrega una dependencia de infraestructura nueva; se descarta por ahora dado el volumen actual del proyecto. Puede reconsiderarse en un RFC futuro si el volumen de eventos lo justifica.
+* **I/O síncrono dentro de la transacción Drizzle:** Descartado por saturación de pools de conexiones y riesgo de bloqueos prolongados.
+* **Cola de mensajes externa (RabbitMQ, AWS SQS, Upstash QStash):** Se difiere para fases posteriores cuando el volumen justifique la infraestructura adicional. El polling con `SKIP LOCKED` sobre Postgres es el estándar canónico para este volumen.

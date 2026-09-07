@@ -46,6 +46,9 @@ Este documento registra los puntos de deuda técnica del repositorio, distinguie
 *   [x] **Reversión irrepetible y consultable:** Bloqueo de la fila original, guarda sobre `reversed_at` y vínculo bidireccional (`reverses_transaction_id`). Antes se podía reversar dos veces y duplicar la devolución de saldos; el nexo sólo vivía en el payload del outbox, así que la interfaz no podía marcar una transacción como reversada.
 *   [x] **Índice redundante eliminado:** `ledger_tx_org_occurred_idx` estaba cubierto por prefijo por `ledger_tx_org_occurred_id_idx` y sólo costaba escrituras (migración `0015`).
 
+### Despachador de Eventos Outbox (RFC 020)
+*   [x] **Despachador desacoplado, índice y purga en `outbox_events`:** Implementación de `outboxDispatcher.ts` con ciclo en 3 pasos (reclamo atómico con `SKIP LOCKED` a `PROCESSING`, despacho fuera de transacción de BD, y asentamiento final a `SENT` o reintento con backoff hasta `MAX_ATTEMPTS = 5`). Recuperación automática de eventos `PROCESSING` colgados con TTL de 5 minutos (`recoverStaleProcessing`), purga periódica de eventos `SENT` con más de 30 días (`purgeOldSentEvents`), script CLI `db:outbox` (`dispatchOutbox.ts`) e índice `outbox_status_created_idx` sobre `(status, created_at)` con migración `0016_eminent_roxanne_simpson.sql`.
+
 ## § Abierto (Pendiente de Refactorización)
 
 ### 1. Visualización y Gráficos
@@ -56,4 +59,3 @@ Este documento registra los puntos de deuda técnica del repositorio, distinguie
 
 ### 3. Rendimiento de Base de Datos
 *   [ ] **Índice compuesto en `monthly_summaries`:** Agregar índice sobre `(organization_id, year, month)` para acelerar consultas de rangos históricos `findRecent`.
-*   [ ] **Índice para polling en `outbox_events`:** La tabla `outbox_events` no cuenta con índice sobre `status` o `(status, created_at)`. Las consultas del futuro dispatcher realizarían un sequential scan sobre una tabla en crecimiento continuo.

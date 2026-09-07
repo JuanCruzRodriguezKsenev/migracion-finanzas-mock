@@ -56,18 +56,29 @@ El libro diario es inmutable: una transacción equivocada no se edita ni se borr
 Para garantizar consistencia eventual con servicios externos (webhooks, notificaciones, sincronizaciones bancarias) sin requerir transacciones distribuidas (2PC), FinanzIA utiliza el patrón Outbox.
 
 ### Tabla involucrada
-*   [`outboxEvents`](../src/features/accounting/schema.db.ts#L94-L104):
+*   [`outboxEvents`](../src/features/accounting/schema.db.ts#L106-L117):
     *   `organizationId`: Tenancy del evento.
-    *   `eventType`: Identificador del evento de dominio (ej. `TRANSACTION_CREATED`).
+    *   `eventType`: Identificador del evento de dominio (`TRANSACTION_CREATED`, `TRANSACTION_DELETED`, `TRANSACTION_METADATA_UPDATED`, `TRANSACTION_REVERSED`).
     *   `payload`: Datos del evento en `jsonb`.
-    *   `status`: Máquina de estados (`PENDING` $\rightarrow$ `SENT` / `FAILED`).
-    *   `attempts`: Contador de reintentos con backoff.
+    *   `status`: Máquina de estados (`PENDING` $\rightarrow$ `PROCESSING` $\rightarrow$ `SENT` / `FAILED`).
+    *   `attempts`: Contador de reintentos con límite en `MAX_ATTEMPTS = 5`.
+    *   `processedAt`: Marca temporal de procesamiento/reclamo.
+    *   Índice: `outbox_status_created_idx` sobre `(status, created_at)` para optimizar el polling sin sequential scans.
 
-### Garantía ACID
+### Garantía ACID y Despacho en 3 Pasos
 El evento outbox **se persiste dentro de la misma transacción de base de datos** (`tx`) que registra el asiento contable en `ledgerEntries`:
 *   Si la base de datos comitea, tanto el libro contable como el evento outbox quedan guardados atómicamente.
 *   Si la transacción hace rollback, no queda ningún evento huérfano.
-*   Un despachador desacoplado (Worker / Cron) procesa los eventos `PENDING` con entrega al menos una vez (*at-least-once delivery*).
+
+Para procesar los eventos sin retener bloqueos de base de datos durante operaciones lentas de red, el despachador ([`outboxDispatcher.ts`](../src/features/accounting/services/outboxDispatcher.ts)) implementa un **ciclo en tres pasos**:
+1.  **Paso 1 (Reclamo atómico):** En una micro-transacción rápida, selecciona eventos con `status = 'PENDING'` usando `SELECT ... FOR UPDATE SKIP LOCKED` y los actualiza de inmediato a `status = 'PROCESSING'` con marca de tiempo `processedAt`. La transacción de DB se cierra al instante, liberando conexiones y bloqueos.
+2.  **Paso 2 (Despacho desacoplado):** Fuera de la transacción de base de datos, ejecuta de forma asíncrona los handlers registrados en el `EventHandlerRegistry`. Si una llamada de red falla o se demora, no afecta al resto del sistema.
+3.  **Paso 3 (Asentamiento final):** En una micro-transacción, los eventos exitosos pasan a `status = 'SENT'`. Los fallidos incrementan su contador `attempts`; si superan `MAX_ATTEMPTS (5)`, pasan a `status = 'FAILED'`; de lo contrario, retornan a `status = 'PENDING'` para reintento posterior.
+
+### Recuperación de Huérfanos y Purga Histórica
+*   **Recuperación (`recoverStaleProcessing`):** Si el worker colapsa durante el despacho, cualquier evento congelado en `PROCESSING` por más de 5 minutos (`PROCESSING_TTL_MS`) es retornado a `PENDING` automáticamente al inicio del ciclo.
+*   **Purga periódica (`purgeOldSentEvents`):** Elimina registros `SENT` con más de 30 días de antigüedad para mantener acotado el tamaño de la tabla.
+*   **Ejecución manual CLI:** Disponible mediante el comando `pnpm db:outbox` ([`src/shared/db/dispatchOutbox.ts`](../src/shared/db/dispatchOutbox.ts)).
 
 ---
 
