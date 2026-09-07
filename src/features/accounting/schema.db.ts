@@ -110,9 +110,11 @@ export const monthlySummaries = pgTable( "monthly_summaries" , {
   organizationId:  uuid( "organization_id"  ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
   year:            integer( "year"          ).notNull() ,
   month:           integer( "month"         ).notNull() , // 0-indexed (0 = Enero ... 11 = Diciembre), igual que Date.getMonth(). Distinto del parámetro 'beforeMonth' de findRecent(), que es 1-indexed por diseño de API pública.
-  totalRevenue:    integer( "total_revenue" ).default( 0 ).notNull() ,
-  totalExpense:    integer( "total_expense" ).default( 0 ).notNull() ,
-  balanceSnapshot: integer( "balance_snapshot" ).default( 0 ).notNull() ,
-  createdAt:       timestamp( "created_at"  , {withTimezone: true} ).defaultNow().notNull() ,
+  totalRevenue:        integer( "total_revenue"     ).default( 0 ).notNull() ,
+  totalExpense:        integer( "total_expense"     ).default( 0 ).notNull() ,
+  balanceSnapshot:     integer( "balance_snapshot"  ).default( 0 ).notNull() ,
+  assetsSnapshot:      integer( "assets_snapshot"   ).default( 0 ).notNull() ,
+  liabilitiesSnapshot: integer( "liabilities_snapshot" ).default( 0 ).notNull() ,
+  createdAt:           timestamp( "created_at"      , {withTimezone: true} ).defaultNow().notNull() ,
 } ) ;
 

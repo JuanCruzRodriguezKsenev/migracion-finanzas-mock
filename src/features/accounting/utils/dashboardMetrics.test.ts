@@ -68,9 +68,11 @@ function makeSummary( overrides: Partial<MonthlySummary> ): MonthlySummary {
     year:            2026 ,
     month:           0 ,
     totalRevenue:    0 ,
-    totalExpense:    0 ,
-    balanceSnapshot: 0 ,
-    createdAt:       new Date() ,
+    totalExpense:        0 ,
+    balanceSnapshot:     0 ,
+    assetsSnapshot:      0 ,
+    liabilitiesSnapshot: 0 ,
+    createdAt:           new Date() ,
     ...overrides ,
   } ) ;
 }

@@ -35,8 +35,9 @@ Este documento registra los puntos de deuda técnica del repositorio, distinguie
     *   Saneamiento de catch bindings opcionales, variables no usadas e imports huérfanos.
     *   Memoización de reglas en `PasswordInput` para satisfacer `exhaustive-deps`.
     *   Exigencia estricta de `--max-warnings 0` en compuerta CI.
+*   [x] **Desglose histórico de Activos y Pasivos en `/accounts`:** Incorporación de columnas `assets_snapshot` y `liabilities_snapshot` en la tabla `monthly_summaries` con migración `0012_tranquil_luckman.sql`. Persistencia en `seed.ts` respetando la invariante contable ($\text{Patrimonio Neto} = \text{Activos} - \text{Pasivos}$) y conexión de `SparklinePoint[]` con tendencias dinámicas en las tarjetas de Total Activos y Total Pasivos de `/accounts`.
 *   [x] **Validación Zod de Entorno:** Módulo `src/shared/lib/env.ts` con `obtenerEnv()` lazy y validación de protocolos de conexión; eliminación del fallback silencioso a localhost en producción.
-*   [x] **Compuerta CI en GitHub Actions:** Pipeline `.github/workflows/compuerta.yml` con contenedor de servicio PostgreSQL, Node 26, pnpm 11.3.0, typecheck, lint (`--max-warnings 0`), 182 tests unitarios y build de producción. Verificada en ejecución remota.
+*   [x] **Compuerta CI en GitHub Actions:** Pipeline `.github/workflows/compuerta.yml` con contenedor de servicio PostgreSQL, Node 26, pnpm 11.3.0, typecheck, lint (`--max-warnings 0`), 184 tests unitarios y build de producción. Verificada en ejecución remota.
 
 ---
 
@@ -46,7 +47,6 @@ Este documento registra los puntos de deuda técnica del repositorio, distinguie
 *   [ ] **Limitación de escala categórica en Recharts Sparkline:** En gráficos de línea categóricos sin eje X continuo, Recharts reserva padding discreto en bandas laterales, lo que evita que el trazo toque los bordes exactos del contenedor (a diferencia de un path SVG manual directo). Si a futuro se requiere renderizado borde a borde absoluto, evaluar cálculo directo de coordenadas SVG o escala continua.
 
 ### 2. Persistencia y Modelado de Datos
-*   [ ] **Desglose histórico de Activos y Pasivos en `/accounts`:** La tabla `monthly_summaries` sólo persiste `balanceSnapshot` (patrimonio neto). Para volver a proveer sparklines históricas reales en las tarjetas de Activos Totales y Pasivos Totales de `/accounts`, se debe extender el modelo con `assetsSnapshot` y `liabilitiesSnapshot` o calcular agregaciones en background.
 *   [ ] **Desacoplar suscripciones de memoria mock:** El repositorio `subscriptionRepository.ts` actualmente opera con datos simulados y debe migrarse a las tablas de suscripciones vinculadas a `ledgerTransactions`.
 
 ### 3. Rendimiento de Base de Datos

@@ -1,0 +1,2 @@
+ALTER TABLE "monthly_summaries" ADD COLUMN "assets_snapshot" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "monthly_summaries" ADD COLUMN "liabilities_snapshot" integer DEFAULT 0 NOT NULL;

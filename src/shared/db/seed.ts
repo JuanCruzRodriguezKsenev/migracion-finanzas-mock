@@ -354,16 +354,22 @@ async function main() {
 
       saldoAcumulado = ( saldoAcumulado + totalIngresos - totalGastos ) ;
 
+      // Pasivos mensuales coherentes (saldos de tarjeta/deudas mensuales entre 20.000 y 35.000 pesos)
+      const pasivosMes = ( ( Math.floor( Math.random() * 15000 ) + 20000 ) * 100 ) ;
+      const activosMes = ( saldoAcumulado + pasivosMes ) ; // Invariante contable: Activos = Patrimonio Neto + Pasivos
+
       await db
         .insert( monthlySummaries )
         .values( {
-          organizationId:  org.id ,
-          year:            year ,
-          month:           month ,
-          totalRevenue:    totalIngresos ,
-          totalExpense:    totalGastos ,
-          balanceSnapshot: saldoAcumulado ,
-          createdAt:       new Date( year , month + 1 , 0 , 23 , 59 , 59 )
+          organizationId:      org.id ,
+          year:                year ,
+          month:               month ,
+          totalRevenue:        totalIngresos ,
+          totalExpense:        totalGastos ,
+          balanceSnapshot:     saldoAcumulado ,
+          assetsSnapshot:      activosMes ,
+          liabilitiesSnapshot: pasivosMes ,
+          createdAt:           new Date( year , month + 1 , 0 , 23 , 59 , 59 )
         } ) ;
     }
 

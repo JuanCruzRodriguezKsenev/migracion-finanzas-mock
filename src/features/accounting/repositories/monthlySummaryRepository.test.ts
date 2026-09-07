@@ -54,15 +54,15 @@ describe( "monthlySummaryRepository" , () => {
 
     // 3. Sembrar datos históricos: 9 meses (de 2025-10 a 2026-06, en 0-indexed: 2025-09 a 2026-05)
     const testData = [
-      { organizationId: orgId , year: 2025 , month: 9  , totalRevenue: 1000 , totalExpense: 800 , balanceSnapshot: 200 } ,
-      { organizationId: orgId , year: 2025 , month: 10 , totalRevenue: 1100 , totalExpense: 900 , balanceSnapshot: 400 } ,
-      { organizationId: orgId , year: 2025 , month: 11 , totalRevenue: 1200 , totalExpense: 950 , balanceSnapshot: 650 } ,
-      { organizationId: orgId , year: 2026 , month: 0  , totalRevenue: 1300 , totalExpense: 1000 , balanceSnapshot: 950 } ,
-      { organizationId: orgId , year: 2026 , month: 1  , totalRevenue: 1400 , totalExpense: 1100 , balanceSnapshot: 1250 } ,
-      { organizationId: orgId , year: 2026 , month: 2  , totalRevenue: 1500 , totalExpense: 1150 , balanceSnapshot: 1600 } ,
-      { organizationId: orgId , year: 2026 , month: 3  , totalRevenue: 1600 , totalExpense: 1200 , balanceSnapshot: 2000 } ,
-      { organizationId: orgId , year: 2026 , month: 4  , totalRevenue: 1700 , totalExpense: 1300 , balanceSnapshot: 2400 } ,
-      { organizationId: orgId , year: 2026 , month: 5  , totalRevenue: 1800 , totalExpense: 1400 , balanceSnapshot: 2800 }
+      { organizationId: orgId , year: 2025 , month: 9  , totalRevenue: 1000 , totalExpense: 800 , balanceSnapshot: 200  , assetsSnapshot: 300  , liabilitiesSnapshot: 100 } ,
+      { organizationId: orgId , year: 2025 , month: 10 , totalRevenue: 1100 , totalExpense: 900 , balanceSnapshot: 400  , assetsSnapshot: 500  , liabilitiesSnapshot: 100 } ,
+      { organizationId: orgId , year: 2025 , month: 11 , totalRevenue: 1200 , totalExpense: 950 , balanceSnapshot: 650  , assetsSnapshot: 800  , liabilitiesSnapshot: 150 } ,
+      { organizationId: orgId , year: 2026 , month: 0  , totalRevenue: 1300 , totalExpense: 1000 , balanceSnapshot: 950  , assetsSnapshot: 1100 , liabilitiesSnapshot: 150 } ,
+      { organizationId: orgId , year: 2026 , month: 1  , totalRevenue: 1400 , totalExpense: 1100 , balanceSnapshot: 1250 , assetsSnapshot: 1450 , liabilitiesSnapshot: 200 } ,
+      { organizationId: orgId , year: 2026 , month: 2  , totalRevenue: 1500 , totalExpense: 1150 , balanceSnapshot: 1600 , assetsSnapshot: 1800 , liabilitiesSnapshot: 200 } ,
+      { organizationId: orgId , year: 2026 , month: 3  , totalRevenue: 1600 , totalExpense: 1200 , balanceSnapshot: 2000 , assetsSnapshot: 2250 , liabilitiesSnapshot: 250 } ,
+      { organizationId: orgId , year: 2026 , month: 4  , totalRevenue: 1700 , totalExpense: 1300 , balanceSnapshot: 2400 , assetsSnapshot: 2700 , liabilitiesSnapshot: 300 } ,
+      { organizationId: orgId , year: 2026 , month: 5  , totalRevenue: 1800 , totalExpense: 1400 , balanceSnapshot: 2800 , assetsSnapshot: 3100 , liabilitiesSnapshot: 300 }
     ] ;
 
     // Insertar registros

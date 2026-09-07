@@ -13,6 +13,7 @@ import type { getDictionary }   from "@/shared/lib/dictionary" ;
 import { useMetricsVisibility } from "@/shared/ui/layout/MetricsSection/MetricsVisibilityContext" ;
 import { InstitutionLogo }      from "@/shared/ui/display/InstitutionLogo/InstitutionLogo" ;
 import { MetricsSection }       from "@/shared/ui/layout/MetricsSection/MetricsSection" ;
+import { Sparkline }            from "@/shared/ui/display/RechartsSparkline/Sparkline" ;
 import { EmptyState }           from "@/shared/ui/feedback/EmptyState/EmptyState" ;
 import { MetricCard }           from "@/shared/ui/MetricCard/MetricCard" ;
 import { Button }               from "@/shared/ui/display/Button/Button" ;
@@ -86,14 +87,26 @@ export function AccountsContainer( {
   const totalLiabs  = walletAccounts.filter( ( a ) => a.type === "liability" ).reduce( ( sum , a ) => (sum + a.balance) , 0 ) ;
   const netWorth    = ( totalAssets - totalLiabs ) ;
 
-  // Procesar serie temporal real para Patrimonio Neto (Hero)
+  // Procesar series temporales reales para Patrimonio Neto, Activos y Pasivos
   const sparklinePointsNetWorth: SparklinePoint[] = summaries.map( ( s ) => ( {
     value:    s.balanceSnapshot / 100 ,
     monthKey: formatMonthKey( s.year , s.month )
   } ) ).reverse() ;
 
-  // Calcular tendencia dinámica de Patrimonio Neto
+  const sparklinePointsAssets: SparklinePoint[] = summaries.map( ( s ) => ( {
+    value:    s.assetsSnapshot / 100 ,
+    monthKey: formatMonthKey( s.year , s.month )
+  } ) ).reverse() ;
+
+  const sparklinePointsLiabs: SparklinePoint[] = summaries.map( ( s ) => ( {
+    value:    s.liabilitiesSnapshot / 100 ,
+    monthKey: formatMonthKey( s.year , s.month )
+  } ) ).reverse() ;
+
+  // Calcular tendencias dinámicas
   const tendenciaNetWorth = calcularTendenciaDesdeSparkline( sparklinePointsNetWorth ) ;
+  const tendenciaAssets   = calcularTendenciaDesdeSparkline( sparklinePointsAssets ) ;
+  const tendenciaLiabs    = calcularTendenciaDesdeSparkline( sparklinePointsLiabs , true ) ; // Invertida para pasivos
 
   const labelTrend = ( dict.dashboard?.savingTrend || "vs mes anterior" ) ;
 
@@ -148,12 +161,45 @@ export function AccountsContainer( {
           iconBg="rgba( 16 , 185 , 129 , 0.1 )"
           iconColor="#10b981"
           isSensitive={true}
+          trend={ tendenciaAssets ? {
+            value:      tendenciaAssets.value ,
+            isPositive: tendenciaAssets.isPositive ,
+            isRising:   tendenciaAssets.isRising ,
+            label:      labelTrend
+          } : undefined }
+          sparkline={
+            sparklinePointsAssets.length > 0 ? (
+              <Sparkline
+                points={sparklinePointsAssets}
+                color="#10b981"
+                height={26}
+                lang={lang}
+              />
+            ) : undefined
+          }
         />
         <MetricCard
           title={accountsPageDict.totalLiabilities}
           value={formatCents( totalLiabs )}
           isDanger={true}
           isSensitive={true}
+          trend={ tendenciaLiabs ? {
+            value:      tendenciaLiabs.value ,
+            isPositive: tendenciaLiabs.isPositive ,
+            isRising:   tendenciaLiabs.isRising ,
+            label:      labelTrend
+          } : undefined }
+          sparkline={
+            sparklinePointsLiabs.length > 0 ? (
+              <Sparkline
+                points={sparklinePointsLiabs}
+                color="#ef4444"
+                height={26}
+                lang={lang}
+                isInverted={true}
+              />
+            ) : undefined
+          }
         />
       </MetricsSection>
 
