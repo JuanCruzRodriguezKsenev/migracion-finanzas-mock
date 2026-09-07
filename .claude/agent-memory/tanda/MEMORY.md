@@ -44,6 +44,10 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Estado
 
-*   Rama `feat/contacts-management`, 3 commits. Fase 0 cerrada (4 commits). 298 tests.
-*   Pendiente sin commitear: fixtures de `Account` en 3 archivos de test.
-*   Próximo: plan de corrección de entidades (partir la acción, partir `logo`, limpiar `kk`).
+*   Rama `feat/contacts-management`, limpia, **13 commits por delante de `master`** (arrastra Tandas I/J/K,
+    toda la Fase 0 y el Bloque B). `master` nunca recibió el merge. 298 tests.
+*   Fase 1 del artifact: RFC 006 cerrado; **RFC 015 (perfil, preferencias y consolidación) es el único
+    RFC en `DRAFT`** — falta que Juan Cruz lo apruebe antes de tocar código.
+*   Pendiente propio: plan de corrección de entidades (partir la acción, partir `logo`, limpiar `kk`).
+*   El artifact de la hoja de ruta trae datos viejos en el encabezado (rama `feat/transactions-management`,
+    253 tests, RFC 019 en DRAFT, RFC 015 pintado APPROVED). Corregir cuando se lo edite.
