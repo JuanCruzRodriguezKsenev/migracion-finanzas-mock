@@ -1,10 +1,15 @@
 # Ficha de proyecto — FinanzIA
 
 Esto se autocarga en **toda** sesión, incluida una consulta de dos minutos, y es la fuente que leen
-los agentes (`tanda`, `verificador`, `forja`) para orientarse sin barrer el repo.
+los agentes (`tanda`, `obra`, `verificador`, `forja`) para orientarse sin barrer el repo.
 
 Para el modo de trabajo por rondas: `claude --agent tanda`. Los agentes son genéricos y viven en
 `~/.claude/agents/`; lo específico de este proyecto es esta ficha.
+
+**El ciclo son tres piezas y vos en el medio:** `tanda` piensa y deja el plan escrito en
+`docs/planes/`; `obra` lo ejecuta (`claude --agent obra`, pasándole la ruta del plan); `verificador`
+comprueba. Los agentes no se invocan entre sí — salvo la batería, que `tanda` y `obra` sí delegan en
+`verificador`.
 
 ## Proyecto
 
@@ -27,6 +32,7 @@ pnpm build            # next build
 pnpm lint             # eslint
 pnpm test             # vitest run (una pasada)
 pnpm exec vitest      # modo watch
+pnpm exec vitest run src/features/accounting/services/accountingService.test.ts   # un solo archivo
 
 pnpm db:generate      # drizzle-kit generate — crea migración desde el esquema
 pnpm db:migrate       # drizzle-kit migrate
@@ -68,13 +74,15 @@ Columnas monetarias en `bigint` (centavos). `year`, `month`, `attempts`, `failed
 | Archivo | Qué tiene | Cuándo se toca |
 | :--- | :--- | :--- |
 | `docs/trabajo-en-vuelo.md` | **Único doc de estado**: rama y próximo paso | Se actualiza **en el mismo commit** que avanza el trabajo |
+| `docs/planes/` | **Planes aprobados listos para ejecutar**, uno por ronda. Los escribe `tanda`, los ejecuta `obra`. Un plan **no** lleva progreso adentro: el estado vive en `trabajo-en-vuelo.md` | Al cerrar un plan, antes de ejecutarlo |
 | `docs/TECHNICAL_DEBT.md` | § Resuelto y § Abierto | Al cerrar o abrir deuda |
 | `docs/patterns.md` | Patrones vigentes. **Contrastar acá toda decisión nueva** | Al establecer un patrón |
 | `docs/proposals/` | 21 RFCs con estado `DRAFT`/`APPROVED` | Código sólo contra `APPROVED` |
 | `docs/adr/`, `docs/registro/` | Decisiones arquitectónicas; ramas cerradas | Al cerrar una rama |
 | `docs/ROADMAP.md` | **Desactualizado**: cubre 9 de 23 ítems | La hoja de ruta real es el artifact |
 | `ARCHITECTURE.md` | Arquitectura feature-driven | Lectura |
-| `.agents/AGENTS.md` | §1 restricciones · §4 estilo · §7 flujo · §8 lo que el proyecto cobra caro | Lectura obligatoria |
+| `AGENTS.md` (raíz) | **Router neutral**, para cualquier agente de IA. Reglas duras completas + rutas. Se autocarga | Al cambiar una regla dura |
+| `.agents/AGENTS.md` | §1 restricciones · §4 estilo · §7 flujo · §8 lo que el proyecto cobra caro. **NO se autocarga**: abrilo antes de escribir código | Lectura obligatoria |
 | `CLAUDE.md` (raíz) | Comandos, stack, estilo de código, convenciones | Lectura |
 
 ## Restricciones

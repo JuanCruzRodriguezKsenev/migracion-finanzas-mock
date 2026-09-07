@@ -12,12 +12,18 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `feat/contacts-management` (Módulo de Contactos y Cuentas de Cobro — RFC 006 completado integralmente con pruebas y build de producción exitoso).
+**Rama activa:** `chore/gobernanza-reglas-neutrales` (sale de `feat/contacts-management`, no de master, porque `.claude/CLAUDE.md` nació en `677a337`). Gobernanza de agentes y reglas neutrales: `AGENTS.md` router en la raíz, `CLAUDE.md` reducido a puntero, `docs/planes/` y el agente ejecutor `obra`.
+
+**Rama pendiente de merge:** `feat/contacts-management` (Módulo de Contactos y Cuentas de Cobro — RFC 006 completado integralmente con pruebas y build de producción exitoso).
 
 **Estado:** 🟢 **Módulo `/contacts` y Métodos de Cobro (RFC 006) finalizados. Enmiendas arquitectónicas aplicadas y RFC 006 en APPROVED; decisión de cotizaciones registrada en RFC 015 (DRAFT). Esquema Drizzle (`contacts`, `contact_payment_methods`, y extensión con `cbu_cvu`/`alias` en `accounts`) con migración `0019_tidy_piledriver.sql` aplicada. Validadores puros de identificadores argentinos (CBU con doble dígito verificador BCRA, Alias AFIP 6-20 caracteres y CUIT módulo 11). DAL `contactsRepository.ts` con aislamiento multi-tenant transitivo obligatorio, búsqueda por texto, baja lógica (`archived_at`) y actualización transaccional de predeterminado. Server Actions (`contactsActions.ts`) tipadas con Result pattern y esquemas Zod. UI reactiva en `/contacts` (`ContactsContainer`, `ContactsTable`, `ContactFormModal`, `PaymentMethodsPanel` con alta al vuelo reutilizando `CreateFinancialEntityForm`). Integración en navegación (`Navbar`, `BottomNav`, `IconContacts`) y diccionarios i18n (`es`, `en`, `br`). 39 suites de test (298 pruebas) pasando en verde, 0 advertencias ESLint y build de producción exitoso.**
 
 **Próximo paso de desarrollo:**
-Merge de `feat/contacts-management` a master o continuar con el siguiente módulo financiero del roadmap (Tarjetas `/cards` — RFC 007 o Metas `/goals` — RFC 011).
+Mergear `chore/gobernanza-reglas-neutrales` y `feat/contacts-management` a master (en ese orden, la segunda es ancestro de la primera), y seguir con el próximo módulo financiero del roadmap (Tarjetas `/cards` — RFC 007 o Metas `/goals` — RFC 011).
+
+**Pendiente de la gobernanza:** estrenar `obra` con un plan corto para ver si realmente frena cuando el
+código no coincide con el plan; evaluar `model: sonnet` en `verificador`; y revisar la duplicación
+entre `ARCHITECTURE.md` y `.agents/AGENTS.md` §2–§5.
 
 ---
 

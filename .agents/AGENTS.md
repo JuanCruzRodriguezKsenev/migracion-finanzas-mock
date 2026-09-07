@@ -26,9 +26,9 @@ Este archivo contiene instrucciones, restricciones y directrices operativas espe
 
 ## 2. Directrices de Arquitectura (Feature-Driven Architecture)
 
-*   Seguir estrictamente la distribución definida en el archivo de arquitectura [ARCHITECTURE.md](file:///C:/Users/jcrod/Dev/migracion-finanzas_mock/ARCHITECTURE.md).
+*   Seguir estrictamente la distribución definida en el archivo de arquitectura [ARCHITECTURE.md](../ARCHITECTURE.md).
 *   **Código de Características (Features):** Debe ubicarse modularizado por dominio de negocio dentro de `src/features/{nombre_feature}/`. Cada carpeta de feature encapsula sus propios componentes de React, helpers lógicos, servicios de API y esquemas de Drizzle (`schema.db.ts`).
-*   **Rutas e Interfaz de Next.js:** Se ubican en [src/app/](file:///C:/Users/jcrod/Dev/migracion-finanzas_mock/src/app). Las páginas y layouts actúan únicamente como contenedores/enrutadores que importan y renderizan las características de la carpeta `features/`.
+*   **Rutas e Interfaz de Next.js:** Se ubican en [src/app/](../src/app). Las páginas y layouts actúan únicamente como contenedores/enrutadores que importan y renderizan las características de la carpeta `features/`.
 *   **Recursos Globales Compartidos:** Deben ubicarse en `src/shared/` (ej: componentes base de UI en `shared/components`, conexión central de DB en `shared/db`, helpers matemáticos globales en `shared/lib` y lógica contable transversal en `shared/services`).
 
 
@@ -37,7 +37,7 @@ Este archivo contiene instrucciones, restricciones y directrices operativas espe
 ## 3. Normas de Testing
 
 *   Todas las pruebas nuevas deben ubicarse junto al código fuente correspondiente (ej: `nombre.ts` al lado de `nombre.test.ts`).
-*   Los tests deben crearse en [src/features/](file:///C:/Users/jcrod/Dev/migracion-finanzas_mock/src/features) (para lógica modular de features), en [src/shared/lib/](file:///C:/Users/jcrod/Dev/migracion-finanzas_mock/src/shared/lib) o en `src/shared/services/` para que Vitest los detecte automáticamente de acuerdo con el archivo [vitest.config.ts](file:///C:/Users/jcrod/Dev/migracion-finanzas_mock/vitest.config.ts).
+*   Los tests deben crearse en [src/features/](../src/features) (para lógica modular de features), en [src/shared/lib/](../src/shared/lib) o en `src/shared/services/` para que Vitest los detecte automáticamente de acuerdo con el archivo [vitest.config.ts](../vitest.config.ts).
 *   El entorno por defecto de pruebas es `"node"`. Si se requiere simular DOM, usar `// @vitest-environment jsdom` en la primera línea del archivo de test respectivo en lugar de alterar la configuración global.
 
 ---
