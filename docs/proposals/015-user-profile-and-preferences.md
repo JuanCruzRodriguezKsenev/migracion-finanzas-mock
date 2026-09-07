@@ -2,9 +2,14 @@
 
 *   **ID de la Propuesta:** 015
 *   **Título:** Módulo de Perfil del Usuario, Preferencias de Formateo y Algoritmo de Patrimonio Neto Consolidado
-*   **Estado:** `APPROVED` (Aprobado - 2026-06-23)
+*   **Estado:** `DRAFT` (Enmienda 2026-09-07 — Cotizaciones Históricas)
 *   **Fecha de Creación:** 2026-06-22
+*   **Fecha de Enmienda:** 2026-09-07
 *   **Autor:** Antigravity (AI Coding Assistant)
+
+> [!NOTE]
+> **Enmienda de Arquitectura (2026-09-07 — Bloque B):**
+> Se incorpora la Sección 5 con el registro formal de la decisión arquitectónica sobre **Cotizaciones Históricas y Manejo Multimoneda** (tabla `exchange_rates`, cierres contables persistidos vs. saldos vivos cacheados). Esta decisión queda asentada por escrito para no perder el criterio técnico de diseño, mientras que su implementación de código se reserva para la ronda correspondiente a este RFC.
 
 ---
 
@@ -106,3 +111,59 @@ $$\text{Patrimonio Neto Total} = \sum(\text{Activos Convertidos}) - \sum(\text{P
     *   **Correcto:** Identificar el conjunto único de divisas de origen involucradas en los saldos (`Mo_unicas`) y consultar todos sus tipos de cambio hacia la moneda destino ($M_d$) en una única consulta de base de datos o en paralelo mediante `Promise.all`.
 4.  **Cálculo en Memoria:** Una vez que el mapa de tasas de cambio y los saldos están cargados en memoria del servidor, realizar la multiplicación y agregación de forma puramente síncrona:
     $$\text{Saldo Convertido} = S \times \text{Tasa de Cambio en Memoria}$$
+
+---
+
+## 5. Registro de Decisión Arquitectónica: Cotizaciones Históricas y Manejo Multimoneda
+
+*Nota: Esta sección documenta la decisión formal de diseño para el almacenamiento de cotizaciones y conversión cambiaria. Su construcción queda fuera del alcance del Bloque B y se ejecutará cuando se aborde integralmente el RFC 015.*
+
+### A. Problemática
+El cálculo del patrimonio neto consolidado y la visualización de balances o transacciones en monedas extranjeras (USD, EUR, etc.) requiere un criterio explícito para evitar distorsiones o inconsistencias causadas por la volatilidad cambiaria histórica.
+
+### B. Criterio de Doble Estrategia
+
+| Dimensión | Enfoque Técnico | Criterio de Negocio |
+| :--- | :--- | :--- |
+| **Cierres mensuales** | **Persistidos en Base de Datos** | Todo balance cerrado (`monthly_summaries`) fija la cotización vigente al cierre y la guarda. Es el único caso donde hay que almacenarla: un cierre es un total en moneda base sin dos importes de los que deducir el cociente. No se recalcula retrospectivamente. |
+| **Transacciones de cambio** | **Deducida, nunca almacenada** | Una transacción de cambio ya lleva los dos importes en sus asientos, así que su cotización efectiva es el cociente entre ambos. Guardarla aparte crearía un dato que puede contradecir a los asientos. Esta regla ya está implementada y documentada en `patterns.md` §Cambio de divisas; esta sección no la altera. |
+| **Saldos Vivos del Dashboard** | **Caché del Día (In-Memory / TTL)** | La conversión en tiempo real de saldos vigentes hacia la divisa preferida del usuario utiliza la cotización oficial/de referencia del día. Se cachea a nivel servidor con TTL (ej. 24 horas o intradía) para evitar llamadas concurrentes a APIs externas o consultas recurrentes a la base de datos. |
+
+### C. Esquema Relacional de Referencia (`exchange_rates`)
+Para la persistencia histórica de tasas de cambio diarias/oficiales:
+
+```typescript
+import { pgTable , uuid , varchar , bigint , date , timestamp , uniqueIndex , index } from "drizzle-orm/pg-core" ;
+
+export const exchangeRates = pgTable( "exchange_rates" , {
+  id:             uuid( "id" ).primaryKey().defaultRandom() ,
+  // Sin `organization_id`: las cotizaciones son dato de referencia del sistema, iguales para todos
+  // los inquilinos. Una columna de tenant anulable obligaría a todas las consultas a hacer
+  // `or( eq(orgId) , isNull(orgId) )`, que es exactamente el patrón que filtra datos cuando alguien
+  // olvida la mitad. Una cotización propia por organización necesita su propia decisión.
+  baseCurrency:   varchar( "base_currency"   , {length: 10} ).notNull() , // Ej: 'USD'
+  targetCurrency: varchar( "target_currency" , {length: 10} ).notNull() , // Ej: 'ARS'
+  // Tasa entera con factor fijo RATE_SCALE = 1_000_000 (seis decimales). 1 USD = 1487,50 ARS se
+  // guarda como 1_487_500_000. El factor es único y no negociable: una escala ambigua se lee mal
+  // tarde o temprano. Seis decimales cubren también los pares invertidos (1 ARS = 0,000672 USD).
+  rate:           bigint( "rate" , {mode: "number"} ).notNull() ,
+  // `date` y no `timestamp`: la cotización es de un día. Con marca de tiempo, dos capturas del mismo
+  // día a distinta hora pasarían el índice único y habría dos cotizaciones para la misma fecha.
+  rateDate:       date( "rate_date" ).notNull() ,
+  source:         varchar( "source" , {length: 50} ).default( "official" ).notNull() , // 'official' | 'blue' | 'mep' | 'ccl'
+  createdAt:      timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
+} , ( table ) => { return( {
+  uniqueRateEntry: uniqueIndex( "exchange_rates_currency_date_source_unique" ).on(
+    table.baseCurrency ,
+    table.targetCurrency ,
+    table.rateDate ,
+    table.source
+  ) ,
+  lookupIdx: index( "exchange_rates_lookup_idx" ).on(
+    table.targetCurrency ,
+    table.baseCurrency ,
+    table.rateDate
+  ) ,
+} ) ; } ) ;
+```
+
