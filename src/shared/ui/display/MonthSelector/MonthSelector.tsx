@@ -6,12 +6,14 @@
  */
 "use client" ;
 
-import React , { useState , useRef , useEffect , useMemo , useCallback } from "react" ;
+import React , { useState , useRef , useEffect , useMemo , useCallback , useId } from "react" ;
 import styles                                                           from "./MonthSelector.module.css" ;
 
 export interface MonthSelectorDictionary {
   prevMonth?:       string ;
   nextMonth?:       string ;
+  prevYear?:        string ;
+  nextYear?:        string ;
   currentMonth?:    string ;
   selectMonth?:     string ;
   dialogAriaLabel?: string ;
@@ -76,6 +78,7 @@ export function MonthSelector( {
   icon ,
   dict
 }: MonthSelectorProps ) {
+  const dialogId     = useId() ;
   const [ isOpen , setIsOpen ] = useState( false ) ;
   const containerRef = useRef<HTMLDivElement>( null ) ;
   const triggerRef   = useRef<HTMLButtonElement>( null ) ;
@@ -192,6 +195,8 @@ export function MonthSelector( {
   // Textos accesibles e internacionalizados (S7/M5)
   const prevLabel             = dict?.prevMonth || ( lang === "en" ? "Previous month" : lang === "br" ? "Mês anterior" : "Mes anterior" ) ;
   const nextLabel             = dict?.nextMonth || ( lang === "en" ? "Next month" : lang === "br" ? "Próximo mês" : "Mes siguiente" ) ;
+  const prevYearLabel         = dict?.prevYear || ( lang === "en" ? "Previous year" : lang === "br" ? "Ano anterior" : "Año anterior" ) ;
+  const nextYearLabel         = dict?.nextYear || ( lang === "en" ? "Next year" : lang === "br" ? "Próximo ano" : "Año siguiente" ) ;
   const triggerLabel          = dict?.selectMonth || ( lang === "en" ? "Select month" : lang === "br" ? "Selecionar mês" : "Seleccionar mes" ) ;
   const dialogLabel           = dict?.dialogAriaLabel || ( lang === "en" ? "Month and year selector" : lang === "br" ? "Seletor de mês e ano" : "Selector de mes y año" ) ;
   const currentMonthBtnLabel  = dict?.currentMonth || ( lang === "en" ? "Go to current month" : lang === "br" ? "Ir para o mês atual" : "Ir al mes actual" ) ;
@@ -226,7 +231,7 @@ export function MonthSelector( {
           onClick={handleTriggerClick}
           aria-expanded={isOpen}
           aria-haspopup="dialog"
-          aria-controls="month-selector-dialog"
+          aria-controls={dialogId}
           aria-label={triggerLabel}
         >
           <div className={styles.triggerContent}>
@@ -253,9 +258,8 @@ export function MonthSelector( {
 
         {isOpen ? (
           <div
-            id="month-selector-dialog"
+            id={dialogId}
             role="dialog"
-            aria-modal="true"
             aria-label={dialogLabel}
             className={styles.gridPopover}
           >
@@ -266,7 +270,7 @@ export function MonthSelector( {
                 className={styles.navBtn}
                 disabled={ (minYear !== undefined) && (viewYear <= minYear) }
                 onClick={ () => adjustYear( -1 ) }
-                aria-label="Año anterior"
+                aria-label={prevYearLabel}
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="15 18 9 12 15 6" />
@@ -278,7 +282,7 @@ export function MonthSelector( {
                 className={styles.navBtn}
                 disabled={viewYear >= maxYear}
                 onClick={ () => adjustYear( 1 ) }
-                aria-label="Año siguiente"
+                aria-label={nextYearLabel}
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="9 18 15 12 9 6" />

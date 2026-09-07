@@ -6,6 +6,8 @@
     "monthSelector": {
       "prevMonth": "Previous month",
       "nextMonth": "Next month",
+      "prevYear": "Previous year",
+      "nextYear": "Next year",
       "currentMonth": "Go to current month",
       "selectMonth": "Select month",
       "dialogAriaLabel": "Month and year selector"

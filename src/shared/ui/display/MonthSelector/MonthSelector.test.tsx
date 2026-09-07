@@ -142,4 +142,26 @@ describe( "MonthSelector Component" , () => {
     fireEvent.click( febBtn ) ;
     expect( onChange ).not.toHaveBeenCalled() ;
   } ) ;
+
+  it( "debería asociar el trigger con el diálogo vía useId y no incluir aria-modal" , () => {
+    render( <MonthSelector {...defaultProps} /> ) ;
+
+    const trigger = screen.getByLabelText( "Seleccionar mes" ) ;
+    fireEvent.click( trigger ) ;
+
+    const dialog = screen.getByRole( "dialog" , { name: "Selector de mes y año" } ) ;
+    expect( dialog ).toBeInTheDocument() ;
+    expect( dialog ).not.toHaveAttribute( "aria-modal" ) ;
+    expect( trigger.getAttribute( "aria-controls" ) ).toBe( dialog.getAttribute( "id" ) ) ;
+  } ) ;
+
+  it( "debería traducir los botones de año en inglés (lang='en')" , () => {
+    render( <MonthSelector {...defaultProps} lang="en" /> ) ;
+
+    const trigger = screen.getByLabelText( "Select month" ) ;
+    fireEvent.click( trigger ) ;
+
+    expect( screen.getByRole( "button" , { name: "Previous year" } ) ).toBeInTheDocument() ;
+    expect( screen.getByRole( "button" , { name: "Next year" } ) ).toBeInTheDocument() ;
+  } ) ;
 } ) ;
