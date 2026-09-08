@@ -12,7 +12,7 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `master`. No hay trabajo a medias.
+**Rama activa:** `feat/tarjetas` (sale de `master` en `e4d8cb3`). Sólo lleva documentación: la enmienda al RFC 007 y el plan de la ronda. **No hay código escrito todavía**, y no lo habrá hasta que la enmienda esté aprobada.
 
 **Estado:** 🟢 **`feat/preferencias-canonicas` quedó consolidada en `master` el 2026-09-08**, por fast-forward y sin conflictos. Son 6 commits (`492b8cf..1ba3d37`): la aprobación del **RFC 015** sobre texto enmendado contra el esquema real —era el último de los 21 en `DRAFT`— y la primera tajada ejecutable de ese RFC, que normaliza las preferencias de perfil a códigos canónicos (ISO 4217 / IANA / BCP 47), migra las filas existentes con backfill en `0021_thick_corsair.sql`, cierra el escalamiento de plan en `updateProfileAction` con Zod `.strict()` y cablea el formateo monetario al locale del usuario. El detalle congelado está en [`registro/2026-09-08-cierre-preferencias-canonicas.md`](registro/2026-09-08-cierre-preferencias-canonicas.md).
 
@@ -20,8 +20,11 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 **`master` está pusheado** a `origin` el 2026-09-08 (`b28eb08..a4f2539`). La compuerta CI corre sobre ese push.
 
-**Próximo paso de desarrollo:**
-El módulo lo define el artifact de la hoja de ruta, no este documento. Lo que **no** corresponde tomar todavía es el resto del RFC 015: la consolidación multimoneda de su §4 consulta `wealthAssets` y `loans`, y ninguna de las dos tablas existe. Se retoma cuando estén las tablas de riqueza y deudas.
+**Próximo paso de desarrollo — Fase 2, tarjetas.** Plan escrito y contrastado contra el esquema real: [`planes/tarjetas-como-cuentas-de-pasivo.md`](planes/tarjetas-como-cuentas-de-pasivo.md).
+
+> **El plan no es ejecutable todavía.** El RFC 007 es de junio, anterior al core contable. Las **cuatro enmiendas** que necesita ya están escritas en el RFC —Sección 0 y notas en §2, §7A y §7B—, en `DRAFT` y **pendientes de tu aprobación**: rutas de import inválidas (`features/accounts/` no existe), tres columnas monetarias en `integer` contra el `bigint` que impuso el RFC 019, la sección §7A que propone una columna de `ledger_entries` que **ya existe**, y —la que decide el diseño— un §7B que calcula el saldo dual con un `GROUP BY currency` sobre una sola cuenta, cuando el motor impone que **la moneda de un asiento la manda su cuenta**. Con una cuenta por tarjeta ese `GROUP BY` sólo puede devolver una fila. El plan y la enmienda resuelven el saldo dual con una cuenta de pasivo por divisa (`cards` + `card_accounts`). **Aprobar la enmienda es el paso que destraba la ejecución.**
+
+Lo que **no** corresponde tomar todavía es el resto del RFC 015: la consolidación multimoneda de su §4 consulta `wealthAssets` y `loans`, y ninguna de las dos tablas existe. Se retoma cuando estén las tablas de riqueza y deudas.
 
 **Pendientes menores heredados de la ronda**, anotados en el registro y sin ejecutar: el catálogo de `preferences.ts` todavía no tiene consumidor de producción (sólo tests) porque `/perfil` quedó fuera de alcance, `formatCurrency` no protege el locale contra un valor heredado no-BCP-47, y `roundAmounts` se guarda pero nadie lo lee.
 

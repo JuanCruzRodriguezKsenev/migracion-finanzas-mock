@@ -2,9 +2,61 @@
 
 *   **ID de la Propuesta:** 007
 *   **Título:** Modelado Avanzado de Tarjetas, Ciclos de Cierre/Vencimiento, Intereses y Cumplimiento de Seguridad
-*   **Estado:** `APPROVED` (Aprobado - 2026-06-23)
+*   **Estado:** `APPROVED` (Aprobado - 2026-06-23) · **Enmienda de contraste del 2026-09-08 en `DRAFT`, pendiente de aprobación del usuario.**
 *   **Fecha de Creación:** 2026-06-22
+*   **Fecha de Enmienda:** 2026-09-08 — redactada, **no aprobada**
 *   **Autor:** Antigravity (AI Coding Assistant)
+
+> [!IMPORTANT]
+> **Enmienda de Contraste (2026-09-08) — pendiente de aprobación.**
+> Este RFC se redactó el 2026-06-22, **antes del core contable de partida doble**. Al contrastarlo
+> archivo por archivo contra el esquema real, **cuatro de sus puntos describen un sistema que no es
+> el que existe**, y uno de ellos —el saldo dual del §7B— es directamente irrealizable con el motor
+> actual. El detalle está en la Sección 0.
+>
+> El RFC sigue `APPROVED` en lo que no toca esta enmienda. **Las secciones marcadas como enmendadas
+> (§2, §7A y §7B) no habilitan código hasta que el usuario apruebe la enmienda**, según la regla del
+> repositorio: las enmiendas quedan en `DRAFT` hasta que las apruebe el usuario, y no las aprueba el
+> agente.
+
+---
+
+## 0. Contraste contra el esquema real (2026-09-08)
+
+Verificado archivo por archivo y contra la base de desarrollo. Lo que este RFC daba por cierto y no lo es:
+
+| Lo que el RFC asumía | Lo que hay realmente | Consecuencia |
+| :--- | :--- | :--- |
+| `accounts` se importa de `../../features/accounts/schema.db` | `accounts` vive en [`src/features/accounting/schema.db.ts`](../../src/features/accounting/schema.db.ts). **La carpeta `features/accounts/` no existe** | Ruta de import inválida. Se corrige en §2 |
+| `creditLimit`, `monthlyMaintenanceFee` y `annualRenewalFee` en `integer` | El **RFC 019** migró toda columna monetaria a `bigint` en modo `number` (migración `0018`) | Tres columnas nacerían violando el cimiento de la Fase 0. Se corrigen en §2 |
+| §7A propone **añadir** la columna `currency` a `ledger_entries` | **Ya existe** (`varchar(10)`, default `'ARS'`), desde el soporte multimoneda. El snippet del RFC la declara además `bigint` en `mode: "bigint"`, cuando el repositorio usa `mode: "number"` en todas | §7A ya está construida. Su snippet, si alguien lo copia, rompe el modo. Se marca implementada |
+| §7B obtiene el saldo dual con `SUM(debit-credit) … GROUP BY currency` sobre **un** `cardAccountId` | [`accountingService.ts`](../../src/features/accounting/services/accountingService.ts) impone que **la moneda de un asiento la manda su cuenta**, y rechaza con excepción cualquier asiento en otra divisa | Ese `GROUP BY` **sólo puede devolver una fila**. El saldo dual con una sola cuenta es imposible. §7B se reescribe |
+
+### La restricción que decide el diseño
+
+El motor no permite que una cuenta acumule dos monedas. La regla está en `createLedgerTransaction`:
+
+```typescript
+const monedaAsiento = ( entry.currency || account.currency ) ;
+
+if( monedaAsiento !== account.currency ){
+  throw new Error( `La cuenta ${account.name} opera en ${account.currency} y el asiento vino en ${monedaAsiento}. Para mover valor entre monedas usá una transacción de cambio.` ) ;
+}
+```
+
+Es la misma razón por la que el cambio de divisas se registra contra cuentas de posición
+`3.3.01-<MONEDA>` y las contrapartidas de gasto se crean por divisa (`5.1.01.99-<MONEDA>`): **cada
+moneda es un libro propio y cierra por separado.**
+
+Por lo tanto, una tarjeta con saldo en pesos y en dólares —el caso argentino que este RFC describe
+correctamente en §7— **no es una cuenta: son dos**, una por divisa, colgando de la misma tarjeta.
+
+### Lo que sí se sostiene sin cambios
+
+*   **§3 — Seguridad y PCI-DSS.** Prohibir el PAN y el CVV sigue vigente palabra por palabra. La enmienda sólo agrega **cómo se hace cumplir**: validación Zod en modo `.strict()`, que rechaza el payload en vez de descartar la clave en silencio.
+*   **§4 — Lógica de ciclos.** El algoritmo de partición por fecha de cierre es correcto. La enmienda le agrega las condiciones de borde que el texto original no nombra: día de cierre mayor que los días del mes, años bisiestos, `dueDay < closingDay`, y la zona horaria del usuario.
+*   **§5 y §6 — Intereses y comisiones.** El modelo de cálculo y los asientos son correctos. Requieren devengamiento periódico, que depende de los crons de la Fase 3.
+*   **§8 — Interfaz.** La lógica de débito espejo, las capas de saldo de la tarjeta de crédito y las directrices de rendimiento se sostienen enteras.
 
 ---
 
@@ -24,49 +76,79 @@ Para un SaaS financiero escalable, automatizar el cálculo de estos ciclos, aler
 
 ## 2. Esquema de Base de Datos (Drizzle ORM)
 
-Proponemos separar las tarjetas de las cuentas genéricas para dotarlas de atributos financieros específicos:
+> **Reescrito en la enmienda del 2026-09-08 (pendiente de aprobación).** La versión anterior importaba
+> `accounts` de una carpeta que no existe y declaraba tres columnas monetarias en `integer`, contra el
+> `bigint` que impuso el RFC 019. Además modelaba **una sola cuenta por tarjeta**, lo que hace
+> irrealizable el saldo dual de §7. El texto original queda reemplazado por lo que sigue.
+
+Las tarjetas se separan de las cuentas genéricas para dotarlas de atributos financieros específicos.
+Son **dos tablas**: el plástico y sus atributos por un lado, y el vínculo con el libro mayor por otro:
 
 ```typescript
-import { pgTable, text, integer, boolean, timestamp, uuid } from "drizzle-orm/pg-core";
-import { accounts } from "../../features/accounts/schema.db";
-import { organizations } from "../../features/auth/schema.db";
+import { pgTable , uuid , varchar , integer , bigint , timestamp , index , uniqueIndex } from "drizzle-orm/pg-core" ;
 
-export const cards = pgTable("cards", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
-  
-  // Cuenta bancaria/billetera a la que pertenece o está vinculada para el débito automático de su pago
-  linkedAccountId: uuid("linked_account_id").references(() => accounts.id, { onDelete: "set null" }),
+import { accounts , financialEntities } from "@/features/accounting/schema.db" ;
+import { organizations }                from "@/features/auth/schema.db" ;
 
-  label: text("label").notNull(), // Ej: "Visa Black Galicia"
-  type: text("type").notNull(), // 'credit' | 'debit'
-  network: text("network").notNull(), // 'visa' | 'mastercard' | 'amex' | 'other'
-  
-  // Seguridad (Strict compliance)
-  lastFour: text("last_four").notNull(), // Solo guardamos los últimos 4 dígitos
-  expiryMonth: integer("expiry_month").notNull(), // Ej: 12
-  expiryYear: integer("expiry_year").notNull(), // Ej: 2029
-  
-  // --- CAMPOS EXCLUSIVOS DE TARJETA DE CRÉDITO ---
-  creditLimit: integer("credit_limit"), // Límite de compra en centavos
-  
-  // Fechas del Ciclo (Días del mes)
-  closingDay: integer("closing_day"), // Día del mes en que cierra (ej: 25)
-  dueDay: integer("due_day"), // Día del mes en que vence el pago (ej: 5 del mes siguiente)
-  
-  // Tasas de Interés (Almacenado como entero multiplicado por 100. Ej: 85.5% TNA = 8550)
-  interestRateFinancing: integer("interest_rate_financing"), // TNA para saldos financiados
-  interestRatePenalty: integer("interest_rate_penalty"), // TNA punitorio por retraso
-  
-  // Costos Fijos
-  monthlyMaintenanceFee: integer("monthly_maintenance_fee").default(0).notNull(), // Mantenimiento mensual (centavos)
-  annualRenewalFee: integer("annual_renewal_fee").default(0).notNull(), // Renovación anual (centavos)
-  
-  isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull()
-});
+export const cards = pgTable( "cards" , {
+  id:             uuid( "id"              ).primaryKey().defaultRandom() ,
+  organizationId: uuid( "organization_id" ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
+
+  // Entidad emisora: de acá salen el logotipo y el color de marca de §8C, vía brand_domain.
+  entityId:        uuid( "entity_id"         ).references( () => financialEntities.id , {onDelete: "restrict"} ) ,
+  // Débito: la cuenta que la tarjeta espeja. Crédito: la cuenta de la que se paga el resumen.
+  linkedAccountId: uuid( "linked_account_id" ).references( () => accounts.id , {onDelete: "set null"} ) ,
+
+  label:   varchar( "label"   , {length: 100} ).notNull() , // Ej: "Visa Black Galicia"
+  type:    varchar( "type"    , {length: 20 } ).notNull() , // 'credit' | 'debit'
+  network: varchar( "network" , {length: 20 } ).notNull() , // 'visa' | 'mastercard' | 'amex' | 'other'
+
+  // Seguridad (§3). No hay columna para el PAN ni para el CVV, y no la va a haber.
+  lastFour:    varchar( "last_four" , {length: 4} ).notNull() ,
+  expiryMonth: integer( "expiry_month" ).notNull() , // 1-12
+  expiryYear:  integer( "expiry_year"  ).notNull() , // Ej: 2029
+
+  // --- CAMPOS EXCLUSIVOS DE TARJETA DE CRÉDITO (todos anulables) ---
+  creditLimit: bigint( "credit_limit" , {mode: "number"} ) , // Centavos. bigint por RFC 019
+
+  closingDay: integer( "closing_day" ) , // Día del mes en que cierra (ej: 25)
+  dueDay:     integer( "due_day"     ) , // Día del mes en que vence el pago (ej: 5)
+
+  // Tasas: puntos básicos x100 (85,5% TNA = 8550). NO son dinero: integer, igual que year y month.
+  interestRateFinancing: integer( "interest_rate_financing" ) ,
+  interestRatePenalty:   integer( "interest_rate_penalty"   ) ,
+
+  // Costos fijos, en centavos.
+  monthlyMaintenanceFee: bigint( "monthly_maintenance_fee" , {mode: "number"} ).default( 0 ).notNull() ,
+  annualRenewalFee:      bigint( "annual_renewal_fee"      , {mode: "number"} ).default( 0 ).notNull() ,
+
+  archivedAt: timestamp( "archived_at" , {withTimezone: true} ) , // Baja lógica, como contacts
+  createdAt:  timestamp( "created_at"  , {withTimezone: true} ).defaultNow().notNull() ,
+  updatedAt:  timestamp( "updated_at"  , {withTimezone: true} ).defaultNow().notNull() ,
+} , ( table ) => { return( {
+  orgLabelIdx: index( "cards_org_label_idx" ).on( table.organizationId , table.label ) ,
+} ) ; } ) ;
+
+/**
+ * Vínculo entre una tarjeta y sus cuentas del libro mayor: una fila por divisa.
+ * Es lo que hace posible el saldo dual de §7 sobre un motor donde cada cuenta tiene una sola moneda.
+ */
+export const cardAccounts = pgTable( "card_accounts" , {
+  id:        uuid( "id"         ).primaryKey().defaultRandom() ,
+  cardId:    uuid( "card_id"    ).references( () => cards.id    , {onDelete: "cascade"}  ).notNull() ,
+  accountId: uuid( "account_id" ).references( () => accounts.id , {onDelete: "restrict"} ).notNull() ,
+  currency:  varchar( "currency" , {length: 10} ).notNull() ,
+  createdAt: timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
+} , ( table ) => { return( {
+  uniqueCardCurrency: uniqueIndex( "card_accounts_card_currency_unique" ).on( table.cardId , table.currency ) ,
+} ) ; } ) ;
 ```
+
+### Notas de diseño de la enmienda
+
+*   **Por qué la tabla intermedia y no una columna `card_id` en `accounts`.** `cards` ya referencia a `accounts` por `linkedAccountId`; la columna inversa cerraría un ciclo de imports entre los dos `schema.db.ts`. Con `card_accounts` la dependencia va en un solo sentido —`cards` → `accounting`—, que es la misma dirección de `contact_payment_methods` → `financial_entities`. El índice único sobre `(card_id, currency)` es lo que impide dos cuentas en pesos para la misma tarjeta.
+*   **`isActive` se reemplaza por `archivedAt`.** Es la convención de baja lógica que ya usa `contacts`, y conserva *cuándo* se dio de baja en vez de sólo *que* se dio.
+*   **La deuda de una tarjeta es su saldo negado.** En el motor, un `liability` aumenta con el débito y disminuye con el crédito; un consumo **acredita** la tarjeta, así que su `balance` queda **negativo**. Toda lectura de deuda pasa por una única función de conversión; repartir el cambio de signo por los componentes es cómo se termina mostrando una deuda en negativo y un disponible mayor que el límite.
 
 ---
 
@@ -127,9 +209,14 @@ Las tarjetas de crédito suelen acarrear costos fijos independientes de los cons
 En mercados como el argentino, las tarjetas de crédito operan con un **saldo dual** (un balance en pesos ARS y otro balance en dólares USD que se cobran de manera independiente en el mismo resumen).
 
 ### A. Diseño de Base de Datos sin Redundancia
-En lugar de añadir columnas rígidas como `balance_ars` y `balance_usd` a la tabla de tarjetas, implementamos el soporte multimoneda a nivel de la tabla `ledger_entries` (Apuntes contables).
 
-Añadimos una columna `currency` a cada apunte:
+> **Ya implementada (enmienda del 2026-09-08).** La columna `currency` **existe desde el soporte
+> multimoneda del core contable**, como `varchar( "currency" , {length: 10} ).default( "ARS" ).notNull()`.
+> El snippet de abajo se conserva como registro de la decisión, pero **no se copia**: declara los
+> montos en `mode: "bigint"` cuando todo el repositorio usa `mode: "number"`, y el tipo real de
+> `currency` es `varchar(10)`, no `text`.
+
+La decisión, que se sostiene: en lugar de añadir columnas rígidas como `balance_ars` y `balance_usd` a la tabla de tarjetas, el soporte multimoneda vive a nivel de la tabla `ledger_entries` (Apuntes contables), con una columna `currency` en cada apunte:
 ```typescript
 // En la tabla ledger_entries:
 export const ledgerEntries = pgTable("ledger_entries", {
@@ -145,7 +232,39 @@ export const ledgerEntries = pgTable("ledger_entries", {
 ```
 
 ### B. Cálculo Dinámico de Balances
-El saldo de una tarjeta o cuenta en una moneda específica se calcula sumando sus apuntes de forma dinámica agrupando por divisa:
+
+> **Reescrito en la enmienda del 2026-09-08 (pendiente de aprobación).** La consulta original agrupa
+> por divisa los apuntes de **una** cuenta. Sobre el motor real esa consulta **sólo puede devolver una
+> fila**: `createLedgerTransaction` rechaza con excepción todo asiento cuya moneda no sea la de su
+> cuenta, así que los apuntes de una cuenta son siempre de una única divisa. El `GROUP BY` no está
+> mal escrito: está apoyado sobre un supuesto que el core contable no admite.
+
+Una tarjeta con saldo dual **tiene una cuenta de pasivo por divisa**, vinculadas por `card_accounts`.
+El saldo dual se obtiene recorriendo las cuentas de la tarjeta, no agrupando los apuntes de una sola:
+
+```typescript
+// Saldo por divisa de una tarjeta: una fila por cuenta vinculada.
+const saldos = await db
+  .select( {
+    currency: cardAccounts.currency ,
+    balance:  accounts.balance ,      // Negativo en un pasivo: la deuda es -balance
+  } )
+  .from( cardAccounts )
+  .innerJoin( accounts , eq( accounts.id , cardAccounts.accountId ) )
+  .where( and(
+    eq( cardAccounts.cardId       , cardId         ) ,
+    eq( accounts.organizationId   , organizationId ) , // Aislamiento multi-tenant, siempre
+  ) ) ;
+
+// [ { currency: 'ARS', balance: -5500000 }, { currency: 'USD', balance: -12050 } ]
+// Es decir: $55.000,00 ARS y u$s 120,50 de deuda.
+```
+
+`accounts.balance` es el saldo acumulado que el motor mantiene dentro de la misma transacción ACID
+que inserta los asientos, así que no hace falta sumar apuntes para conocerlo. **Sumar apuntes sí hace
+falta para el ciclo** —separar lo facturado de lo que está en curso—, porque eso no es un saldo sino
+una partición por fecha; esa consulta filtra por `ledger_transactions.occurred_at`, no por
+`ledger_entries.created_at`, y excluye las transacciones reversadas.
 ```typescript
 // Consulta conceptual en Drizzle para obtener el balance multidivisa de una tarjeta:
 const cardBalances = await db
