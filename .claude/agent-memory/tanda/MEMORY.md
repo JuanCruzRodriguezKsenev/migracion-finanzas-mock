@@ -12,17 +12,25 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 *   **Los RFCs viejos (junio 2026) traen esquemas anteriores al core contable.** El RFC 006 redefinía
     `accounts` con `balance: integer` y sin `entityId`. Antes de implementar un RFC viejo, contrastar
     su esquema contra `src/features/*/schema.db.ts`.
-*   **`createFinancialEntityAction` crea la entidad Y una cuenta propia** (`Cuenta Principal <nombre>`,
-    tipo `asset`, `accountingActions.ts:158-190`). No es un "crear entidad" puro. Como
-    `PaymentMethodsPanel.tsx:415` reusa `CreateFinancialEntityForm` sin variante, dar de alta una
-    entidad para el método de cobro de un contacto **crea una cuenta de activo del usuario en un banco
-    donde no opera**. Peor: el form expone "Saldo Inicial" también ahí, y `accountRepository.create`
-    (`:87`) es un insert pelado sin asiento — un saldo > 0 **viola Debe = Haber**. `entityId` tiene
-    `onDelete: "restrict"`, así que limpiar exige borrar antes la cuenta espuria.
-    Documentado en `TECHNICAL_DEBT.md` § Abierto desde 2026-09-07.
-*   **`financial_entities.logo` hace dos trabajos**: guarda un dominio de marca o un nombre de ícono, y
-    `InstitutionLogo` los desambigua olfateando strings. En el formulario de entidad, el `FormSelect`
-    de ícono no tiene el guard `!isBrandFromApi` y **pisa el dominio en silencio**.
+*   **`createFinancialEntityAction` ya es alta pura** (corregido en `2ebc37e`, rama
+    `fix/entidades-financieras`). La cuenta se crea aparte con `createAccountForEntityAction`, que
+    ante saldo inicial > 0 emite asiento contra Patrimonio (`3.1.01.01`, con fallback al primer
+    `type === "equity"`) y **verifica que esa cuenta exista antes de crear nada**. El formulario tomó
+    una prop `withOwnAccount` (default `true`); `PaymentMethodsPanel` la pasa en `false`.
+    La deuda pasó a `TECHNICAL_DEBT.md` § Resuelto. Queda viva sólo la basura de datos: entidad `kk`
+    con su `Cuenta Principal kk` (`1.1.01.03`, 3 centavos, 0 movimientos) en la base local; borrarla
+    exige sacar antes la cuenta, por el `onDelete: "restrict"` de `entityId`.
+*   **La cuenta que crea `createAccountForEntityAction` fija `currency: "ARS"` hardcodeado**
+    (`accountingActions.ts`), en un proyecto que ya valida Debe = Haber por divisa. Una entidad que
+    opera en otra moneda igual recibe cuenta en pesos.
+*   **`financial_entities` ya tiene `brand_domain`** (`varchar(100)`, migración `0020_soft_fixer.sql`,
+    con backfill de los dominios que vivían en `logo`). `logo` queda como nombre de ícono de respaldo,
+    y el `FormSelect` de ícono está envuelto en `{!isBrandFromApi}` para no pisar el dominio.
+    **`InstitutionLogo` tiene 4 consumidores y sólo 3 recibieron la prop `brandDomain` nueva**:
+    `AccountsContainer:254`, `PaymentMethodsPanel:211` y `ContactsTable:104` sí;
+    `TransactionsTable.tsx:188-192` **no** — sigue pasando `logoUrl={entity?.logo}`, que ahora recibe
+    un nombre de ícono y ya no resuelve la marca directo. Degrada a búsqueda por nombre, no rompe.
+    Es el archivo que el plan no nombró: exactamente el patrón de defecto de este repo.
 *   **`CircuitBreaker` (`shared/lib/circuitBreaker.ts`) no está cableado en ningún lado**: sólo lo
     importa su propio test. La "protección de Brandfetch" que dicen los docs no existe.
 *   **La búsqueda de marcas está duplicada en tres componentes** que van directo del navegador a
@@ -35,6 +43,10 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     marca + dominio; `financial_entities` es la única tabla que no lo sigue.
 *   `shared/ui/` tiene `DataTable`, `SearchInput`, `Modal`, `Form`, `Autocomplete`, `InstitutionLogo`,
     `EmptyState`, `Tabs`, `Toolbar`. Casi ningún módulo nuevo necesita primitivas propias.
+*   **Contrato del `Result` de `@/shared/lib/result`: el éxito trae `value`, no `data`**
+    (`{ success: true, value: T }`). Nombrarlo en el plan ahorra un tropiezo por ronda.
+*   **`createLedgerTransaction` exige `organizationId` explícito** en la cabecera: `ledger_transactions`
+    tiene la FK de aislamiento no anulable. No lo deduce de la sesión quien lo llama.
 *   Aislamiento multi-tenant en tablas hijas: `contact_payment_methods` cuelga de `contact_id`, así que
     la DAL **joinea contra `contacts`** para filtrar por organización. Ver `contactsRepository.ts`.
 
@@ -57,20 +69,20 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Estado
 
-*   Rama `fix/entidades-financieras`, limpia, sale de `chore/gobernanza-reglas-neutrales`.
-    **`obra` está ejecutando `docs/planes/fix-entidades-financieras.md`.**
+*   Rama `fix/entidades-financieras`, **plan ejecutado y verificado de forma independiente el
+    2026-09-07**: 39 archivos de test, 305 tests, lint 0, `tsc --noEmit` 0 errores, build verde.
+    Los cuatro corridos por `verificador`, con el typecheck como comando propio.
+*   **`verificador` ya corre en `model: sonnet`**, declarado en `~/.claude/agents/verificador.md`.
+    El pendiente de evaluarlo está cerrado; `trabajo-en-vuelo.md` todavía lo lista como abierto.
+*   Pendiente propio: revisar duplicación entre `ARCHITECTURE.md` y `.agents/AGENTS.md` §2–§5.
 *   **Tres ramas encadenadas pendientes de merge a master, en este orden**:
     `feat/contacts-management` → `chore/gobernanza-reglas-neutrales` → `fix/entidades-financieras`.
-    `master` no recibió ninguna. 298 tests al empezar la ronda.
-*   **La Fase 1 NO está cerrada.** RFC 006 entregado; falta el **RFC 015 (perfil, preferencias y
-    consolidación multimoneda)**, único RFC en `DRAFT` de los 21 y único bloqueo formal. Verificado
-    archivo por archivo, no de memoria. No hay una sola línea de consolidación en `src/`
-    (`grep exchange_rate|baseCurrency|consolidat` → cero).
-*   **Tarjetas (007) es Fase 2 y Metas (011) es Fase 3.** `trabajo-en-vuelo.md` proponía cualquiera de
-    las dos como próximo módulo, contra el artifact; corregido el 2026-09-07. Metas en fase temprana
-    es justo el error que el artifact le señala al `ROADMAP.md` viejo.
-*   **El artifact ya está sincronizado** (2026-09-07): 18 ítems pendientes, 5 de 17 rutas, 298 tests,
-    RFC 015 como único DRAFT, Fase 0 completa y estado por fase. Tiene vocabulario de estado nuevo
-    (`.ph-status`, filas `.done` con ✓). Releerlo con `action: "read"` antes de volver a editarlo.
-*   Pendientes propios: evaluar `model: sonnet` en `verificador`; revisar duplicación entre
-    `ARCHITECTURE.md` y `.agents/AGENTS.md` §2–§5.
+    `master` no recibió ninguna.
+*   **La Fase 1 NO está cerrada.** Falta el **RFC 015 (perfil, preferencias y consolidación
+    multimoneda)**, único RFC en `DRAFT` de los 21 y único bloqueo formal. No hay una sola línea de
+    consolidación en `src/`.
+*   **Tarjetas (007) es Fase 2 y Metas (011) es Fase 3.** Metas en fase temprana es justo el error que
+    el artifact le señala al `ROADMAP.md` viejo.
+*   **El artifact está sincronizado al 2026-09-07** (18 ítems pendientes, 5 de 17 rutas, Fase 0
+    completa). Los números de tests quedaron en 298 y hoy son 305. Releerlo con `action: "read"`
+    antes de volver a editarlo.

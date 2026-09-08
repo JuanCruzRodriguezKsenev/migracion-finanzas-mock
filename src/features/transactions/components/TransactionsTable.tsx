@@ -188,6 +188,7 @@ export function TransactionsTable( {
             <InstitutionLogo
               institution={entity?.name || acc?.name || "Banco"}
               logoUrl={entity?.logo}
+              brandDomain={entity?.brandDomain}
               size={20}
             />
             <span className={styles.accountName}>{acc ? acc.name : "—"}</span>

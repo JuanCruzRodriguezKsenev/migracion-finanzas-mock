@@ -16,17 +16,24 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 **Ramas pendientes de merge, en este orden:** `feat/contacts-management` → `chore/gobernanza-reglas-neutrales` → `fix/entidades-financieras`. Cada una es ancestro de la siguiente, y `master` todavía no recibió ninguna.
 
-**Estado:** 🟢 **Corrección del alta de entidades financieras completada integralmente. `createFinancialEntityAction` desacoplada como alta pura a nivel organización sin creación de cuentas espurias. Nueva `createAccountForEntityAction` que garantiza partida doble emitiendo asiento contable contra Patrimonio Neto (`3.1.01.01`) ante saldos iniciales mayores a cero. Columna `brand_domain` (`varchar(100)`) añadida con migración `0020_soft_fixer.sql` y backfill de dominios históricos aplicado. `CreateFinancialEntityForm` adaptado con prop `withOwnAccount?: boolean` (`withOwnAccount={false}` en `PaymentMethodsPanel`) y protección de selector de iconos. `InstitutionLogo` refactorizado con soporte directo de `brandDomain`. Fixtures actualizados y suite de tests completa con 5 nuevas pruebas contables y multi-tenant.**
+**Estado:** 🟢 **Corrección del alta de entidades financieras completada y verificada de forma independiente.** `createFinancialEntityAction` es alta pura a nivel organización, sin cuentas espurias. La nueva `createAccountForEntityAction` garantiza partida doble emitiendo asiento contra Patrimonio Neto (`3.1.01.01`) ante saldo inicial mayor a cero, y verifica que esa cuenta exista **antes** de crear nada. Columna `brand_domain` (`varchar(100)`) con migración `0020_soft_fixer.sql` y backfill de dominios históricos. `CreateFinancialEntityForm` con prop `withOwnAccount` (en `false` desde `PaymentMethodsPanel`) y guard del selector de íconos. `InstitutionLogo` resuelve por `brandDomain` directo.
+
+**Batería al cerrar la ronda:** 39 archivos de test, 305 tests, `pnpm lint` en 0, `pnpm exec tsc --noEmit` en 0 errores y `pnpm build` verde. Los cuatro corridos por `verificador`, con el typecheck como comando propio.
+
+**Cierre de hallazgos de la ejecución:**
+* `TransactionsTable.tsx` era el único de los cuatro consumidores de `InstitutionLogo` que no recibía `brandDomain`: con `logo` degradado a nombre de ícono, la columna de cuenta perdía la resolución directa de marca que sí tienen `/accounts` y `/contacts`. Corregido.
+* Entidad de diagnóstico `kk` y su `Cuenta Principal kk` (`1.1.01.03`, 3 centavos, 0 asientos) **eliminadas** de la base local. No quedan cuentas con saldo sin asiento respaldatorio.
+* Dos contratos internos que la ejecución descubrió sobre la marcha y que los próximos planes deben nombrar explícitos: el `Result` de `@/shared/lib/result` expone `value` (no `data`), y `createLedgerTransaction` exige `organizationId` explícito en la cabecera.
 
 **Próximo paso de desarrollo:**
-Mergear las tres ramas a master en el orden establecido (`feat/contacts-management` → `chore/gobernanza-reglas-neutrales` → `fix/entidades-financieras`), resolver la limpieza de la entidad de diagnóstico `kk` si el usuario lo decide, y retomar la **Fase 1** con la aprobación y desarrollo del **RFC 015 — perfil, preferencias y consolidación multimoneda** (único RFC en `DRAFT`).
+Mergear las tres ramas a master en el orden establecido (`feat/contacts-management` → `chore/gobernanza-reglas-neutrales` → `fix/entidades-financieras`) y recién después retomar la **Fase 1** con la aprobación y desarrollo del **RFC 015 — perfil, preferencias y consolidación multimoneda** (único RFC en `DRAFT` y único bloqueo formal de la fase).
 
 > **Corrección de rumbo (2026-09-07):** este documento venía proponiendo Tarjetas o Metas como próximo
 > módulo, en contra del artifact. Metas en la primera fase es justamente el error que el artifact
 > documenta del `ROADMAP.md` viejo.
 
-**Pendiente de la gobernanza:** evaluar `model: sonnet` en `verificador`; y revisar la duplicación
-entre `ARCHITECTURE.md` y `.agents/AGENTS.md` §2–§5.
+**Pendiente de la gobernanza:** revisar la duplicación entre `ARCHITECTURE.md` y
+`.agents/AGENTS.md` §2–§5. (`verificador` ya corre en `model: sonnet`: aplicado y verificado.)
 
 **Estreno de `obra` (2026-09-07):** frenó como se esperaba. Ante el árbol sucio y sin permiso para
 cambiar de rama, devolvió un informe de factibilidad en vez de improvisar. El protocolo de arranque
@@ -61,7 +68,7 @@ previo de `tanda`, no suyo.
 | **Fase 0 (A3)** | `feat/transactions-management` | 🟢 **Completada** | Regularización RFC 018 a APPROVED con estado de implementación del core contable (migraciones 0012–0016). |
 | **Fase 0 (A4)** | `feat/transactions-management` | 🟢 **Completada** | RFC 019 y migración de 9 columnas monetarias a bigint (modo number, migración `0018_slimy_wiccan.sql`). |
 | **Bloque B** | `feat/contacts-management` | 🟢 **Completada** | Agenda de contactos y métodos de cobro en `/contacts` (RFC 006, migración `0019_tidy_piledriver.sql`, validadores CBU/Alias/CUIT, DAL transitivo multi-tenant, 42 tests nuevos de contactos, 298 tests totales). |
-| **Fix Entidades** | `fix/entidades-financieras` | 🟢 **Completada** | Alta pura de entidades, asiento de apertura contable `3.1.01.01`, columna `brand_domain` (`0020_soft_fixer.sql`), prop `withOwnAccount` en formulario para contactos (5 tests nuevos). |
+| **Fix Entidades** | `fix/entidades-financieras` | 🟢 **Completada** | Alta pura de entidades, asiento de apertura contable `3.1.01.01`, columna `brand_domain` (`0020_soft_fixer.sql`), prop `withOwnAccount` en formulario para contactos, `brandDomain` en los 4 consumidores de `InstitutionLogo` (305 tests). |
 
 ---
 
