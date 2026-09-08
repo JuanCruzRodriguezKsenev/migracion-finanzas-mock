@@ -12,21 +12,18 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `feat/preferencias-canonicas` (sale de `master`). Plan ejecutado: [`planes/normalizar-preferencias-perfil.md`](planes/normalizar-preferencias-perfil.md).
+**Rama activa:** `master`. No hay trabajo a medias.
 
-**Estado:** 🟢 **Completado y verificado en la rama.** Se ejecutaron los 7 pasos del plan [`planes/normalizar-preferencias-perfil.md`](planes/normalizar-preferencias-perfil.md). Se creó el catálogo canónico de preferencias [`src/features/profile/preferences.ts`](../src/features/profile/preferences.ts), se actualizaron los defaults en el esquema Drizzle y se aplicó la migración `0021_thick_corsair.sql` con backfill sobre PostgreSQL. Se sincronizaron los productores de datos (`DEFAULT_PROFILE` en layout y los dos bloques en `seed.ts`). Se protegió `updateProfileAction` mediante validación Zod estricta (`updateProfileSchema`) impidiendo la alteración de campos comerciales (`planName`, etc.) y el ingreso de etiquetas de UI. Se cablearon las 8 llamadas de `formatCurrency` al locale dinámico del perfil (`profile.numberFormat`), y se agregaron 16 tests unitarios en `profile/`.
+**Estado:** 🟢 **`feat/preferencias-canonicas` quedó consolidada en `master` el 2026-09-08**, por fast-forward y sin conflictos. Son 6 commits (`492b8cf..1ba3d37`): la aprobación del **RFC 015** sobre texto enmendado contra el esquema real —era el último de los 21 en `DRAFT`— y la primera tajada ejecutable de ese RFC, que normaliza las preferencias de perfil a códigos canónicos (ISO 4217 / IANA / BCP 47), migra las filas existentes con backfill en `0021_thick_corsair.sql`, cierra el escalamiento de plan en `updateProfileAction` con Zod `.strict()` y cablea el formateo monetario al locale del usuario. El detalle congelado está en [`registro/2026-09-08-cierre-preferencias-canonicas.md`](registro/2026-09-08-cierre-preferencias-canonicas.md).
 
-**Fuera de alcance, y nombrado para que no se filtre:** `exchange_rates` y la consolidación de patrimonio (dependen de tablas inexistentes), multi-workspace (`users.organization_id` es `NOT NULL`; es cambio de modelo, RFC propio) y la ruta `/perfil`.
+**Batería sobre `master` en `1ba3d37`:** 41 archivos de test, 321 tests, `pnpm lint` en 0, `pnpm exec tsc --noEmit` en 0 errores y `pnpm build` verde. Los cuatro, con el typecheck como comando propio.
 
-**Verificación independiente (2026-09-08), sobre `002e7c7`:** `pnpm test` 41 archivos / 321 tests en verde · `pnpm lint` 0 · `pnpm exec tsc --noEmit` 0 errores · `pnpm build` verde. Las cinco columnas de `profiles` y sus `column_default` quedaron en códigos canónicos en la base real.
-
-Sobre esa verificación se corrigió un borde: `ProfileContext.updateProfile` pasa a tipar `UpdateProfileInput` en lugar de `Partial<ProfileData>`. Ese `Partial` incluía `planName`, `userId` y `createdAt`, que el `.strict()` del esquema rechaza en runtime sin aviso del compilador; era una trampa armada para quien construya la UI de `/perfil`.
+**`master` no está pusheado:** el trabajo vive local, por delante de `origin/master`. El push queda a tu criterio.
 
 **Próximo paso de desarrollo:**
-1.  Merge a `master` y congelamiento de sección en `registro/`.
-2.  Retomar la consolidación multimoneda en rondas posteriores cuando existan las tablas de riqueza y deudas.
+El módulo lo define el artifact de la hoja de ruta, no este documento. Lo que **no** corresponde tomar todavía es el resto del RFC 015: la consolidación multimoneda de su §4 consulta `wealthAssets` y `loans`, y ninguna de las dos tablas existe. Se retoma cuando estén las tablas de riqueza y deudas.
 
-**Pendiente menor detectado al verificar, no ejecutado:** el catálogo de `preferences.ts` (`etiquetaDe`, `PREFERENCE_CATALOG`, `LABEL_TO_CODE_MAP`) todavía no tiene consumidor de producción — sólo tests —, porque `/perfil` quedó fuera de alcance; y `formatCurrency` no protege el locale contra un valor heredado no-BCP-47 que el `ELSE` del backfill haya preservado. Ninguno es bug activo con los datos de hoy.
+**Pendientes menores heredados de la ronda**, anotados en el registro y sin ejecutar: el catálogo de `preferences.ts` todavía no tiene consumidor de producción (sólo tests) porque `/perfil` quedó fuera de alcance, `formatCurrency` no protege el locale contra un valor heredado no-BCP-47, y `roundAmounts` se guarda pero nadie lo lee.
 
 > **Corrección de rumbo (2026-09-07):** este documento venía proponiendo Tarjetas o Metas como próximo
 > módulo, en contra del artifact. **Tarjetas (RFC 007) es Fase 2 y Metas (RFC 011) es Fase 3.** Metas
