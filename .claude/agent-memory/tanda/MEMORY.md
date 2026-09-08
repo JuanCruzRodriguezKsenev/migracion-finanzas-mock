@@ -59,6 +59,16 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 *   **Nada de `kind` en `financial_entities`.** La especie (banco/billetera/tarjeta) es del instrumento,
     no de la institución: una marca emite varios. Ya vive en `contact_payment_methods.type`.
 
+## Cómo se cierra una rama en este repo
+
+*   **La historia es estrictamente lineal: cero merge commits.** La convención es fast-forward, y las
+    ramas se encadenan una sobre otra en vez de salir todas de `master`. Verificar con
+    `git log --merges --oneline` (vacío) antes de proponer cualquier `--no-ff`.
+*   **Consolidar ramas no es sólo mergear.** Se escribe `docs/registro/YYYY-MM-DD-<nombre>.md` con
+    fecha de consolidación, rama base, **resultado global** (tests / lint / build) y detalle por tanda
+    con su commit; y las secciones cerradas se podan de `trabajo-en-vuelo.md`, que sólo lleva lo vivo.
+    Modelo a copiar: `docs/registro/2026-09-06-cierre-tandas-0-a-g.md`.
+
 ## Cómo arranca `obra`
 
 *   **`obra` exige árbol limpio y tiene prohibido cambiar de rama.** La preparación del entorno es
