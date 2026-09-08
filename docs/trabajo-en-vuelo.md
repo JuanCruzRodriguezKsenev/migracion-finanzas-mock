@@ -18,7 +18,7 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 **Batería sobre `master` en `1ba3d37`:** 41 archivos de test, 321 tests, `pnpm lint` en 0, `pnpm exec tsc --noEmit` en 0 errores y `pnpm build` verde. Los cuatro, con el typecheck como comando propio.
 
-**`master` no está pusheado:** el trabajo vive local, por delante de `origin/master`. El push queda a tu criterio.
+**`master` está pusheado** a `origin` el 2026-09-08 (`b28eb08..a4f2539`). La compuerta CI corre sobre ese push.
 
 **Próximo paso de desarrollo:**
 El módulo lo define el artifact de la hoja de ruta, no este documento. Lo que **no** corresponde tomar todavía es el resto del RFC 015: la consolidación multimoneda de su §4 consulta `wealthAssets` y `loans`, y ninguna de las dos tablas existe. Se retoma cuando estén las tablas de riqueza y deudas.
