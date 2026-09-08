@@ -111,8 +111,10 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 ## Estado
 
 *   Rama `feat/preferencias-canonicas` (sale de `master`), limpia y commiteada. **Plan escrito en
-    `docs/planes/normalizar-preferencias-perfil.md`, bloqueado por aprobación**: el RFC 015 sigue en
-    `DRAFT` y `obra` no debe tocar código hasta que pase a `APPROVED`.
+    `docs/planes/normalizar-preferencias-perfil.md` y listo para `obra`.**
+*   **El RFC 015 pasó a `APPROVED` el 2026-09-08**, a pedido explícito del usuario y sobre el texto
+    enmendado. **Ya no queda ningún RFC en `DRAFT`: los 21 están aprobados.** Es la primera vez que el
+    proyecto no tiene una propuesta frenando código.
 *   **El RFC 015 fue enmendado el 2026-09-08** con una §0 de contraste. Los RFCs de junio 2026 dan por
     ciertas cosas que ya no lo son: éste proponía crear preferencias en `users` (viven en `profiles`),
     una columna `password` (hoy `password_hash`+`salt`+`hash_params`, commit `0176d86`) y un algoritmo
@@ -125,6 +127,9 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     la alternativa de ponerla en `organizations`.
 *   **Tarjetas (007) es Fase 2 y Metas (011) es Fase 3.** Metas en fase temprana es el error que el
     artifact le señala al `ROADMAP.md` viejo.
-*   **El artifact quedó desactualizado** (dice 298 tests y ramas sin mergear). Releerlo con
-    `action: "read"` antes de editarlo y republicar con su `url`; no crear uno nuevo.
+*   **El artifact está sincronizado al 2026-09-08**: 305 tests, `master` consolidado, RFC 015
+    aprobado y ninguno en DRAFT, nodo 015 del grafo pasado de bloqueado a aprobado-sin-construir.
+    Releerlo con `action: "read"` antes de editarlo y republicar con su `url`; no crear uno nuevo.
+    **Republicarlo exige leer el archivo guardado entero** (~1130 líneas) o el publish se rechaza:
+    editar una copia en `/tmp` y dejar intacto el original que baja `action: "read"`.
 *   Pendiente propio: revisar duplicación entre `ARCHITECTURE.md` y `.agents/AGENTS.md` §2–§5.
