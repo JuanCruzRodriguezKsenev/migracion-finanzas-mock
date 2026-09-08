@@ -2,9 +2,11 @@
 
 *   **ID de la Propuesta:** 015
 *   **Título:** Módulo de Perfil del Usuario, Preferencias de Formateo y Algoritmo de Patrimonio Neto Consolidado
-*   **Estado:** `DRAFT` (Enmienda 2026-09-08 — Contraste contra el esquema real)
+*   **Estado:** `APPROVED` (2026-09-08, aprobado por el usuario tras la enmienda de contraste)
 *   **Fecha de Creación:** 2026-06-22
 *   **Fecha de Enmienda:** 2026-09-08
+*   **Fecha de Aprobación:** 2026-09-08 — aprobado por el usuario sobre el texto enmendado. El alcance
+    aprobado es el de la Sección 1 (*Alcance de la primera ronda*): objetivos 1 y 2 únicamente.
 *   **Autor:** Antigravity (AI Coding Assistant)
 
 > [!IMPORTANT]
