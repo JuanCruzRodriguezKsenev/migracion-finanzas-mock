@@ -28,3 +28,17 @@ autocargado en toda sesión.
 ese archivo es invisible para todos los clientes — señalalo. Y al escribir agentes, la regla genérica
 es: *lo que cita `§N` de otro archivo es referencia, no contenido; hay que seguir la ruta*. Está
 incorporada a `tanda` §3 y `obra` §4. Ver [[flota-de-agentes]].
+
+## El router hace falta para cada tipo de artefacto, no sólo para las reglas (2026-09-07)
+
+`.agents/skills/vercel-react-best-practices` estaba en el repo con un `SKILL.md` válido y **ninguna
+sesión la podía invocar**: no había `.claude/skills/`. Mismo patrón que el `AGENTS.md` huérfano, un
+piso más abajo. Resuelto con la convención que el usuario ya usaba a nivel de usuario
+(`~/.claude/skills/frontend-design -> ~/.agents/skills/frontend-design`): un symlink relativo
+`.claude/skills/<nombre> -> ../../.agents/skills/<nombre>`, que git versiona como symlink.
+
+**How to apply:** en cualquier repo suyo, `ls .agents/` y verificá que **cada** subdirectorio tenga su
+router: `AGENTS.md` en la raíz para las reglas, `.claude/skills/` con symlinks para las skills. Y ojo
+con el arranque: crear `.claude/skills/` cuando no existía **exige reiniciar** — el observador sólo
+cubre directorios que ya estaban. Además, una skill se carga cuando se invoca o matchea: si la regla
+tiene que aplicar **siempre**, va en `AGENTS.md`, no en una skill.

@@ -59,6 +59,17 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 *   **Nada de `kind` en `financial_entities`.** La especie (banco/billetera/tarjeta) es del instrumento,
     no de la institución: una marca emite varios. Ya vive en `contact_payment_methods.type`.
 
+## Cómo consultarle al usuario
+
+*   **El mapa completo primero, la decisión después.** No pongas un `AskUserQuestion` arriba de la
+    mesa hasta que el usuario tenga claro qué hay hoy y dónde está el hueco. El 2026-09-07 `forja` le
+    disparó una consulta con cuatro opciones antes de explicar el ciclo completo y lo cortó en seco
+    (*"para para y entonces a `verificador` cuando lo uso?"*): le faltaba una pieza y no podía elegir
+    sobre un mapa incompleto. Contestada esa pregunta, decidió todo en un mensaje.
+    El orden es *qué hay → cómo funciona → dónde está el hueco → recién ahí, qué hacemos*.
+*   **Cuando corta con "pará", no reinsistas con la pregunta:** contestá lo que preguntó y recién
+    después volvé.
+
 ## Cómo se cierra una rama en este repo
 
 *   **La historia es estrictamente lineal: cero merge commits.** La convención es fast-forward, y las
