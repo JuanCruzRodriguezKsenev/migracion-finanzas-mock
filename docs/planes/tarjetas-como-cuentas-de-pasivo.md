@@ -3,7 +3,7 @@
 *   **Fase:** 2 — El lado de los pasivos
 *   **RFC:** [`007-cards-management.md`](../proposals/007-cards-management.md) · `APPROVED` (2026-06-23)
 *   **Rama:** `feat/tarjetas`, sale de `master` en `e4d8cb3`
-*   **Estado del plan:** escrito y contrastado contra el esquema real. **No ejecutable todavía**: el RFC necesita cuatro enmiendas que sólo el usuario aprueba. Ver § Enmiendas.
+*   **Estado del plan:** **listo para ejecutar.** Contrastado contra el esquema real, y la enmienda que necesitaba el RFC quedó aprobada por el usuario el 2026-09-08.
 
 ---
 
@@ -39,11 +39,10 @@ Una cuenta tiene **una** divisa. Por eso el cambio de divisas se registra contra
 `3.3.01-<MONEDA>` y las contrapartidas de gasto se crean por divisa (`5.1.01.99-<MONEDA>`). Una
 tarjeta con saldo dual no es una cuenta: **son dos**, una por moneda, colgando de la misma tarjeta.
 
-## Enmiendas que el RFC necesita antes de ejecutar esto
+## Enmiendas al RFC, ya aprobadas
 
-**Escritas en el RFC el 2026-09-08, en `DRAFT` y pendientes de aprobación.** El RFC sigue `APPROVED`
-en todo lo que la enmienda no toca; las secciones enmendadas (§2, §7A y §7B) **no habilitan código
-hasta que el usuario las apruebe**. Son cuatro:
+**Escritas y aprobadas por el usuario el 2026-09-08.** El texto vigente de §2, §7A y §7B es el
+enmendado; las versiones de junio quedan como registro y no se copian. Fueron cuatro:
 
 1.  **§2 — Rutas de import**: `accounts` y `organizations` se importan de `@/features/accounting/schema.db` y `@/features/auth/schema.db`.
 2.  **§2 — Tipos monetarios**: `creditLimit`, `monthlyMaintenanceFee` y `annualRenewalFee` pasan a `bigint( ... , {mode: "number"} )`. Las tasas (`interestRateFinancing`, `interestRatePenalty`) **se quedan en `integer`**: son puntos básicos ×100, no dinero, igual que `year` y `month`.
@@ -51,8 +50,7 @@ hasta que el usuario las apruebe**. Son cuatro:
 4.  **§7B — Saldo dual**: se reescribe contra el motor real. Una tarjeta con saldo en dos monedas tiene **una cuenta de pasivo por moneda**; el saldo dual se obtiene recorriendo las cuentas de la tarjeta, no agrupando los asientos de una sola.
 
 El contraste completo quedó asentado en la **Sección 0** del propio RFC, con la cita del motor que
-hace irrealizable el §7B original. Hasta que las cuatro estén aprobadas, esto es un plan, no una
-orden de trabajo.
+hace irrealizable el §7B original.
 
 ---
 

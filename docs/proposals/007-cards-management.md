@@ -2,22 +2,24 @@
 
 *   **ID de la Propuesta:** 007
 *   **Título:** Modelado Avanzado de Tarjetas, Ciclos de Cierre/Vencimiento, Intereses y Cumplimiento de Seguridad
-*   **Estado:** `APPROVED` (Aprobado - 2026-06-23) · **Enmienda de contraste del 2026-09-08 en `DRAFT`, pendiente de aprobación del usuario.**
+*   **Estado:** `APPROVED` (2026-06-23, y de nuevo el 2026-09-08 sobre el texto enmendado)
 *   **Fecha de Creación:** 2026-06-22
-*   **Fecha de Enmienda:** 2026-09-08 — redactada, **no aprobada**
+*   **Fecha de Enmienda:** 2026-09-08
+*   **Fecha de Aprobación de la Enmienda:** 2026-09-08 — aprobada por el usuario. Habilita código
+    contra §2, §7A y §7B en su redacción enmendada.
 *   **Autor:** Antigravity (AI Coding Assistant)
 
 > [!IMPORTANT]
-> **Enmienda de Contraste (2026-09-08) — pendiente de aprobación.**
+> **Enmienda de Contraste (2026-09-08) — aprobada por el usuario.**
 > Este RFC se redactó el 2026-06-22, **antes del core contable de partida doble**. Al contrastarlo
-> archivo por archivo contra el esquema real, **cuatro de sus puntos describen un sistema que no es
-> el que existe**, y uno de ellos —el saldo dual del §7B— es directamente irrealizable con el motor
-> actual. El detalle está en la Sección 0.
+> archivo por archivo contra el esquema real, **cuatro de sus puntos describían un sistema que no es
+> el que existe**, y uno de ellos —el saldo dual del §7B— era directamente irrealizable con el motor
+> actual. El detalle del contraste está en la Sección 0.
 >
-> El RFC sigue `APPROVED` en lo que no toca esta enmienda. **Las secciones marcadas como enmendadas
-> (§2, §7A y §7B) no habilitan código hasta que el usuario apruebe la enmienda**, según la regla del
-> repositorio: las enmiendas quedan en `DRAFT` hasta que las apruebe el usuario, y no las aprueba el
-> agente.
+> **El texto vigente es el enmendado.** §2, §7A y §7B se leen en su redacción de esta enmienda; las
+> versiones de junio quedan sólo como registro de la decisión y **no se copian**. El resto del RFC
+> —§3 seguridad, §4 ciclos, §5 intereses, §6 comisiones y §8 interfaz— se sostiene sin cambios desde
+> su aprobación original.
 
 ---
 
@@ -76,7 +78,7 @@ Para un SaaS financiero escalable, automatizar el cálculo de estos ciclos, aler
 
 ## 2. Esquema de Base de Datos (Drizzle ORM)
 
-> **Reescrito en la enmienda del 2026-09-08 (pendiente de aprobación).** La versión anterior importaba
+> **Reescrito en la enmienda aprobada del 2026-09-08.** La versión anterior importaba
 > `accounts` de una carpeta que no existe y declaraba tres columnas monetarias en `integer`, contra el
 > `bigint` que impuso el RFC 019. Además modelaba **una sola cuenta por tarjeta**, lo que hace
 > irrealizable el saldo dual de §7. El texto original queda reemplazado por lo que sigue.
@@ -233,7 +235,7 @@ export const ledgerEntries = pgTable("ledger_entries", {
 
 ### B. Cálculo Dinámico de Balances
 
-> **Reescrito en la enmienda del 2026-09-08 (pendiente de aprobación).** La consulta original agrupa
+> **Reescrito en la enmienda aprobada del 2026-09-08.** La consulta original agrupa
 > por divisa los apuntes de **una** cuenta. Sobre el motor real esa consulta **sólo puede devolver una
 > fila**: `createLedgerTransaction` rechaza con excepción todo asiento cuya moneda no sea la de su
 > cuenta, así que los apuntes de una cuenta son siempre de una única divisa. El `GROUP BY` no está
