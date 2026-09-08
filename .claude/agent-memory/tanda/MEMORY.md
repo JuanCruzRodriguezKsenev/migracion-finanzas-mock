@@ -90,20 +90,21 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Estado
 
-*   Rama `fix/entidades-financieras`, **plan ejecutado y verificado de forma independiente el
-    2026-09-07**: 39 archivos de test, 305 tests, lint 0, `tsc --noEmit` 0 errores, build verde.
-    Los cuatro corridos por `verificador`, con el typecheck como comando propio.
-*   **`verificador` ya corre en `model: sonnet`**, declarado en `~/.claude/agents/verificador.md`.
-    El pendiente de evaluarlo está cerrado; `trabajo-en-vuelo.md` todavía lo lista como abierto.
-*   Pendiente propio: revisar duplicación entre `ARCHITECTURE.md` y `.agents/AGENTS.md` §2–§5.
-*   **Tres ramas encadenadas pendientes de merge a master, en este orden**:
-    `feat/contacts-management` → `chore/gobernanza-reglas-neutrales` → `fix/entidades-financieras`.
-    `master` no recibió ninguna.
-*   **La Fase 1 NO está cerrada.** Falta el **RFC 015 (perfil, preferencias y consolidación
-    multimoneda)**, único RFC en `DRAFT` de los 21 y único bloqueo formal. No hay una sola línea de
-    consolidación en `src/`.
+*   **`master` es la rama viva y no hay trabajo a medias** (2026-09-08). Las tres ramas encadenadas se
+    consolidaron por fast-forward: `b28eb08..ef21cf9`, 23 commits. Detalle congelado en
+    `docs/registro/2026-09-08-cierre-transacciones-contactos-entidades.md`.
+*   **Batería sobre `master` en `ef21cf9`:** 39 archivos, 305 tests, lint 0, `tsc --noEmit` 0, build
+    verde. Corrida por `verificador` con el typecheck como comando propio.
+*   **Próximo paso: RFC 015 (perfil, preferencias y consolidación multimoneda).** Único DRAFT de los
+    21 y único bloqueo formal de la Fase 1; no hay una sola línea de consolidación en `src/`.
+    **Necesita aprobación del usuario antes de escribir código**, y hay que contrastarlo contra
+    `src/features/*/schema.db.ts` porque los RFCs de junio traen esquemas anteriores al core contable.
 *   **Tarjetas (007) es Fase 2 y Metas (011) es Fase 3.** Metas en fase temprana es justo el error que
     el artifact le señala al `ROADMAP.md` viejo.
-*   **El artifact está sincronizado al 2026-09-07** (18 ítems pendientes, 5 de 17 rutas, Fase 0
-    completa). Los números de tests quedaron en 298 y hoy son 305. Releerlo con `action: "read"`
-    antes de volver a editarlo.
+*   **El artifact quedó desactualizado tras la consolidación** (dice 298 tests y ramas sin mergear;
+    hoy son 305 y `master` tiene todo). Releerlo con `action: "read"` antes de editarlo y republicar
+    con su `url`; no crear uno nuevo.
+*   Pendiente propio: revisar duplicación entre `ARCHITECTURE.md` y `.agents/AGENTS.md` §2–§5.
+*   **Al delimitar un rango para un registro aparecen commits que la tabla de estado nunca nombró**
+    (esta vez `0176d86`, endurecimiento de autenticación). El `git log` del rango es la fuente, no la
+    tabla de tandas.
