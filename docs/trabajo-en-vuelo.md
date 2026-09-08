@@ -12,14 +12,18 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `master`. No hay trabajo a medias.
+**Rama activa:** `feat/preferencias-canonicas` (sale de `master`). Plan escrito y listo para ejecutar: [`planes/normalizar-preferencias-perfil.md`](planes/normalizar-preferencias-perfil.md).
 
-**Estado:** 🟢 **Las tres ramas encadenadas quedaron consolidadas en `master` el 2026-09-08**, por fast-forward y sin conflictos: `feat/contacts-management` → `chore/gobernanza-reglas-neutrales` → `fix/entidades-financieras`. Son 23 commits (`b28eb08..ef21cf9`) que cubren el módulo de transacciones, el soporte multimoneda, el despachador Outbox, la Fase 0 completa, la agenda de contactos, la gobernanza de agentes y la corrección del alta de entidades financieras. El detalle congelado está en [`registro/2026-09-08-cierre-transacciones-contactos-entidades.md`](registro/2026-09-08-cierre-transacciones-contactos-entidades.md).
+**Estado:** 🟡 **Planificado, bloqueado por aprobación.** El RFC 015 fue contrastado archivo por archivo contra el esquema real y **enmendado el 2026-09-08**: describía preferencias a crear en `users` que ya existen en `profiles`, proponía una columna `password` que el endurecimiento de autenticación (`0176d86`) reemplazó por `password_hash`+`salt`+`hash_params`, y su algoritmo de consolidación consulta `wealthAssets` y `loans`, dos tablas que no existen. **El RFC sigue en `DRAFT`: no se escribe una línea de código hasta que pase a `APPROVED`.**
+
+La primera ronda cubre sólo los objetivos 1 y 2 del RFC: normalizar las preferencias de `profiles` de etiquetas de interfaz (`'Peso argentino (ARS)'`, `'1.234,56'`, `'Lunes'`) a códigos canónicos (`'ARS'`, `'es-AR'`, `'monday'`), y cablearlas al formateo — hoy las ocho llamadas a `formatCurrency` pasan `"es-AR"` escrito en duro, de modo que **ninguna preferencia del usuario afecta a nada**. Incluye cerrar la validación ausente de `updateProfileAction`, que hoy permite que un cliente se cambie el plan comercial.
+
+**Fuera de alcance, y nombrado para que no se filtre:** `exchange_rates` y la consolidación de patrimonio (dependen de tablas inexistentes), multi-workspace (`users.organization_id` es `NOT NULL`; es cambio de modelo, RFC propio) y la ruta `/perfil`.
 
 **Próximo paso de desarrollo:**
-Retomar la **Fase 1** con el **RFC 015 — perfil, preferencias y consolidación multimoneda**: es el único RFC en `DRAFT` de los 21 y el único bloqueo formal que impide dar la fase por cerrada. Hoy no hay una sola línea de consolidación multimoneda en `src/`. **El RFC necesita tu aprobación antes de que se escriba código contra él**; ningún agente lo aprueba por su cuenta.
-
-Al planificarlo, arrancar por contrastar el RFC contra `src/features/*/schema.db.ts`: los RFCs de junio traen esquemas anteriores al core contable y ya pasó una vez que uno redefiniera `accounts` con un tipo que hoy sería incorrecto.
+1.  **Aprobar el RFC 015** (`docs/proposals/015-user-profile-and-preferences.md`) pasándolo de `DRAFT` a `APPROVED`. Es decisión del usuario; ningún agente lo aprueba por su cuenta.
+2.  Ejecutar el plan con `obra`.
+3.  Al cerrar, retomar la consolidación multimoneda cuando existan las tablas de riqueza y deudas.
 
 > **Corrección de rumbo (2026-09-07):** este documento venía proponiendo Tarjetas o Metas como próximo
 > módulo, en contra del artifact. **Tarjetas (RFC 007) es Fase 2 y Metas (RFC 011) es Fase 3.** Metas
