@@ -16,6 +16,9 @@ import { FormActions }  from "@/shared/ui/forms/Form/FormActions" ;
 import { Button }       from "@/shared/ui/display/Button/Button" ;
 import { formatCurrency } from "@/shared/lib/currencyFormatter" ;
 
+// Feature: Profile
+import { useProfileContext } from "@/features/profile/context/ProfileContext" ;
+
 // Feature: Accounting
 import { TransactionWithEntries } from "@/features/accounting/repositories/ledgerRepository" ;
 import { Account , Category }     from "@/features/accounting/types" ;
@@ -53,6 +56,8 @@ function TransactionDetailContent( {
   accounts ,
   categories ,
 }: TransactionDetailContentProps ) {
+  const { profile }                     = useProfileContext() ;
+  const locale                          = ( profile?.numberFormat || "es-AR" ) ;
   const [ isPending , startTransition ] = useTransition() ;
 
   // Una transacción ya reversada no vuelve a reversarse: el servicio lo rechaza, y ofrecer el botón
@@ -182,10 +187,10 @@ function TransactionDetailContent( {
                 <tr key={entry.id || `entry-${index}`}>
                   <td>{acc ? `${acc.name} (${acc.type})` : entry.accountId.slice( 0 , 8 )}</td>
                   <td className={styles.alignRight}>
-                    {entry.debit > 0 ? formatCurrency( entry.debit , entry.currency || "ARS" , "es-AR" ) : "—"}
+                    {entry.debit > 0 ? formatCurrency( entry.debit , entry.currency || "ARS" , locale ) : "—"}
                   </td>
                   <td className={styles.alignRight}>
-                    {entry.credit > 0 ? formatCurrency( entry.credit , entry.currency || "ARS" , "es-AR" ) : "—"}
+                    {entry.credit > 0 ? formatCurrency( entry.credit , entry.currency || "ARS" , locale ) : "—"}
                   </td>
                 </tr>
               ) ;

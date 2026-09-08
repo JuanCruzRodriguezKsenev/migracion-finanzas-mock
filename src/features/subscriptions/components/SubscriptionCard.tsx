@@ -12,6 +12,9 @@ import React from "react" ;
 // Shared
 import { formatCurrency } from "@/shared/lib/currencyFormatter" ;
 
+// Feature: Profile
+import { useProfileContext } from "@/features/profile/context/ProfileContext" ;
+
 // Feature: Subscriptions
 import { SubscriptionWithStats } from "../types" ;
 import { SubscriptionBadge }     from "./SubscriptionBadge" ;
@@ -44,10 +47,12 @@ export function SubscriptionCard( {
   onEdit ,
   onDelete ,
 }: SubscriptionCardProps ) {
-  const config = getLogoConfig( subscription.logoKey ) ;
+  const { profile }  = useProfileContext() ;
+  const locale       = ( profile?.numberFormat || "es-AR" ) ;
+  const config       = getLogoConfig( subscription.logoKey ) ;
 
-  const monthlyLabel = formatCurrency( subscription.monthlyAmount , subscription.currency , "es-AR" ) ;
-  const yearlyLabel  = `~${formatCurrency( subscription.yearlyAmount , subscription.currency , "es-AR" )}${yearlySuffix}` ;
+  const monthlyLabel = formatCurrency( subscription.monthlyAmount , subscription.currency , locale ) ;
+  const yearlyLabel  = `~${formatCurrency( subscription.yearlyAmount , subscription.currency , locale )}${yearlySuffix}` ;
 
   return(
     <div

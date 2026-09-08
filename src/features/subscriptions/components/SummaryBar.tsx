@@ -19,6 +19,7 @@ interface SummaryBarProps {
   monthlyLabel:     string ;
   yearlyLabel:      string ;
   currency?:        string ;
+  locale?:          string ;
 }
 
 /**
@@ -30,6 +31,7 @@ export function SummaryBar( {
   monthlyLabel ,
   yearlyLabel ,
   currency = "ARS" ,
+  locale = "es-AR" ,
 }: SummaryBarProps ) {
   return(
     <div className={styles.summaryBar}>
@@ -38,7 +40,7 @@ export function SummaryBar( {
           { monthlyLabel }
         </p>
         <p className={styles.totalPrice}>
-          { formatCurrency( totalMonthly , currency , "es-AR" ) }
+          { formatCurrency( totalMonthly , currency , locale ) }
         </p>
       </div>
       <div className={styles.rightSection}>
@@ -46,7 +48,7 @@ export function SummaryBar( {
           { yearlyLabel }
         </p>
         <p className={styles.yearlyPrice}>
-          { formatCurrency( totalYearly , currency , "es-AR" ) }
+          { formatCurrency( totalYearly , currency , locale ) }
         </p>
       </div>
     </div>

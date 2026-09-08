@@ -16,6 +16,9 @@ import { formatCurrency }              from "@/shared/lib/currencyFormatter" ;
 import { TransactionWithEntries }                      from "@/features/accounting/repositories/ledgerRepository" ;
 import { Account , Category , FinancialEntity }         from "@/features/accounting/types" ;
 
+// Feature: Profile
+import { useProfileContext } from "@/features/profile/context/ProfileContext" ;
+
 // Feature: Transactions
 import { calcularResumenTransaccion } from "../utils/derivarTipo" ;
 import styles                         from "./Transactions.module.css" ;
@@ -111,6 +114,8 @@ export function TransactionsTable( {
   loading = false ,
   onSelectTransaction ,
 }: TransactionsTableProps ) {
+  const { profile }   = useProfileContext() ;
+  const locale        = ( profile?.numberFormat || "es-AR" ) ;
   const accountsMap   = new Map( accounts.map( ( a ) => [ a.id , a ] ) ) ;
   const categoriesMap = new Map( categories.map( ( c ) => [ c.id , c ] ) ) ;
   const entitiesMap   = new Map( financialEntities.map( ( e ) => [ e.id , e ] ) ) ;
@@ -236,14 +241,14 @@ export function TransactionsTable( {
       render: ( tx ) => {
         const resumen  = calcularResumenTransaccion( tx.entries , accountsMap ) ;
         const currency = resumen.currency || "ARS" ;
-        const formatted = formatCurrency( Math.abs( resumen.amountInCents ) , currency , "es-AR" ) ;
+        const formatted = formatCurrency( Math.abs( resumen.amountInCents ) , currency , locale ) ;
 
         // Un cambio tiene dos importes en dos monedas: mostrar uno solo escondería la operación.
         if( resumen.type === "exchange" ) {
           const recibido = formatCurrency(
             Math.abs( resumen.destinationAmountInCents || 0 ) ,
             resumen.destinationCurrency || currency ,
-            "es-AR"
+            locale
           ) ;
 
           return(

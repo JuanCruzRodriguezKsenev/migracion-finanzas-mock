@@ -155,3 +155,24 @@ Los archivos que implementan este patrón son:
 Siguiendo el precedente establecido en `ledger_transactions` (`merchantName` / `merchantDomain`), las entidades que consumen logotipos externos separan explícitamente el nombre visible del dominio web:
 *   `financial_entities` almacena `name` (nombre de la institución), `brand_domain` (dominio web para Brandfetch) y `logo` (icono local de respaldo: `bank`, `wallet`, `cash`, `credit-card`).
 *   [`InstitutionLogo`](../src/shared/ui/display/InstitutionLogo/InstitutionLogo.tsx) recibe la propiedad opcional `brandDomain` para resolver sincrónicamente la CDN de Brandfetch sin depender de inspección heurística de cadenas (`includes( "." )`), manteniendo la deducción heurística únicamente como fallback de compatibilidad para registros previos.
+
+---
+
+## 6. Preferencias Canónicas y Derivación en el Borde (Canonical Preferences & Edge Labeling)
+
+Para evitar que cadenas de presentación de la interfaz (como `'Peso argentino (ARS)'`, `'(GMT-03:00) Buenos Aires'` o `'1.234,56'`) se filtren a la base de datos o impidan la integración con APIs estándar de internacionalización como `Intl`, FinanzIA separa estrictamente el almacenamiento canónico del dato de su representación visual:
+
+### Reglas e Invariantes
+1.  **La base de datos almacena únicamente códigos canónicos normalizados:**
+    *   `currency`: Códigos ISO 4217 (`'ARS'`, `'USD'`).
+    *   `timezone`: Identificadores de zona horaria IANA (`'America/Argentina/Buenos_Aires'`).
+    *   `number_format`: Etiquetas de locale BCP 47 (`'es-AR'`, `'en-US'`).
+    *   `weekly_start`: Identificadores de día canónicos (`'monday'`, `'sunday'`).
+    *   `default_view`: Slugs de ruta normalizados (`'dashboard'`, `'transactions'`).
+2.  **La derivación a etiquetas en español ocurre en el borde de interfaz:**
+    *   El módulo [`preferences.ts`](../src/features/profile/preferences.ts) centraliza el catálogo de opciones y la función pura `etiquetaDe( grupo , code )`.
+    *   Si un valor no está catalogado o es desconocido, el sistema recurre al propio código o a un respaldo seguro (`"es-AR"`) sin lanzar excepciones.
+3.  **Validación estricta en mutaciones:**
+    *   [`profile.schema.ts`](../src/features/profile/schemas/profile.schema.ts) valida mediante `z.enum()` sobre los códigos canónicos con modo estricto (`.strict()`), impidiendo que peticiones cliente reintroduzcan etiquetas de presentación.
+    *   Excluye campos de suscripción comercial (`planName`, `planBilling`, `planNextCharge`) para proteger la integridad comercial del SaaS.
+

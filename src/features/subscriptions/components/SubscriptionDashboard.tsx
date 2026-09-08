@@ -16,6 +16,9 @@ import { EmptyState }         from "@/shared/ui/feedback/EmptyState/EmptyState" 
 import { Button }             from "@/shared/ui/display/Button/Button" ;
 import { FormError }          from "@/shared/ui/forms/Form/FormError" ;
 
+// Feature: Profile
+import { useProfileContext } from "@/features/profile/context/ProfileContext" ;
+
 // Feature: Subscriptions
 import { useSubscriptions }  from "../hooks/useSubscriptions" ;
 import { SubscriptionCard }  from "./SubscriptionCard" ;
@@ -54,6 +57,8 @@ const WEIGHT_OFFSET = 500 ;
  * Dashboard de treemap de suscripciones con mutaciones optimistas.
  */
 export function SubscriptionDashboard( { initialData , dict }: SubscriptionDashboardProps ) {
+  const { profile }                                 = useProfileContext() ;
+  const locale                                      = ( profile?.numberFormat || "es-AR" ) ;
   const { summary , error , add , update , remove } = useSubscriptions( initialData ) ;
   const [ modalOpen , setModalOpen ] = useState( false ) ;
   const [ editingId , setEditingId ] = useState< string | null >( null ) ;
@@ -203,6 +208,7 @@ export function SubscriptionDashboard( { initialData , dict }: SubscriptionDashb
         totalYearly={summary.totalYearly}
         monthlyLabel={dict.totalMonthLabel}
         yearlyLabel={dict.yearlyProjectionLabel}
+        locale={locale}
       />
 
       {/* Modal con datos de edición cuando corresponde (key fuerza remount limpio) */}
