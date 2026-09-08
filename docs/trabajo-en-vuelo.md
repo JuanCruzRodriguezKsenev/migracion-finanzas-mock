@@ -12,63 +12,20 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `fix/entidades-financieras` (sale de `chore/gobernanza-reglas-neutrales`). Ejecutó [`planes/fix-entidades-financieras.md`](planes/fix-entidades-financieras.md): partir el alta de entidades, asiento de apertura contra `3.1.01.01`, columna `brand_domain` y variante del formulario para el flujo de contactos.
+**Rama activa:** `master`. No hay trabajo a medias.
 
-**Ramas pendientes de merge, en este orden:** `feat/contacts-management` → `chore/gobernanza-reglas-neutrales` → `fix/entidades-financieras`. Cada una es ancestro de la siguiente, y `master` todavía no recibió ninguna.
-
-**Estado:** 🟢 **Corrección del alta de entidades financieras completada y verificada de forma independiente.** `createFinancialEntityAction` es alta pura a nivel organización, sin cuentas espurias. La nueva `createAccountForEntityAction` garantiza partida doble emitiendo asiento contra Patrimonio Neto (`3.1.01.01`) ante saldo inicial mayor a cero, y verifica que esa cuenta exista **antes** de crear nada. Columna `brand_domain` (`varchar(100)`) con migración `0020_soft_fixer.sql` y backfill de dominios históricos. `CreateFinancialEntityForm` con prop `withOwnAccount` (en `false` desde `PaymentMethodsPanel`) y guard del selector de íconos. `InstitutionLogo` resuelve por `brandDomain` directo.
-
-**Batería al cerrar la ronda:** 39 archivos de test, 305 tests, `pnpm lint` en 0, `pnpm exec tsc --noEmit` en 0 errores y `pnpm build` verde. Los cuatro corridos por `verificador`, con el typecheck como comando propio.
-
-**Cierre de hallazgos de la ejecución:**
-* `TransactionsTable.tsx` era el único de los cuatro consumidores de `InstitutionLogo` que no recibía `brandDomain`: con `logo` degradado a nombre de ícono, la columna de cuenta perdía la resolución directa de marca que sí tienen `/accounts` y `/contacts`. Corregido.
-* Entidad de diagnóstico `kk` y su `Cuenta Principal kk` (`1.1.01.03`, 3 centavos, 0 asientos) **eliminadas** de la base local. No quedan cuentas con saldo sin asiento respaldatorio.
-* Dos contratos internos que la ejecución descubrió sobre la marcha y que los próximos planes deben nombrar explícitos: el `Result` de `@/shared/lib/result` expone `value` (no `data`), y `createLedgerTransaction` exige `organizationId` explícito en la cabecera.
+**Estado:** 🟢 **Las tres ramas encadenadas quedaron consolidadas en `master` el 2026-09-08**, por fast-forward y sin conflictos: `feat/contacts-management` → `chore/gobernanza-reglas-neutrales` → `fix/entidades-financieras`. Son 23 commits (`b28eb08..ef21cf9`) que cubren el módulo de transacciones, el soporte multimoneda, el despachador Outbox, la Fase 0 completa, la agenda de contactos, la gobernanza de agentes y la corrección del alta de entidades financieras. El detalle congelado está en [`registro/2026-09-08-cierre-transacciones-contactos-entidades.md`](registro/2026-09-08-cierre-transacciones-contactos-entidades.md).
 
 **Próximo paso de desarrollo:**
-Mergear las tres ramas a master en el orden establecido (`feat/contacts-management` → `chore/gobernanza-reglas-neutrales` → `fix/entidades-financieras`) y recién después retomar la **Fase 1** con la aprobación y desarrollo del **RFC 015 — perfil, preferencias y consolidación multimoneda** (único RFC en `DRAFT` y único bloqueo formal de la fase).
+Retomar la **Fase 1** con el **RFC 015 — perfil, preferencias y consolidación multimoneda**: es el único RFC en `DRAFT` de los 21 y el único bloqueo formal que impide dar la fase por cerrada. Hoy no hay una sola línea de consolidación multimoneda en `src/`. **El RFC necesita tu aprobación antes de que se escriba código contra él**; ningún agente lo aprueba por su cuenta.
+
+Al planificarlo, arrancar por contrastar el RFC contra `src/features/*/schema.db.ts`: los RFCs de junio traen esquemas anteriores al core contable y ya pasó una vez que uno redefiniera `accounts` con un tipo que hoy sería incorrecto.
 
 > **Corrección de rumbo (2026-09-07):** este documento venía proponiendo Tarjetas o Metas como próximo
-> módulo, en contra del artifact. Metas en la primera fase es justamente el error que el artifact
-> documenta del `ROADMAP.md` viejo.
+> módulo, en contra del artifact. **Tarjetas (RFC 007) es Fase 2 y Metas (RFC 011) es Fase 3.** Metas
+> en la primera fase es justamente el error que el artifact documenta del `ROADMAP.md` viejo.
 
-**Pendiente de la gobernanza:** revisar la duplicación entre `ARCHITECTURE.md` y
-`.agents/AGENTS.md` §2–§5. (`verificador` ya corre en `model: sonnet`: aplicado y verificado.)
-
-**Estreno de `obra` (2026-09-07):** frenó como se esperaba. Ante el árbol sucio y sin permiso para
-cambiar de rama, devolvió un informe de factibilidad en vez de improvisar. El protocolo de arranque
-funciona; la preparación del entorno (commit de la planificación y creación de la rama) es trabajo
-previo de `tanda`, no suyo.
-
----
-
-## Estado al 2026-09-07
-
-### Plan de punta a punta — FinanzIA
-
-| Tanda | Rama | Estado | Foco principal |
-| :--- | :--- | :---: | :--- |
-| **Tanda 0** | `docs/gobernanza-base` | 🟢 **Cerrada** | `docs/trabajo-en-vuelo.md` y §8 en `.agents/AGENTS.md` (commit `36b0019`) |
-| **Tanda A** | `fix/dashboard-correctitud` | 🟢 **Cerrada** | S1 ({value, monthKey}[]), S2 (ojito), S3 (pct 0.0%), M1 (hoy en server), A5 (summaryCache) (commit `2661f8e`) |
-| **Tanda B** | `fix/dashboard-visual` | 🟢 **Cerrada** | S4 (overflow hero), S5 (cursor tema claro), S6 (formatCents), M7 (px fijos), S8 (flash) (commit `b41b0b3`) |
-| **Tanda C** | `fix/dashboard-i18n-a11y` | 🟢 **Cerrada** | S7/M5 (i18n es/en/br), M5b (Intl labels), M6 (dialog a11y), M4 (todayKey), M8 (clases) (commit `12a9c5c`) |
-| **Tanda D** | `feat/month-selector-limites`| 🟢 **Cerrada** | M2 (ocultar en accounts/subscriptions), M3 (minKey primer mes con datos) (commit `6e7bbe8`) |
-| **Tanda E** | `fix/lint-set-state-in-effect`| 🟢 **Cerrada** | 4 errores ESLint resueltos (NotificationsContext, InstitutionLogo, CreateFinancialEntityForm) (commit `4cdb0ad`) |
-| **Tanda F** | `feat/env-validado` | 🟢 **Cerrada** | `env.ts` con Zod (lazy `obtenerEnv`), eliminar fallback silencioso de `client.ts:15` (commit `70b147d`) |
-| **Tanda G** | `ci/compuerta` | 🟢 **Cerrada** | `.github/workflows/compuerta.yml` con service postgres + `packageManager: pnpm@11.3.0` (commit `a190447`) |
-| **Tanda H** | `docs/canonicos` | 🟢 **Completada** | `patterns.md`, `TECHNICAL_DEBT.md`, `ROADMAP.md`, `docs/adr/`, `docs/registro/` |
-| **Hotfix RSC** | `master` | 🟢 **Cerrada** | Separación isomórfica de `sparklineUtils.ts` (evita límite Server/Client Component en `calcularCambioPorcentual`) |
-| **Regla UI/UX** | `master` | 🟢 **Cerrada** | Prohibición formal de movimientos y escalas en `:hover` (anti-CLS y anti-flicker); saneamiento en 7 archivos CSS |
-| **Saneamiento Previo** | `master` | 🟢 **Cerrada** | S1 definitivo (`SparklinePoint[]` obligatorio, eliminación prop `data`), saneamiento `/accounts`, 23 warnings ESLint a 0 + `--max-warnings 0`, a11y `MonthSelector` (`useId`, sin `aria-modal`), CI verde en remoto. |
-| **Tanda I** | `feat/transactions-management` | 🟢 **Completada** | Módulo de transacciones contables `/transactions`, `occurred_at` con backfill (`0014_real_komodo.sql`), paginación cursor `(occurred_at, id)`, búsqueda/filtros, reversión ACID, primitivas `DataTable` y `SearchInput`, modals de alta y detalle. |
-| **Tanda J** | `feat/transactions-management` | 🟢 **Completada** | Soporte multimoneda (validación Debe=Haber por divisa), cambio de divisas (4 asientos / 2 libros contra `3.3.01-<MONEDA>`), reversión irrepetible con bloqueo `SELECT FOR UPDATE`, columnas `reversed_at` y `reverses_transaction_id` (migración `0015_icy_blizzard.sql`), selector de columnas visibles y badges de marcas. |
-| **Tanda K** | `feat/transactions-management` | 🟢 **Completada** | Despachador Outbox (RFC 020): consumo desacoplado en 3 pasos con `SKIP LOCKED`, recuperación de `PROCESSING` huérfanos, purga histórica, script CLI `pnpm db:outbox` e índice `outbox_status_created_idx` (migración `0016_eminent_roxanne_simpson.sql`). |
-| **Fase 0 (A1)** | `feat/transactions-management` | 🟢 **Completada** | Endurecimiento outbox dispatcher: incremento de intentos y transición a FAILED en huérfanos, protección de asentamiento tardío. |
-| **Fase 0 (A2)** | `feat/transactions-management` | 🟢 **Completada** | Índice único `monthly_summaries_org_year_month_unique` (migración `0017_free_iron_monger.sql`). |
-| **Fase 0 (A3)** | `feat/transactions-management` | 🟢 **Completada** | Regularización RFC 018 a APPROVED con estado de implementación del core contable (migraciones 0012–0016). |
-| **Fase 0 (A4)** | `feat/transactions-management` | 🟢 **Completada** | RFC 019 y migración de 9 columnas monetarias a bigint (modo number, migración `0018_slimy_wiccan.sql`). |
-| **Bloque B** | `feat/contacts-management` | 🟢 **Completada** | Agenda de contactos y métodos de cobro en `/contacts` (RFC 006, migración `0019_tidy_piledriver.sql`, validadores CBU/Alias/CUIT, DAL transitivo multi-tenant, 42 tests nuevos de contactos, 298 tests totales). |
-| **Fix Entidades** | `fix/entidades-financieras` | 🟢 **Completada** | Alta pura de entidades, asiento de apertura contable `3.1.01.01`, columna `brand_domain` (`0020_soft_fixer.sql`), prop `withOwnAccount` en formulario para contactos, `brandDomain` en los 4 consumidores de `InstitutionLogo` (305 tests). |
+**Pendiente de la gobernanza:** revisar la duplicación entre `ARCHITECTURE.md` y `.agents/AGENTS.md` §2–§5.
 
 ---
 
