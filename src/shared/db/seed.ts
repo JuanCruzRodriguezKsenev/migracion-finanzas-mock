@@ -15,6 +15,9 @@ dotenv.config( {path: ".env.local"} ) ;
 import { categories , accounts , ledgerTransactions , ledgerEntries , monthlySummaries , financialEntities } from "@/features/accounting/schema.db" ;
 import { createLedgerTransaction } from "@/features/accounting/services/accountingService" ;
 
+// Feature: Cards
+import { cards , cardAccounts } from "@/features/cards/schema.db" ;
+
 // Feature: Subscriptions
 import { subscriptions } from "@/features/subscriptions/schema.db" ;
 
@@ -35,6 +38,8 @@ async function main() {
     // 1. Garantizar idempotencia limpiando registros previos en el orden correcto
     // Se preservan organizations y users con upsert para no invalidar sesiones JWT activas
     console.log( "Limpiando registros previos..." ) ;
+    await db.delete( cardAccounts       ) ;
+    await db.delete( cards              ) ;
     await db.delete( subscriptions      ) ;
     await db.delete( ledgerEntries      ) ;
     await db.delete( ledgerTransactions ) ;
@@ -274,6 +279,65 @@ async function main() {
         entityId:       entGalicia.id
       } )
       .returning() ;
+
+    // Crear instrumento físico de Tarjeta y vincular cuenta de pasivo (RFC 007)
+    const CARD_DEMO_ID = "c0000000-0000-4000-a000-000000000001" ;
+    const [ tarjetaDemo ] = await db
+      .insert( cards )
+      .values( {
+        id:                    CARD_DEMO_ID ,
+        organizationId:        org.id ,
+        entityId:              entGalicia.id ,
+        linkedAccountId:       ctaBanco.id ,
+        label:                 "Visa Galicia Signature" ,
+        type:                  "credit" ,
+        network:               "visa" ,
+        lastFour:              "4242" ,
+        expiryMonth:           12 ,
+        expiryYear:            2029 ,
+        creditLimit:           500000000 , // $5.000.000,00 ARS
+        closingDay:            25 ,
+        dueDay:                5 ,
+        interestRateFinancing: 8550 , // 85.5% TNA
+        interestRatePenalty:   12000 ,
+        monthlyMaintenanceFee: 0 ,
+        annualRenewalFee:      0 ,
+      } )
+      .onConflictDoUpdate( {
+        target: cards.id ,
+        set: {
+          organizationId:        org.id ,
+          entityId:              entGalicia.id ,
+          linkedAccountId:       ctaBanco.id ,
+          label:                 "Visa Galicia Signature" ,
+          type:                  "credit" ,
+          network:               "visa" ,
+          lastFour:              "4242" ,
+          expiryMonth:           12 ,
+          expiryYear:            2029 ,
+          creditLimit:           500000000 ,
+          closingDay:            25 ,
+          dueDay:                5 ,
+          interestRateFinancing: 8550 ,
+          interestRatePenalty:   12000 ,
+          updatedAt:             new Date() ,
+        } ,
+      } )
+      .returning() ;
+
+    await db
+      .insert( cardAccounts )
+      .values( {
+        cardId:    tarjetaDemo.id ,
+        accountId: ctaTarjeta.id ,
+        currency:  "ARS" ,
+      } )
+      .onConflictDoUpdate( {
+        target: [ cardAccounts.cardId , cardAccounts.currency ] ,
+        set: {
+          accountId: ctaTarjeta.id ,
+        } ,
+      } ) ;
 
     // Cuentas de Patrimonio, Ingresos y Gastos
     const [ ctaPatrimonio ] = await db

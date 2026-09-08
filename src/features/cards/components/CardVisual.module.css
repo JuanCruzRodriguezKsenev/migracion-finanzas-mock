@@ -1,0 +1,253 @@
+/**
+ * @file CardVisual.module.css
+ * Estilos para la representación visual de tarjetas físicas digitales (RFC 007).
+ * Utiliza tokens semánticos, diseño glassmorphism estático y prohíbe transformaciones en :hover.
+ */
+
+.cardContainer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  max-width: clamp(20rem, 18rem + 10vw, 26rem);
+  aspect-ratio: 1.586;
+  border-radius: var(--radius-xl);
+  padding: clamp(1rem, 0.8rem + 1vw, 1.5rem);
+  box-sizing: border-box;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--card-brand-bg, #1e293b) 0%, #0f172a 100%);
+  color: #ffffff;
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.cardContainer:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.glassOverlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 70%);
+  pointer-events: none;
+}
+
+.topRow {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1;
+}
+
+.brandGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cardTypeBadge {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
+}
+
+.chipArea {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  z-index: 1;
+}
+
+.chip {
+  width: clamp(2rem, 1.8rem + 1vw, 2.75rem);
+  height: clamp(1.5rem, 1.3rem + 0.8vw, 2rem);
+  background: linear-gradient(135deg, #fcd34d 0%, #d97706 50%, #b45309 100%);
+  border-radius: var(--radius-xs);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.2);
+}
+
+.numberRow {
+  position: relative;
+  margin-top: auto;
+  margin-bottom: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: clamp(0.9rem, 0.8rem + 0.5vw, 1.25rem);
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.bottomRow {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  z-index: 1;
+}
+
+.cardHolder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  max-width: 65%;
+}
+
+.holderLabel {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 0.05em;
+}
+
+.holderName {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #ffffff;
+}
+
+.expiryGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+}
+
+.expiryLabel {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.expiryValue {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.networkBadge {
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Panel de métricas financieras adjunto a la tarjeta */
+.financialDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  padding: 0.85rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+}
+
+.balanceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.balanceLabel {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.balanceValue {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.progressContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 0.4rem;
+  background: var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width 0.3s ease;
+}
+
+.progressBarAlert {
+  background: var(--color-warning);
+}
+
+.progressMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.metaBadge {
+  font-size: var(--fs-xs);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+
+.datesRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 0.4rem;
+}
+
+.archiveButton {
+  align-self: flex-end;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius-xs);
+  transition: color 0.15s ease;
+}
+
+.archiveButton:hover {
+  color: var(--color-danger);
+}

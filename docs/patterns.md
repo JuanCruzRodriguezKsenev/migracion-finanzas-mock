@@ -176,3 +176,26 @@ Para evitar que cadenas de presentación de la interfaz (como `'Peso argentino (
     *   [`profile.schema.ts`](../src/features/profile/schemas/profile.schema.ts) valida mediante `z.enum()` sobre los códigos canónicos con modo estricto (`.strict()`), impidiendo que peticiones cliente reintroduzcan etiquetas de presentación.
     *   Excluye campos de suscripción comercial (`planName`, `planBilling`, `planNextCharge`) para proteger la integridad comercial del SaaS.
 
+---
+
+## 7. Tarjetas como Cuentas de Pasivo (Cards as Liability Accounts)
+
+Para modelar instrumentos de crédito y débito sin desvirtuar la partida doble ni violar la regla de una única moneda por cuenta contable (RFC 007):
+
+### Reglas e Invariantes
+1.  **Separación entre plástico y libro contable (`cards` y `card_accounts`):**
+    *   `cards` almacena exclusivamente los metadatos del plástico físico (red, últimos 4 dígitos, fechas de expiración, días de cierre/pago y límites). No almacena dinero ni saldo acumulado.
+    *   `card_accounts` vincula el plástico a sus respectivas cuentas contables de pasivo (`type = "liability"`), una fila por divisa. Esto permite saldos duales (ej: pesos ARS y dólares USD) sobre un motor donde cada cuenta tiene una única divisa.
+2.  **La deuda de la tarjeta es el saldo contable negado:**
+    *   En partida doble, un pasivo (`liability`) aumenta con el crédito y disminuye con el débito (`balance + debit - credit`).
+    *   Los consumos acreditan la cuenta de la tarjeta, por lo que su balance contable en la base de datos es **negativo** (ej: `-2500000`).
+    *   La deuda exigible es `-balance` (ej: `+$25.000,00`). La conversión se realiza centralizadamente en `deudaDe( cuenta )` ([`src/features/cards/utils/ciclo.ts`](../src/features/cards/utils/ciclo.ts)).
+3.  **El ciclo de facturación es una función pura sobre fechas contables (`occurred_at`) en la zona horaria del usuario:**
+    *   El ciclo divide consumos en dos baldes: **Saldo Facturado** (`occurredAt ∈ (cierreAnterior, cierreActual]`) y **Saldo en Curso** (`occurredAt > cierreActual`).
+    *   Se calcula usando identificadores IANA (`Intl.DateTimeFormat`) y `profile.timezone`. Los cierres se evalúan a las 23:59:59.999 en la zona local del usuario para evitar que consumos nocturnos caigan al día siguiente por desfase UTC.
+    *   Si `dueDay < closingDay`, el vencimiento cae en el mes siguiente al cierre; si `dueDay >= closingDay`, en el mismo mes. Días no existentes (ej: 31 en febrero) se recortan al último día real del mes respetando años bisiestos.
+4.  **Asiento de apertura invertido en crédito:**
+    *   Si una tarjeta de crédito nace con deuda preexistente, emite un asiento: **Debe Patrimonio Neto / Haber Tarjeta de Crédito**. Esto reduce el patrimonio por el monto de la deuda preexistente.
+    *   Una tarjeta de débito es un espejo puro de una cuenta de activo (`linkedAccountId`) y no crea cuentas de pasivo ni emite ningún asiento contable.
+
+

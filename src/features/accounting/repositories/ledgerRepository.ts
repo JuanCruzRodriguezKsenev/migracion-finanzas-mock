@@ -3,7 +3,7 @@
  * Repositorio de Libro Mayor y Asientos de Diario (Capa de Acceso a Datos - DAL).
  */
 // Librerías externas
-import { eq , and , desc , inArray , gte , lte , lt , or , ilike } from "drizzle-orm" ;
+import { eq , and , desc , inArray , gte , lte , lt , gt , or , ilike , isNull , sql } from "drizzle-orm" ;
 
 // Shared
 import { db , DBOrTx } from "@/shared/db/client" ;
@@ -351,6 +351,54 @@ export const ledgerRepository = {
       items ,
       nextCursor ,
       hasMore ,
+    } ) ;
+  } ,
+
+  /**
+   * Suma los débitos y créditos de los asientos de una cuenta en un rango de fechas contables.
+   * Filtra por occurredAt de ledgerTransactions, garantiza aislamiento multi-tenant
+   * y excluye transacciones reversadas o que revierten a otra.
+   *
+   * @param accountId - ID de la cuenta contable.
+   * @param organizationId - ID de la organización.
+   * @param desde - Cota inferior exclusiva (occurredAt > desde) o null.
+   * @param hasta - Cota superior inclusiva (occurredAt <= hasta) o null.
+   * @param tx - Instancia de transacción opcional.
+   * @returns Total de débitos y créditos en centavos enteros.
+   */
+  async sumEntriesByAccountInRange(
+    accountId:      string ,
+    organizationId: string ,
+    desde?:         Date | null ,
+    hasta?:         Date | null ,
+    tx:             DBOrTx = db
+  ): Promise< {debit: number ; credit: number} > {
+    const conditions = [
+      eq( ledgerEntries.accountId              , accountId      ) ,
+      eq( ledgerTransactions.organizationId    , organizationId ) ,
+      isNull( ledgerTransactions.reversedAt ) ,
+      isNull( ledgerTransactions.reversesTransactionId ) ,
+    ] ;
+
+    if( desde ) {
+      conditions.push( gt( ledgerTransactions.occurredAt , desde ) ) ;
+    }
+    if( hasta ) {
+      conditions.push( lte( ledgerTransactions.occurredAt , hasta ) ) ;
+    }
+
+    const [ result ] = await tx
+      .select( {
+        debit:  sql<string>`COALESCE(SUM(${ledgerEntries.debit}), 0)` ,
+        credit: sql<string>`COALESCE(SUM(${ledgerEntries.credit}), 0)` ,
+      } )
+      .from( ledgerEntries )
+      .innerJoin( ledgerTransactions , eq( ledgerEntries.transactionId , ledgerTransactions.id ) )
+      .where( and( ...conditions ) ) ;
+
+    return( {
+      debit:  Number( result?.debit  || 0 ) ,
+      credit: Number( result?.credit || 0 ) ,
     } ) ;
   } ,
 } ;
