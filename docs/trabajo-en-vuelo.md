@@ -12,16 +12,21 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `feat/preferencias-canonicas` (sale de `master`). Plan escrito y listo para ejecutar: [`planes/normalizar-preferencias-perfil.md`](planes/normalizar-preferencias-perfil.md).
+**Rama activa:** `feat/preferencias-canonicas` (sale de `master`). Plan ejecutado: [`planes/normalizar-preferencias-perfil.md`](planes/normalizar-preferencias-perfil.md).
 
 **Estado:** 🟢 **Completado y verificado en la rama.** Se ejecutaron los 7 pasos del plan [`planes/normalizar-preferencias-perfil.md`](planes/normalizar-preferencias-perfil.md). Se creó el catálogo canónico de preferencias [`src/features/profile/preferences.ts`](../src/features/profile/preferences.ts), se actualizaron los defaults en el esquema Drizzle y se aplicó la migración `0021_thick_corsair.sql` con backfill sobre PostgreSQL. Se sincronizaron los productores de datos (`DEFAULT_PROFILE` en layout y los dos bloques en `seed.ts`). Se protegió `updateProfileAction` mediante validación Zod estricta (`updateProfileSchema`) impidiendo la alteración de campos comerciales (`planName`, etc.) y el ingreso de etiquetas de UI. Se cablearon las 8 llamadas de `formatCurrency` al locale dinámico del perfil (`profile.numberFormat`), y se agregaron 16 tests unitarios en `profile/`.
 
 **Fuera de alcance, y nombrado para que no se filtre:** `exchange_rates` y la consolidación de patrimonio (dependen de tablas inexistentes), multi-workspace (`users.organization_id` es `NOT NULL`; es cambio de modelo, RFC propio) y la ruta `/perfil`.
 
+**Verificación independiente (2026-09-08), sobre `002e7c7`:** `pnpm test` 41 archivos / 321 tests en verde · `pnpm lint` 0 · `pnpm exec tsc --noEmit` 0 errores · `pnpm build` verde. Las cinco columnas de `profiles` y sus `column_default` quedaron en códigos canónicos en la base real.
+
+Sobre esa verificación se corrigió un borde: `ProfileContext.updateProfile` pasa a tipar `UpdateProfileInput` en lugar de `Partial<ProfileData>`. Ese `Partial` incluía `planName`, `userId` y `createdAt`, que el `.strict()` del esquema rechaza en runtime sin aviso del compilador; era una trampa armada para quien construya la UI de `/perfil`.
+
 **Próximo paso de desarrollo:**
-1.  Correr verificación final independiente y consolidar commit de la rama.
-2.  Merge a `master` y congelamiento de sección en `registro/`.
-3.  Retomar la consolidación multimoneda en rondas posteriores cuando existan las tablas de riqueza y deudas.
+1.  Merge a `master` y congelamiento de sección en `registro/`.
+2.  Retomar la consolidación multimoneda en rondas posteriores cuando existan las tablas de riqueza y deudas.
+
+**Pendiente menor detectado al verificar, no ejecutado:** el catálogo de `preferences.ts` (`etiquetaDe`, `PREFERENCE_CATALOG`, `LABEL_TO_CODE_MAP`) todavía no tiene consumidor de producción — sólo tests —, porque `/perfil` quedó fuera de alcance; y `formatCurrency` no protege el locale contra un valor heredado no-BCP-47 que el `ELSE` del backfill haya preservado. Ninguno es bug activo con los datos de hoy.
 
 > **Corrección de rumbo (2026-09-07):** este documento venía proponiendo Tarjetas o Metas como próximo
 > módulo, en contra del artifact. **Tarjetas (RFC 007) es Fase 2 y Metas (RFC 011) es Fase 3.** Metas

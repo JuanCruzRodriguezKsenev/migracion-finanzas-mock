@@ -11,14 +11,18 @@ import React , { createContext , useState , useEffect , useContext } from "react
 import { Result , ok , fail } from "@/shared/lib/result" ;
 
 // Feature: Profile
-import { updateProfileAction } from "../actions/profileActions" ;
-import { ProfileData } from "../types" ;
+import { updateProfileAction }  from "../actions/profileActions" ;
+import { UpdateProfileInput }   from "../schemas/profile.schema" ;
+import { ProfileData }          from "../types" ;
 
 interface ProfileContextType {
   profile:        ProfileData ;
   loading:        boolean ;
   error:          string | null ;
-  updateProfile:  ( data: Partial<ProfileData> ) => Promise< Result<ProfileData , string> > ;
+  // El tipo de entrada es el del esquema Zod, no Partial<ProfileData>: la acción valida en modo
+  // estricto y rechaza las columnas comerciales (planName, planBilling, planNextCharge) que sí
+  // viven en ProfileData. Tiparlo acá hace que el compilador lo diga antes que el servidor.
+  updateProfile:  ( data: UpdateProfileInput ) => Promise< Result<ProfileData , string> > ;
   refreshProfile: () => Promise< void > ;
 }
 
@@ -45,7 +49,7 @@ export function ProfileProvider( {children , initialProfile}: {children: React.R
     localStorage.setItem( "theme" , theme ) ;
   } , [ theme ] ) ;
 
-  async function updateProfile( newData: Partial<ProfileData> ): Promise< Result<ProfileData , string> > {
+  async function updateProfile( newData: UpdateProfileInput ): Promise< Result<ProfileData , string> > {
     setLoading( true ) ;
     setError( null ) ;
     
