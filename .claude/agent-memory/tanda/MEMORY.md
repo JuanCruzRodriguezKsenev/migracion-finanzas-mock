@@ -70,6 +70,26 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 *   **Cuando corta con "pará", no reinsistas con la pregunta:** contestá lo que preguntó y recién
     después volvé.
 
+## Preferencias de usuario (feature `profile`)
+
+*   **`profiles` es una tabla aparte de `users`** y ya tiene todas las preferencias (`currency`,
+    `timezone`, `theme`, `numberFormat`, `weeklyStart`, `dateFormat`, `roundAmounts`, …). Cuelga de
+    `users.id`, sin `organizationId`: aislamiento transitivo, igual que `contact_payment_methods`.
+*   **Guarda etiquetas de UI en español, no códigos**: `'Peso argentino (ARS)'`, `'(GMT-03:00) Buenos
+    Aires'`, `'1.234,56'`, `'Lunes'`. Por eso **ninguna preferencia afecta a nada**: las 8 llamadas a
+    `formatCurrency` pasan `"es-AR"` en duro porque `'1.234,56'` no es un locale que `Intl` resuelva.
+*   **`formatCurrency( amount , currencyCode , locale )`** (`shared/lib/currencyFormatter.ts`) ya tiene
+    la firma correcta y cachea decimales por divisa. **No hay que reescribirlo, sólo pasarle el
+    locale.** Convive con `formatCents` (`accounting/utils/dashboardMetrics.ts`), más viejo y sin
+    divisa ni locale, que `.agents/AGENTS.md` §8.2 todavía nombra como el canónico. Deuda anotada.
+*   **`updateProfileAction` no valida nada**: recibe `Partial<ProfileData>` y lo pasa entero al
+    repositorio. Como `profiles` incluye `planName`/`planBilling`/`planNextCharge`, un cliente puede
+    mandar `{planName: "Premium"}` y cambiarse el plan comercial. La feature no tiene ni un test.
+*   **No existe la ruta `/perfil`.** Los únicos productores del dato son el `default` del esquema,
+    `seed.ts` (**dos** bloques, ~107 y ~127) y `DEFAULT_PROFILE` en `app/[lang]/layout.tsx`.
+*   `SummaryBar.tsx` **no lleva `"use client"`**: es cliente por transitividad, porque lo importa
+    `SubscriptionDashboard`. Recibe todo por props y debe seguir así.
+
 ## Cómo se cierra una rama en este repo
 
 *   **La historia es estrictamente lineal: cero merge commits.** La convención es fast-forward, y las
@@ -90,21 +110,21 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Estado
 
-*   **`master` es la rama viva y no hay trabajo a medias** (2026-09-08). Las tres ramas encadenadas se
-    consolidaron por fast-forward: `b28eb08..ef21cf9`, 23 commits. Detalle congelado en
+*   Rama `feat/preferencias-canonicas` (sale de `master`), limpia y commiteada. **Plan escrito en
+    `docs/planes/normalizar-preferencias-perfil.md`, bloqueado por aprobación**: el RFC 015 sigue en
+    `DRAFT` y `obra` no debe tocar código hasta que pase a `APPROVED`.
+*   **El RFC 015 fue enmendado el 2026-09-08** con una §0 de contraste. Los RFCs de junio 2026 dan por
+    ciertas cosas que ya no lo son: éste proponía crear preferencias en `users` (viven en `profiles`),
+    una columna `password` (hoy `password_hash`+`salt`+`hash_params`, commit `0176d86`) y un algoritmo
+    sobre `wealthAssets`/`loans`, **tablas que no existen**. Contrastar siempre antes de planificar.
+*   `master` quedó consolidado el 2026-09-08 (`b28eb08..ef21cf9`, 23 commits) con la batería en
+    39 archivos / 305 tests / lint 0 / tsc 0 / build verde. Registro congelado en
     `docs/registro/2026-09-08-cierre-transacciones-contactos-entidades.md`.
-*   **Batería sobre `master` en `ef21cf9`:** 39 archivos, 305 tests, lint 0, `tsc --noEmit` 0, build
-    verde. Corrida por `verificador` con el typecheck como comando propio.
-*   **Próximo paso: RFC 015 (perfil, preferencias y consolidación multimoneda).** Único DRAFT de los
-    21 y único bloqueo formal de la Fase 1; no hay una sola línea de consolidación en `src/`.
-    **Necesita aprobación del usuario antes de escribir código**, y hay que contrastarlo contra
-    `src/features/*/schema.db.ts` porque los RFCs de junio traen esquemas anteriores al core contable.
-*   **Tarjetas (007) es Fase 2 y Metas (011) es Fase 3.** Metas en fase temprana es justo el error que
-    el artifact le señala al `ROADMAP.md` viejo.
-*   **El artifact quedó desactualizado tras la consolidación** (dice 298 tests y ramas sin mergear;
-    hoy son 305 y `master` tiene todo). Releerlo con `action: "read"` antes de editarlo y republicar
-    con su `url`; no crear uno nuevo.
+*   **Decisión del usuario (2026-09-08): la moneda base de consolidación es del usuario**
+    (`profiles.currency`), no de la organización. Es preferencia de visualización; eligió esto sobre
+    la alternativa de ponerla en `organizations`.
+*   **Tarjetas (007) es Fase 2 y Metas (011) es Fase 3.** Metas en fase temprana es el error que el
+    artifact le señala al `ROADMAP.md` viejo.
+*   **El artifact quedó desactualizado** (dice 298 tests y ramas sin mergear). Releerlo con
+    `action: "read"` antes de editarlo y republicar con su `url`; no crear uno nuevo.
 *   Pendiente propio: revisar duplicación entre `ARCHITECTURE.md` y `.agents/AGENTS.md` §2–§5.
-*   **Al delimitar un rango para un registro aparecen commits que la tabla de estado nunca nombró**
-    (esta vez `0176d86`, endurecimiento de autenticación). El `git log` del rango es la fuente, no la
-    tabla de tandas.
