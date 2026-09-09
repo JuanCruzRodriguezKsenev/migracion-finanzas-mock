@@ -70,3 +70,8 @@ Este documento registra los puntos de deuda técnica del repositorio, distinguie
 *   [ ] **Disponible de tarjetas de crédito no descuenta cuotas futuras pendientes:** El cálculo de disponible para compras (`Disponible = Límite − Deuda total`) no descuenta el saldo remanente de compras en cuotas hasta que se implemente el modelo relacional de cuotas (`installmentPlans`, RFC 008).
 
 
+
+### 3. Preferencias de Usuario y Perfil
+*   [ ] **El catálogo de `preferences.ts` no tiene consumidor de producción:** los códigos canónicos (ISO 4217, IANA, BCP 47) que la migración `0021` dejó en `profiles` sólo los usan los tests. La causa es que **no existe la ruta de edición del perfil**, que quedó fuera del alcance de la ronda de preferencias canónicas (2026-09-08) a propósito. Comprometido para una ronda propia; por la convención de rutas de `ARCHITECTURE.md` §4 la ruta se llama **`/profile`**, no `/perfil`.
+*   [ ] **`roundAmounts` se persiste pero nadie lo lee:** la preferencia existe en la tabla y en el catálogo, y ningún formateador la consulta. Mismo origen que el punto anterior: sin pantalla de edición no se cerró el circuito.
+*   [ ] **`formatCurrency` no valida el locale que recibe:** `src/shared/lib/currencyFormatter.ts` pasa el locale directo a `Intl` sin protegerlo contra un valor heredado que no sea BCP 47. Las filas viejas se migraron con el `UPDATE` de la `0021`, pero una fila que escape a ese backfill —o un valor escrito por fuera de la acción— haría lanzar a `Intl` en tiempo de render. Falta un `try/catch` con fallback al locale por defecto y su test.

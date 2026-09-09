@@ -67,6 +67,20 @@ Para mantener el código legible y homogéneo, aplicamos las siguientes convenci
 *   **Archivos de Utilidad / Servicios / Tests:** Utilizar **camelCase** o **kebab-case** (ej: `mathHelpers.ts`, `authService.ts`).
 *   **Archivos de Estilos:** Usar CSS Modules adjuntos a su componente (ej: `page.module.css` o `button.module.css`).
 
+### Rutas de Producto (segmentos de URL):
+
+**Los segmentos de ruta se escriben en inglés**, en minúsculas y en kebab-case cuando llevan más de
+una palabra: `/accounts`, `/cards`, `/contacts`, `/subscriptions`, `/transactions`.
+
+Esto se decidió porque el repositorio ya venía construyéndolas así, no al revés: las cinco rutas en
+pie nacieron en inglés mientras el catálogo de referencia de **FinanzasMock** las nombra en español
+(`/tarjetas`, `/deudas`, `/metas`). **Al portar una pantalla del mock, el nombre de su ruta se
+traduce al inglés; el contenido visible al usuario sigue en español**, que es lo que resuelve el
+segmento `[lang]` de i18n.
+
+Los módulos que faltan portar toman entonces: `/debts`, `/goals`, `/budgets`, `/investments`,
+`/billing`, `/wealth`, `/integrations`, `/reports`, `/upgrade-plan`.
+
 ### Documentación de Código (Estándar TSDoc):
 Todas las interfaces, tipos y funciones públicas críticas deben documentarse utilizando bloques de comentario compatibles con TSDoc. Esto permite autocompletado inteligente en el editor de código.
 

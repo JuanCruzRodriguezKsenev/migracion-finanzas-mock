@@ -12,45 +12,55 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `feat/tarjetas` (sale de `master` en `e4d8cb3`).
+**Rama activa:** ninguna. `master` está en `0578bb2`, consolidado y sin trabajo sin integrar.
 
-**Estado:** 🟢 **Tarjetas como cuentas de pasivo (RFC 007, primera tajada) implementada según el plan.** Se implementó el modelo de dos tablas (`cards` y `card_accounts`) con migración `0022_familiar_richard_fisk.sql`, agregación en `ledgerRepository.sumEntriesByAccountInRange`, cálculo puro de ciclos en `ciclo.ts` con soporte IANA, validación PCI-DSS estricta en `cards.schema.ts`, Server Actions con emisión contable diferenciada en `cardsActions.ts`, UI completa en `/cards` (`CardVisual`, `CardsContainer`, `CardFormModal`), siembra idempotente en `seed.ts`, 24 tests unitarios/integración en 4 archivos, patrón §7 documentado en `patterns.md`, deuda técnica registrada en `TECHNICAL_DEBT.md` y corrección de `.agents/AGENTS.md` §8.1.
+**Estado:** 🟢 **Tarjetas (RFC 007, primera tajada) consolidada en `master`.** El cierre quedó
+congelado en [`registro/2026-09-08-cierre-tarjetas.md`](registro/2026-09-08-cierre-tarjetas.md):
+modelo de dos tablas (`cards` y `card_accounts`), migración `0022`, ciclo de facturación resuelto en
+el servidor con la zona horaria del perfil, y `/cards` mostrando saldo facturado, saldo en curso y
+deuda total.
 
-**Cierre de la verificación independiente (2026-09-08).** La batería reproducía en verde, pero
-`calcularPeriodos` y `sumEntriesByAccountInRange` **no tenían consumidor de producción**: la
-maquinaria del ciclo estaba construida y probada, y la tarjeta seguía mostrando sólo deuda total.
-Esa partición es el §4 del RFC y la justificación de la ronda entera. Se cableó con un servicio
-nuevo, [`cardCycleService.ts`](../src/features/cards/services/cardCycleService.ts), que resuelve el
-ciclo en el servidor —la partición sale de una agregación del libro mayor— y con la zona horaria del
-perfil, de la que depende a qué día del mes pertenece un consumo. `/cards` ahora muestra **saldo
-facturado con su fecha de vencimiento, saldo en curso desde el cierre, y deuda total**. Se corrigieron
-además el mensaje de error del alta —que tragaba el estado a medias de cuatro escrituras no
-atómicas— y una función que devolvía una constante.
+**Batería sobre `master`:** 46 archivos de test, **348 tests**, lint 0, `tsc --noEmit` 0 errores,
+build verde. Verificada de forma independiente antes del merge.
 
-**Batería sobre la rama:** 46 archivos de test, **348 tests**, lint 0, `tsc --noEmit` 0 errores, build verde.
+**Próximo paso:** **suscripciones al libro mayor (RFC 004)**, segunda tajada de la Fase 2. El módulo
+persiste en Postgres pero no emite un solo asiento contable, y el código de devengamiento que se
+escriba ahí es el mismo que van a necesitar las cuotas del RFC 008: conviene resolverlo una vez.
 
-**Próximo paso:** revisión y merge de `feat/tarjetas` a `master`, o siguiente tajada de Fase 2 (cuotas y préstamos del RFC 008, o el flujo de pago del resumen).
+**Comprometido para después, en este orden:** la ruta de edición del perfil —que se llama
+**`/profile`**, no `/perfil`, por la convención de rutas— y las cuotas y préstamos del RFC 008.
 
-**Pendientes menores heredados de la ronda**, anotados en el registro y sin ejecutar: el catálogo de `preferences.ts` todavía no tiene consumidor de producción (sólo tests) porque `/perfil` quedó fuera de alcance, `formatCurrency` no protege el locale contra un valor heredado no-BCP-47, y `roundAmounts` se guarda pero nadie lo lee.
+> **Convención asentada (2026-09-08):** los segmentos de ruta van **en inglés**
+> (`ARCHITECTURE.md` §4). El catálogo de FinanzasMock los nombra en español y las cinco rutas en pie
+> nacieron en inglés sin que la regla estuviera escrita en ningún lado.
 
-> **Corrección de rumbo (2026-09-07):** este documento venía proponiendo Tarjetas o Metas como próximo
-> módulo, en contra del artifact. **Tarjetas (RFC 007) es Fase 2 y Metas (RFC 011) es Fase 3.** Metas
-> en la primera fase es justamente el error que el artifact documenta del `ROADMAP.md` viejo.
+> **Corrección de rumbo (2026-09-07):** este documento venía proponiendo Tarjetas o Metas como
+> próximo módulo, en contra del artifact. **Tarjetas (RFC 007) es Fase 2 y Metas (RFC 011) es Fase
+> 3.** Metas en la primera fase es justamente el error que el artifact documenta del `ROADMAP.md`
+> viejo.
 
-**Pendiente de la gobernanza:** revisar la duplicación entre `ARCHITECTURE.md` y `.agents/AGENTS.md` §2–§5.
+**Pendiente de la gobernanza:** revisar la duplicación entre `ARCHITECTURE.md` y `.agents/AGENTS.md`
+§2–§5.
 
 ---
 
 ### Inventario de migración de módulos (Fuentes de referencia)
 
 #### 1. Módulos pendientes de portar desde `FinanzasMock` (Catálogo UI de 17 dominios)
-* **Tarjetas (`/tarjetas`)** — RFC 007 (`007-cards-management.md`): componente visual de tarjeta física (chip, emisor, número enmascarado), vinculado a cuentas de pasivo.
-* **Metas de ahorro (`/metas`)** — RFC 011 (`011-goals-and-reserves.md`): barras de progreso, cálculo de fecha objetivo y asignación de fondos.
-* **Presupuestos (`/presupuestos`):** Donut ring, barras de progreso y límites de gasto asociados al árbol de `categories`.
-* **Inversiones (`/inversiones`)** — RFC 014 (`014-investments-management.md`): portafolio, cotizaciones y gráficos con Recharts.
-* **Deudas y préstamos (`/deudas`)** — RFC 008 (`008-loans-and-installments.md`): cronograma de amortización y cuotas.
-* **Facturación (`/facturacion`)** — RFC 013 (`013-billing-and-invoicing.md`): emisión y preview de comprobantes.
-* **Integraciones y API Keys (`/integraciones`)** — RFC 012 (`012-integrations-and-api-keys.md`).
+
+Las rutas van **en inglés** (`ARCHITECTURE.md` §4); entre paréntesis, el nombre que el módulo tiene
+en el catálogo del mock, que es donde está la referencia visual.
+
+* **Metas de ahorro (`/goals`, mock: `/metas`)** — RFC 011 (`011-goals-and-reserves.md`): barras de progreso, cálculo de fecha objetivo y asignación de fondos. **Fase 3**, no antes: su saldo libre necesita que los compromisos existan.
+* **Presupuestos (`/budgets`, mock: `/presupuestos`):** Donut ring, barras de progreso y límites de gasto asociados al árbol de `categories`. **Sin RFC**: hay que escribirlo antes de tocar código.
+* **Inversiones (`/investments`, mock: `/inversiones`)** — RFC 014 (`014-investments-management.md`): portafolio, cotizaciones y gráficos con Recharts.
+* **Deudas y préstamos (`/debts`, mock: `/deudas`)** — RFC 008 (`008-loans-and-installments.md`): cronograma de amortización y cuotas.
+* **Facturación (`/billing`, mock: `/facturacion`)** — RFC 013 (`013-billing-and-invoicing.md`): emisión y preview de comprobantes.
+* **Integraciones y API Keys (`/integrations`, mock: `/integraciones`)** — RFC 012 (`012-integrations-and-api-keys.md`).
+* **Perfil (`/profile`, mock: `/perfil`)** — RFC 015, ya aprobado: es la pantalla que le falta a las preferencias canónicas para tener consumidor de producción.
+
+**Ya portados:** cuentas (`/accounts`), contactos (`/contacts`), transacciones (`/transactions`),
+suscripciones (`/subscriptions`) y **tarjetas (`/cards`)**.
 
 #### 2. Servicios de infraestructura pendientes de portar desde `FinanceApp-WSL`
 * **Crons y Workers de Background:** Upstash QStash (`/api/cron/net-worth`, `/api/cron/statements`, `/api/webhooks/qstash`) para el cálculo automatizado de fin de mes.
