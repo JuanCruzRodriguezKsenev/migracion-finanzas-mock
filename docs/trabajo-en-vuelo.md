@@ -25,9 +25,15 @@ por entidad** —se entra por Galicia y se ven sus cuentas, sus tarjetas y sus p
 `/debts` y la página de patrimonio (propiedades, autos) son páginas aparte; y el **Patrimonio Neto se
 muda a la página de estadísticas**, donde también van a vivir las categorías.
 
-**Próximo paso: escribir las propuestas del §7**, empezando por la que desbloquea más cosas. El RFC
-008 hay que **reescribirlo**, no implementarlo: es de junio de 2026, usa `integer` para dinero y
-guarda un `remainingBalance` propio que duplicaría el saldo ya materializado en `accounts.balance`.
+**Escrita la primera propuesta: [`proposals/022-unified-classification.md`](proposals/022-unified-classification.md)**,
+en `DRAFT`. Categoría = cuenta contable, imputación real del gasto, catálogo inicial de 18 categorías
+con sus subcategorías, y la corrección de un defecto que el contraste destapó: un cambio de divisas
+puede asentar contra el Patrimonio Neto (`TECHNICAL_DEBT.md` §5).
+
+**Próximo paso: que el usuario apruebe el RFC 022.** Hasta que pase a `APPROVED` no habilita código.
+Después siguen las otras propuestas del §7 del documento de diseño. El RFC 008 hay que
+**reescribirlo**, no implementarlo: es de junio de 2026, usa `integer` para dinero y guarda un
+`remainingBalance` propio que duplicaría el saldo ya materializado en `accounts.balance`.
 
 **Por qué se frenó el código.** La ronda iba a ser suscripciones al libro mayor (RFC 004). Al
 investigar aparecieron tres decisiones de arquitectura sin tomar y sin RFC, que ese trabajo
