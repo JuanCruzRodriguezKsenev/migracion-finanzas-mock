@@ -21,9 +21,11 @@ FinanzIA implementa un libro mayor contable balanceado en el que cada movimiento
 3.  **La moneda de un asiento la define su cuenta.** `ledger_entries.currency` no puede diferir de `accounts.currency`; el motor rechaza el asiento antes de tocar ningún saldo. Un saldo es un entero sin unidad, así que aceptar otra divisa no falla: sólo miente.
 4.  **No negatividad en líneas:** Las columnas `debit` y `credit` son enteros $\ge 0$. La dirección del saldo se determina por el tipo de cuenta:
     *   **Activos / Gastos:** Aumentan por el Débito (Debe), disminuyen por el Crédito (Haber).
-    *   **Pasivos / Patrimonio / Ingresos:** Aumentan por el Crédito (Haber), disminuyen por el Débito (Debe).
+    *   **Patrimonio / Ingresos:** Aumentan por el Crédito (Haber), disminuyen por el Débito (Debe).
+    *   **Pasivos:** ⚠️ **el motor los trata igual que a los activos** (`balance + debit - credit`), así que un pasivo con deuda guarda **saldo negativo**. Esto se aparta de la convención contable clásica, en la que un pasivo tiene saldo acreedor positivo. **Antes de leer, escribir o sumar un `balance` de tipo `liability`, leer el §8.**
 5.  **Cálculo de Patrimonio Neto (Net Worth):**
     $$\text{Patrimonio Neto} = \text{Activos} - \text{Pasivos}$$
+    La identidad es correcta en abstracto, **pero no se aplica directamente sobre la columna `balance`**: como los pasivos ya están negados, restarlos suma la deuda. La fórmula sobre los saldos del repositorio es una suma. Ver §8.
 
 ### Cambio de divisas
 Un cambio de moneda **no es un asiento que cruza divisas** —eso no existe en partida doble—. Se registra como una única transacción con cuatro asientos en dos libros, cada uno cerrando en cero contra su **cuenta de posición de cambio** (`3.3.01-<MONEDA>`, tipo `equity`):
@@ -187,7 +189,7 @@ Para modelar instrumentos de crédito y débito sin desvirtuar la partida doble 
     *   `cards` almacena exclusivamente los metadatos del plástico físico (red, últimos 4 dígitos, fechas de expiración, días de cierre/pago y límites). No almacena dinero ni saldo acumulado.
     *   `card_accounts` vincula el plástico a sus respectivas cuentas contables de pasivo (`type = "liability"`), una fila por divisa. Esto permite saldos duales (ej: pesos ARS y dólares USD) sobre un motor donde cada cuenta tiene una única divisa.
 2.  **La deuda de la tarjeta es el saldo contable negado:**
-    *   En partida doble, un pasivo (`liability`) aumenta con el crédito y disminuye con el débito (`balance + debit - credit`).
+    *   El motor aplica a los pasivos la misma regla que a los activos: `balance + debit - credit` (§8). Los consumos acreditan la cuenta, así que la restan.
     *   Los consumos acreditan la cuenta de la tarjeta, por lo que su balance contable en la base de datos es **negativo** (ej: `-2500000`).
     *   La deuda exigible es `-balance` (ej: `+$25.000,00`). La conversión se realiza centralizadamente en `deudaDe( cuenta )` ([`src/features/cards/utils/ciclo.ts`](../src/features/cards/utils/ciclo.ts)).
 3.  **El ciclo de facturación es una función pura sobre fechas contables (`occurred_at`) en la zona horaria del usuario:**
@@ -197,5 +199,33 @@ Para modelar instrumentos de crédito y débito sin desvirtuar la partida doble 
 4.  **Asiento de apertura invertido en crédito:**
     *   Si una tarjeta de crédito nace con deuda preexistente, emite un asiento: **Debe Patrimonio Neto / Haber Tarjeta de Crédito**. Esto reduce el patrimonio por el monto de la deuda preexistente.
     *   Una tarjeta de débito es un espejo puro de una cuenta de activo (`linkedAccountId`) y no crea cuentas de pasivo ni emite ningún asiento contable.
+
+---
+
+## 8. Convención de Signo de los Saldos (Balance Sign Convention)
+
+**Este patrón documenta lo que el motor hace hoy, no lo que la teoría contable prescribe.** Se escribió el 2026-09-09 después de encontrar un defecto que no fue un descuido: fue seguir la documentación, que se contradecía a sí misma entre el §1 y el §7.
+
+### La regla vigente
+
+`accountingService.ts` aplica **una sola fórmula a tres tipos** — activos, gastos **y pasivos**:
+
+```
+asset | expense | liability   →   balance + debit - credit
+equity | revenue              →   balance - debit + credit
+```
+
+**Consecuencia:** una cuenta de pasivo con deuda tiene `balance` **negativo**. Un consumo de tarjeta (Debe Gasto / Haber Tarjeta) resta del saldo de la tarjeta.
+
+### Reglas e Invariantes
+
+1.  **La deuda de un pasivo es `-balance`.** Nunca `balance`. La conversión está centralizada en `deudaDe( cuenta )` (`cards/utils/ciclo.ts`); **usarla en vez de escribir el signo a mano.**
+2.  **Un pasivo se da de alta en negativo.** `accountingActions.ts` invierte el signo cuando el alta manual recibe un saldo positivo para un `type === "liability"`. Un pasivo con `balance` positivo es un pasivo pagado de más, no una deuda.
+3.  **Sumar saldos de tipos mezclados es una suma, nunca una resta.** Con los pasivos ya negados, `activos + pasivos` da el neto correcto. **`activos - pasivos` suma la deuda al patrimonio**: es literalmente el defecto de `AccountsContainer.tsx:88`, anotado en `TECHNICAL_DEBT.md` §6.
+4.  **`monthly_summaries` usa la convención opuesta.** Sus columnas `liabilities_snapshot` y `assets_snapshot` guardan los pasivos en **positivo**, con la identidad clásica $A = PN + P$ (ver `seed.ts`). **Una pantalla que mezcle `accounts.balance` con `monthly_summaries` está mezclando dos convenciones**, y hoy hay una que lo hace: el número de Patrimonio Neto de `/accounts` sale de `accounts` y su sparkline de `monthly_summaries`. Deuda abierta: unificar.
+
+### Por qué está anotado como deuda y no corregido acá
+
+Cambiar el motor para que los pasivos sean acreedores positivos es una decisión de arquitectura con migración de datos detrás: toca el servicio, el alta manual, `deudaDe()`, la vista de tarjetas y todos los saldos ya persistidos. **Mientras no se tome esa decisión, la regla de este §8 es la verdad operante y hay que programar contra ella.**
 
 
