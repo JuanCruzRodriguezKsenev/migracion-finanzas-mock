@@ -1,13 +1,14 @@
 ---
 name: decisiones-modelo-clasificacion
-description: Sesión de diseño abierta el 2026-09-09 sobre categorías, transacciones propuestas e instrumentos; dos temas cerrados y uno pendiente
+description: Sesión de diseño del 2026-09-09 sobre categorías, transacciones propuestas e instrumentos; los tres temas cerrados, faltan escribir las propuestas
 metadata:
   type: project
 ---
 
-**Hay una sesión de diseño abierta y sin terminar**, registrada en
+**Sesión de diseño cerrada el 2026-09-09**, registrada en
 `docs/diseno/rediseno-clasificacion-y-propuestas.md`. **Leer ese documento antes de retomar**: tiene
-las decisiones con su fundamento, los defectos verificados y por dónde se sigue (su §4).
+las decisiones con su fundamento, los defectos verificados y el §7 con las propuestas que faltan
+escribir. Los tres temas están decididos; quedan bordes abiertos anotados dentro de cada uno.
 
 **Why:** la ronda iba a ser suscripciones al libro mayor (RFC 004) y al investigar aparecieron tres
 decisiones de arquitectura sin tomar y sin RFC. **El hallazgo que reordenó todo:** la app no puede
@@ -26,9 +27,13 @@ registros de categoría en el proyecto y ninguno cumple función.
     registra lo que se supone que va a pasar**. Cuotas = compromiso cierto, se cargan enteras.
     Suscripción del mes que viene = supuesto, se resuelve de a una.
 
-**How to apply:** el tema abierto es **instrumentos contra cuentas** (§4 del documento): el usuario
-objetó que tarjetas y deudas estén modeladas como cuentas. Verificado que la cuenta de la tarjeta
-aparece en `/accounts` mezclada con la caja de ahorro (`AccountsContainer.tsx:63`) y que
-`createCardAction` emite un asiento de apertura contra Patrimonio, cuando una tarjeta no nace con
-deuda. Nada de esto habilita código: primero se cierran los tres temas, después se escriben las
-propuestas. Ver [[feedback-una-pregunta-por-vez]] para el método de la discusión.
+*   **La navegación sigue al instrumento, no al plan de cuentas** (§4). **`/accounts` es el directorio
+    por entidad**: se entra por Galicia y se ven sus cuentas, sus tarjetas y sus préstamos. `/cards`,
+    `/debts` y la página de patrimonio (propiedades, autos) son transversales y aparte. Un
+    instrumento aparece **dos veces, en dos ejes** —quién lo emite y qué tipo de cosa es—, y eso es
+    deliberado. **El Patrimonio Neto se muda a la página de estadísticas**, junto con las categorías.
+
+**How to apply:** nada de esto habilita código: falta escribir las propuestas del §7. El **RFC 008 hay
+que reescribirlo, no implementarlo** (junio 2026: `integer` para dinero y un `remainingBalance` que
+duplica `accounts.balance`). La página de estadísticas y la de patrimonio **no tienen RFC ninguno**.
+Ver [[feedback-una-pregunta-por-vez]] para el método de la discusión.

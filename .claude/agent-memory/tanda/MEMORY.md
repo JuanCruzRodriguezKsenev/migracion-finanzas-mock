@@ -10,9 +10,14 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 *   **Agregar una columna a una tabla rompe fixtures de tests de otras features.** `cbu_cvu` y `alias`
     en `accounts` rompieron `accountCodes.test.ts`, `dashboardMetrics.test.ts` y `derivarTipo.test.ts`.
     Siempre listar quién construye el tipo antes de tocarlo.
-*   **Los RFCs viejos (junio 2026) traen esquemas anteriores al core contable.** El RFC 006 redefinía
-    `accounts` con `balance: integer` y sin `entityId`. Antes de implementar un RFC viejo, contrastar
-    su esquema contra `src/features/*/schema.db.ts`.
+*   **Los RFCs viejos (junio 2026) traen esquemas anteriores al core contable.** Ya pasó con el 006,
+    el 015, el **008** (`integer` para dinero + un `remainingBalance` que duplica `accounts.balance`)
+    y el **010** (siete columnas monetarias en `integer`). Antes de implementar un RFC viejo,
+    contrastar su esquema contra `src/features/*/schema.db.ts`.
+*   **Antes de decir "esto no tiene RFC", mirar `docs/proposals/`.** El 2026-09-09 afirmé que
+    patrimonio (propiedades, autos) no tenía propuesta: **el RFC 010 existe, está `APPROVED` desde
+    junio** y cubre inmuebles, vehículos, valuaciones, inquilinos e incidencias. Son 21 RFCs y los
+    nombres de archivo están en inglés, así que "patrimonio" se busca como `wealth`.
 *   **`createFinancialEntityAction` ya es alta pura** (corregido en `2ebc37e`, rama
     `fix/entidades-financieras`). La cuenta se crea aparte con `createAccountForEntityAction`, que
     ante saldo inicial > 0 emite asiento contra Patrimonio (`3.1.01.01`, con fallback al primer
@@ -32,6 +37,13 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     `TransactionsTable.tsx:188-192` **no** — sigue pasando `logoUrl={entity?.logo}`, que ahora recibe
     un nombre de ícono y ya no resuelve la marca directo. Degrada a búsqueda por nombre, no rompe.
     Es el archivo que el plan no nombró: exactamente el patrón de defecto de este repo.
+*   **Los pasivos se guardan en negativo, y `/accounts` no respeta esa convención.**
+    `accountingService.ts:117` trata `liability` igual que `asset` (aumenta con el Debe), así que un
+    consumo de tarjeta deja la cuenta en negativo; `accountingActions.ts:99` y `CardVisual.tsx:34`
+    lo respetan. **`AccountsContainer.tsx:87-88` hace `totalAssets - totalLiabs` sobre un total ya
+    negativo y suma la deuda al patrimonio.** Y `monthly_summaries.liabilitiesSnapshot` usa el signo
+    **opuesto** (positivo), así que el número y su sparkline no hablan el mismo idioma. En
+    `TECHNICAL_DEBT.md` §6.
 *   **`CircuitBreaker` (`shared/lib/circuitBreaker.ts`) no está cableado en ningún lado**: sólo lo
     importa su propio test. La "protección de Brandfetch" que dicen los docs no existe.
 *   **La búsqueda de marcas está duplicada en tres componentes** que van directo del navegador a
@@ -53,7 +65,11 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Decisiones tomadas
 
-*   [Rediseño de clasificación y propuestas](decisiones_modelo_clasificacion.md) — sesión de diseño **abierta**: categoría = cuenta contable, propuestas fuera del libro. Falta el tema de instrumentos.
+*   [Rediseño de clasificación y propuestas](decisiones_modelo_clasificacion.md) — sesión **cerrada**: categoría = cuenta contable, propuestas fuera del libro, navegación por instrumento. Faltan las propuestas.
+*   [Cómo levantar los repos hermanos](repos_hermanos_como_levantarlos.md) — FinanzasMock está atado a Neon: sin base, con bypass de login. Y qué hay adentro de cada uno.
+*   **`/accounts` es el directorio por entidad** (decidido 2026-09-09): se entra por Galicia y se ven
+    sus cuentas, sus tarjetas y sus préstamos. `/cards`, `/debts` y patrimonio (propiedades, autos)
+    van aparte; el Patrimonio Neto se muda a la página de estadísticas, junto con las categorías.
 
 *   **Cotizaciones (RFC 015, registrado en `DRAFT`):** los cierres mensuales persisten su cotización en
     una tabla `exchange_rates`; los saldos vivos usan cotización del día cacheada. Escala fija
@@ -118,6 +134,11 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Estado
 
+*   **Sesión de diseño cerrada el 2026-09-09**, los tres temas decididos. Lo que sigue es escribir las
+    propuestas del §7 de `docs/diseno/rediseno-clasificacion-y-propuestas.md`. Sin código todavía.
+*   **El inventario de `trabajo-en-vuelo.md` estaba incompleto**: decía 17 dominios y listaba 12.
+    Faltaban `/reportes` (la página de estadísticas), `/patrimonio`, `/configuracion` y
+    `/mejorar-plan`. Corregido el 2026-09-09.
 *   **`master` en `a9303b5`, sin ramas vivas.** Tarjetas (RFC 007) consolidada el 2026-09-08:
     46 archivos de test, 348 tests, lint 0, tsc 0, build verde, verificado de forma independiente.
     Registro en `docs/registro/2026-09-08-cierre-tarjetas.md`.
