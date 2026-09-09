@@ -75,6 +75,7 @@ Columnas monetarias en `bigint` (centavos). `year`, `month`, `attempts`, `failed
 | :--- | :--- | :--- |
 | `docs/trabajo-en-vuelo.md` | **Único doc de estado**: rama y próximo paso | Se actualiza **en el mismo commit** que avanza el trabajo |
 | `docs/planes/` | **Planes aprobados listos para ejecutar**, uno por ronda. Los escribe `tanda`, los ejecuta `obra`. Un plan **no** lleva progreso adentro: el estado vive en `trabajo-en-vuelo.md` | Al cerrar un plan, antes de ejecutarlo |
+| `docs/diseno/` | **Sesiones de diseño en curso**, antes de que haya RFC. Registran decisiones tomadas y su porqué; cuando el tema cierra, se parte en propuestas | Mientras se discute una decisión de arquitectura |
 | `docs/TECHNICAL_DEBT.md` | § Resuelto y § Abierto | Al cerrar o abrir deuda |
 | `docs/patterns.md` | Patrones vigentes. **Contrastar acá toda decisión nueva** | Al establecer un patrón |
 | `docs/proposals/` | 21 RFCs con estado `DRAFT`/`APPROVED` | Código sólo contra `APPROVED` |

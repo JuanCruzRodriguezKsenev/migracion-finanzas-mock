@@ -12,35 +12,42 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** ninguna. `master` está en `0578bb2`, consolidado y sin trabajo sin integrar.
+**Rama activa:** ninguna. `master` está en `4cd8a8a`, consolidado y sin trabajo sin integrar.
 
-**Estado:** 🟢 **Tarjetas (RFC 007, primera tajada) consolidada en `master`.** El cierre quedó
-congelado en [`registro/2026-09-08-cierre-tarjetas.md`](registro/2026-09-08-cierre-tarjetas.md):
-modelo de dos tablas (`cards` y `card_accounts`), migración `0022`, ciclo de facturación resuelto en
-el servidor con la zona horaria del perfil, y `/cards` mostrando saldo facturado, saldo en curso y
-deuda total.
+**Estado:** 🟡 **Sesión de diseño abierta, sin código.** El 2026-09-09 se abrió el rediseño de la
+clasificación y de las transacciones propuestas, registrado en
+[`diseno/rediseno-clasificacion-y-propuestas.md`](diseno/rediseno-clasificacion-y-propuestas.md).
+**Dos temas cerrados y uno sin empezar.** Nada de esto habilita código todavía: cuando los tres
+estén cerrados se parte en propuestas formales bajo `proposals/`, y recién ahí se implementa.
+
+**Próximo paso: retomar por el §4 del documento de diseño** — instrumentos contra cuentas: qué es una
+tarjeta, qué es un préstamo, y qué se muestra en `/accounts`. Es lo que arrastra el RFC 007 ya
+implementado y lo que bloquea el RFC 008.
+
+**Por qué se frenó el código.** La ronda iba a ser suscripciones al libro mayor (RFC 004). Al
+investigar aparecieron tres decisiones de arquitectura sin tomar y sin RFC, que ese trabajo
+necesitaba: el estado de una transacción propuesta, la relación entre categoría y cuenta contable, y
+la distinción entre instrumento y cuenta. Suscripciones necesita las dos primeras; las cuotas del
+RFC 008 necesitan la primera y la tercera; los presupuestos necesitan la segunda.
+
+**El hallazgo que reordenó las prioridades:** la app hoy no puede responder *de dónde viene cada
+cosa*. Las estadísticas agrupan por tipo de cuenta contable y **nadie agrupa por categoría en ningún
+lado**; la categoría que el usuario elige no llega a la contabilidad, y todos los gastos del
+formulario se imputan a la misma cuenta. Los defectos quedaron anotados en
+[`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §4 y §5.
 
 **Batería sobre `master`:** 46 archivos de test, **348 tests**, lint 0, `tsc --noEmit` 0 errores,
-build verde. Verificada de forma independiente antes del merge.
-
-**Próximo paso:** **suscripciones al libro mayor (RFC 004)**, segunda tajada de la Fase 2. El módulo
-persiste en Postgres pero no emite un solo asiento contable, y el código de devengamiento que se
-escriba ahí es el mismo que van a necesitar las cuotas del RFC 008: conviene resolverlo una vez.
-
-**Comprometido para después, en este orden:** la ruta de edición del perfil —que se llama
-**`/profile`**, no `/perfil`, por la convención de rutas— y las cuotas y préstamos del RFC 008.
+build verde. Verificada de forma independiente antes del merge de tarjetas.
 
 > **Convención asentada (2026-09-08):** los segmentos de ruta van **en inglés**
-> (`ARCHITECTURE.md` §4). El catálogo de FinanzasMock los nombra en español y las cinco rutas en pie
-> nacieron en inglés sin que la regla estuviera escrita en ningún lado.
+> (`ARCHITECTURE.md` §4).
 
-> **Corrección de rumbo (2026-09-07):** este documento venía proponiendo Tarjetas o Metas como
-> próximo módulo, en contra del artifact. **Tarjetas (RFC 007) es Fase 2 y Metas (RFC 011) es Fase
-> 3.** Metas en la primera fase es justamente el error que el artifact documenta del `ROADMAP.md`
-> viejo.
+> **Corrección de rumbo (2026-09-07):** **Tarjetas (RFC 007) es Fase 2 y Metas (RFC 011) es Fase 3.**
+> Metas en la primera fase es el error que el artifact documenta del `ROADMAP.md` viejo.
 
 **Pendiente de la gobernanza:** revisar la duplicación entre `ARCHITECTURE.md` y `.agents/AGENTS.md`
-§2–§5.
+§2–§5. Y el artifact de la hoja de ruta quedó desactualizado tras el merge de tarjetas: dice 321
+tests y da tarjetas por pendiente.
 
 ---
 

@@ -4,6 +4,7 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Trampas del repo
 
+*   [Postgres caído se disfraza de bug](entorno_postgres_caido.md) — `AggregateError` + 401 en login, o suite roja, suele ser `postgres-dev` apagado. Chequearlo primero.
 *   **`pnpm build` no tipa los tests.** Build verde + tests verdes convivieron con 7 errores de
     `tsc --noEmit` (fixtures de `Account` sin las columnas nuevas). Es lo que rompe la compuerta CI.
 *   **Agregar una columna a una tabla rompe fixtures de tests de otras features.** `cbu_cvu` y `alias`
@@ -52,6 +53,8 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Decisiones tomadas
 
+*   [Rediseño de clasificación y propuestas](decisiones_modelo_clasificacion.md) — sesión de diseño **abierta**: categoría = cuenta contable, propuestas fuera del libro. Falta el tema de instrumentos.
+
 *   **Cotizaciones (RFC 015, registrado en `DRAFT`):** los cierres mensuales persisten su cotización en
     una tabla `exchange_rates`; los saldos vivos usan cotización del día cacheada. Escala fija
     `RATE_SCALE = 1_000_000`, `rateDate` como `date`, sin columna de organización. Las **transacciones
@@ -61,6 +64,7 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Cómo consultarle al usuario
 
+*   [Una pregunta por vez en diseño](feedback_una_pregunta_por_vez.md) — decisiones de arquitectura: una sola, con el impacto analizado antes.
 *   **El mapa completo primero, la decisión después.** No pongas un `AskUserQuestion` arriba de la
     mesa hasta que el usuario tenga claro qué hay hoy y dónde está el hueco. El 2026-09-07 `forja` le
     disparó una consulta con cuatro opciones antes de explicar el ciclo completo y lo cortó en seco
@@ -108,28 +112,20 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     Si se le pasa el plan con el árbol sucio, devuelve un informe de factibilidad y no toca nada
     — verificado el 2026-09-07, funciona como se esperaba.
 
+## Ideas aparcadas
+
+*   [Página de proyecciones](idea_pagina_proyecciones.md) — por tendencia sobre recurrencias reales, ajustable por inflación. Sin discutir; idea del 2026-09-09.
+
 ## Estado
 
-*   Rama `feat/preferencias-canonicas` (sale de `master`), limpia y commiteada. **Plan escrito en
-    `docs/planes/normalizar-preferencias-perfil.md` y listo para `obra`.**
-*   **El RFC 015 pasó a `APPROVED` el 2026-09-08**, a pedido explícito del usuario y sobre el texto
-    enmendado. **Ya no queda ningún RFC en `DRAFT`: los 21 están aprobados.** Es la primera vez que el
-    proyecto no tiene una propuesta frenando código.
-*   **El RFC 015 fue enmendado el 2026-09-08** con una §0 de contraste. Los RFCs de junio 2026 dan por
-    ciertas cosas que ya no lo son: éste proponía crear preferencias en `users` (viven en `profiles`),
-    una columna `password` (hoy `password_hash`+`salt`+`hash_params`, commit `0176d86`) y un algoritmo
-    sobre `wealthAssets`/`loans`, **tablas que no existen**. Contrastar siempre antes de planificar.
-*   `master` quedó consolidado el 2026-09-08 (`b28eb08..ef21cf9`, 23 commits) con la batería en
-    39 archivos / 305 tests / lint 0 / tsc 0 / build verde. Registro congelado en
-    `docs/registro/2026-09-08-cierre-transacciones-contactos-entidades.md`.
-*   **Decisión del usuario (2026-09-08): la moneda base de consolidación es del usuario**
-    (`profiles.currency`), no de la organización. Es preferencia de visualización; eligió esto sobre
-    la alternativa de ponerla en `organizations`.
-*   **Tarjetas (007) es Fase 2 y Metas (011) es Fase 3.** Metas en fase temprana es el error que el
-    artifact le señala al `ROADMAP.md` viejo.
-*   **El artifact está sincronizado al 2026-09-08**: 305 tests, `master` consolidado, RFC 015
-    aprobado y ninguno en DRAFT, nodo 015 del grafo pasado de bloqueado a aprobado-sin-construir.
-    Releerlo con `action: "read"` antes de editarlo y republicar con su `url`; no crear uno nuevo.
-    **Republicarlo exige leer el archivo guardado entero** (~1130 líneas) o el publish se rechaza:
-    editar una copia en `/tmp` y dejar intacto el original que baja `action: "read"`.
-*   Pendiente propio: revisar duplicación entre `ARCHITECTURE.md` y `.agents/AGENTS.md` §2–§5.
+*   **`master` en `4cd8a8a`, sin ramas vivas.** Tarjetas (RFC 007) consolidada el 2026-09-08:
+    46 archivos de test, 348 tests, lint 0, tsc 0, build verde, verificado de forma independiente.
+    Registro en `docs/registro/2026-09-08-cierre-tarjetas.md`.
+*   **Sesión de diseño abierta**, sin código. Se retoma por el §4 de
+    `docs/diseno/rediseno-clasificacion-y-propuestas.md`. Ver [[decisiones-modelo-clasificacion]].
+*   **Convención nueva:** los segmentos de ruta van en inglés (`ARCHITECTURE.md` §4). Existía de
+    hecho —las 5 rutas en pie nacieron así— y no estaba escrita; el artifact y el inventario
+    prometían los nombres en español del mock.
+*   **El artifact quedó desactualizado** tras el merge de tarjetas: dice 321 tests (hoy 348), da
+    tarjetas por pendiente en la Fase 2 y en el grafo, dice `/tarjetas` donde el repo tiene `/cards`,
+    cuenta 5 rutas en pie de 17 cuando son 6, y se contradice solo en el total de ítems (18 / 23 / 24).
