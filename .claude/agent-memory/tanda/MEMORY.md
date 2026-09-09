@@ -118,7 +118,7 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Estado
 
-*   **`master` en `4cd8a8a`, sin ramas vivas.** Tarjetas (RFC 007) consolidada el 2026-09-08:
+*   **`master` en `a9303b5`, sin ramas vivas.** Tarjetas (RFC 007) consolidada el 2026-09-08:
     46 archivos de test, 348 tests, lint 0, tsc 0, build verde, verificado de forma independiente.
     Registro en `docs/registro/2026-09-08-cierre-tarjetas.md`.
 *   **Sesión de diseño abierta**, sin código. Se retoma por el §4 de
