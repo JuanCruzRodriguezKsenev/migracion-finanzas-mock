@@ -43,3 +43,11 @@ next-env.d.ts
 
 # Prohibición de acceso crítica
 /migracion
+
+# Enlaces simbólicos locales hacia las skills, cuyo contenido real SÍ está
+# versionado en `.agents/skills/` —el lugar neutro, que sirve a cualquier
+# agente de IA—. Acá sólo viven los symlinks que Claude Code necesita para
+# verlas, y son específicos de cada máquina.
+# Al clonar en otra máquina hay que rehacerlos:
+#   ln -s ../../.agents/skills/<nombre> .claude/skills/<nombre>
+/.claude/skills/
