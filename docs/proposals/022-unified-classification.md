@@ -2,8 +2,9 @@
 
 *   **ID de la Propuesta:** 022
 *   **Título:** Unificación del árbol de categorías con el plan de cuentas, imputación real del gasto y catálogo inicial
-*   **Estado:** `DRAFT` — **pendiente de aprobación del usuario.** No habilita código.
+*   **Estado:** `APPROVED` (2026-09-09) — aprobado por el usuario. Habilita código contra este texto.
 *   **Fecha de Creación:** 2026-09-09
+*   **Fecha de Aprobación:** 2026-09-09
 *   **Autor:** `tanda` (sesión de diseño del 2026-09-09)
 *   **Origen:** §3 de [`docs/diseno/rediseno-clasificacion-y-propuestas.md`](../diseno/rediseno-clasificacion-y-propuestas.md), donde se tomaron las decisiones con su fundamento.
 

@@ -12,7 +12,9 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** ninguna. `master` está en `5b011ea`, consolidado y sin trabajo sin integrar.
+**Rama activa:** `feat/clasificacion-unificada`, con el plan
+[`planes/clasificacion-unificada.md`](planes/clasificacion-unificada.md) listo para ejecutar y sin
+código escrito todavía. Sale de `master` en `c980d93`.
 
 **Estado:** 🟢 **Sesión de diseño cerrada, sin código.** El 2026-09-09 se abrió y se cerró el
 rediseño de la clasificación y de las transacciones propuestas, registrado en
@@ -25,12 +27,16 @@ por entidad** —se entra por Galicia y se ven sus cuentas, sus tarjetas y sus p
 `/debts` y la página de patrimonio (propiedades, autos) son páginas aparte; y el **Patrimonio Neto se
 muda a la página de estadísticas**, donde también van a vivir las categorías.
 
-**Escrita la primera propuesta: [`proposals/022-unified-classification.md`](proposals/022-unified-classification.md)**,
-en `DRAFT`. Categoría = cuenta contable, imputación real del gasto, catálogo inicial de 18 categorías
-con sus subcategorías, y la corrección de un defecto que el contraste destapó: un cambio de divisas
-puede asentar contra el Patrimonio Neto (`TECHNICAL_DEBT.md` §5).
+**Primera propuesta escrita y aprobada: [`proposals/022-unified-classification.md`](proposals/022-unified-classification.md)**,
+`APPROVED` el 2026-09-09. Categoría = cuenta contable, imputación real del gasto, catálogo inicial de
+18 categorías con sus subcategorías, y la corrección de un defecto que el contraste destapó: un
+cambio de divisas puede asentar contra el Patrimonio Neto (`TECHNICAL_DEBT.md` §5).
 
-**Próximo paso: que el usuario apruebe el RFC 022.** Hasta que pase a `APPROVED` no habilita código.
+**Próximo paso: ejecutar la primera tajada**, con el plan ya escrito. Entra el backend completo
+—esquema, migración 0023, catálogo, generador de códigos, repositorio, acciones, imputación real y la
+corrección de D1, con sus tests—. **No entran** la pantalla de gestión de categorías (el RFC no la
+especifica) ni la migración de `subscriptions.category`: van a una segunda tanda.
+
 Después siguen las otras propuestas del §7 del documento de diseño. El RFC 008 hay que
 **reescribirlo**, no implementarlo: es de junio de 2026, usa `integer` para dinero y guarda un
 `remainingBalance` propio que duplicaría el saldo ya materializado en `accounts.balance`.
