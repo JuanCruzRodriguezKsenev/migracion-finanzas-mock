@@ -12,17 +12,22 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** ninguna. `master` está en `4cd8a8a`, consolidado y sin trabajo sin integrar.
+**Rama activa:** ninguna. `master` está en `5b011ea`, consolidado y sin trabajo sin integrar.
 
-**Estado:** 🟡 **Sesión de diseño abierta, sin código.** El 2026-09-09 se abrió el rediseño de la
-clasificación y de las transacciones propuestas, registrado en
+**Estado:** 🟢 **Sesión de diseño cerrada, sin código.** El 2026-09-09 se abrió y se cerró el
+rediseño de la clasificación y de las transacciones propuestas, registrado en
 [`diseno/rediseno-clasificacion-y-propuestas.md`](diseno/rediseno-clasificacion-y-propuestas.md).
-**Dos temas cerrados y uno sin empezar.** Nada de esto habilita código todavía: cuando los tres
-estén cerrados se parte en propuestas formales bajo `proposals/`, y recién ahí se implementa.
+**Los tres temas están decididos**, con bordes abiertos anotados dentro de cada uno. Nada de esto
+habilita código todavía: falta partirlo en las propuestas formales del §7 bajo `proposals/`.
 
-**Próximo paso: retomar por el §4 del documento de diseño** — instrumentos contra cuentas: qué es una
-tarjeta, qué es un préstamo, y qué se muestra en `/accounts`. Es lo que arrastra el RFC 007 ya
-implementado y lo que bloquea el RFC 008.
+**Lo que se decidió en el §4 (navegación por instrumento):** `/accounts` pasa a ser el **directorio
+por entidad** —se entra por Galicia y se ven sus cuentas, sus tarjetas y sus préstamos—; `/cards`,
+`/debts` y la página de patrimonio (propiedades, autos) son páginas aparte; y el **Patrimonio Neto se
+muda a la página de estadísticas**, donde también van a vivir las categorías.
+
+**Próximo paso: escribir las propuestas del §7**, empezando por la que desbloquea más cosas. El RFC
+008 hay que **reescribirlo**, no implementarlo: es de junio de 2026, usa `integer` para dinero y
+guarda un `remainingBalance` propio que duplicaría el saldo ya materializado en `accounts.balance`.
 
 **Por qué se frenó el código.** La ronda iba a ser suscripciones al libro mayor (RFC 004). Al
 investigar aparecieron tres decisiones de arquitectura sin tomar y sin RFC, que ese trabajo
@@ -65,6 +70,14 @@ en el catálogo del mock, que es donde está la referencia visual.
 * **Facturación (`/billing`, mock: `/facturacion`)** — RFC 013 (`013-billing-and-invoicing.md`): emisión y preview de comprobantes.
 * **Integraciones y API Keys (`/integrations`, mock: `/integraciones`)** — RFC 012 (`012-integrations-and-api-keys.md`).
 * **Perfil (`/profile`, mock: `/perfil`)** — RFC 015, ya aprobado: es la pantalla que le falta a las preferencias canónicas para tener consumidor de producción.
+
+**Cuatro rutas del mock que este inventario no listaba** (detectado el 2026-09-09 al recorrer el
+catálogo con el mock levantado; el encabezado decía 17 dominios y sólo se enumeraban 12):
+
+* **Estadísticas / reportes (mock: `/reportes`)** — **Sin RFC.** Es la página donde el §4 del diseño manda el Patrimonio Neto y donde el §3 manda las categorías. En el mock trae cinco métricas (ahorro neto, ingresos, gastos, tasa de ahorro, transacciones), gráfico combinado de ingresos/gastos/ahorro, **donut de gastos por categoría**, cascada, "Resumen por cuenta", "Top gastos" y reportes guardados. Nombre de ruta a decidir.
+* **Patrimonio (mock: `/patrimonio`)** — **Sin RFC.** Activos no financieros: propiedades, autos. Decisión 3 del §4. El único precedente es la tabla `assets` de FinanceApp-WSL.
+* **Configuración (mock: `/configuracion`)** — sin RFC; distinta de `/profile`.
+* **Mejorar plan (mock: `/mejorar-plan`)** — pantalla comercial del SaaS; se cruza con la deuda de `planName`/`planBilling` en `profiles`.
 
 **Ya portados:** cuentas (`/accounts`), contactos (`/contacts`), transacciones (`/transactions`),
 suscripciones (`/subscriptions`) y **tarjetas (`/cards`)**.

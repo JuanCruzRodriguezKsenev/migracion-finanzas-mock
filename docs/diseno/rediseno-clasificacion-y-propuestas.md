@@ -1,12 +1,12 @@
 # Rediseño de la clasificación y de las transacciones propuestas
 
-*   **Estado:** 🟡 **En discusión.** Dos temas cerrados, uno sin empezar.
-*   **Iniciado:** 2026-09-09
-*   **Qué es esto:** el registro de una sesión de diseño que todavía no es código ni RFC. Cuando los
-    tres temas estén cerrados, esto se parte en propuestas formales bajo `docs/proposals/` y recién
-    ahí habilita implementación, según la regla del repositorio.
-*   **Para retomar sin contexto:** leé §1 (por qué existe esto), después §2 y §3 (lo decidido) y
-    arrancá por §4, que es el tema que falta.
+*   **Estado:** 🟢 **Los tres temas cerrados.** Quedan bordes abiertos anotados dentro de cada uno.
+*   **Iniciado:** 2026-09-09 · **Cerrado:** 2026-09-09
+*   **Qué es esto:** el registro de una sesión de diseño que todavía no es código ni RFC. Con los
+    tres temas cerrados, el paso siguiente es partirlo en las propuestas formales del §7 bajo
+    `docs/proposals/`; recién ahí habilita implementación, según la regla del repositorio.
+*   **Para retomar sin contexto:** leé §1 (por qué existe esto) y después §2, §3 y §4, que son lo
+    decidido. El §5 son los defectos vivos que la discusión destapó.
 
 ---
 
@@ -233,9 +233,9 @@ Los presupuestos del mock ni siquiera apuntan a una categoría: `budgets` guarda
 
 ---
 
-## 4. Tema sin empezar — Instrumentos contra cuentas
+## 4. Tema cerrado — Instrumentos contra cuentas
 
-**Acá se retoma mañana.** Lo que está planteado y sin decidir:
+### De dónde salió
 
 El usuario objetó que tarjetas y deudas estén modeladas como cuentas: *que pertenezcan a una entidad
 no quiere decir que sean una cuenta; son un sistema independiente, sin saldo inicial, con una
@@ -261,6 +261,75 @@ instrumento de su reflejo contable (`cards` no guarda dinero, `card_accounts` lo
 pasivo por divisa). Lo que estaría mal no es que exista la cuenta, sino tres cosas: que se presente
 como una cuenta operable del usuario, el asiento de apertura contra Patrimonio, y que el instrumento
 se agote en su reflejo contable cuando tiene ciclo, límite, cuotas comprometidas y débitos adheridos.
+
+### Lo que se verificó antes de decidir
+
+**Ninguno de los dos proyectos de referencia agrupa por tipo contable.** Los dos cortan por
+**instrumento**, y este repositorio es el único que corta por el plan de cuentas — que es exactamente
+lo que produjo la mezcla:
+
+| | FinanzasMock | FinanceApp-WSL | Este repo |
+| :--- | :--- | :--- | :--- |
+| Corte de las páginas | por instrumento | por instrumento | **por tipo contable** |
+| Modelo de datos | tabla por instrumento | tabla por instrumento | cuenta del plan |
+| Partida doble | no tiene | no tiene | **sí** |
+
+*   **FinanzasMock** ya tiene en su menú lateral `Cuentas`, `Tarjetas`, `Deudas`, `Patrimonio`,
+    `Inversiones` y `Reportes` como entradas **separadas**. Comprobado levantándolo en local.
+*   **FinanceApp-WSL** resuelve su dashboard con tres tarjetas cuyos nombres son la decisión entera:
+    `NetWorthCard`, `LiquidityCard`, `DebtsCard`. Su esquema es una tabla por instrumento
+    (`bank_accounts`, `digital_wallets`, `assets`, `liabilities`, `credit_cards`), más
+    `net_worth_snapshots`.
+*   Los dos podían darse ese lujo **porque no tienen libro mayor**. Nosotros lo tenemos, y el RFC 007
+    ya encontró la salida: instrumento en su tabla, reflejo en el libro. Lo que faltaba era que la
+    **navegación** siguiera al instrumento en vez de seguir al plan de cuentas.
+
+### Decisiones
+
+1.  **`/accounts` es el directorio por entidad, no el listado del plan de cuentas.** Se entra por
+    quién emite —Galicia, Mercado Pago, Efectivo— y al abrir una entidad aparece **todo lo que se
+    tiene con ella**: sus cuentas corrientes, sus tarjetas, sus préstamos.
+    *Fundamento:* la pregunta que contesta esa página es *"¿qué tengo con este banco?"*, y hoy la
+    contesta a medias porque agrupa por `type` contable en vez de agrupar por instrumento.
+
+2.  **Cada familia de instrumento tiene además su página transversal propia:** `/cards` (ya existe),
+    `/debts` y la de patrimonio. Un mismo instrumento aparece **dos veces, en dos ejes distintos** —
+    por quién lo emite y por qué tipo de cosa es—, y eso no es duplicación: son dos preguntas
+    reales, *"¿qué tengo con Galicia?"* contra *"¿cómo vienen mis tarjetas?"*.
+
+3.  **La página de patrimonio cubre los activos no financieros:** propiedades, autos y demás. **Ya
+    tiene RFC**: el **010 (`010-wealth-assets-management.md`), `APPROVED` desde el 2026-06-23**,
+    cubre inmuebles y vehículos, historial de valuaciones en cualquier divisa, fotos, inquilinos
+    vinculados a `contacts` y bitácora de incidencias con su costo. Está en la Fase 4 de la hoja de
+    ruta. **No hay que escribirle propuesta nueva, hay que contrastarlo**: es de junio de 2026, con
+    la misma trampa que el 008 y que el 015 — sus siete columnas monetarias son `integer` y el
+    repositorio migró todo a `bigint` en el RFC 019.
+
+4.  **El instrumento se presenta como instrumento, no como fila del plan.** Dentro de Galicia, la
+    tarjeta se muestra como tarjeta —marca, últimos cuatro, ciclo— y no como `2.1.01.01` con saldo
+    negativo al lado de la Caja de Ahorro. La cuenta contable **sigue existiendo por debajo**, sin
+    cambios: el patrón `cards` → `card_accounts` del RFC 007 es el que se repite para lo que venga.
+
+5.  **El Patrimonio Neto se va a la página de estadísticas.** Deja de ser la métrica hero de
+    `/accounts`.
+    *Fundamento:* si `/accounts` es el directorio de entidades, el patrimonio neto **ya no se puede
+    calcular ahí** — necesita los autos y las propiedades, que viven en otra página. Y el cálculo que
+    hay hoy está roto: ver el defecto 8 del §5.
+
+### Lo que queda abierto en este tema
+
+*   **El nombre de las rutas.** Por `ARCHITECTURE.md` §4 los segmentos van en inglés, así que serían
+    `/debts` y `/wealth`; y la página de estadísticas todavía no tiene nombre elegido — el mock la
+    llama `/reportes`, lo que daría `/reports`, pero se habló de ella como "stats".
+*   **El asiento de apertura contra Patrimonio.** El planteo original de este §4 lo daba por defecto a
+    corregir. Contra-argumento a resolver: es la técnica estándar de saldo inicial y es **idéntica**
+    a la que usa `createAccountForEntityAction` para el saldo inicial de una caja de ahorro; si se
+    saca de tarjetas hay que sacarlo de cuentas, y entonces ningún saldo de arranque puede entrar sin
+    romper Debe = Haber. Lo que sí está mal es la **descripción** del asiento, que se lee como un
+    hecho económico en vez de como una apertura.
+*   **Qué pasa con la solapa "Plan contable"** de `/accounts` y con `CreateAccountForm`, que hoy
+    ofrece los cinco tipos contables al usuario. El §3 se lleva ingresos y gastos al árbol de
+    categorías; falta decidir si queda alguna vista del plan crudo y para quién.
 
 ---
 
@@ -295,6 +364,20 @@ anotados en [`TECHNICAL_DEBT.md`](../TECHNICAL_DEBT.md).
 7.  **`1.1.01.02 Efectivo en Billetera` tiene balance negativo** (`-1.032.300`). Un activo de efectivo
     en negativo es imposible: no se puede tener menos que cero de plata física. Dato del seed o falta
     de validación; hay que mirarlo.
+8.  **El Patrimonio Neto de `/accounts` suma la deuda en vez de restarla.** El motor guarda los
+    pasivos con **signo negativo**: `accountingService.ts:117` los trata con la misma regla que los
+    activos —aumentan con el Debe, disminuyen con el Haber—, así que un consumo de tarjeta
+    (Debe Gasto / Haber Tarjeta) deja la cuenta en negativo. La convención es coherente y el resto
+    del repositorio la respeta: `accountingActions.ts:99` invierte el signo al alta manual de un
+    pasivo, y `CardVisual.tsx:34` calcula la deuda como `-balance`. **`AccountsContainer` no la
+    respeta:** la línea 87 acumula `sum + a.balance` sobre los pasivos —total negativo— y la 88 hace
+    `netWorth = totalAssets - totalLiabs`, o sea *activos − (−deuda)*. Con la tarjeta en `-2.500.000`
+    el patrimonio se infla en 5.000.000.
+    **Y las dos mitades de la misma tarjeta usan convenciones opuestas:** la sparkline que va debajo
+    de ese número sale de `monthly_summaries.balanceSnapshot`, que el seed calcula con los pasivos en
+    **positivo** (`activosMes = saldoAcumulado + pasivosMes`, invariante A = PN + P).
+    *Nota:* en la misma pantalla, el "Saldo Neto" por entidad (línea 220) hace `sum + a.balance` sin
+    restar nada y **da bien**. El mismo dato, dos cálculos, uno correcto y otro no.
 
 ## 6. Datos del motor que condicionaron las decisiones
 
@@ -322,6 +405,8 @@ aprobarse — el procedimiento que evitó implementar los RFC 007 y 015 contra t
 | :--- | :--- |
 | **Transacciones propuestas** | §2 completo. Nueva |
 | **Clasificación unificada** | §3 completo: categoría = cuenta. Nueva |
-| **Instrumentos financieros** | §4, cuando se cierre. Nueva o enmienda al RFC 007 — a decidir |
+| **Instrumentos y navegación por entidad** | §4: `/accounts` por entidad, `/cards`, `/debts`. Nueva o enmienda al RFC 007 — a decidir |
+| **Reescritura del RFC 008** | Es de junio de 2026: usa `integer` para dinero y guarda un `remainingBalance` propio que duplicaría el saldo ya materializado en `accounts.balance` |
+| **Enmienda al RFC 010** | Patrimonio físico **ya está aprobado**; hay que contrastarlo contra el esquema real: sus siete columnas monetarias son `integer` y el repositorio migró a `bigint` en el RFC 019 |
 | **Enmienda al RFC 003** | Categorizar al confirmar; cada parte en su propio libro |
 | **Enmienda al RFC 004** | El §4 pide `needs_review` en el libro; queda reemplazado por §2 |
