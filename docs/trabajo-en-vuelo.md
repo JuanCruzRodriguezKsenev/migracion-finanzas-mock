@@ -12,34 +12,24 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `feat/clasificacion-unificada`, con el plan
-[`planes/clasificacion-unificada.md`](planes/clasificacion-unificada.md) listo para ejecutar y sin
-código escrito todavía. Sale de `master` en `c980d93`.
+**Rama activa:** `feat/clasificacion-unificada`, ejecutando el plan
+[`planes/clasificacion-unificada.md`](planes/clasificacion-unificada.md). Sale de `master` en `c980d93`.
 
-**Estado:** 🟢 **Sesión de diseño cerrada, sin código.** El 2026-09-09 se abrió y se cerró el
-rediseño de la clasificación y de las transacciones propuestas, registrado en
-[`diseno/rediseno-clasificacion-y-propuestas.md`](diseno/rediseno-clasificacion-y-propuestas.md).
-**Los tres temas están decididos**, con bordes abiertos anotados dentro de cada uno. Nada de esto
-habilita código todavía: falta partirlo en las propuestas formales del §7 bajo `proposals/`.
+**Estado:** 🟢 **Primera tajada completada (Backend e imputación contable).**
+Se implementó el núcleo contable del RFC 022:
+*   Esquema de base de datos (`categories` enriquecida con `type`, `account_code`, `archived_at`, `is_system_leaf` y `parentId` auto-referenciado; tabla puente `category_accounts` multidivisa).
+*   Migración `0023_amusing_omega_red.sql` con backfill limpio de categorías gemelas, adopción de cuentas `5.1.01.99` y `4.1.01.99` como hojas del sistema `General`, e índices/FKs estrictos.
+*   Generador correlativo de códigos `getNextCategoryCode` con soporte estricto de dos niveles, reserva de `.99` para hojas `General` y fallo explícito al superar 98 hermanos.
+*   Catálogo inicial del RFC 022 §10 (18 categorías y 42 subcategorías) sembrado por organización en `seed.ts`.
+*   Repositorio `categoryRepository` y Server Actions de categorías (`createCategoryAction`, `updateCategoryAction`, `archiveCategoryAction`, `unarchiveCategoryAction`, `getCategoryTreeAction`) con soporte de mudanza atómica R3 y archivo lógico R4.
+*   Imputación contable real por categoría en `createTransactionFromFormAction` con resolución bajo demanda por divisa (`findOrCreateAccountForCurrency`).
+*   Corrección del defecto D1 en `obtenerCuentaPorMoneda` (búsqueda por código exacto `${codigoBase}-${currency}`).
+*   Tests completos de unidad e integración (radio A, radio B, mudanza R3, borrado protegido R4, multidivisa R5, codificación y defecto D1).
 
-**Lo que se decidió en el §4 (navegación por instrumento):** `/accounts` pasa a ser el **directorio
-por entidad** —se entra por Galicia y se ven sus cuentas, sus tarjetas y sus préstamos—; `/cards`,
-`/debts` y la página de patrimonio (propiedades, autos) son páginas aparte; y el **Patrimonio Neto se
-muda a la página de estadísticas**, donde también van a vivir las categorías.
+**Próximo paso: Segunda tajada del RFC 022.**
+1.  Pantalla de gestión de categorías en la UI (árbol jerárquico, modal de creación, edición, archivado lógico).
+2.  Migración de `subscriptions.category` (reemplazo del `z.enum` de siete valores por relación a `categoryId`).
 
-**Primera propuesta escrita y aprobada: [`proposals/022-unified-classification.md`](proposals/022-unified-classification.md)**,
-`APPROVED` el 2026-09-09. Categoría = cuenta contable, imputación real del gasto, catálogo inicial de
-18 categorías con sus subcategorías, y la corrección de un defecto que el contraste destapó: un
-cambio de divisas puede asentar contra el Patrimonio Neto (`TECHNICAL_DEBT.md` §5).
-
-**Próximo paso: ejecutar la primera tajada**, con el plan ya escrito. Entra el backend completo
-—esquema, migración 0023, catálogo, generador de códigos, repositorio, acciones, imputación real y la
-corrección de D1, con sus tests—. **No entran** la pantalla de gestión de categorías (el RFC no la
-especifica) ni la migración de `subscriptions.category`: van a una segunda tanda.
-
-Después siguen las otras propuestas del §7 del documento de diseño. El RFC 008 hay que
-**reescribirlo**, no implementarlo: es de junio de 2026, usa `integer` para dinero y guarda un
-`remainingBalance` propio que duplicaría el saldo ya materializado en `accounts.balance`.
 
 **Por qué se frenó el código.** La ronda iba a ser suscripciones al libro mayor (RFC 004). Al
 investigar aparecieron tres decisiones de arquitectura sin tomar y sin RFC, que ese trabajo

@@ -10,10 +10,10 @@ import { db } from "@/shared/db/client" ;
 import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
-import { accounts , ledgerEntries , ledgerTransactions , idempotencyKeys , outboxEvents , monthlySummaries } from "@/features/accounting/schema.db" ;
+import { accounts , categories , categoryAccounts , ledgerEntries , ledgerTransactions , idempotencyKeys , outboxEvents , monthlySummaries } from "@/features/accounting/schema.db" ;
 
 // Feature: Transactions
-import { createTransactionFromFormAction } from "./transactionsActions" ;
+import { createTransactionFromFormAction , obtenerCuentaPorMoneda } from "./transactionsActions" ;
 
 vi.mock( "next-auth" , () => ( {
   getServerSession: vi.fn() ,
@@ -39,6 +39,8 @@ describe( "createTransactionFromFormAction — monedas" , () => {
     await db.delete( ledgerEntries      ) ;
     await db.delete( ledgerTransactions ) ;
     await db.delete( monthlySummaries   ) ;
+    await db.delete( categoryAccounts   ) ;
+    await db.delete( categories         ) ;
     await db.delete( accounts           ) ;
     await db.delete( organizations      ) ;
 
@@ -171,5 +173,105 @@ describe( "createTransactionFromFormAction — monedas" , () => {
     if( !res.success ) {
       expect( res.error ).toContain( "transferencia" ) ;
     }
+  } ) ;
+
+  describe( "D1 — Defecto contable de posición de cambio (RFC 022 §0, §5)" , () => {
+    it( "con Patrimonio Neto Inicial presente, codigoBase: '3.3.01' debe devolver 3.3.01-ARS y no el patrimonio" , async () => {
+      // 1. Crear Patrimonio Neto Inicial (3.1.01.01, equity, ARS)
+      const [ patrimonio ] = await db
+        .insert( accounts )
+        .values( {
+          organizationId: orgId ,
+          code:           "3.1.01.01" ,
+          name:           "Patrimonio Neto Inicial" ,
+          type:           "equity" ,
+          balance:        100000000 ,
+          currency:       "ARS" ,
+        } )
+        .returning() ;
+
+      const allAccounts = await db
+        .select()
+        .from( accounts )
+        .where( eq(accounts.organizationId , orgId) ) ;
+
+      // 2. Pedir cuenta de posición de cambio
+      const ctaPosicion = await obtenerCuentaPorMoneda( {
+        allAccounts ,
+        organizationId: orgId ,
+        currency:       "ARS" ,
+        type:           "equity" ,
+        codigoBase:     "3.3.01" ,
+        nombreBase:     "Posición de cambio" ,
+      } ) ;
+
+      expect( ctaPosicion.id ).not.toBe( patrimonio.id ) ;
+      expect( ctaPosicion.code ).toBe( "3.3.01-ARS" ) ;
+    } ) ;
+  } ) ;
+
+  describe( "Imputación real por categoría (RFC 022 §5)" , () => {
+    it( "debería imputar el débito a la cuenta de la categoría elegida (Supermercado)" , async () => {
+      const [ catSuper ] = await db
+        .insert( categories )
+        .values( {
+          organizationId: orgId ,
+          name:           "Supermercado" ,
+          type:           "expense" ,
+          accountCode:    "5.1.03.01" ,
+        } )
+        .returning() ;
+
+      const res = await createTransactionFromFormAction( {
+        description:     "Compra de lácteos" ,
+        type:            "expense" ,
+        amount:          150 ,
+        sourceAccountId: cajaArsId ,
+        categoryId:      catSuper.id ,
+      } ) ;
+
+      expect( res.success ).toBe( true ) ;
+
+      const [ cuentaSuper ] = await db
+        .select()
+        .from( accounts )
+        .where( eq(accounts.code , "5.1.03.01-ARS") ) ;
+
+      expect( cuentaSuper ).toBeDefined() ;
+
+      const asientos = await db
+        .select()
+        .from( ledgerEntries )
+        .where( eq(ledgerEntries.accountId , cuentaSuper.id) ) ;
+
+      expect( asientos.length ).toBe( 1 ) ;
+      expect( asientos[0].debit ).toBe( 15000 ) ;
+    } ) ;
+
+    it( "sin categoría especificada, debería imputar a la hoja General de Gastos" , async () => {
+      const res = await createTransactionFromFormAction( {
+        description:     "Gasto sin detallar" ,
+        type:            "expense" ,
+        amount:          50 ,
+        sourceAccountId: cajaArsId ,
+      } ) ;
+
+      expect( res.success ).toBe( true ) ;
+
+      const [ cuentaGeneral ] = await db
+        .select()
+        .from( accounts )
+        .where( eq(accounts.code , "5.1.01.99-ARS") ) ;
+
+      expect( cuentaGeneral ).toBeDefined() ;
+
+      const asientos = await db
+        .select()
+        .from( ledgerEntries )
+        .where( eq(ledgerEntries.accountId , cuentaGeneral.id) ) ;
+
+      expect( asientos.length ).toBe( 1 ) ;
+      expect( asientos[0].debit ).toBe( 5000 ) ;
+    } ) ;
   } ) ;
 } ) ;

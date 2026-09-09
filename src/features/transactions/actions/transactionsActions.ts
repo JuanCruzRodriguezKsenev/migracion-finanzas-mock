@@ -67,7 +67,7 @@ export async function getCategoriesAction(): Promise< Result<Category[] , string
  * @param params - Cuentas ya cargadas, organización, moneda, tipo contable y código/nombre base.
  * @returns La cuenta existente para esa moneda, o la recién creada.
  */
-async function obtenerCuentaPorMoneda( params: {
+export async function obtenerCuentaPorMoneda( params: {
   allAccounts:    Account[] ;
   organizationId: string ;
   currency:       string ;
@@ -77,13 +77,14 @@ async function obtenerCuentaPorMoneda( params: {
 } ): Promise< Account > {
   const { allAccounts , organizationId , currency , type , codigoBase , nombreBase } = params ;
 
-  const existente = allAccounts.find( ( a ) => (a.type === type) && (a.currency === currency) ) ;
+  const targetCode = `${codigoBase}-${currency}` ;
+  const existente  = allAccounts.find( ( a ) => (a.code === targetCode) && (a.type === type) ) ;
 
   if( existente ) { return( existente ) ; }
 
   return( await accountRepository.create( {
     organizationId ,
-    code:    `${codigoBase}-${currency}` ,
+    code:    targetCode ,
     name:    `${nombreBase} (${currency})` ,
     type ,
     balance: 0 ,
@@ -115,6 +116,7 @@ export async function createTransactionFromFormAction(
 
   const data          = validation.data ;
   const amountInCents = Math.round( data.amount * 100 ) ;
+  let resolvedCategoryId: string | undefined = data.categoryId || undefined ;
 
   try {
     const allAccounts = await accountRepository.findAll( organizationId ) ;
@@ -144,17 +146,28 @@ export async function createTransactionFromFormAction(
         currency ,
       } ) ;
 
-      // Cuenta de gasto (entra gasto: Débito)
-      // La contrapartida tiene que estar en la misma moneda. El fallback anterior tomaba cualquier
-      // cuenta de gasto y le estampaba otra divisa, que es la misma mezcla por otra puerta.
-      const expenseAccount = await obtenerCuentaPorMoneda( {
-        allAccounts ,
-        organizationId ,
-        currency ,
-        type:       "expense" ,
-        codigoBase: "5.1.01.99" ,
-        nombreBase: "Gastos Generales" ,
-      } ) ;
+      // Imputar por categoría contable (RFC 022 §5)
+      let targetCat: Category ;
+      if( !data.categoryId ) {
+        targetCat = await categoryRepository.findOrCreateTypeGeneralLeaf( "expense" , organizationId ) ;
+      } else {
+        const cat = await categoryRepository.findById( data.categoryId , organizationId ) ;
+        if( !cat ) {
+          targetCat = await categoryRepository.findOrCreateTypeGeneralLeaf( "expense" , organizationId ) ;
+        } else {
+          const children     = await categoryRepository.findChildren( cat.id , organizationId ) ;
+          const realChildren = children.filter( ( c ) => !c.isSystemLeaf ) ;
+          if( realChildren.length > 0 ) {
+            targetCat = await categoryRepository.findOrCreateGeneralLeaf( cat.id , organizationId ) ;
+          } else {
+            targetCat = cat ;
+          }
+        }
+      }
+
+      resolvedCategoryId = targetCat.id ;
+
+      const expenseAccount = await categoryRepository.findOrCreateAccountForCurrency( targetCat.id , currency ) ;
 
       entries.push( {
         accountId: expenseAccount.id ,
@@ -171,15 +184,28 @@ export async function createTransactionFromFormAction(
         currency ,
       } ) ;
 
-      // Cuenta de ingreso (origen: Crédito)
-      const revenueAccount = await obtenerCuentaPorMoneda( {
-        allAccounts ,
-        organizationId ,
-        currency ,
-        type:       "revenue" ,
-        codigoBase: "4.1.01.99" ,
-        nombreBase: "Ingresos Varios" ,
-      } ) ;
+      // Imputar por categoría contable (RFC 022 §5)
+      let targetCat: Category ;
+      if( !data.categoryId ) {
+        targetCat = await categoryRepository.findOrCreateTypeGeneralLeaf( "revenue" , organizationId ) ;
+      } else {
+        const cat = await categoryRepository.findById( data.categoryId , organizationId ) ;
+        if( !cat ) {
+          targetCat = await categoryRepository.findOrCreateTypeGeneralLeaf( "revenue" , organizationId ) ;
+        } else {
+          const children     = await categoryRepository.findChildren( cat.id , organizationId ) ;
+          const realChildren = children.filter( ( c ) => !c.isSystemLeaf ) ;
+          if( realChildren.length > 0 ) {
+            targetCat = await categoryRepository.findOrCreateGeneralLeaf( cat.id , organizationId ) ;
+          } else {
+            targetCat = cat ;
+          }
+        }
+      }
+
+      resolvedCategoryId = targetCat.id ;
+
+      const revenueAccount = await categoryRepository.findOrCreateAccountForCurrency( targetCat.id , currency ) ;
 
       entries.push( {
         accountId: revenueAccount.id ,
@@ -276,7 +302,7 @@ export async function createTransactionFromFormAction(
 
     return( await createLedgerTransactionAction( {
       description:    data.description ,
-      categoryId:     data.categoryId || undefined ,
+      categoryId:     resolvedCategoryId ,
       merchantName:   data.merchantName || undefined ,
       occurredAt:     data.occurredAt || new Date() ,
       entries ,

@@ -12,6 +12,7 @@ import { organizations } from "@/features/auth/schema.db" ;
 import {
   financialEntities ,
   accounts ,
+  categoryAccounts ,
   ledgerTransactions ,
   ledgerEntries
 } from "../schema.db" ;
@@ -86,6 +87,7 @@ describe( "createFinancialEntityAction & createAccountForEntityAction — Lógic
   const cleanDb = async () => {
     await db.delete( ledgerEntries ) ;
     await db.delete( ledgerTransactions ) ;
+    await db.delete( categoryAccounts ) ;
     await db.delete( accounts ) ;
     await db.delete( financialEntities ) ;
     await db.delete( organizations ) ;

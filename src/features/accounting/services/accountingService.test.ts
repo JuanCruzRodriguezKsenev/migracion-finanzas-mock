@@ -10,7 +10,7 @@ import { db } from "@/shared/db/client" ;
 import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
-import { accounts , ledgerTransactions , ledgerEntries , idempotencyKeys , outboxEvents } from "../schema.db" ;
+import { accounts , categoryAccounts , ledgerTransactions , ledgerEntries , idempotencyKeys , outboxEvents } from "../schema.db" ;
 import {
   createLedgerTransaction ,
   deleteLedgerTransaction ,
@@ -37,6 +37,7 @@ describe( "accountingService" , () => {
     await db.delete( idempotencyKeys    ) ;
     await db.delete( ledgerEntries      ) ;
     await db.delete( ledgerTransactions ) ;
+    await db.delete( categoryAccounts   ) ;
     await db.delete( accounts           ) ;
     await db.delete( organizations      ) ;
 

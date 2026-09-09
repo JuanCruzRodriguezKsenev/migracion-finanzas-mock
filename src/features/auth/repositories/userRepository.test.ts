@@ -5,6 +5,9 @@ import { eq } from "drizzle-orm" ;
 // Shared
 import { db } from "@/shared/db/client" ;
 
+// Feature: Accounting
+import { accounts , categories , categoryAccounts } from "@/features/accounting/schema.db" ;
+
 // Feature: Auth
 import { organizations , users } from "../schema.db" ;
 import { userRepository }        from "./userRepository" ;
@@ -20,6 +23,9 @@ describe( "userRepository" , () => {
   let userId: string ;
 
   const cleanDatabase = async () => {
+    await db.delete( categoryAccounts ) ;
+    await db.delete( categories ) ;
+    await db.delete( accounts ) ;
     await db.delete( users ) ;
     await db.delete( organizations ) ;
   } ;

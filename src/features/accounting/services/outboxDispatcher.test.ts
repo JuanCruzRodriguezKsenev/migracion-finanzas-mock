@@ -18,7 +18,7 @@ import {
   MAX_ATTEMPTS ,
   PROCESSING_TTL_MS
 } from "./outboxDispatcher" ;
-import { outboxEvents } from "../schema.db" ;
+import { accounts , categories , categoryAccounts , outboxEvents } from "../schema.db" ;
 
 
 /**
@@ -33,6 +33,9 @@ describe( "outboxDispatcher" , () => {
     resetEventHandlers() ;
 
     await db.delete( outboxEvents  ) ;
+    await db.delete( categoryAccounts ) ;
+    await db.delete( categories ) ;
+    await db.delete( accounts ) ;
     await db.delete( organizations ) ;
 
     const [ org ] = await db

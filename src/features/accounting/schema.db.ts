@@ -4,7 +4,7 @@
  * Define las tablas de cuentas, categorías contables, transacciones y asientos de diario.
  */
 // Librerías externas
-import { pgTable , uuid , varchar , integer , bigint , timestamp , text , jsonb , uniqueIndex , index } from "drizzle-orm/pg-core" ;
+import { pgTable , uuid , varchar , integer , bigint , timestamp , text , jsonb , uniqueIndex , index , boolean , AnyPgColumn } from "drizzle-orm/pg-core" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -16,12 +16,19 @@ import { organizations } from "@/features/auth/schema.db" ;
 export const categories = pgTable( "categories" , {
   id:             uuid( "id"              ).primaryKey().defaultRandom() ,
   organizationId: uuid( "organization_id" ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
-  parentId:       uuid( "parent_id"       ) , // Auto-referencia para árbol jerárquico
-  name:           varchar( "name"  , {length: 100} ).notNull() ,
-  icon:           varchar( "icon"  , {length: 50 } ) ,
-  color:          varchar( "color" , {length: 7  } ) , // Hex (#FFFFFF)
-  createdAt:      timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
-} ) ;
+  parentId:       uuid( "parent_id"       ).references( (): AnyPgColumn => categories.id , {onDelete: "restrict"} ) ,
+  name:           varchar( "name"         , {length: 100} ).notNull() ,
+  icon:           varchar( "icon"         , {length: 50 } ) ,
+  color:          varchar( "color"        , {length: 7  } ) , // Hex (#FFFFFF)
+  type:           varchar( "type"         , {length: 20 } ).notNull() ,
+  accountCode:    varchar( "account_code" , {length: 50 } ).notNull() ,
+  archivedAt:     timestamp( "archived_at" , {withTimezone: true} ) ,
+  isSystemLeaf:   boolean( "is_system_leaf" ).default( false ).notNull() ,
+  createdAt:      timestamp( "created_at"  , {withTimezone: true} ).defaultNow().notNull() ,
+} , ( table ) => { return( {
+  uniqueOrgCode: uniqueIndex( "categories_org_account_code_unique" ).on( table.organizationId , table.accountCode ) ,
+  orgParentIdx:  index( "categories_org_parent_idx" ).on( table.organizationId , table.parentId ) ,
+} ) ; } ) ;
 
 /**
  * Esquema de la tabla para Entidades Financieras (Bancos, Billeteras Virtuales, Efectivo).
@@ -53,6 +60,20 @@ export const accounts = pgTable( "accounts" , {
   createdAt:      timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
 } , ( table ) => { return( {
   uniqueOrgCode: uniqueIndex( "accounts_org_code_unique" ).on( table.organizationId , table.code ) ,
+} ) ; } ) ;
+
+/**
+ * Vínculo entre una categoría contable y sus cuentas del libro mayor: una fila por divisa.
+ * Permite que una categoría agrupe una cuenta por moneda (ej: 5.1.01.01-ARS y 5.1.01.01-USD).
+ */
+export const categoryAccounts = pgTable( "category_accounts" , {
+  id:         uuid( "id"          ).primaryKey().defaultRandom() ,
+  categoryId: uuid( "category_id" ).references( () => categories.id , {onDelete: "restrict"} ).notNull() ,
+  accountId:  uuid( "account_id"  ).references( () => accounts.id   , {onDelete: "restrict"} ).notNull() ,
+  currency:   varchar( "currency" , {length: 10} ).notNull() ,
+  createdAt:  timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
+} , ( table ) => { return( {
+  uniqueCategoryCurrency: uniqueIndex( "category_accounts_category_currency_unique" ).on( table.categoryId , table.currency ) ,
 } ) ; } ) ;
 
 /**

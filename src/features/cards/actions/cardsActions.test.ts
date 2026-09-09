@@ -13,8 +13,8 @@ import type { Session }                                                     from
 import { db } from "@/shared/db/client" ;
 
 // Feature: Accounting & Auth
-import { accounts , ledgerTransactions , ledgerEntries , financialEntities } from "@/features/accounting/schema.db" ;
-import { organizations }                                                     from "@/features/auth/schema.db" ;
+import { accounts , categoryAccounts , ledgerTransactions , ledgerEntries , financialEntities } from "@/features/accounting/schema.db" ;
+import { organizations }                                                                        from "@/features/auth/schema.db" ;
 
 // Feature: Cards
 import { createCardAction }      from "./cardsActions" ;
@@ -37,6 +37,7 @@ describe( "cardsActions.ts — Server Actions de Tarjetas" , () => {
     await db.delete( cards ) ;
     await db.delete( ledgerEntries ) ;
     await db.delete( ledgerTransactions ) ;
+    await db.delete( categoryAccounts ) ;
     await db.delete( accounts ) ;
     await db.delete( financialEntities ) ;
     await db.delete( organizations ) ;

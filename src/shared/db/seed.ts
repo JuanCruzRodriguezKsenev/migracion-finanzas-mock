@@ -12,8 +12,10 @@ import { eq }      from "drizzle-orm" ;
 dotenv.config( {path: ".env.local"} ) ;
 
 // Feature: Accounting
-import { categories , accounts , ledgerTransactions , ledgerEntries , monthlySummaries , financialEntities } from "@/features/accounting/schema.db" ;
-import { createLedgerTransaction } from "@/features/accounting/services/accountingService" ;
+import { categories , accounts , ledgerTransactions , ledgerEntries , monthlySummaries , financialEntities , categoryAccounts } from "@/features/accounting/schema.db" ;
+import { INITIAL_CATEGORIES_CATALOG }                                                                                        from "@/features/accounting/constants/initialCatalog" ;
+import { createLedgerTransaction }                                                                                           from "@/features/accounting/services/accountingService" ;
+import type { Category , Account }                                                                                           from "@/features/accounting/types" ;
 
 // Feature: Cards
 import { cards , cardAccounts } from "@/features/cards/schema.db" ;
@@ -38,6 +40,7 @@ async function main() {
     // 1. Garantizar idempotencia limpiando registros previos en el orden correcto
     // Se preservan organizations y users con upsert para no invalidar sesiones JWT activas
     console.log( "Limpiando registros previos..." ) ;
+    await db.delete( categoryAccounts   ) ;
     await db.delete( cardAccounts       ) ;
     await db.delete( cards              ) ;
     await db.delete( subscriptions      ) ;
@@ -141,76 +144,100 @@ async function main() {
 
     console.log( "Perfil del administrador inicializado con éxito." ) ;
 
-    // 5. Crear Categorías Contables Jerárquicas
-    console.log( "Inicializando categorías contables..." ) ;
+    // 5. Crear Catálogo Inicial de Categorías Contables y Cuentas Asociadas (RFC 022)
+    console.log( "Inicializando catálogo de categorías contables (RFC 022)..." ) ;
 
-    // Categorías Raíz
-    const [ catIngresos ] = await db
-      .insert( categories )
-      .values( {
-        organizationId: org.id ,
-        name:           "Ingresos" ,
-        icon:           "trending-up" ,
-        color:          "#2ecc71"
-      } )
-      .returning() ;
+    let subSueldos!:        Category ;
+    let subSupermercado!:   Category ;
+    let subServicios!:      Category ;
+    let subAlquiler!:       Category ;
+    let ctaIngSueldo!:      Account ;
+    let ctaGastoSuper!:     Account ;
+    let ctaGastoServicios!: Account ;
+    let ctaGastoAlquiler!:  Account ;
 
-    const [ catGastos ] = await db
-      .insert( categories )
-      .values( {
-        organizationId: org.id ,
-        name:           "Gastos" ,
-        icon:           "trending-down" ,
-        color:          "#e74c3c"
-      } )
-      .returning() ;
+    for( const catDef of INITIAL_CATEGORIES_CATALOG ) {
+      const [ parentCat ] = await db
+        .insert( categories )
+        .values( {
+          organizationId: org.id ,
+          name:           catDef.name ,
+          type:           catDef.type ,
+          accountCode:    catDef.code ,
+          icon:           catDef.icon ,
+          color:          catDef.color ,
+          isSystemLeaf:   false ,
+        } )
+        .returning() ;
 
-    // Subcategorías
-    const [ subSueldos ] = await db
-      .insert( categories )
-      .values( {
-        organizationId: org.id ,
-        parentId:       catIngresos.id ,
-        name:           "Sueldos y Honorarios" ,
-        icon:           "briefcase" ,
-        color:          "#27ae60"
-      } )
-      .returning() ;
+      const [ parentAcc ] = await db
+        .insert( accounts )
+        .values( {
+          organizationId: org.id ,
+          code:           `${catDef.code}-ARS` ,
+          name:           `${catDef.name} (ARS)` ,
+          type:           catDef.type ,
+          balance:        0 ,
+          currency:       "ARS" ,
+        } )
+        .returning() ;
 
-    const [ subSupermercado ] = await db
-      .insert( categories )
-      .values( {
-        organizationId: org.id ,
-        parentId:       catGastos.id ,
-        name:           "Supermercado y Alimentos" ,
-        icon:           "shopping-cart" ,
-        color:          "#e67e22"
-      } )
-      .returning() ;
+      await db.insert( categoryAccounts ).values( {
+        categoryId: parentCat.id ,
+        accountId:  parentAcc.id ,
+        currency:   "ARS" ,
+      } ) ;
 
-    const [ subServicios ] = await db
-      .insert( categories )
-      .values( {
-        organizationId: org.id ,
-        parentId:       catGastos.id ,
-        name:           "Servicios del Hogar" ,
-        icon:           "home" ,
-        color:          "#3498db"
-      } )
-      .returning() ;
+      for( const subDef of catDef.subcategories ) {
+        const [ subCat ] = await db
+          .insert( categories )
+          .values( {
+            organizationId: org.id ,
+            parentId:       parentCat.id ,
+            name:           subDef.name ,
+            type:           catDef.type ,
+            accountCode:    subDef.code ,
+            icon:           subDef.icon || catDef.icon ,
+            color:          subDef.color || catDef.color ,
+            isSystemLeaf:   false ,
+          } )
+          .returning() ;
 
-    const [ subAlquiler ] = await db
-      .insert( categories )
-      .values( {
-        organizationId: org.id ,
-        parentId:       catGastos.id ,
-        name:           "Alquiler y Expensas" ,
-        icon:           "key" ,
-        color:          "#9b59b6"
-      } )
-      .returning() ;
+        const [ subAcc ] = await db
+          .insert( accounts )
+          .values( {
+            organizationId: org.id ,
+            code:           `${subDef.code}-ARS` ,
+            name:           `${subDef.name} (ARS)` ,
+            type:           catDef.type ,
+            balance:        0 ,
+            currency:       "ARS" ,
+          } )
+          .returning() ;
 
-    console.log( "Categorías inicializadas con éxito." ) ;
+        await db.insert( categoryAccounts ).values( {
+          categoryId: subCat.id ,
+          accountId:  subAcc.id ,
+          currency:   "ARS" ,
+        } ) ;
+
+        if( subDef.code === "4.1.01.01" ) {
+          subSueldos   = subCat ;
+          ctaIngSueldo = subAcc ;
+        } else if( subDef.code === "5.1.01.01" ) {
+          subAlquiler      = subCat ;
+          ctaGastoAlquiler = subAcc ;
+        } else if( subDef.code === "5.1.02.04" ) {
+          subServicios      = subCat ;
+          ctaGastoServicios = subAcc ;
+        } else if( subDef.code === "5.1.03.01" ) {
+          subSupermercado = subCat ;
+          ctaGastoSuper   = subAcc ;
+        }
+      }
+    }
+
+    console.log( "Catálogo de categorías inicializado con éxito." ) ;
 
     // 5.5 Crear Entidades Financieras
     console.log( "Inicializando entidades financieras..." ) ;
@@ -347,54 +374,6 @@ async function main() {
         code:           "3.1.01.01" ,
         name:           "Patrimonio Neto Inicial" ,
         type:           "equity" ,
-        balance:        0 ,
-        currency:       "ARS"
-      } )
-      .returning() ;
-
-    const [ ctaIngSueldo ] = await db
-      .insert( accounts )
-      .values( {
-        organizationId: org.id ,
-        code:           "4.1.01.01" ,
-        name:           "Ingresos por Sueldos" ,
-        type:           "revenue" ,
-        balance:        0 ,
-        currency:       "ARS"
-      } )
-      .returning() ;
-
-    const [ ctaGastoSuper ] = await db
-      .insert( accounts )
-      .values( {
-        organizationId: org.id ,
-        code:           "5.1.01.01" ,
-        name:           "Gastos de Supermercado" ,
-        type:           "expense" ,
-        balance:        0 ,
-        currency:       "ARS"
-      } )
-      .returning() ;
-
-    const [ ctaGastoServicios ] = await db
-      .insert( accounts )
-      .values( {
-        organizationId: org.id ,
-        code:           "5.1.01.02" ,
-        name:           "Gastos de Servicios" ,
-        type:           "expense" ,
-        balance:        0 ,
-        currency:       "ARS"
-      } )
-      .returning() ;
-
-    const [ ctaGastoAlquiler ] = await db
-      .insert( accounts )
-      .values( {
-        organizationId: org.id ,
-        code:           "5.1.01.03" ,
-        name:           "Gastos de Alquiler" ,
-        type:           "expense" ,
         balance:        0 ,
         currency:       "ARS"
       } )

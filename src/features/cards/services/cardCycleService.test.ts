@@ -11,8 +11,8 @@ import { describe , it , expect , beforeEach , afterEach , afterAll , vi } from 
 import { db } from "@/shared/db/client" ;
 
 // Feature: Accounting
-import { accounts , ledgerTransactions , ledgerEntries , financialEntities } from "@/features/accounting/schema.db" ;
-import { accountRepository }                                                from "@/features/accounting/repositories/accountRepository" ;
+import { accounts , categoryAccounts , ledgerTransactions , ledgerEntries , financialEntities } from "@/features/accounting/schema.db" ;
+import { accountRepository }                                                                     from "@/features/accounting/repositories/accountRepository" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -31,6 +31,7 @@ describe( "cardCycleService — Partición del saldo de una tarjeta de crédito"
     await db.delete( cards ) ;
     await db.delete( ledgerEntries ) ;
     await db.delete( ledgerTransactions ) ;
+    await db.delete( categoryAccounts ) ;
     await db.delete( accounts ) ;
     await db.delete( financialEntities ) ;
     await db.delete( organizations ) ;

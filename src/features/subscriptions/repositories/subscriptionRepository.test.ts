@@ -8,7 +8,7 @@ import { db } from "@/shared/db/client" ;
 import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
-import { accounts , ledgerEntries , ledgerTransactions , monthlySummaries , idempotencyKeys , outboxEvents } from "@/features/accounting/schema.db" ;
+import { accounts , categoryAccounts , ledgerEntries , ledgerTransactions , monthlySummaries , idempotencyKeys , outboxEvents } from "@/features/accounting/schema.db" ;
 
 // Feature: Subscriptions
 import { subscriptionRepository } from "./subscriptionRepository" ;
@@ -30,6 +30,7 @@ describe( "subscriptionRepository" , () => {
     await db.delete( ledgerEntries ) ;
     await db.delete( ledgerTransactions ) ;
     await db.delete( monthlySummaries ) ;
+    await db.delete( categoryAccounts ) ;
     await db.delete( accounts ) ;
     await db.delete( organizations ) ;
   } ;

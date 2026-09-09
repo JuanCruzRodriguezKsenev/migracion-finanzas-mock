@@ -6,11 +6,14 @@
 import { InferSelectModel , InferInsertModel } from "drizzle-orm" ;
 
 // Feature: Accounting
-import { categories , accounts , ledgerTransactions , ledgerEntries , monthlySummaries , financialEntities } from "./schema.db" ;
+import { categories , accounts , ledgerTransactions , ledgerEntries , monthlySummaries , financialEntities , categoryAccounts } from "./schema.db" ;
 
 
 export type Category       = InferSelectModel< typeof categories > ;
 export type InsertCategory = InferInsertModel< typeof categories > ;
+
+export type CategoryAccount       = InferSelectModel< typeof categoryAccounts > ;
+export type InsertCategoryAccount = InferInsertModel< typeof categoryAccounts > ;
 
 export type FinancialEntity       = InferSelectModel< typeof financialEntities > ;
 export type InsertFinancialEntity = InferInsertModel< typeof financialEntities > ;

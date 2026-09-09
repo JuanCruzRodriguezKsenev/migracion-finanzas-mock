@@ -228,4 +228,38 @@ equity | revenue              →   balance - debit + credit
 
 Cambiar el motor para que los pasivos sean acreedores positivos es una decisión de arquitectura con migración de datos detrás: toca el servicio, el alta manual, `deudaDe()`, la vista de tarjetas y todos los saldos ya persistidos. **Mientras no se tome esa decisión, la regla de este §8 es la verdad operante y hay que programar contra ella.**
 
+---
+
+## 9. Clasificación Unificada: La Categoría es la Cuenta Contable (RFC 022)
+
+En FinanzIA, las categorías de gasto e ingreso no son meras etiquetas informativas ni desgloses paralelos en metadata de la transacción: **la categoría es la cuenta contable de resultado** (`expense` o `revenue`).
+
+### Tablas involucradas
+*   [`categories`](../src/features/accounting/schema.db.ts): Entidad de clasificación en árbol (`id`, `name`, `type`, `parentId`, `accountCode`, `archivedAt`, `isSystemLeaf`).
+*   [`categoryAccounts`](../src/features/accounting/schema.db.ts): Tabla puente relacional que asocia una categoría con su cuenta contable por divisa (`categoryId`, `accountId`, `currency`), con restricción de unicidad `(categoryId, currency)`.
+*   [`accounts`](../src/features/accounting/schema.db.ts): Cuenta contable de resultado (`type = "expense"` o `"revenue"`).
+
+### Comparación con Patrones Hermanos
+*   **Contraste con Tarjetas (§7):** Así como `cards` modela el plástico físico y se vincula a cuentas de pasivo multidivisa mediante `card_accounts`, `categories` modela la entidad conceptual del árbol y se vincula a sus cuentas de resultado por divisa mediante `category_accounts`. En ambos patrones, la cuenta contable en `accounts` tiene una única moneda y el balance vive materializado en `accounts.balance`.
+*   **Contraste con Signo de Saldos (§8):** Las cuentas de gasto (`expense`) aumentan por el Débito (`balance + debit - credit`) conservando saldo positivo, mientras que los ingresos (`revenue`) aumentan por el Crédito (`balance - debit + credit`). No sufren la inversión de signo de los pasivos documentada en §8.
+
+### Reglas e Invariantes (R1 a R5)
+
+1.  **R1 (Solo las hojas reciben movimientos):**
+    Un nodo padre (`parentId = null` con hijos) no puede recibir asientos contables directamente. Si una transacción imputa a un padre (o si viene sin categoría), la imputación se redirige a la hoja `General` del padre o a la hoja `General` raíz del tipo (`5.1.01.99` o `4.1.01.99`).
+2.  **R2 (Cuentas por divisa bajo demanda):**
+    La moneda del asiento contable la impone siempre la cuenta de origen (ej: caja, banco, tarjeta). Cuando se imputa un movimiento sobre una categoría en una moneda no asociada previamente, el repositorio resuelve o crea la cuenta contable correspondiente para esa divisa (`findOrCreateAccountForCurrency`) y registra el nexo en `category_accounts` sin duplicar la categoría en el árbol.
+3.  **R3 (Mudanza automática al ramificar):**
+    Si una categoría hoja acumula movimientos contables y posteriormente el usuario decide crearle una primera subcategoría hija, los asientos históricos y el saldo acumulado en su cuenta contable se transfieren atómicamente a su nueva hija `General` (`.99`). De esta forma, el padre queda limpio para actuar exclusivamente como agrupador, respetando la invariante R1.
+4.  **R4 (Inmutabilidad y protección de borrado):**
+    Las categorías no admiten borrado físico (`DELETE` restringido por clave foránea). Se gestionan mediante archivado lógico (`archived_at`). Una categoría archivada queda excluida de los selectores para nuevas transacciones, pero preserva intacto su historial contable y su saldo acumulado. Asimismo, `type` y `accountCode` son estrictamente inmutables tras su creación.
+5.  **R5 (Soporte Multidivisa):**
+    Una categoría puede operar en múltiples monedas (ej: ARS y USD). Cada moneda opera como un libro contable independiente conforme a la invariante de balance cero por divisa (§1.2), manteniendo cuentas separadas en `accounts` con sus respectivos saldos en centavos.
+
+### Jerarquía y Codificación (`categoryCodes.ts`)
+*   **Árbol de dos niveles:** Raíz (`5.1.NN` para gastos, `4.1.NN` para ingresos) y Subcategorías (`<códigoPadre>.NN`).
+*   **Correlativos de ancho fijo:** `NN` va de `01` a `98` formateado con `padStart(2, "0")`. Al alcanzar 98 hermanos, el generador lanza una excepción explícita impidiendo desbordes hacia tres dígitos.
+*   **Reserva estricta del `.99`:** El sufijo `.99` está reservado en cada nivel para las hojas del sistema `General` (`isSystemLeaf = true`), impidiendo que categorías creadas por usuarios colisionen con las cuentas de absorción del sistema.
+
+
 

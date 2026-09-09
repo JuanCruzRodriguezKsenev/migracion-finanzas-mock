@@ -10,9 +10,9 @@ import { describe , it , expect , beforeEach , afterEach , afterAll } from "vite
 import { db } from "@/shared/db/client" ;
 
 // Feature: Accounting
-import { accounts , ledgerTransactions , ledgerEntries , financialEntities } from "@/features/accounting/schema.db" ;
-import { ledgerRepository }                                                 from "@/features/accounting/repositories/ledgerRepository" ;
-import { accountRepository }                                                from "@/features/accounting/repositories/accountRepository" ;
+import { accounts , categoryAccounts , ledgerTransactions , ledgerEntries , financialEntities } from "@/features/accounting/schema.db" ;
+import { ledgerRepository }                                                                      from "@/features/accounting/repositories/ledgerRepository" ;
+import { accountRepository }                                                                     from "@/features/accounting/repositories/accountRepository" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -31,6 +31,7 @@ describe( "cardsRepository — DAL de Tarjetas y Partición de Saldos por Fecha"
     await db.delete( cards ) ;
     await db.delete( ledgerEntries ) ;
     await db.delete( ledgerTransactions ) ;
+    await db.delete( categoryAccounts ) ;
     await db.delete( accounts ) ;
     await db.delete( financialEntities ) ;
     await db.delete( organizations ) ;

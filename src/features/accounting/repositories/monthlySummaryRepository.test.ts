@@ -11,6 +11,7 @@ import { organizations } from "@/features/auth/schema.db" ;
 import { monthlySummaryRepository } from "./monthlySummaryRepository" ;
 import {
   accounts ,
+  categoryAccounts ,
   ledgerTransactions ,
   ledgerEntries ,
   idempotencyKeys ,
@@ -28,6 +29,7 @@ describe( "monthlySummaryRepository" , () => {
     await db.delete( idempotencyKeys ) ;
     await db.delete( ledgerEntries ) ;
     await db.delete( ledgerTransactions ) ;
+    await db.delete( categoryAccounts ) ;
     await db.delete( accounts ) ;
     await db.delete( monthlySummaries ) ;
     await db.delete( organizations ) ;

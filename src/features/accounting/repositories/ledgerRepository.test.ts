@@ -8,8 +8,8 @@ import { db } from "@/shared/db/client" ;
 import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
-import { ledgerRepository }                                                                from "./ledgerRepository" ;
-import { accounts , categories , ledgerTransactions , ledgerEntries , outboxEvents }       from "../schema.db" ;
+import { ledgerRepository }                                                                                 from "./ledgerRepository" ;
+import { accounts , categories , categoryAccounts , ledgerTransactions , ledgerEntries , outboxEvents }       from "../schema.db" ;
 
 
 describe( "ledgerRepository" , () => {
@@ -23,6 +23,7 @@ describe( "ledgerRepository" , () => {
     await db.delete( outboxEvents       ) ;
     await db.delete( ledgerEntries      ) ;
     await db.delete( ledgerTransactions ) ;
+    await db.delete( categoryAccounts   ) ;
     await db.delete( categories         ) ;
     await db.delete( accounts           ) ;
     await db.delete( organizations      ) ;
@@ -72,6 +73,8 @@ describe( "ledgerRepository" , () => {
       .values( {
         organizationId: orgId ,
         name:           "Supermercado" ,
+        type:           "expense" ,
+        accountCode:    "5.1.01.01" ,
       } )
       .returning() ;
 
