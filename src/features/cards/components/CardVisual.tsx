@@ -101,7 +101,35 @@ export function CardVisual( { card , locale , onArchive }: CardVisualProps ) {
       <div className={styles.financialDetails}>
         { isCredit ? (
           <>
-            <div className={balanceRowClass()}>
+            { card.ciclo ? (
+              <>
+                <div className={styles.balanceRow}>
+                  <div className={styles.balanceStack}>
+                    <span className={styles.balanceLabel}>Saldo facturado</span>
+                    <span className={styles.balanceHint}>
+                      Vence el { formatearDia( card.ciclo.vencimiento , locale ) }
+                    </span>
+                  </div>
+                  <span className={styles.balanceValue}>
+                    { formatCurrency( card.ciclo.facturado , monedaPrincipal , locale ) }
+                  </span>
+                </div>
+
+                <div className={styles.balanceRow}>
+                  <div className={styles.balanceStack}>
+                    <span className={styles.balanceLabel}>Saldo en curso</span>
+                    <span className={styles.balanceHint}>
+                      Desde el cierre del { formatearDia( card.ciclo.cierreActual , locale ) }
+                    </span>
+                  </div>
+                  <span className={styles.balanceValueSoft}>
+                    { formatCurrency( card.ciclo.enCurso , monedaPrincipal , locale ) }
+                  </span>
+                </div>
+              </>
+            ) : null }
+
+            <div className={styles.balanceRow}>
               <span className={styles.balanceLabel}>Deuda Total</span>
               <span className={styles.balanceValue}>
                 { formatCurrency( deudaTotal , monedaPrincipal , locale ) }
@@ -143,7 +171,7 @@ export function CardVisual( { card , locale , onArchive }: CardVisualProps ) {
               ) : null }
             </div>
 
-            { (card.closingDay || card.dueDay) ? (
+            { ( !card.ciclo && (card.closingDay || card.dueDay) ) ? (
               <div className={styles.datesRow}>
                 { card.closingDay ? <span>Cierre: día { card.closingDay }</span> : null }
                 { card.dueDay ? <span>Vence: día { card.dueDay }</span> : null }
@@ -180,6 +208,13 @@ export function CardVisual( { card , locale , onArchive }: CardVisualProps ) {
   ) ;
 }
 
-function balanceRowClass(): string {
-  return( styles.balanceRow ) ;
+/**
+ * Formatea una fecha ISO como día y mes cortos en el locale del usuario.
+ *
+ * @param iso - Fecha en ISO 8601, tal como viaja desde el servidor.
+ * @param locale - Locale BCP 47 del perfil.
+ * @returns La fecha en formato corto (ej: "5 oct").
+ */
+function formatearDia( iso: string , locale: string ): string {
+  return( new Intl.DateTimeFormat( locale , {day: "numeric" , month: "short"} ).format( new Date(iso) ) ) ;
 }

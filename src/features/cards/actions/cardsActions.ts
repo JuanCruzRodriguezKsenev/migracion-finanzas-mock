@@ -21,10 +21,14 @@ import { accountRepository }          from "@/features/accounting/repositories/a
 import { getNextCode }                from "@/features/accounting/utils/accountCodes" ;
 import { Account }                    from "@/features/accounting/types" ;
 
+// Feature: Profile
+import { profileRepository } from "@/features/profile/repositories/profileRepository" ;
+
 // Feature: Cards
-import { createCardSchema , CreateCardInput } from "../schemas/cards.schema" ;
-import { cardsRepository }                    from "../repositories/cardsRepository" ;
-import { Card , CardWithAccountsAndEntity }   from "../types" ;
+import { createCardSchema , CreateCardInput }  from "../schemas/cards.schema" ;
+import { cardsRepository }                     from "../repositories/cardsRepository" ;
+import { calcularCiclosDeTarjetas }            from "../services/cardCycleService" ;
+import { Card , CardWithAccountsAndEntity }    from "../types" ;
 
 
 /**
@@ -174,13 +178,35 @@ export async function createCardAction( params: CreateCardInput ): Promise< Resu
     revalidatePath( "/cards" ) ;
     return( ok( tarjetaCreada ) ) ;
   } catch( error ) {
+    // El alta de una tarjeta de crédito son cuatro escrituras encadenadas —tarjeta, cuenta de
+    // pasivo, vínculo y asiento— y no comparten transacción, igual que el precedente de
+    // createAccountForEntityAction. Si se corta en el medio queda estado a medias, así que el
+    // mensaje tiene que decir qué pasó en vez de tragárselo: una tarjeta de crédito sin cuenta
+    // contable no muestra saldo, y desde la interfaz eso parece un error de lectura y no de alta.
+    const codigo = ( error as {code?: string} )?.code ;
+
+    if( codigo === "23505" ) {
+      logger.error( `[createCardAction] Colisión de código contable: ${error}` ) ;
+      return( fail( "Conflicto al generar el código contable de la tarjeta. Por favor, intentá de nuevo." ) ) ;
+    }
+
+    if( codigo === "23503" ) {
+      logger.error( `[createCardAction] Referencia inexistente: ${error}` ) ;
+      return( fail( "Tu sesión referencia una organización inexistente. Cerrá sesión y volvé a ingresar." ) ) ;
+    }
+
     logger.error( `[createCardAction] Error no controlado: ${error}` ) ;
-    return( fail( "Ocurrió un error inesperado al registrar la tarjeta." ) ) ;
+    return( fail( "Error al registrar la tarjeta. Si aparece en el listado sin saldo, quedó sin cuenta contable: dala de baja y volvé a crearla." ) ) ;
   }
 }
 
 /**
- * Obtiene todas las tarjetas activas de la organización del usuario autenticado.
+ * Obtiene todas las tarjetas activas de la organización del usuario autenticado, cada una con su
+ * ciclo de facturación resuelto y su saldo partido entre lo facturado y lo que está en curso.
+ *
+ * El ciclo se resuelve acá y no en el cliente porque la partición sale de una agregación del libro
+ * mayor, que es dato del servidor. La zona horaria es la del perfil: de ella depende a qué día del
+ * mes pertenece un consumo, y con un cierre el 25 eso decide en qué período cae.
  */
 export async function getCardsAction(): Promise< Result<CardWithAccountsAndEntity[] , string> > {
   const session = await getServerSession( authOptions ) ;
@@ -190,8 +216,17 @@ export async function getCardsAction(): Promise< Result<CardWithAccountsAndEntit
   }
 
   try {
+    // Las tarjetas primero: la agregación del ciclo necesita los ids de sus cuentas contables, así
+    // que esta secuencia es una dependencia real y no una cascada evitable. El paralelismo está
+    // adentro del servicio, que resuelve todas las tarjetas a la vez.
     const list = await cardsRepository.findAll( session.user.organizationId ) ;
-    return( ok( list ) ) ;
+
+    const perfil       = ( session.user.id ? await profileRepository.findByUserId( session.user.id ) : null ) ;
+    const zonaHoraria  = ( perfil?.timezone || "America/Argentina/Buenos_Aires" ) ;
+
+    const conCiclo = await calcularCiclosDeTarjetas( list , session.user.organizationId , zonaHoraria ) ;
+
+    return( ok( conCiclo ) ) ;
   } catch( error ) {
     logger.error( `[getCardsAction] Error: ${error}` ) ;
     return( fail( "Error al obtener las tarjetas." ) ) ;

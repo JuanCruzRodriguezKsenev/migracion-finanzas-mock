@@ -179,6 +179,27 @@
   font-size: var(--fs-md);
   font-weight: 700;
   color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Etiqueta y aclaración de una fila de saldo, apiladas contra el importe de la derecha. */
+.balanceStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.balanceHint {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+/* El saldo en curso todavía no vence: se muestra con menos peso que el facturado. */
+.balanceValueSoft {
+  font-size: var(--fs-md);
+  font-weight: 500;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .progressContainer {

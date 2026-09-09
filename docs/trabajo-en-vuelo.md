@@ -16,9 +16,20 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 **Estado:** 🟢 **Tarjetas como cuentas de pasivo (RFC 007, primera tajada) implementada según el plan.** Se implementó el modelo de dos tablas (`cards` y `card_accounts`) con migración `0022_familiar_richard_fisk.sql`, agregación en `ledgerRepository.sumEntriesByAccountInRange`, cálculo puro de ciclos en `ciclo.ts` con soporte IANA, validación PCI-DSS estricta en `cards.schema.ts`, Server Actions con emisión contable diferenciada en `cardsActions.ts`, UI completa en `/cards` (`CardVisual`, `CardsContainer`, `CardFormModal`), siembra idempotente en `seed.ts`, 24 tests unitarios/integración en 4 archivos, patrón §7 documentado en `patterns.md`, deuda técnica registrada en `TECHNICAL_DEBT.md` y corrección de `.agents/AGENTS.md` §8.1.
 
-**Batería de la ronda (verde):** 45 archivos de test, 345 tests, lint 0, tsc 0 errores, build verde.
+**Cierre de la verificación independiente (2026-09-08).** La batería reproducía en verde, pero
+`calcularPeriodos` y `sumEntriesByAccountInRange` **no tenían consumidor de producción**: la
+maquinaria del ciclo estaba construida y probada, y la tarjeta seguía mostrando sólo deuda total.
+Esa partición es el §4 del RFC y la justificación de la ronda entera. Se cableó con un servicio
+nuevo, [`cardCycleService.ts`](../src/features/cards/services/cardCycleService.ts), que resuelve el
+ciclo en el servidor —la partición sale de una agregación del libro mayor— y con la zona horaria del
+perfil, de la que depende a qué día del mes pertenece un consumo. `/cards` ahora muestra **saldo
+facturado con su fecha de vencimiento, saldo en curso desde el cierre, y deuda total**. Se corrigieron
+además el mensaje de error del alta —que tragaba el estado a medias de cuatro escrituras no
+atómicas— y una función que devolvía una constante.
 
-**Próximo paso:** revisión y merge de `feat/tarjetas` a `master` por el usuario, o siguiente tajada de Fase 2 (cuotas/préstamos RFC 008 o workflow de pago de resúmenes).
+**Batería sobre la rama:** 46 archivos de test, **348 tests**, lint 0, `tsc --noEmit` 0 errores, build verde.
+
+**Próximo paso:** revisión y merge de `feat/tarjetas` a `master`, o siguiente tajada de Fase 2 (cuotas y préstamos del RFC 008, o el flujo de pago del resumen).
 
 **Pendientes menores heredados de la ronda**, anotados en el registro y sin ejecutar: el catálogo de `preferences.ts` todavía no tiene consumidor de producción (sólo tests) porque `/perfil` quedó fuera de alcance, `formatCurrency` no protege el locale contra un valor heredado no-BCP-47, y `roundAmounts` se guarda pero nadie lo lee.
 
