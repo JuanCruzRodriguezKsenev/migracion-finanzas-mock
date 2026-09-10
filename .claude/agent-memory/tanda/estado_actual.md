@@ -1,74 +1,52 @@
 ---
 name: estado-actual
-description: Dónde quedó el trabajo de FinanzIA al cerrar la última ronda — ramas sin consolidar, qué está verificado y qué está en vuelo. Contrastar con git antes de usar.
+description: Dónde quedó el trabajo de FinanzIA al cerrar la última ronda — qué se consolidó, qué está verificado y qué está en vuelo. Contrastar con git antes de usar.
 metadata:
   type: project
 ---
 
-# Estado al cerrar la ronda del 2026-09-10
+# Estado al cerrar la ronda del 2026-09-10 (segunda del día)
 
 **Verificar con `git log` antes de actuar: esto se desactualiza rápido.**
 
 ## Ramas
 
 ```
-master                        2ae7186   pusheado, CI verde
-  └─ feat/bandeja-recurrencias  +3       dd7388d  RFC 023 — verde, SIN consolidar
-       └─ fix/cabos-rfc023...     +5     df53f56  verde, SIN consolidar
+origin/master = master        8e086d9   consolidado y pusheado
+  └─ fix/page-header-unico-por-pagina   5baa78f   rama activa, plan SIN ejecutar
 ```
 
-Historia lineal, cero merge commits, todo fast-forwardeable. **El merge lo decide el usuario.**
+**La cadena encadenada se consolidó.** `master` avanzó por fast-forward de `2ae7186` a `8e086d9`
+(15 commits, sin merge commit) y está pusheado. Entraron `feat/bandeja-recurrencias` (RFC 023) y
+`fix/cabos-rfc023-y-limpieza-de-tests`; **las dos ramas viejas ya no reciben trabajo y se pueden
+borrar.**
 
-*   **`df53f56` verificado en verde** por batería independiente: **393 tests / 53 suites**,
+*   **`8e086d9` verificado en verde** por batería independiente: **393 tests / 53 suites**,
     `eslint . --max-warnings 0` sin warnings, `tsc --noEmit` 0 errores, build exitoso.
 *   Del RFC 023 **no hay que rehacer nada**: `limpiarBase()`, la guarda releída bajo bloqueo, el
     backfill `0026` y el factory `makeSubscription` están correctos y verificados.
 
-## En cola — dos planes escritos, ninguno ejecutado
+**Queda pendiente de `docs/registro/`:** la consolidación se hizo pero **no** se escribió el
+`docs/registro/2026-09-10-<nombre>.md` que la convención pide, ni se podó de `trabajo-en-vuelo.md`
+el bloque «Estado de la ronda anterior». Ver [[ciclo-de-trabajo]] § Cómo se cierra una rama.
 
-1.  **`docs/planes/alinear-lint-y-refresh-de-tarjetas.md`**, en la rama actual. Los dos hallazgos que
-    dejó `obra`: alinear el script `lint` con el flag de la compuerta (más las cuatro notas de doc que
-    advierten lo contrario) y sacar el `window.location.reload()` de `CardsContainer`.
-2.  **`docs/planes/page-header-unico-por-pagina.md`**, en rama nueva, después de consolidar.
+## En cola — un plan escrito, listo para `obra`
 
-**Van secuenciados a propósito:** los dos tocan `CardsContainer`, en bloques distintos del archivo.
+**`docs/planes/page-header-unico-por-pagina.md`**, en la rama `fix/page-header-unico-por-pagina`
+(ya creada, árbol limpio). Un `PageHeader` compartido con `title` obligatoria que cada página
+compone, para matar el sniffeo de `pathname` de `Header.tsx:50-53` y las dos listas de rutas
+hardcodeadas (título y selector de mes). Afecta **cuatro de ocho rutas**; `/cards` y `/settings`
+además **no tienen `*Page.title` en el diccionario** y hay que agregarlo.
 
-### El doble encabezado (plan 2), porque el diagnóstico costó la ronda
+**Primer intento fallido, sin daño:** se invocó a `obra` antes de crear la rama y rebotó con un
+informe de factibilidad. Confirmó que el plan coincide con el repo — validación gratis. La lección
+quedó en [[ciclo-de-trabajo]].
 
-`shared/ui/layout/Header/Header.tsx:50-74` decide su título **sniffeando el `pathname`** con ternarios
-que conocen cuatro rutas; el resto cae en un `else` con el saludo del dashboard. Afecta a **4 de 8
-rutas**: `/sandbox` repite el título, y `/cards`, `/contacts` y `/settings` reciben "Hola, {nombre}".
-El mismo vicio decide el selector de mes (`:55`), que hoy sale en seis rutas **por descarte**.
+## Sobre la mesa, sin plan
 
-Decidido con el usuario: el layout deja de dibujar encabezado y **cada página compone un `PageHeader`
-compartido con `title` obligatoria**; el selector queda sólo en dashboard y transacciones. Dos cabos
-que el cambio destapa y el plan nombra: `Header.module.css:138` **oculta el título en móvil**, que
-pasaría a ser el único, y el botón hamburguesa pierde su `onMenuClick` al salir del `AppShell`.
-
-Datos que no hay que volver a averiguar: `.globalHeader` es `position: relative`, **no sticky**; y los
-tres providers (`Session`, `Profile`, `Notifications`) viven en `[lang]/layout.tsx:105-111`, **por
-encima** de `(main)`, así que un componente instanciado dentro de la página los sigue teniendo.
-
-## Sobre la mesa después
-
-*   Suscripciones al libro mayor (**RFC 004**).
-*   Las propuestas que faltan del §7 del doc de diseño — ver [[decisiones-modelo-clasificacion]].
-*   La página de estadísticas (**sin RFC**): es donde van el Patrimonio Neto y las categorías.
-*   [[idea-pagina-proyecciones]], sin discutir.
-
-## Convenciones asentadas
-
-*   Los segmentos de ruta van **en inglés** (`ARCHITECTURE.md` §4).
-*   **`/accounts` es el directorio por entidad** (2026-09-09): se entra por Galicia y se ven sus
-    cuentas, tarjetas y préstamos. `/cards`, `/debts` y patrimonio van aparte.
-*   **Nada de `kind` en `financial_entities`.** La especie (banco/billetera/tarjeta) es del
-    instrumento, no de la institución: ya vive en `contact_payment_methods.type`.
-*   **Cotizaciones (RFC 015, `DRAFT`):** `exchange_rates` para los cierres, cotización del día cacheada
-    para saldos vivos, `RATE_SCALE = 1_000_000`; las transacciones de cambio **no** guardan cotización,
-    se deduce del cociente (`patterns.md:38`).
-
-## Pendiente de mantenimiento
-
-**El artifact de la hoja de ruta** (2026-09-10, *Cierre RFC 022*) **no refleja el RFC 023 ni estas dos
-rondas.** Releerlo entero con `action: "read"` antes de editarlo — son 1211 líneas — y republicarlo
-con su `url`, sin crear uno nuevo.
+*   Las cuatro rutas del mock que el inventario no listaba: `/reportes`, `/patrimonio`,
+    `/configuracion`, `/mejorar-plan`. **Ninguna tiene RFC.**
+*   Las propuestas que faltan de la sesión de diseño de clasificación — ver
+    [[decisiones-modelo-clasificacion]].
+*   Dos ítems de deuda preventiva abiertos en `TECHNICAL_DEBT.md`: cobertura de métodos en el mock de
+    `next/cache`, y retroceso potencial de punteros en la migración `0026`.

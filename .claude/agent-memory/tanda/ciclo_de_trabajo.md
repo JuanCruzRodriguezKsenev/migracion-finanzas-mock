@@ -14,10 +14,18 @@ metadata:
 si hace falta una nueva, y dejar `trabajo-en-vuelo.md` sincronizado y commiteado.
 
 **Why:** con el árbol sucio devuelve un informe de factibilidad y no toca una línea — verificado el
-2026-09-07, funciona como se espera.
+2026-09-07, funciona como se espera. **Y rebota igual con el árbol limpio si la rama que el plan
+nombra no existe todavía**: el 2026-09-10 el plan del `PageHeader` decía en su línea 3 «Rama: a crear
+por `tanda` antes del traspaso», la rama no se creó, y `obra` devolvió «Hallazgos: ninguno, la
+estructura coincidió con lo anticipado por el plan» — que **no** es el reporte de un trabajo hecho
+sino la confirmación de que el plan es aplicable. Se distinguen mirando el repo, no el informe: mismo
+`HEAD`, reflog sin entradas nuevas, ningún archivo de `src/` tocado.
 
 **How to apply:** el bloque de traspaso lleva tres partes: qué hacer antes de pasárselo, el comando
-exacto, y el mensaje textual con la ruta del plan.
+exacto, y el mensaje textual con la ruta del plan. **La primera parte la ejecuta `tanda`, no la
+ofrece.** Cerrar una ronda con «¿querés que consolide o arrancamos directo?» deja el traspaso a medias
+y el usuario invoca a `obra` sobre un entorno sin preparar: pasó el 2026-09-10 y costó una ronda
+entera. Si el plan nombra una rama, esa rama existe **antes** de que el bloque de traspaso se escriba.
 
 ## Cómo se cierra una rama
 
