@@ -44,6 +44,12 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     negativo y suma la deuda al patrimonio.** Y `monthly_summaries.liabilitiesSnapshot` usa el signo
     **opuesto** (positivo), así que el número y su sparkline no hablan el mismo idioma. En
     `TECHNICAL_DEBT.md` §6.
+*   **Las 14 suites de test limpian la base a mano, cada una con su propia lista de `db.delete()`.**
+    Ninguna limpia al salir, así que el último test de cada archivo deja filas para el siguiente.
+    Agregar un `DELETE` de una tabla padre sin sus hijas hace explotar a la suite que corra después,
+    y parece intermitente porque vitest ordena por la duración de la corrida anterior. Ya produjo un
+    defecto (`TECHNICAL_DEBT.md` §7). **Todo plan que agregue una tabla con FK tiene que nombrar qué
+    suites la limpian.**
 *   **`CircuitBreaker` (`shared/lib/circuitBreaker.ts`) no está cableado en ningún lado**: sólo lo
     importa su propio test. La "protección de Brandfetch" que dicen los docs no existe.
 *   **La búsqueda de marcas está duplicada en tres componentes** que van directo del navegador a
@@ -78,6 +84,10 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     de cambio no almacenan cotización**: se deduce del cociente (`patterns.md:38`).
 *   **Nada de `kind` en `financial_entities`.** La especie (banco/billetera/tarjeta) es del instrumento,
     no de la institución: una marca emite varios. Ya vive en `contact_payment_methods.type`.
+
+## Cómo verificar
+
+*   [Mientras corre `verificador`, el árbol no se toca](verificacion_no_tocar_el_arbol.md) — `pgrep` no prueba que terminó; sólo su notificación. Y cómo diagnosticar una suite "intermitente".
 
 ## Cómo consultarle al usuario
 
@@ -148,25 +158,20 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Estado
 
-*   **RFC 022 implementado en dos tajadas y verificado el 2026-09-09.** Rama
-    `feat/gestion-categorias` en `a71d439`, árbol limpio, **51 archivos de test, 375 tests, lint 0,
-    `tsc --noEmit` 0, build verde**, esquema real contrastado contra la base. Sin consolidar todavía:
-    `master` está en `2d7ac63` y es ancestro, así que el merge es fast-forward de 4 commits.
-    Detalle y cabos sueltos en [[rfc022-clasificacion-unificada]].
-*   **Ramas vivas:** `feat/tarjetas` (ya contenida en `master`, se puede borrar) y
-    `feat/clasificacion-unificada` (ancestro de `feat/gestion-categorias`, se borra con la
-    consolidación).
-*   **La sesión de diseño de septiembre está agotada en su parte de clasificación**: el §3 y el §4
-    bajaron al RFC 022 y ya son código. Sigue sin propuesta lo demás del §7 de
-    `docs/diseno/rediseno-clasificacion-y-propuestas.md`. Ver [[decisiones-modelo-clasificacion]].
+*   **RFC 022 consolidado el 2026-09-10.** `master` en `e3af72c`, **sin ramas vivas**, árbol limpio,
+    historia lineal (`git log --merges` vacío). Batería: **51 archivos de test, 376 tests, lint 0,
+    `tsc --noEmit` 0, build verde**, con la suite corrida **tres veces seguidas** para probar
+    estabilidad. Registro en `docs/registro/2026-09-10-cierre-rfc022.md`.
+    Modelo y cabos en [[rfc022-clasificacion-unificada]].
+*   **`master` está 22 commits adelante de `origin/master`: no se hizo push.** Hay remoto configurado.
+*   **Próximo paso sin decidir.** Sobre la mesa, en `trabajo-en-vuelo.md`: suscripciones al libro
+    mayor (RFC 004, y antes extraer la resolución padre→hoja duplicada), las propuestas que faltan
+    del §7 del doc de diseño, la página de estadísticas (sin RFC), y el helper de limpieza compartido
+    de los tests.
 *   **Enmienda al RFC 015 (2026-09-09): no hay ruta `/profile`.** El perfil pasa a ser otra pestaña de
-    `/settings`, que ya existe con sus pestañas Perfil, Preferencias y Seguridad deshabilitadas.
-*   **El inventario de `trabajo-en-vuelo.md` estaba incompleto**: decía 17 dominios y listaba 12.
-    Faltaban `/reportes` (la página de estadísticas), `/patrimonio`, `/configuracion` y
-    `/mejorar-plan`. Corregido el 2026-09-09.
-*   **Convención asentada:** los segmentos de ruta van en inglés (`ARCHITECTURE.md` §4). Existía de
-    hecho y no estaba escrita; el artifact y el inventario prometían los nombres en español del mock.
+    `/settings`, que ya existe con Perfil, Preferencias y Seguridad deshabilitadas.
+*   **Convención asentada:** los segmentos de ruta van en inglés (`ARCHITECTURE.md` §4).
 *   **El artifact de la hoja de ruta quedó desactualizado** desde el merge de tarjetas: dice 321 tests
-    (hoy 375), da tarjetas por pendiente en la Fase 2 y en el grafo, dice `/tarjetas` donde el repo
+    (hoy 376), da tarjetas por pendiente en la Fase 2 y en el grafo, dice `/tarjetas` donde el repo
     tiene `/cards`, no conoce `/settings` ni el RFC 022, y se contradice solo en el total de ítems
     (18 / 23 / 24).
