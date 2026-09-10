@@ -31,8 +31,14 @@ Se implementó el núcleo contable del RFC 022:
 `pnpm db:seed` corrieron limpios; en la base quedaron 67 categorías y 67 filas de `category_accounts`.
 **La rama pasaría la compuerta CI.** Falta mergear.
 
-**Próximo paso: Segunda tajada del RFC 022**, con el alcance ya decidido (ver §4bis del documento de
-diseño):
+**Rama en curso: `feat/gestion-categorias`**, encadenada sobre `feat/clasificacion-unificada`, con el
+plan [`planes/gestion-categorias.md`](planes/gestion-categorias.md) listo para ejecutar y sin código
+escrito todavía. La rama padre sigue **sin mergear a `master`**.
+
+**Layout decidido:** dos columnas —padres a la izquierda, ficha del padre seleccionado a la
+derecha—, **sin montos**: en Configuración no van. El código contable tampoco se muestra (RFC 022 §2).
+
+**Segunda tajada del RFC 022**, con el alcance ya decidido (ver §4bis del documento de diseño):
 
 1.  **Arreglar el selector de categorías** de `TransactionFormModal.tsx:277-286`, que quedó como un
     `<select>` plano de **67 opciones** sin jerarquía: agrupar con `<optgroup>` por padre y sumar un
