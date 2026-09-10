@@ -62,6 +62,16 @@ entera. Si el plan nombra una rama, esa rama existe **antes** de que el bloque d
     `CategoriesSettingsContainer:296-302` y el archivo vive en
     `src/features/accounting/components/CategoriesSettings/`. No costó un defecto pero obliga a `obra`
     a buscar. Un `find`/`grep -rln` por nombre antes de escribir la tabla lo evita.
+*   **Al predecir totales de tests, contar también el archivo nuevo.** El plan de storage dijo
+    «53 suites / 399 tests»: sumó los 6 tests que creaba `safeStorage.test.ts` pero no el archivo
+    que los trae. Salieron 54. `obra` reportó el número del plan en vez de la salida real, así que
+    la discrepancia la destapó `verificador`. **Un total predicho mal convierte una corrida sana en
+    una discrepancia que hay que investigar.**
+*   **Una regla nueva en un doc se contrasta contra el repo antes de escribirla — incluidas sus
+    excepciones.** La Regla 5 del §12 salió como «nunca `localStorage` directo» y el repo tiene un
+    sitio que la incumple para siempre y con razón (el script anti-flash del `<head>`, fuera del
+    grafo de módulos). Una prohibición absoluta que el propio repo viola sin explicar por qué es la
+    que la próxima ronda «arregla» al revés.
 *   **Preferir anclas textuales a números de línea** en los pasos: el número envejece dentro de la
     misma ronda apenas un paso anterior inserta líneas.
 *   **Un hueco del plan vuelve como defecto del código, y hay que decirlo así.** El plan del RFC 023
