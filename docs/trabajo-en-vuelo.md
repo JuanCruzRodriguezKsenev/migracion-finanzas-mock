@@ -13,9 +13,15 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 ## Rama y próximo paso
 
 **Rama activa:** `fix/cabos-rfc023-y-limpieza-de-tests`, encadenada sobre `feat/bandeja-recurrencias`.
-**Próximo paso:** consolidar / mergear la rama sobre `feat/bandeja-recurrencias` tras la verificación de la suite completa.
+**Próximo paso:** ejecutar [`docs/planes/alinear-lint-y-refresh-de-tarjetas.md`](planes/alinear-lint-y-refresh-de-tarjetas.md) en esta misma rama; después consolidar las **dos** ramas encadenadas sobre `master`.
 
-**Estado:** 🟢 **Cierre de cabos del RFC 023 completado y compuerta de CI desbloqueada.**
+**Estado:** 🟢 **`df53f56` verificado en verde** el 2026-09-10 por batería independiente: **393 tests / 53 suites**, `eslint . --max-warnings 0` sin warnings, `tsc --noEmit` 0 errores, build exitoso. La rama pasaría la compuerta.
+
+**Pendiente en esta rama** — los dos hallazgos que dejó la ejecución anterior, ya contrastados y planificados:
+*   **Alinear el script `lint` de `package.json`** con el comando de la compuerta (`eslint . --max-warnings 0`) y reescribir las cuatro notas de la documentación que hoy advierten que difieren.
+*   **Sacar el `window.location.reload()` de `CardsContainer.tsx:70`.** El motivo del reload no es la caché sino que el contenedor fotografía `initialCards` en `useState`; la corrección es renderizar de props como `AccountsContainer` y montar `CardFormModal` condicionalmente, porque sus 16 `useState` no se resetean solos.
+
+**Estado de la ronda anterior:** 🟢 **Cierre de cabos del RFC 023 completado y compuerta de CI desbloqueada.**
 
 Se ejecutó [`docs/planes/cierre-cabos-rfc023.md`](planes/cierre-cabos-rfc023.md):
 *   **75 warnings huérfanos eliminados (Paso 1):** saneamiento de imports no utilizados en los 18 archivos de test afectados por `limpiarBase()` y la centralización del factory, dejando `pnpm exec eslint . --max-warnings 0` en código de salida 0 sin advertencias.
