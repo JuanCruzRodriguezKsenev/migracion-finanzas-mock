@@ -12,31 +12,25 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `fix/page-header-unico-por-pagina`, creada sobre `master` ya consolidado.
-**Próximo paso:** revisión y consolidación sobre `master`.
+**Rama activa:** `fix/mocks-de-ui-y-dict-obligatorio`, encadenada sobre `master` ya consolidado.
+**Próximo paso:** ejecutar `docs/planes/mocks-de-ui-y-dict-obligatorio.md` — el plan vive en esa
+rama y llega a `master` cuando se consolide.
 
-**Estado:** 🟢 **Plan de PageHeader único por página ejecutado y verificado en verde por batería independiente (2026-09-10).**
-*   **Encabezado único por página:** se extrajo `Header` de `AppShell` y se transformó en `PageHeader` compuesto en `src/shared/ui/layout/PageHeader/PageHeader.tsx`, con prop `title` obligatoria (`<h1>`), `subtitle` opcional, `actions` contextuales y selector de mes condicional (únicamente en `/` y `/transactions`).
-*   **Eliminación de sniffeo de rutas:** removidas todas las cadenas de ternarios y comprobaciones de `pathname` en el encabezado.
-*   **Ocho páginas migradas:** compuestas con `PageHeader` y sus acciones contextuales (`/`, `/transactions`, `/accounts`, `/subscriptions`, `/cards`, `/contacts`, `/settings`, `/sandbox`).
-*   **Responsividad móvil corregida:** invertida la regla CSS en móvil para asegurar que el título de la página siempre se visualice y la marca redundante se oculte.
-*   **Internacionalización:** añadidas claves `cardsPage` y `settingsPage` en `es.json`, `en.json` y `br.json`.
-*   **Limpieza CSS:** eliminadas clases huérfanas en los `.module.css` de los contenedores afectados.
-*   **Batería en verde:** **393 tests / 53 suites** (0 fallos), `eslint . --max-warnings 0` (0 errores, 0 warnings), `tsc --noEmit` (0 errores), build de producción exitoso. Mocks de `next/navigation` y `NotificationsContext` incorporados a `vitest.setup.mocks.ts` y fallback defensivo en `CategoriesSettingsContainer`.
-*   **Cabo conocido documentado:** registrado en `docs/TECHNICAL_DEBT.md` §8 el botón hamburguesa inerte de `PageHeader` en móvil.
+**Estado:** 🟡 **Plan escrito y listo para ejecutar (2026-09-10).** Cierra los dos hallazgos que dejó
+la ronda del `PageHeader`: la prop `dict` de `CategoriesSettingsContainer` quedó opcional con un
+diccionario de respaldo casteado con `as unknown as`, y el setup global de vitest pasó a mockear
+`NotificationsContext` —código propio— para las 53 suites. **Decisión del usuario:** el setup global
+mockea sólo dependencias de framework; el código propio se monta real. El plan deja el patrón §12 en
+[`patterns.md`](patterns.md), que hoy no tiene ninguno de testing de UI.
 
-**Estado de la ronda anterior:** 🟢 **Cierre de cabos del RFC 023 completado y compuerta de CI desbloqueada.**
+**Lo consolidado el 2026-09-10 quedó congelado en `registro/`:**
+[`2026-09-10-cierre-rfc023-y-compuerta.md`](registro/2026-09-10-cierre-rfc023-y-compuerta.md)
+(`2ae7186..8e086d9`) y
+[`2026-09-10-cierre-page-header.md`](registro/2026-09-10-cierre-page-header.md)
+(`8e086d9..2fe778b`). El código consolidado llega hasta `2fe778b`.
 
-Se ejecutó [`docs/planes/cierre-cabos-rfc023.md`](planes/cierre-cabos-rfc023.md):
-*   **75 warnings huérfanos eliminados (Paso 1):** saneamiento de imports no utilizados en los 18 archivos de test afectados por `limpiarBase()` y la centralización del factory, dejando `pnpm exec eslint . --max-warnings 0` en código de salida 0 sin advertencias.
-*   **Normalización de `revalidatePath` (Paso 2):** se actualizaron las tres llamadas en `src/features/cards/actions/cardsActions.ts` a `revalidatePath( "/[lang]/(main)/cards" , "page" )`, alineadas con la estructura física de archivos de ruta de Next.js y cubriendo todos los idiomas.
-*   **Deuda técnica actualizada (Paso 3):** ítem §7 resuelto y documentado en `docs/TECHNICAL_DEBT.md`, y registro de dos nuevos ítems de deuda preventiva (§ Abierto: cobertura de métodos en el mock de `next/cache` y retroceso potencial de punteros en la migración 0026).
-
-**Lo que ya estaba verificado de la ronda anterior:**
-*   **Guarda bajo bloqueo:** `subscriptionRepository.findByIdForUpdate` consumido en `resolveSubscriptionAction` con guarda releída.
-*   **Backfill de frecuencias no mensuales:** migración `0026_backfill_recurrence_pointers.sql` aplicada.
-*   **Limpieza topológica compartida:** `limpiarBase()` en las 18 suites de integración con `afterAll( limpiarBase )`.
-*   **Factory y mock de setup:** `makeSubscription` y mock de `next/cache`.
+**Ramas que se pueden borrar:** `feat/bandeja-recurrencias`, `fix/cabos-rfc023-y-limpieza-de-tests`
+y `fix/page-header-unico-por-pagina`, las tres ya contenidas en `master`.
 
 ---
 
