@@ -27,6 +27,11 @@ consolidar, va marcado como escrito en diferido) y `docs/registro/2026-09-10-cie
 y las tres ramas ya contenidas —`feat/bandeja-recurrencias`, `fix/cabos-rfc023-y-limpieza-de-tests`,
 `fix/page-header-unico-por-pagina`— **no se borraron**: ninguna de las dos cosas se pidió.
 
+**Artifact de la hoja de ruta al día (versión 8):** refleja `ba8b7ca`, 393 tests, Fase 2 en 4 de 6
+y el RFC 023 entregado. **Trampa al republicar:** el archivo que devuelve `action: "read"` viene con
+el envoltorio `<!doctype><head><body>` que agrega la publicación — hay que quitarlo antes de
+republicar. Y el `favicon` (📒) hay que pasarlo explícito o la publicación se rechaza.
+
 ## En cola — un plan escrito, listo para `obra`
 
 **`docs/planes/mocks-de-ui-y-dict-obligatorio.md`**, en la rama `fix/mocks-de-ui-y-dict-obligatorio`
