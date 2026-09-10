@@ -8,7 +8,7 @@ import { db }          from "@/shared/db/client" ;
 import { authOptions } from "./auth" ;
 
 // Feature: Accounting
-import { accounts , categories , categoryAccounts } from "@/features/accounting/schema.db" ;
+import { accounts , categories , categoryAccounts , ledgerEntries , ledgerTransactions } from "@/features/accounting/schema.db" ;
 
 // Feature: Auth
 import { organizations , users } from "@/features/auth/schema.db" ;
@@ -28,6 +28,8 @@ describe( "authOptions callbacks (JWT & Session)" , () => {
   const cleanDatabase = async () => {
     await db.delete( categoryAccounts ) ;
     await db.delete( categories ) ;
+    await db.delete( ledgerEntries      ) ;
+    await db.delete( ledgerTransactions ) ;
     await db.delete( accounts ) ;
     await db.delete( users ) ;
     await db.delete( organizations ) ;

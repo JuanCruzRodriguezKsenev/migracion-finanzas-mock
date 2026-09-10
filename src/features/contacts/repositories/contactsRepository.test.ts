@@ -10,7 +10,7 @@ import { describe , it , expect , beforeEach , afterEach , afterAll } from "vite
 import { db } from "@/shared/db/client" ;
 
 // Feature: Accounting & Auth
-import { accounts , categories , categoryAccounts , financialEntities } from "@/features/accounting/schema.db" ;
+import { accounts , categories , categoryAccounts , financialEntities , ledgerEntries , ledgerTransactions } from "@/features/accounting/schema.db" ;
 import { organizations }                                               from "@/features/auth/schema.db" ;
 
 // Feature: Contacts
@@ -28,6 +28,8 @@ describe( "contactsRepository — DAL de Contactos y Métodos de Cobro" , () => 
     await db.delete( contacts ) ;
     await db.delete( categoryAccounts ) ;
     await db.delete( categories ) ;
+    await db.delete( ledgerEntries      ) ;
+    await db.delete( ledgerTransactions ) ;
     await db.delete( accounts ) ;
     await db.delete( financialEntities ) ;
     await db.delete( organizations ) ;

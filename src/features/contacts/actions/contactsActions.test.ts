@@ -11,7 +11,7 @@ import type { Session }                             from "next-auth" ;
 import { db } from "@/shared/db/client" ;
 
 // Feature: Accounting & Auth
-import { accounts , categories , categoryAccounts , financialEntities } from "@/features/accounting/schema.db" ;
+import { accounts , categories , categoryAccounts , financialEntities , ledgerEntries , ledgerTransactions } from "@/features/accounting/schema.db" ;
 import { organizations }                                               from "@/features/auth/schema.db" ;
 
 // Feature: Contacts
@@ -47,6 +47,8 @@ describe( "contactsActions.ts — Server Actions" , () => {
     await db.delete( contacts ) ;
     await db.delete( categoryAccounts ) ;
     await db.delete( categories ) ;
+    await db.delete( ledgerEntries      ) ;
+    await db.delete( ledgerTransactions ) ;
     await db.delete( accounts ) ;
     await db.delete( financialEntities ) ;
     await db.delete( organizations ) ;
