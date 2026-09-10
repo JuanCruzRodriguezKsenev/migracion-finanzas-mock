@@ -12,23 +12,25 @@ metadata:
 ## Ramas
 
 ```
-origin/master = master                        8e086d9   consolidado y pusheado
-  └─ fix/page-header-unico-por-pagina         2fe778b   EJECUTADA y verificada en verde
-       └─ fix/mocks-de-ui-y-dict-obligatorio  6fedbb9   rama activa, plan SIN ejecutar
+origin/master                                 8e086d9   NO pusheado todavía
+master                                        ba8b7ca   consolidado, 4 commits por delante de origin
+  └─ fix/mocks-de-ui-y-dict-obligatorio       0a8989f   rama activa, plan SIN ejecutar
 ```
 
-**`2fe778b` verificado de forma independiente** (no sólo por el informe de `obra`): 393 tests /
-53 suites, eslint 0/0, `tsc --noEmit` 0 errores, build ok. **El merge a `master` lo decide el
-usuario** — se le dejó planteado y no contestó todavía.
+**`fix/page-header-unico-por-pagina` se consolidó** por fast-forward puro (`8e086d9..2fe778b`),
+`git log --merges` sigue vacío. **Los dos registros que faltaban ya están escritos:**
+`docs/registro/2026-09-10-cierre-rfc023-y-compuerta.md` (`2ae7186..8e086d9`, se había omitido al
+consolidar, va marcado como escrito en diferido) y `docs/registro/2026-09-10-cierre-page-header.md`.
+`trabajo-en-vuelo.md` quedó podado, sólo con lo vivo.
 
-**Sigue pendiente de `docs/registro/`:** la consolidación del 2026-09-10 se hizo pero nunca se
-escribió su `docs/registro/2026-09-10-<nombre>.md`, ni se podó de `trabajo-en-vuelo.md` el bloque
-«Estado de la ronda anterior». Ver [[ciclo-de-trabajo]] § Cómo se cierra una rama.
+**Pendiente y consciente:** `master` **no está pusheado** (4 commits por delante de `origin/master`)
+y las tres ramas ya contenidas —`feat/bandeja-recurrencias`, `fix/cabos-rfc023-y-limpieza-de-tests`,
+`fix/page-header-unico-por-pagina`— **no se borraron**: ninguna de las dos cosas se pidió.
 
 ## En cola — un plan escrito, listo para `obra`
 
 **`docs/planes/mocks-de-ui-y-dict-obligatorio.md`**, en la rama `fix/mocks-de-ui-y-dict-obligatorio`
-(ya creada, árbol limpio, plan commiteado). Cierra los dos hallazgos de la ronda del `PageHeader`:
+(ya creada, árbol limpio, plan commiteado, rebaseada sobre el `master` consolidado). Cierra los dos hallazgos de la ronda del `PageHeader`:
 `dict` obligatorio en `CategoriesSettingsContainer` (hoy opcional con `FALLBACK_DICT` casteado con
 `as unknown as`), test montado con `getDictionary( "es" )` real y `<NotificationsProvider>` real, y
 setup global de vitest reducido a framework. Deja el patrón §12 en `docs/patterns.md`.
