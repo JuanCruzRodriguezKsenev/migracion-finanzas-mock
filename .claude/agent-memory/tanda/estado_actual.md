@@ -1,11 +1,4 @@
----
-name: estado-actual
-description: Dónde quedó el trabajo de FinanzIA al cerrar la última ronda — qué se consolidó, qué está verificado y qué está en vuelo. Contrastar con git antes de usar.
-metadata:
-  type: project
----
-
-# Estado al cerrar la ronda del 2026-09-10 (tercera del día)
+# Estado al cerrar la ronda del 2026-09-10 (cuarta del día)
 
 **Verificar con `git log` antes de actuar: esto se desactualiza rápido.**
 
@@ -14,31 +7,34 @@ metadata:
 ```
 origin/master                                 8e086d9   NO pusheado todavía
 master                                        ba8b7ca   consolidado, 4 commits por delante de origin
-  └─ fix/mocks-de-ui-y-dict-obligatorio       0a8989f   rama activa, plan SIN ejecutar
+  └─ fix/mocks-de-ui-y-dict-obligatorio       01a8467   rama activa, árbol limpio
 ```
 
-**`fix/page-header-unico-por-pagina` se consolidó** por fast-forward puro (`8e086d9..2fe778b`),
-`git log --merges` sigue vacío. **Los dos registros que faltaban ya están escritos:**
-`docs/registro/2026-09-10-cierre-rfc023-y-compuerta.md` (`2ae7186..8e086d9`, se había omitido al
-consolidar, va marcado como escrito en diferido) y `docs/registro/2026-09-10-cierre-page-header.md`.
-`trabajo-en-vuelo.md` quedó podado, sólo con lo vivo.
+## Dónde quedó la rama activa
+
+`bfaac23` trae la **ejecución parcial** del plan de mocks (dict obligatorio, setup de vitest sin
+código propio, patrón §12). **La suite quedó en 3 tests rojos a propósito**: 52/53 suites,
+390/393 tests. Montar el `<NotificationsProvider>` real destapó que en jsdom + Node 26 no hay
+`localStorage` — ver [[testing-de-componentes-cliente]], que corrige una nota mía que era falsa.
+
+`01a8467` trae el plan que lo cierra: **`docs/planes/storage-tolerante-y-cierre-de-mocks-ui.md`**,
+listo para `obra` y sin ejecutar. Crea `@/shared/lib/safeStorage` y lo adopta en los **cuatro**
+sitios que tocan Storage (`NotificationsContext`, `MetricsVisibilityContext`, `ProfileContext`,
+`AddSubscriptionModal`). Total esperado al terminar: **399 tests, 53 suites**.
 
 **Pendiente y consciente:** `master` **no está pusheado** (4 commits por delante de `origin/master`)
 y las tres ramas ya contenidas —`feat/bandeja-recurrencias`, `fix/cabos-rfc023-y-limpieza-de-tests`,
 `fix/page-header-unico-por-pagina`— **no se borraron**: ninguna de las dos cosas se pidió.
 
-**Artifact de la hoja de ruta al día (versión 8):** refleja `ba8b7ca`, 393 tests, Fase 2 en 4 de 6
-y el RFC 023 entregado. **Trampa al republicar:** el archivo que devuelve `action: "read"` viene con
-el envoltorio `<!doctype><head><body>` que agrega la publicación — hay que quitarlo antes de
-republicar. Y el `favicon` (📒) hay que pasarlo explícito o la publicación se rechaza.
+**Artifact de la hoja de ruta (versión 8):** refleja `ba8b7ca`, 393 tests, Fase 2 en 4 de 6 y el
+RFC 023 entregado. **Quedó desactualizado**: no incluye esta rama. **Trampa al republicar:** el
+archivo que devuelve `action: "read"` viene con el envoltorio `<!doctype><head><body>` que agrega la
+publicación — hay que quitarlo antes de republicar. Y el `favicon` (📒) hay que pasarlo explícito o
+la publicación se rechaza.
 
 ## En cola — un plan escrito, listo para `obra`
 
-**`docs/planes/mocks-de-ui-y-dict-obligatorio.md`**, en la rama `fix/mocks-de-ui-y-dict-obligatorio`
-(ya creada, árbol limpio, plan commiteado, rebaseada sobre el `master` consolidado). Cierra los dos hallazgos de la ronda del `PageHeader`:
-`dict` obligatorio en `CategoriesSettingsContainer` (hoy opcional con `FALLBACK_DICT` casteado con
-`as unknown as`), test montado con `getDictionary( "es" )` real y `<NotificationsProvider>` real, y
-setup global de vitest reducido a framework. Deja el patrón §12 en `docs/patterns.md`.
+**`docs/planes/storage-tolerante-y-cierre-de-mocks-ui.md`** (detalle arriba).
 
 ## Sobre la mesa, sin plan
 
