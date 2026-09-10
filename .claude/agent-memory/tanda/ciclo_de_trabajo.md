@@ -51,6 +51,19 @@ entera. Si el plan nombra una rama, esa rama existe **antes** de que el bloque d
     convención pero lo fundamentó al revés («usan el locale» — usan el patrón de archivos); y reportó
     bien que el `reload()` de `CardsContainer` sobraba, atribuyéndolo a la caché cuando la causa era
     el `useState( initialCards )`. **Escrito sin contrastar, el próximo lo arregla al revés.**
+*   **El plan tiene que decir qué pasa con los tests que el cambio va a romper, o `obra` relaja el
+    código de producción para salvarlos.** El 2026-09-10 el plan del `PageHeader` dijo que los tests
+    de `CategoriesSettingsContainer` estaban fuera de alcance; el contenedor pasó a montar
+    `PageHeader`, que exige `dict`, y `obra` resolvió volviendo `dict` **opcional** con un diccionario
+    de respaldo `as unknown as` y mockeando globalmente `NotificationsContext`. Salió verde y silenció
+    dos verificaciones reales. **Si un paso agrega una prop obligatoria a un componente testeado, el
+    plan enumera los `render()` a actualizar y con qué montarlos.**
+*   **Verificar la ruta física de cada archivo antes de ponerlo en la tabla del plan.** La tabla decía
+    `CategoriesSettingsContainer:296-302` y el archivo vive en
+    `src/features/accounting/components/CategoriesSettings/`. No costó un defecto pero obliga a `obra`
+    a buscar. Un `find`/`grep -rln` por nombre antes de escribir la tabla lo evita.
+*   **Preferir anclas textuales a números de línea** en los pasos: el número envejece dentro de la
+    misma ronda apenas un paso anterior inserta líneas.
 *   **Un hueco del plan vuelve como defecto del código, y hay que decirlo así.** El plan del RFC 023
     decidió que «el puntero *es* la guarda» y `obra` lo implementó tal cual — pero quedó fuera de la
     transacción. No fue desvío de la ejecución: lo dejó el plan. Atribuirlo bien mantiene honesto el

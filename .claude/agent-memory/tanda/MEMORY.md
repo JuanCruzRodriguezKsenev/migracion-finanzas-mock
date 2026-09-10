@@ -11,6 +11,7 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 
 - [Trampas del repo](trampas_del_repo.md) — verificación, migraciones que rompen fixtures, RFCs viejos con esquemas previos al core contable, signo de pasivos, y código que los docs dicen que existe y no.
 - [Patrones que conviene reusar](patrones_reusables.md) — `Result` con `value`, bloqueo `FOR UPDATE`, contenedores server-driven, aislamiento multi-tenant, vitest. Nombrarlos con archivo y línea en el plan.
+- [Tests de componentes cliente](testing_de_componentes_cliente.md) — qué mockea el setup global y qué se monta real; `vi.hoisted`, dict real, provider real.
 - [Postgres caído se disfraza de bug](entorno_postgres_caido.md) — `AggregateError` + 401 en login, o suite roja: suele ser `postgres-dev` apagado. Chequearlo primero.
 
 ## Decisiones tomadas
