@@ -1,10 +1,3 @@
----
-name: estado-actual
-description: Dónde quedó la última ronda — ramas, qué está verificado, qué hay en cola y qué está sobre la mesa sin plan.
-metadata:
-  type: project
----
-
 # Estado al cerrar la ronda del 2026-09-10 (quinta del día)
 
 **Verificar con `git log` antes de actuar: esto se desactualiza rápido.**
@@ -12,36 +5,32 @@ metadata:
 ## Ramas
 
 ```
-origin/master                                 8e086d9   NO pusheado todavía
-master                                        ba8b7ca   consolidado, 4 commits por delante de origin
-  └─ fix/mocks-de-ui-y-dict-obligatorio       ece10ba   rama activa, árbol limpio, TERMINADA Y VERDE
+origin/master   8e086d9   NO pusheado — master está 15 commits por delante
+master          7c49444   consolidado, verde, árbol limpio, SIN rama activa encima
 ```
 
-## Dónde quedó la rama activa
+**Cuatro ramas ya contenidas en `master` y borrables** (nadie lo pidió todavía):
+`feat/bandeja-recurrencias`, `fix/cabos-rfc023-y-limpieza-de-tests`,
+`fix/page-header-unico-por-pagina` y `fix/mocks-de-ui-y-dict-obligatorio`.
 
-**Terminada.** `e5f1e4f` ejecutó el plan `docs/planes/storage-tolerante-y-cierre-de-mocks-ui.md`
-completo: `@/shared/lib/safeStorage` (`readStorage`/`writeStorage`) creado y adoptado en los cuatro
-sitios (`NotificationsContext`, `MetricsVisibilityContext`, `ProfileContext`, `AddSubscriptionModal`),
-`dict` obligatorio en `CategoriesSettingsContainer`, y la Regla 5 del §12 de `patterns.md`.
+## Qué se consolidó
+
+`fix/mocks-de-ui-y-dict-obligatorio` entró por **fast-forward puro** (`git log --merges` sigue en 0).
+Registro congelado en `docs/registro/2026-09-10-cierre-mocks-ui-y-storage.md`: `dict` obligatorio,
+la política «se mockea el framework, no el proyecto» en el setup de vitest, y
+`@/shared/lib/safeStorage` adoptado en los cuatro sitios de producción que tocaban Storage.
 
 **Verificado de forma independiente** con `verificador` sobre `e5f1e4f`, los cuatro en verde:
 **54 archivos de test / 399 tests**, eslint 0/0, `tsc --noEmit` 0 errores, build exitoso.
 
 **Ojo con el conteo:** el plan predijo «53 suites / 399 tests» y `obra` repitió ese número en vez de
 la salida real. Eran 54: el plan sumó los 6 tests de `safeStorage.test.ts` pero no contó el archivo
-nuevo que los trae. No fue defecto de ejecución, fue aritmética del plan. **Al predecir totales en un
-plan que crea un archivo de test, sumar el archivo además de los tests.**
-
-`ece10ba` cierra los dos hallazgos de `obra` (ver abajo) y asienta la verificación.
-
-**Pendiente y consciente:** `master` **no está pusheado** (4 commits por delante de `origin/master`)
-y las tres ramas ya contenidas —`feat/bandeja-recurrencias`, `fix/cabos-rfc023-y-limpieza-de-tests`,
-`fix/page-header-unico-por-pagina`— **no se borraron**: ninguna de las dos cosas se pidió.
+nuevo que los trae. No fue defecto de ejecución, fue aritmética del plan.
 
 **Artifact de la hoja de ruta (versión 8):** refleja `ba8b7ca`, 393 tests, Fase 2 en 4 de 6.
-**Desactualizado**: no incluye esta rama. **Trampa al republicar:** lo que devuelve `action: "read"`
-viene con el envoltorio `<!doctype><head><body>` que agrega la publicación — hay que quitarlo antes
-de republicar. Y el `favicon` (📒) hay que pasarlo explícito o la publicación se rechaza.
+**Desactualizado**: no incluye esta consolidación. **Trampa al republicar:** lo que devuelve
+`action: "read"` viene con el envoltorio `<!doctype><head><body>` que agrega la publicación — hay que
+quitarlo antes de republicar. Y el `favicon` (📒) hay que pasarlo explícito o la publicación se rechaza.
 
 ## Los dos hallazgos de la ronda, ya enrutados
 
@@ -56,8 +45,6 @@ de republicar. Y el `favicon` (📒) hay que pasarlo explícito o la publicació
 
 ## Sobre la mesa, sin plan
 
-*   **Consolidar `fix/mocks-de-ui-y-dict-obligatorio` sobre `master`** — está verde y lista; el merge
-    lo decide el usuario.
 *   `dict?:` opcional heredado, **5 declaraciones en 4 archivos**: `ContactsTable.tsx:26`,
     `PaymentMethodsPanel.tsx:45`, `ContactFormModal.tsx:26` y `:43`, `MonthSelector.tsx:39`. Shape
     acotado y sin cast, así que es menos grave que el caso ya cerrado; es la continuación natural.
