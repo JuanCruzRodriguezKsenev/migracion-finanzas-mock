@@ -13,7 +13,7 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 ## Rama y próximo paso
 
 **Rama activa:** `fix/mocks-de-ui-y-dict-obligatorio`, encadenada sobre `master` ya consolidado.
-**Próximo paso:** revisión y consolidación sobre `master`.
+**Próximo paso:** **decisión del usuario** — la rama está terminada y verificada en verde, lista para consolidar sobre `master`. El merge no se hace por cuenta propia.
 
 **Estado:** 🟢 **Plan ejecutado (2026-09-10).** Se cerraron `dict` obligatorio, la política de mocks de UI
 y el acceso tolerante a Storage:
@@ -26,7 +26,11 @@ y el acceso tolerante a Storage:
    `ProfileContext` y `AddSubscriptionModal`) para tolerar SSR, Storage bloqueado (`SecurityError`) y jsdom en Node (`undefined`).
 4. Se actualizó el patrón §12 en [`patterns.md`](patterns.md) incorporando la Regla 5 (Storage no garantizado)
    y precisando la sintaxis hoisted.
-5. Total de pruebas en verde: 53 suites, 399 tests.
+5. Total de pruebas en verde: **54 archivos de test, 399 tests**. (El plan predijo «53 suites»: sumó los 6 tests nuevos de `safeStorage.test.ts` pero no el archivo que los trae. Error de aritmética del plan, no defecto de la ejecución.)
+
+**Verificado de forma independiente el 2026-09-10** sobre `e5f1e4f`, con la batería completa de la
+ficha y `postgres-dev` arriba: `pnpm test` 54 archivos / 399 tests en verde · `pnpm exec eslint . --max-warnings 0` 0 errores y 0 warnings ·
+`pnpm exec tsc --noEmit` 0 errores TS · `pnpm build` exitoso (estáticas 4/4). **La rama pasaría la compuerta.**
 
 **Lo consolidado el 2026-09-10 quedó congelado en `registro/`:**
 [`2026-09-10-cierre-rfc023-y-compuerta.md`](registro/2026-09-10-cierre-rfc023-y-compuerta.md)
