@@ -1,8 +1,9 @@
 // Librerías externas
-import { describe , it , expect , beforeEach , afterEach } from "vitest" ;
+import { describe , it , expect , beforeEach , afterEach , afterAll } from "vitest" ;
 
 // Shared
-import { db } from "@/shared/db/client" ;
+import { db }          from "@/shared/db/client" ;
+import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -24,16 +25,7 @@ describe( "subscriptionRepository" , () => {
   let otherOrgId: string ;
 
   const cleanDatabase = async () => {
-    await db.delete( subscriptions ) ;
-    await db.delete( outboxEvents ) ;
-    await db.delete( idempotencyKeys ) ;
-    await db.delete( ledgerEntries ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( monthlySummaries ) ;
-    await db.delete( categoryAccounts ) ;
-    await db.delete( categories ) ;
-    await db.delete( accounts ) ;
-    await db.delete( organizations ) ;
+    await limpiarBase() ;
   } ;
 
   beforeEach( async () => {
@@ -200,5 +192,9 @@ describe( "subscriptionRepository" , () => {
 
     expect( subEnt.categoryId ).toBe( entCat.id ) ;
     expect( subOther.categoryId ).toBe( genCat.id ) ;
+  } ) ;
+
+  afterAll( async () => {
+    await limpiarBase() ;
   } ) ;
 } ) ;

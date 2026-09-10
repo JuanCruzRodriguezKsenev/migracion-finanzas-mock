@@ -1,9 +1,10 @@
 // Librerías externas
-import { describe , it , expect , beforeEach , afterEach } from "vitest" ;
-import { eq }                                              from "drizzle-orm" ;
+import { describe , it , expect , beforeEach , afterEach , afterAll } from "vitest" ;
+import { eq }                                                         from "drizzle-orm" ;
 
 // Shared
-import { db } from "@/shared/db/client" ;
+import { db }          from "@/shared/db/client" ;
+import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -32,13 +33,7 @@ describe( "outboxDispatcher" , () => {
   beforeEach( async () => {
     resetEventHandlers() ;
 
-    await db.delete( outboxEvents  ) ;
-    await db.delete( categoryAccounts ) ;
-    await db.delete( categories ) ;
-    await db.delete( ledgerEntries      ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( accounts ) ;
-    await db.delete( organizations ) ;
+    await limpiarBase() ;
 
     const [ org ] = await db
       .insert( organizations )
@@ -373,5 +368,9 @@ describe( "outboxDispatcher" , () => {
       .where( eq(outboxEvents.id , inserted.id) ) ;
 
     expect( dbEvt.status ).toBe( "SENT" ) ;
+  } ) ;
+
+  afterAll( async () => {
+    await limpiarBase() ;
   } ) ;
 } ) ;

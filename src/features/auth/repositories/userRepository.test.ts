@@ -1,9 +1,10 @@
 // Librerías externas
-import { describe , it , expect , beforeEach , afterEach } from "vitest" ;
-import { eq } from "drizzle-orm" ;
+import { describe , it , expect , beforeEach , afterEach , afterAll } from "vitest" ;
+import { eq }                                                         from "drizzle-orm" ;
 
 // Shared
-import { db } from "@/shared/db/client" ;
+import { db }          from "@/shared/db/client" ;
+import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Accounting
 import { accounts , categories , categoryAccounts , ledgerEntries , ledgerTransactions } from "@/features/accounting/schema.db" ;
@@ -23,13 +24,7 @@ describe( "userRepository" , () => {
   let userId: string ;
 
   const cleanDatabase = async () => {
-    await db.delete( categoryAccounts ) ;
-    await db.delete( categories ) ;
-    await db.delete( ledgerEntries      ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( accounts ) ;
-    await db.delete( users ) ;
-    await db.delete( organizations ) ;
+    await limpiarBase() ;
   } ;
 
   beforeEach( async () => {
@@ -134,5 +129,9 @@ describe( "userRepository" , () => {
     expect( actualizado?.passwordHash ).toBe( "1".repeat( 128 ) ) ;
     expect( actualizado?.salt ).toBe( "fedcba9876543210fedcba9876543210" ) ;
     expect( actualizado?.hashParams ).toBe( "scrypt$131072$8$1$64" ) ;
+  } ) ;
+
+  afterAll( async () => {
+    await limpiarBase() ;
   } ) ;
 } ) ;

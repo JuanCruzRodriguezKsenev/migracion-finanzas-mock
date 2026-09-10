@@ -73,6 +73,9 @@ Este documento registra los puntos de deuda técnica del repositorio, distinguie
 *   [x] **Corrección de `addInterval` sin desborde en fin de mes:** Derivación anclada en el día nominal (`anchorDay`) y recorte al último día del mes mediante `recortarDia` de `cards/utils/ciclo.ts`, evitando saltos y desvíos permanentes al operar con fin de mes (e.g. 31 de enero -> 28/29 de febrero -> 31 de marzo).
 *   [x] **Resolución unificada de categoría padre → hoja (`categoryRepository.resolveToLeaf`):** Extracción del resolutor a hoja imputable reutilizable en `categoryRepository`, eliminando la duplicación existente en `transactionsActions.ts` y garantizando fallback determinístico a la hoja general del padre o catálogo.
 
+### Infraestructura de Pruebas y Limpieza de Base de Datos
+*   [x] **Limpieza unificada de base de datos entre suites de test:** Resuelto con `limpiarBase()` en `src/shared/db/testCleanup.ts`. Las 18 suites de integración que limpiaban tablas con listas manuales divergentes ahora consumen la función compartida, que ejecuta los borrados en un único bloque transaccional siguiendo el orden topológico estricto de claves foráneas con restricción (`restrict`), con borrado en dos pasos para la autorreferencia en `categories` y limpieza de salida en `afterAll`.
+
 ## § Abierto (Pendiente de Refactorización)
 
 ### 1. Visualización y Gráficos
@@ -109,5 +112,5 @@ Items pendientes tras el RFC 022:
 *   [ ] **`1.1.01.02 Efectivo en Billetera` tiene balance negativo** (`-1.032.300` en la base local): un activo de efectivo en negativo es imposible. Dato del seed o falta de validación de sobregiro para cuentas de caja.
 
 
-### 7. Limpieza de la base entre suites de test (detectado el 2026-09-10)
-*   [ ] **Cada suite limpia la base a mano, con su propio orden y su propio subconjunto de tablas:** son **14 archivos** de test que abren su `beforeEach` con una lista de `db.delete( ... )` escrita a ojo. Ninguno limpia al salir, así que el último test de cada archivo deja sus filas para el siguiente, y basta que una suite borre una tabla padre sin haber borrado antes sus hijas para que reviente la que corra después. **Ya pasó:** la primera tajada del RFC 022 agregó `DELETE FROM accounts` a cinco suites sin agregar `ledger_entries` ni `ledger_transactions` antes, y la suite completa empezó a fallar en un archivo distinto cada vez — porque vitest ordena los archivos por la duración de la corrida anterior. Se parcheó en `567544f`, pero el patrón sigue: cualquier tabla nueva con FK va a reproducirlo. **La corrección de fondo es un único `limpiarBase()` en orden topológico**, compartido por las 14 suites, en vez de catorce listas divergentes. Nota para quien lo tome: `fileParallelism: false` **no protege de esto** y el comentario que lo acompaña en `vitest.config.ts` induce a creer que sí — el problema no es el paralelismo, es el residuo que queda entre archivos.
+### 7. Navegación y Rutas (detectado el 2026-09-10)
+*   [ ] **`cardsActions.ts` utiliza una ruta no localizada en `revalidatePath`:** `createCardAction` llama a `revalidatePath("/cards")` a secas, mientras que las demás Server Actions del repositorio usan la convención localizada `"/[lang]/(main)/<ruta>"`. Debe normalizarse para evitar invalidaciones parciales.

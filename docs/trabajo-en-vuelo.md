@@ -13,49 +13,14 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 ## Rama y próximo paso
 
 **Rama activa:** `fix/cabos-rfc023-y-limpieza-de-tests`, encadenada sobre `feat/bandeja-recurrencias`.
-**Próximo paso:** ejecutar [`docs/planes/cabos-rfc023-y-limpieza-de-tests.md`](planes/cabos-rfc023-y-limpieza-de-tests.md).
+**Próximo paso:** verificar con subagente `verificador` (5 comprobaciones) y consolidar/mergear hacia master.
 
-**`feat/bandeja-recurrencias` quedó verificada y lista para consolidar** (2026-09-10, `dd7388d`):
-`verificador` la corrió entera y dio **53 archivos, 392 tests en verde, lint 0, `tsc --noEmit` 0,
-build verde**, con la suite corrida **dos veces seguidas** y conteo idéntico en ambas. Pasa la
-compuerta de CI. No se mergeó todavía: la ronda siguiente se encadena sobre ella, como es la
-convención del repo.
-
-**Lo que la revisión encontró y el plan de la ronda siguiente corrige:**
-
-*   **La guarda del puntero se evalúa fuera de la transacción** (`resolveSubscriptionAction.ts:87-100`
-    lee, `:137` abre la transacción). Dos confirmaciones concurrentes pasan las dos y generan dos
-    asientos para la misma ocurrencia. No fue desvío de la ejecución: el plan anterior decidió que el
-    puntero era la guarda; lo que faltaba era leerlo bajo bloqueo.
-*   **El backfill de la 0025 manda `weekly`/`quarterly`/`custom` al fallback** `start_date - 1 mes`,
-    que a una semanal le abre unas cuatro ocurrencias juntas en la bandeja.
-*   **La deuda §7 pasó de 14 a 18 suites** en una sola tanda. Los tres hallazgos del informe de
-    ejecución apuntan todos ahí.
-
-**Estado:** 🟢 **Bandeja de recurrencias implementada (RFC 023).** La confirmación de recurrencias
-emite asientos contables en el libro mayor de forma atómica (partida doble con fecha civil de ocurrencia),
-avanza el puntero de resolución `resolved_through` como guarda de idempotencia y secuencia cronológica, y
-ofrece opción de descarte sin asiento.
-
-*   **RFC 023 completado íntegramente:**
-    *   `categoryRepository.resolveToLeaf` extraído y reutilizado en transacciones y resolución de recurrencias.
-    *   `addInterval` corregido con anclaje de día nominal y recorte sin desborde de mes.
-    *   Servicio de serie civil puro `recurrenceService.ts` con cobertura exhaustiva (10/10).
-    *   Migración `0025_neat_hellcat.sql` aplicada (`resolved_through date` con backfill de mensuales y anuales).
-    *   Server Action `resolveSubscriptionAction` con transacción ACID estricta y revalidación de ruta.
-    *   Componente accesible `PendingOccurrencesInbox` integrado en `/subscriptions` sobre el treemap.
-    *   Patrón 10 ("Bandeja de transacciones propuestas y avance por puntero de resolución") documentado en `docs/patterns.md`.
-
-**Batería de tests local:** 53 archivos de test, **392 tests** pasando en verde (100% pasando).
-
-> **Enmienda al RFC 015 (2026-09-09):** no hay ruta `/profile`. El perfil pasa a ser otra pestaña de
-> `/settings`, por la duplicación que trae la referencia del mock. Anotada en el propio RFC.
-
-> **Convención asentada (2026-09-08):** los segmentos de ruta van **en inglés**
-> (`ARCHITECTURE.md` §4).
-
-**Pendiente de la gobernanza:** revisar la duplicación entre `ARCHITECTURE.md` y `.agents/AGENTS.md`
-§2–§5.
+**Estado:** 🟢 **Cabos del RFC 023 cerrados y limpieza topológica de tests completada.**
+*   **Guarda bajo bloqueo (Paso 1):** `subscriptionRepository.findByIdForUpdate` agregado y consumido como primera operación dentro de `db.transaction` en `resolveSubscriptionAction`, evaluando la guarda sobre la fila releída y cerrando la condición de carrera concurrente.
+*   **Backfill de frecuencias no mensuales (Paso 2):** migración `0026_backfill_recurrence_pointers.sql` aplicada, ajustando el puntero inicial para series `weekly`, `quarterly` y `custom` a la última ocurrencia anterior a la ventana en curso.
+*   **Limpieza topológica compartida (Paso 3):** `limpiarBase()` en `src/shared/db/testCleanup.ts` ejecutada dentro de transacción única en orden topológico estricto de FK `restrict` (con autorreferencia en dos pasos para `categories`), adoptada en las 18 suites de integración con `afterAll( limpiarBase )`.
+*   **Factory y mock de setup (Paso 4):** `makeSubscription` centralizado en `src/features/subscriptions/testing/subscriptionFactory.ts` y mock global de `next/cache` en `src/shared/lib/vitest.setup.mocks.ts` registrado en `setupFiles` de `vitest.config.ts`.
+*   **Documentación (Paso 5):** Patrón 11 documentado en `docs/patterns.md`, deuda §7 resuelta en `docs/TECHNICAL_DEBT.md`, y comentario de `fileParallelism` rectificado en `vitest.config.ts`.
 
 ---
 

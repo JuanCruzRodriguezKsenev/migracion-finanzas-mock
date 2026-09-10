@@ -1,10 +1,11 @@
 // Librerías externas
-import { describe , it , expect , vi , beforeEach , afterEach } from "vitest" ;
-import { getServerSession }                                   from "next-auth" ;
-import { eq }                                                 from "drizzle-orm" ;
+import { describe , it , expect , vi , beforeEach , afterEach , afterAll } from "vitest" ;
+import { getServerSession }                                                from "next-auth" ;
+import { eq }                                                              from "drizzle-orm" ;
 
 // Shared
-import { db } from "@/shared/db/client" ;
+import { db }          from "@/shared/db/client" ;
+import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Auth
 import { organizations , users } from "@/features/auth/schema.db" ;
@@ -28,14 +29,11 @@ import {
 import { subscriptions }            from "../schema.db" ;
 import { resolveSubscriptionAction } from "./resolveSubscriptionAction" ;
 import { pendientesDe }              from "../services/recurrenceService" ;
+import { makeSubscription }         from "../testing/subscriptionFactory" ;
 import { Subscription }              from "../types" ;
 
 vi.mock( "next-auth" , () => ( {
   getServerSession: vi.fn() ,
-} ) ) ;
-
-vi.mock( "next/cache" , () => ( {
-  revalidatePath: vi.fn() ,
 } ) ) ;
 
 describe( "resolveSubscriptionAction (RFC 023)" , () => {
@@ -45,18 +43,7 @@ describe( "resolveSubscriptionAction (RFC 023)" , () => {
   let catPadreId: string ;
 
   const cleanAll = async () => {
-    await db.delete( outboxEvents       ) ;
-    await db.delete( idempotencyKeys    ) ;
-    await db.delete( ledgerEntries      ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( monthlySummaries   ) ;
-    await db.delete( subscriptions      ) ;
-    await db.delete( categoryAccounts   ) ;
-    await db.delete( categories         ) ;
-    await db.delete( accounts           ) ;
-    await db.delete( profiles           ) ;
-    await db.delete( users              ) ;
-    await db.delete( organizations      ) ;
+    await limpiarBase() ;
   } ;
 
   beforeEach( async () => {
@@ -143,6 +130,10 @@ describe( "resolveSubscriptionAction (RFC 023)" , () => {
 
   afterEach( async () => {
     await cleanAll() ;
+  } ) ;
+
+  afterAll( async () => {
+    await limpiarBase() ;
   } ) ;
 
   it( "Paso 7.5 — Resolver confirmar: nace el asiento con occurredAt de la ocurrencia, Debe = Haber y puntero avanza" , async () => {
@@ -348,14 +339,14 @@ describe( "resolveSubscriptionAction (RFC 023)" , () => {
 
     // Simular las 8 suscripciones sembradas con puntero según la migración y el seed
     const subsSembradas: Subscription[] = [
-      { id: "s1" , organizationId: orgId , name: "Netflix"              , description: null , amount: 1599000 , currency: "ARS" , frequency: "monthly" , intervalCount: 1 , startDate: inicio , nextPaymentDate: inicio , resolvedThrough: "2026-08-05" , autoDebit: false , accountId: null , status: "active" , logoKey: "default" , color: "#000" , categoryId: null , createdAt: inicio , updatedAt: inicio } ,
-      { id: "s2" , organizationId: orgId , name: "Spotify"              , description: null , amount: 649900  , currency: "ARS" , frequency: "monthly" , intervalCount: 1 , startDate: inicio , nextPaymentDate: inicio , resolvedThrough: "2026-08-05" , autoDebit: false , accountId: null , status: "active" , logoKey: "default" , color: "#000" , categoryId: null , createdAt: inicio , updatedAt: inicio } ,
-      { id: "s3" , organizationId: orgId , name: "ChatGPT Plus"         , description: null , amount: 2000000 , currency: "ARS" , frequency: "monthly" , intervalCount: 1 , startDate: inicio , nextPaymentDate: inicio , resolvedThrough: "2026-08-05" , autoDebit: false , accountId: null , status: "active" , logoKey: "default" , color: "#000" , categoryId: null , createdAt: inicio , updatedAt: inicio } ,
-      { id: "s4" , organizationId: orgId , name: "Adobe Creative Cloud" , description: null , amount: 5499000 , currency: "ARS" , frequency: "monthly" , intervalCount: 1 , startDate: inicio , nextPaymentDate: inicio , resolvedThrough: "2026-08-05" , autoDebit: false , accountId: null , status: "active" , logoKey: "default" , color: "#000" , categoryId: null , createdAt: inicio , updatedAt: inicio } ,
-      { id: "s5" , organizationId: orgId , name: "Gimnasio"             , description: null , amount: 3500000 , currency: "ARS" , frequency: "monthly" , intervalCount: 1 , startDate: inicio , nextPaymentDate: inicio , resolvedThrough: "2026-08-05" , autoDebit: false , accountId: null , status: "active" , logoKey: "default" , color: "#000" , categoryId: null , createdAt: inicio , updatedAt: inicio } ,
-      { id: "s6" , organizationId: orgId , name: "iCloud+"              , description: null , amount: 129900  , currency: "ARS" , frequency: "monthly" , intervalCount: 1 , startDate: inicio , nextPaymentDate: inicio , resolvedThrough: "2026-08-05" , autoDebit: false , accountId: null , status: "active" , logoKey: "default" , color: "#000" , categoryId: null , createdAt: inicio , updatedAt: inicio } ,
-      { id: "s7" , organizationId: orgId , name: "NordVPN"              , description: null , amount: 4800000 , currency: "ARS" , frequency: "yearly"  , intervalCount: 1 , startDate: inicio , nextPaymentDate: inicio , resolvedThrough: "2026-06-05" , autoDebit: false , accountId: null , status: "active" , logoKey: "default" , color: "#000" , categoryId: null , createdAt: inicio , updatedAt: inicio } ,
-      { id: "s8" , organizationId: orgId , name: "Figma"                , description: null , amount: 1200000 , currency: "ARS" , frequency: "monthly" , intervalCount: 1 , startDate: inicio , nextPaymentDate: inicio , resolvedThrough: "2026-08-05" , autoDebit: false , accountId: null , status: "active" , logoKey: "default" , color: "#000" , categoryId: null , createdAt: inicio , updatedAt: inicio } ,
+      makeSubscription( { id: "s1" , organizationId: orgId , name: "Netflix"              , amount: 1599000 , frequency: "monthly" , startDate: inicio , resolvedThrough: "2026-08-05" } ) ,
+      makeSubscription( { id: "s2" , organizationId: orgId , name: "Spotify"              , amount: 649900  , frequency: "monthly" , startDate: inicio , resolvedThrough: "2026-08-05" } ) ,
+      makeSubscription( { id: "s3" , organizationId: orgId , name: "ChatGPT Plus"         , amount: 2000000 , frequency: "monthly" , startDate: inicio , resolvedThrough: "2026-08-05" } ) ,
+      makeSubscription( { id: "s4" , organizationId: orgId , name: "Adobe Creative Cloud" , amount: 5499000 , frequency: "monthly" , startDate: inicio , resolvedThrough: "2026-08-05" } ) ,
+      makeSubscription( { id: "s5" , organizationId: orgId , name: "Gimnasio"             , amount: 3500000 , frequency: "monthly" , startDate: inicio , resolvedThrough: "2026-08-05" } ) ,
+      makeSubscription( { id: "s6" , organizationId: orgId , name: "iCloud+"              , amount: 129900  , frequency: "monthly" , startDate: inicio , resolvedThrough: "2026-08-05" } ) ,
+      makeSubscription( { id: "s7" , organizationId: orgId , name: "NordVPN"              , amount: 4800000 , frequency: "yearly"  , startDate: inicio , resolvedThrough: "2026-06-05" } ) ,
+      makeSubscription( { id: "s8" , organizationId: orgId , name: "Figma"                , amount: 1200000 , frequency: "monthly" , startDate: inicio , resolvedThrough: "2026-08-05" } ) ,
     ] ;
 
     // Si resolvedThrough fuera null o startDate, aparecerían 32 ocurrencias (junio, julio, agosto, septiembre x 8)
@@ -371,5 +362,54 @@ describe( "resolveSubscriptionAction (RFC 023)" , () => {
     for( const p of conPuntero ) {
       expect( p.fechaCobro ).toBe( "2026-09-05" ) ;
     }
+  } ) ;
+
+  it( "Paso 1 — Concurrencia: dos resoluciones concurrentes sobre la misma ocurrencia permiten sólo una y crean un solo asiento" , async () => {
+    const inicio = new Date( 2026 , 5 , 5 , 9 , 0 ) ;
+
+    const [ sub ] = await db
+      .insert( subscriptions )
+      .values( {
+        organizationId:  orgId ,
+        name:            "Netflix Concurrente" ,
+        amount:          1599000 ,
+        currency:        "ARS" ,
+        frequency:       "monthly" ,
+        startDate:       inicio ,
+        nextPaymentDate: new Date( 2026 , 8 , 5 , 9 , 0 ) ,
+        resolvedThrough: "2026-08-05" ,
+        accountId:       cajaArsId ,
+        categoryId:      catPadreId ,
+      } )
+      .returning() ;
+
+    const [ res1 , res2 ] = await Promise.all( [
+      resolveSubscriptionAction( {
+        subscriptionId: sub.id ,
+        occurrenceDate: "2026-09-05" ,
+        action:         "confirm" ,
+      } ) ,
+      resolveSubscriptionAction( {
+        subscriptionId: sub.id ,
+        occurrenceDate: "2026-09-05" ,
+        action:         "confirm" ,
+      } ) ,
+    ] ) ;
+
+    const exitos = [ res1 , res2 ].filter( ( r ) => r.success ) ;
+    const fallos = [ res1 , res2 ].filter( ( r ) => !r.success ) ;
+
+    expect( exitos.length ).toBe( 1 ) ;
+    expect( fallos.length ).toBe( 1 ) ;
+    expect( fallos[0].error ).toBe( "Otra confirmación resolvió esta ocurrencia mientras se procesaba." ) ;
+
+    const txs = await db
+      .select()
+      .from( ledgerTransactions )
+      .where( eq( ledgerTransactions.organizationId , orgId ) ) ;
+
+    // Debe haber un solo asiento contable registrado para esta confirmación
+    expect( txs.length ).toBe( 1 ) ;
+    expect( txs[0].description ).toBe( "Netflix Concurrente" ) ;
   } ) ;
 } ) ;

@@ -1,10 +1,11 @@
 // Librerías externas
-import { describe , it , expect , beforeEach , afterEach , vi } from "vitest" ;
-import { eq }                                                    from "drizzle-orm" ;
+import { describe , it , expect , beforeEach , afterEach , afterAll , vi } from "vitest" ;
+import { eq }                                                             from "drizzle-orm" ;
 
 // Shared
 import { executeIdempotent } from "./idempotencyService" ;
 import { db }                from "@/shared/db/client" ;
+import { limpiarBase }       from "@/shared/db/testCleanup" ;
 
 // Feature: Accounting
 import { idempotencyKeys } from "@/features/accounting/schema.db" ;
@@ -18,12 +19,16 @@ import { idempotencyKeys } from "@/features/accounting/schema.db" ;
  */
 describe( "idempotencyService" , () => {
   beforeEach( async () => {
-    await db.delete( idempotencyKeys ) ;
+    await limpiarBase() ;
   } ) ;
 
   afterEach( async () => {
     vi.restoreAllMocks() ;
-    await db.delete( idempotencyKeys ) ;
+    await limpiarBase() ;
+  } ) ;
+
+  afterAll( async () => {
+    await limpiarBase() ;
   } ) ;
 
   it( "debería ejecutar el callback directamente sin registrar clave cuando no se provee key" , async () => {

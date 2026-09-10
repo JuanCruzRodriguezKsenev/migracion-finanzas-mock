@@ -134,6 +134,17 @@ export async function resolveSubscriptionAction(
   // 4. Ejecución en transacción ACID única
   try {
     const outcome = await db.transaction( async ( tx ) => {
+      // 4.1 Releer bajo bloqueo para evitar condiciones de carrera concurrentes
+      const freshSub = await subscriptionRepository.findByIdForUpdate( params.subscriptionId , organizationId , tx ) ;
+      if( !freshSub ) {
+        throw( new Error( "Suscripción no encontrada." ) ) ;
+      }
+
+      const freshPendientes = pendientesDe( freshSub , hoyCivil ) ;
+      if( (freshPendientes.length === 0) || (freshPendientes[0].fechaCobro !== params.occurrenceDate) ) {
+        throw( new Error( "Otra confirmación resolvió esta ocurrencia mientras se procesaba." ) ) ;
+      }
+
       let createdTxId: string | undefined ;
 
       if( creaAsiento && paymentAccountId ) {
@@ -141,7 +152,7 @@ export async function resolveSubscriptionAction(
 
         // Resolver categoría a hoja contable (RFC 022 §5, RFC 023 §6.2)
         const targetCat = await categoryRepository.resolveToLeaf(
-          subscription.categoryId ,
+          freshSub.categoryId ,
           "expense" ,
           organizationId ,
           tx
@@ -157,23 +168,24 @@ export async function resolveSubscriptionAction(
         // occurredAt = fecha de la ocurrencia (no hoy)
         const [ y , m , d ] = params.occurrenceDate.split( "-" ).map( Number ) ;
         const occurredAt    = new Date( Date.UTC( y , m - 1 , d , 12 , 0 , 0 ) ) ;
+        const actualAmount  = ( params.action === "confirm" ? freshSub.amount : amountToCharge ) ;
 
         const ledgerResult = await createLedgerTransaction( {
           organizationId ,
           categoryId:     targetCat.id ,
-          description:    subscription.name ,
+          description:    freshSub.name ,
           occurredAt ,
           entries: [
             {
               accountId: expenseAccount.id ,
-              debit:     amountToCharge ,
+              debit:     actualAmount ,
               credit:    0 ,
               currency:  paymentAccount.currency ,
             } ,
             {
               accountId: paymentAccount.id ,
               debit:     0 ,
-              credit:    amountToCharge ,
+              credit:    actualAmount ,
               currency:  paymentAccount.currency ,
             } ,
           ] ,
@@ -188,9 +200,9 @@ export async function resolveSubscriptionAction(
 
       // Recalcular nextPaymentDate a partir de la nueva posición del puntero
       const nextPaymentDate = proximaOcurrenciaPosteriorA(
-        subscription.startDate ,
-        subscription.frequency as SubscriptionFrequency ,
-        subscription.intervalCount ,
+        freshSub.startDate ,
+        freshSub.frequency as SubscriptionFrequency ,
+        freshSub.intervalCount ,
         params.occurrenceDate
       ) ;
 
@@ -205,7 +217,7 @@ export async function resolveSubscriptionAction(
         nextPaymentDate ,
       } ;
 
-      if( paymentAccountId && (paymentAccountId !== subscription.accountId) ) {
+      if( paymentAccountId && (paymentAccountId !== freshSub.accountId) ) {
         updateData.accountId = paymentAccountId ;
       }
 
@@ -217,7 +229,7 @@ export async function resolveSubscriptionAction(
         updateData.status = "cancelled" ;
       }
 
-      const updated = await subscriptionRepository.update( subscription.id , organizationId , updateData , tx ) ;
+      const updated = await subscriptionRepository.update( freshSub.id , organizationId , updateData , tx ) ;
       if( !updated ) {
         throw( new Error( "No se pudo actualizar la suscripción." ) ) ;
       }

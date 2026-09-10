@@ -7,7 +7,8 @@
 import { describe , it , expect , beforeEach , afterEach , afterAll } from "vitest" ;
 
 // Shared
-import { db } from "@/shared/db/client" ;
+import { db }          from "@/shared/db/client" ;
+import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Accounting
 import { accounts , categoryAccounts , ledgerTransactions , ledgerEntries , financialEntities } from "@/features/accounting/schema.db" ;
@@ -27,14 +28,7 @@ describe( "cardsRepository — DAL de Tarjetas y Partición de Saldos por Fecha"
   let org2Id: string ;
 
   const cleanDb = async () => {
-    await db.delete( cardAccounts ) ;
-    await db.delete( cards ) ;
-    await db.delete( ledgerEntries ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( categoryAccounts ) ;
-    await db.delete( accounts ) ;
-    await db.delete( financialEntities ) ;
-    await db.delete( organizations ) ;
+    await limpiarBase() ;
   } ;
 
   beforeEach( async () => {

@@ -1,10 +1,11 @@
 // Librerías externas
-import { describe , it , expect , beforeEach , afterEach } from "vitest" ;
-import { JWT }                                             from "next-auth/jwt" ;
-import { Session }                                         from "next-auth" ;
+import { describe , it , expect , beforeEach , afterEach , afterAll } from "vitest" ;
+import { JWT }                                                         from "next-auth/jwt" ;
+import { Session }                                                     from "next-auth" ;
 
 // Shared
 import { db }          from "@/shared/db/client" ;
+import { limpiarBase } from "@/shared/db/testCleanup" ;
 import { authOptions } from "./auth" ;
 
 // Feature: Accounting
@@ -26,13 +27,7 @@ describe( "authOptions callbacks (JWT & Session)" , () => {
   let userId: string ;
 
   const cleanDatabase = async () => {
-    await db.delete( categoryAccounts ) ;
-    await db.delete( categories ) ;
-    await db.delete( ledgerEntries      ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( accounts ) ;
-    await db.delete( users ) ;
-    await db.delete( organizations ) ;
+    await limpiarBase() ;
   } ;
 
   beforeEach( async () => {
@@ -176,5 +171,9 @@ describe( "authOptions callbacks (JWT & Session)" , () => {
       expect( Object.keys( session ).length ).toBe( 0 ) ;
       expect( session.user ).toBeUndefined() ;
     } ) ;
+  } ) ;
+
+  afterAll( async () => {
+    await limpiarBase() ;
   } ) ;
 } ) ;

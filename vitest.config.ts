@@ -20,9 +20,12 @@ export default defineConfig( {
     environment: "node" ,
     globals:     true ,
     globalSetup: "./src/shared/db/vitest.setup.ts" ,
-    setupFiles:  [ "./src/shared/lib/vitest.setup.dom.ts" ] ,
-    // Los tests de repositorios comparten la base finanzas_db_test y limpian tablas
-    // entre casos: ejecutar archivos en paralelo produce colisiones de llaves foráneas.
+    setupFiles:  [
+      "./src/shared/lib/vitest.setup.dom.ts" ,
+      "./src/shared/lib/vitest.setup.mocks.ts"
+    ] ,
+    // Las suites comparten finanzas_db_test: fileParallelism: false evita la colisión
+    // simultánea entre archivos (el residuo entre archivos lo resuelve limpiarBase).
     fileParallelism: false ,
     include: [
       "src/shared/lib/**/*.test.ts" ,

@@ -1,10 +1,11 @@
 // Librerías externas
-import { describe , it , expect , vi , beforeEach } from "vitest" ;
-import { getServerSession }                         from "next-auth" ;
-import { eq }                                       from "drizzle-orm" ;
+import { describe , it , expect , vi , beforeEach , afterAll } from "vitest" ;
+import { getServerSession }                                   from "next-auth" ;
+import { eq }                                                 from "drizzle-orm" ;
 
 // Shared
-import { db } from "@/shared/db/client" ;
+import { db }          from "@/shared/db/client" ;
+import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -34,15 +35,7 @@ describe( "createTransactionFromFormAction — monedas" , () => {
   beforeEach( async () => {
     vi.clearAllMocks() ;
 
-    await db.delete( outboxEvents       ) ;
-    await db.delete( idempotencyKeys    ) ;
-    await db.delete( ledgerEntries      ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( monthlySummaries   ) ;
-    await db.delete( categoryAccounts   ) ;
-    await db.delete( categories         ) ;
-    await db.delete( accounts           ) ;
-    await db.delete( organizations      ) ;
+    await limpiarBase() ;
 
     const [ org ] = await db
       .insert( organizations )
@@ -273,5 +266,9 @@ describe( "createTransactionFromFormAction — monedas" , () => {
       expect( asientos.length ).toBe( 1 ) ;
       expect( asientos[0].debit ).toBe( 5000 ) ;
     } ) ;
+  } ) ;
+
+  afterAll( async () => {
+    await limpiarBase() ;
   } ) ;
 } ) ;

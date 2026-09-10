@@ -9,35 +9,8 @@ import {
   calcularPunteroInicial ,
   proximaOcurrenciaPosteriorA
 } from "./recurrenceService" ;
-import { Subscription } from "../types" ;
-
-
-function makeSub( overrides: Partial< Subscription > ): Subscription {
-  const now = new Date( 2026 , 0 , 31 ) ;
-
-  return( {
-    id:              "sub-test-1" ,
-    organizationId:  "org-test" ,
-    name:            "Servicio Recurrente" ,
-    description:     null ,
-    amount:          150000 ,
-    currency:        "ARS" ,
-    frequency:       "monthly" ,
-    intervalCount:   1 ,
-    startDate:       now ,
-    nextPaymentDate: now ,
-    resolvedThrough: null ,
-    autoDebit:       false ,
-    accountId:       null ,
-    status:          "active" ,
-    logoKey:         "default" ,
-    color:           "#EEF2FF" ,
-    categoryId:      null ,
-    createdAt:       now ,
-    updatedAt:       now ,
-    ...overrides ,
-  } ) ;
-}
+import { makeSubscription } from "../testing/subscriptionFactory" ;
+import { Subscription }     from "../types" ;
 
 describe( "recurrenceService" , () => {
   describe( "ocurrenciaN" , () => {
@@ -102,7 +75,7 @@ describe( "recurrenceService" , () => {
 
   describe( "pendientesDe" , () => {
     it( "con el puntero en el período anterior devuelve exactamente uno" , () => {
-      const sub = makeSub( {
+      const sub = makeSubscription( {
         startDate:       new Date( 2026 , 5 , 5 ) , // 2026-06-05
         frequency:       "monthly" ,
         intervalCount:   1 ,
@@ -118,7 +91,7 @@ describe( "recurrenceService" , () => {
     } ) ;
 
     it( "devuelve arreglo vacío si la suscripción no está active" , () => {
-      const sub = makeSub( {
+      const sub = makeSubscription( {
         startDate:       new Date( 2026 , 5 , 5 ) ,
         frequency:       "monthly" ,
         status:          "cancelled" ,
@@ -130,7 +103,7 @@ describe( "recurrenceService" , () => {
 
     it( "el tope de seguridad de 24 ocurrencias corta" , () => {
       // Suscripción vieja de 5 años atrás sin puntero resuelto
-      const sub = makeSub( {
+      const sub = makeSubscription( {
         startDate:       new Date( 2020 , 0 , 1 ) ,
         frequency:       "monthly" ,
         intervalCount:   1 ,

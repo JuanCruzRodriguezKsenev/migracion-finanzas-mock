@@ -8,7 +8,8 @@
 import { describe , it , expect , beforeEach , afterEach , afterAll , vi } from "vitest" ;
 
 // Shared
-import { db } from "@/shared/db/client" ;
+import { db }          from "@/shared/db/client" ;
+import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Accounting
 import { accounts , categoryAccounts , ledgerTransactions , ledgerEntries , financialEntities } from "@/features/accounting/schema.db" ;
@@ -27,14 +28,7 @@ describe( "cardCycleService — Partición del saldo de una tarjeta de crédito"
   let orgId: string ;
 
   const cleanDb = async () => {
-    await db.delete( cardAccounts ) ;
-    await db.delete( cards ) ;
-    await db.delete( ledgerEntries ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( categoryAccounts ) ;
-    await db.delete( accounts ) ;
-    await db.delete( financialEntities ) ;
-    await db.delete( organizations ) ;
+    await limpiarBase() ;
   } ;
 
   beforeEach( async () => {

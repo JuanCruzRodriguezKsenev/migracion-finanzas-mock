@@ -8,7 +8,8 @@ import { getServerSession }                         from "next-auth" ;
 import type { Session }                             from "next-auth" ;
 
 // Shared
-import { db } from "@/shared/db/client" ;
+import { db }          from "@/shared/db/client" ;
+import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Accounting & Auth
 import { accounts , categories , categoryAccounts , financialEntities , ledgerEntries , ledgerTransactions } from "@/features/accounting/schema.db" ;
@@ -33,25 +34,13 @@ vi.mock( "next-auth" , () => ( {
   getServerSession: vi.fn() ,
 } ) ) ;
 
-vi.mock( "next/cache" , () => ( {
-  revalidatePath: vi.fn() ,
-} ) ) ;
-
 describe( "contactsActions.ts — Server Actions" , () => {
   let orgId:    string ;
   let otherOrg: string ;
   let entityId: string ;
 
   const cleanDb = async() => {
-    await db.delete( contactPaymentMethods ) ;
-    await db.delete( contacts ) ;
-    await db.delete( categoryAccounts ) ;
-    await db.delete( categories ) ;
-    await db.delete( ledgerEntries      ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( accounts ) ;
-    await db.delete( financialEntities ) ;
-    await db.delete( organizations ) ;
+    await limpiarBase() ;
   } ;
 
   beforeEach( async() => {

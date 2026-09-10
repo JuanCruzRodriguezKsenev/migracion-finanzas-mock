@@ -3,35 +3,8 @@ import { describe , it , expect } from "vitest" ;
 
 // Feature: Subscriptions
 import { toMonthlyAmount , toYearlyAmount , addInterval , enrichSubscriptions , buildSummary } from "./calculations" ;
+import { makeSubscription }                                                                    from "../testing/subscriptionFactory" ;
 import { Subscription }                                                                        from "../types" ;
-
-
-function makeSubscription( overrides: Partial<Subscription> ): Subscription {
-  const now = new Date() ;
-
-  return( {
-    id:              "sub-1" ,
-    organizationId:  "org-1" ,
-    name:            "Servicio de prueba" ,
-    description:     null ,
-    amount:          100000 ,
-    currency:        "ARS" ,
-    frequency:       "monthly" ,
-    intervalCount:   1 ,
-    startDate:       now ,
-    nextPaymentDate: now ,
-    resolvedThrough: null ,
-    autoDebit:       false ,
-    accountId:       null ,
-    status:          "active" ,
-    logoKey:         "default" ,
-    color:           "#EEF2FF" ,
-    categoryId:      null ,
-    createdAt:       now ,
-    updatedAt:       now ,
-    ...overrides ,
-  } ) ;
-}
 
 /**
  * Suite de pruebas unitarias para las conversiones de montos de suscripciones.

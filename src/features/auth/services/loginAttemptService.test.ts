@@ -1,8 +1,9 @@
 // Librerías externas
-import { describe , it , expect , beforeEach , afterEach } from "vitest" ;
+import { describe , it , expect , beforeEach , afterEach , afterAll } from "vitest" ;
 
 // Shared
-import { db } from "@/shared/db/client" ;
+import { db }          from "@/shared/db/client" ;
+import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Auth
 import {
@@ -33,11 +34,15 @@ describe( "loginAttemptService" , () => {
   ] ;
 
   beforeEach( async () => {
-    await db.delete( loginAttempts ) ;
+    await limpiarBase() ;
   } ) ;
 
   afterEach( async () => {
-    await db.delete( loginAttempts ) ;
+    await limpiarBase() ;
+  } ) ;
+
+  afterAll( async () => {
+    await limpiarBase() ;
   } ) ;
 
   /**

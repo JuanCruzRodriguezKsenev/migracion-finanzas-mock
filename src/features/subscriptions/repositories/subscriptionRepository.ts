@@ -58,6 +58,29 @@ export const subscriptionRepository = {
   } ,
 
   /**
+   * Obtiene una suscripción específica bloqueando la fila para evitar condiciones de carrera (SELECT FOR UPDATE).
+   *
+   * @param id - ID único de la suscripción.
+   * @param organizationId - ID de la organización dueña.
+   * @param tx - Instancia de transacción de base de datos (requerido para bloqueo).
+   * @returns La suscripción encontrada o null si no existe.
+   */
+  async findByIdForUpdate( id: string , organizationId: string , tx: DBOrTx ): Promise< Subscription | null > {
+    const results = await tx
+      .select()
+      .from( subscriptions )
+      .where(
+        and(
+          eq(subscriptions.id             , id) ,
+          eq(subscriptions.organizationId , organizationId) ,
+        )
+      )
+      .for( "update" ) ;
+
+    return( results[0] || null ) ;
+  } ,
+
+  /**
    * Registra una nueva suscripción.
    *
    * @param data - Datos de la nueva suscripción (monto en centavos).

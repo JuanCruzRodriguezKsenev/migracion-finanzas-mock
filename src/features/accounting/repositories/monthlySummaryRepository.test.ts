@@ -1,8 +1,9 @@
 // Librerías externas
-import { describe , it , expect , beforeEach , afterEach , vi } from "vitest" ;
+import { describe , it , expect , beforeEach , afterEach , afterAll , vi } from "vitest" ;
 
 // Shared
-import { db } from "@/shared/db/client" ;
+import { db }          from "@/shared/db/client" ;
+import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -24,15 +25,7 @@ describe( "monthlySummaryRepository" , () => {
   let orgId: string ;
 
   const cleanDatabase = async () => {
-    // Eliminar registros en orden correcto de llaves foráneas para evitar violaciones de integridad
-    await db.delete( outboxEvents ) ;
-    await db.delete( idempotencyKeys ) ;
-    await db.delete( ledgerEntries ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( categoryAccounts ) ;
-    await db.delete( accounts ) ;
-    await db.delete( monthlySummaries ) ;
-    await db.delete( organizations ) ;
+    await limpiarBase() ;
   } ;
 
   beforeEach( async () => {
@@ -170,5 +163,9 @@ describe( "monthlySummaryRepository" , () => {
 
     const earliestKey = await monthlySummaryRepository.findEarliestMonthKey( emptyOrg.id ) ;
     expect( earliestKey ).toBeUndefined() ;
+  } ) ;
+
+  afterAll( async () => {
+    await limpiarBase() ;
   } ) ;
 } ) ;

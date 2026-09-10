@@ -1,9 +1,10 @@
 // Librerías externas
-import { describe , it , expect , vi , beforeEach , afterEach } from "vitest" ;
-import { getServerSession }                                     from "next-auth" ;
+import { describe , it , expect , vi , beforeEach , afterEach , afterAll } from "vitest" ;
+import { getServerSession }                                                from "next-auth" ;
 
 // Shared
-import { db } from "@/shared/db/client" ;
+import { db }          from "@/shared/db/client" ;
+import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -85,12 +86,7 @@ describe( "createFinancialEntityAction & createAccountForEntityAction — Lógic
   let otherOrgId: string ;
 
   const cleanDb = async () => {
-    await db.delete( ledgerEntries ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( categoryAccounts ) ;
-    await db.delete( accounts ) ;
-    await db.delete( financialEntities ) ;
-    await db.delete( organizations ) ;
+    await limpiarBase() ;
   } ;
 
   beforeEach( async () => {
@@ -112,6 +108,10 @@ describe( "createFinancialEntityAction & createAccountForEntityAction — Lógic
 
   afterEach( async () => {
     await cleanDb() ;
+  } ) ;
+
+  afterAll( async () => {
+    await limpiarBase() ;
   } ) ;
 
   it( "createFinancialEntityAction no crea ninguna cuenta propia (alta pura)" , async () => {

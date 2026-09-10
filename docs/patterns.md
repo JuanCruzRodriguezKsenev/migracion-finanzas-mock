@@ -287,6 +287,50 @@ En FinanzIA, los compromisos y cobros periódicos recurrentes (como las suscripc
 6.  **Concordancia de divisas:**
     La divisa de la suscripción y de la cuenta de pago deben coincidir estrictamente. El motor rechaza resolver la ocurrencia si las divisas difieren, impidiendo asientos desbalanceados o conversiones implícitas sin cotización real.
 
+---
+
+## 11. Limpieza Unificada de Base de Datos en Orden Topológico (Test Database Cleanup)
+
+En FinanzIA, todas las suites de integración comparten la misma base de datos `finanzas_db_test`. La limpieza de tablas entre casos de prueba no debe definirse de forma aislada o manual en cada archivo de test, sino a través de una función centralizada que respete el grafo relacional estricto.
+
+### Problema y Causa Raíz
+Cuando cada suite mantiene su propia lista de `db.delete(...)`:
+*   **Listas incompletas:** Nuevas tablas con claves foráneas `restrict` agregadas por una feature rompen silenciosamente los tests de otras features que no las incluyen en sus listas.
+*   **Falta de limpieza de salida:** Si una suite no limpia al finalizar (`afterAll`), deja filas huérfanas para el siguiente archivo. Dado que Vitest reordena los archivos de prueba según su duración en la ejecución previa, los fallos aparecen de forma intermitente y no determinista según el orden de la corrida.
+*   **Colisión simultánea vs. residuo secuencial:** `fileParallelism: false` en `vitest.config.ts` previene la contención y colisión simultánea de lecturas y escrituras concurrentes entre archivos; sin embargo, no previene el residuo secuencial entre suites. La limpieza determinista entre archivos es responsabilidad de `limpiarBase()`.
+
+### Reglas e Invariantes
+
+1.  **Función única y compartida (`src/shared/db/testCleanup.ts`):**
+    Toda suite de integración consume exclusivamente `limpiarBase()`. Queda prohibido escribir bloques locales de `db.delete(...)` sin condiciones específicas en archivos de test.
+2.  **Transaccionalidad atómica:**
+    Los 18 borrados se ejecutan dentro de un único bloque transaccional `db.transaction( async ( tx ) => { ... } )`. Si cualquier eliminación es rechazada, toda la base vuelve a su estado previo sin dejar residuos parciales.
+3.  **Orden topológico estricto por FK `restrict`:**
+    Las tablas se vacían en orden inverso a sus dependencias obligatorias (`restrict`), de mayor dependencia a menor:
+    1. `login_attempts` (sin FK)
+    2. `idempotency_keys` (sin FK)
+    3. `outbox_events`
+    4. `monthly_summaries`
+    5. `ledger_entries` (restrict a `accounts`; antes que `ledger_transactions`)
+    6. `ledger_transactions`
+    7. `card_accounts` (restrict a `accounts`; antes que `cards`)
+    8. `cards` (restrict a `financial_entities` y `accounts`)
+    9. `contact_payment_methods` (restrict a `financial_entities` y `contacts`)
+    10. `contacts`
+    11. `subscriptions` (antes que `accounts` y `categories`)
+    12. `category_accounts` (restrict a `categories` y `accounts`)
+    13. `accounts` (restrict a `financial_entities`)
+    14. `financial_entities`
+    15. `categories` (autorreferencia `restrict`)
+    16. `profiles` (antes que `users`)
+    17. `users`
+    18. `organizations`
+4.  **Resolución de autorreferencias en dos pasos (`categories`):**
+    Al tener `parentId` con referencia `restrict` a la propia tabla `categories`, un `DELETE` plano sobre la tabla puede evaluar un padre antes que sus hijas y fallar. Se eliminan primero las hojas (`where( isNotNull( categories.parentId ) )`) y posteriormente los nodos raíz.
+5.  **Limpieza de entrada y salida:**
+    Las suites que interactúan con la base de datos ejecutan `await limpiarBase()` al inicio de cada caso (`beforeEach`) y garantizan un cierre limpio al finalizar el archivo (`afterAll( limpiarBase )`).
+
+
 
 
 

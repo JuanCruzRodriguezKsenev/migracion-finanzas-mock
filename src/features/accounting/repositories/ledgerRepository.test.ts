@@ -1,8 +1,9 @@
 // Librerías externas
-import { describe , it , expect , beforeEach } from "vitest" ;
+import { describe , it , expect , beforeEach , afterAll } from "vitest" ;
 
 // Shared
-import { db } from "@/shared/db/client" ;
+import { db }          from "@/shared/db/client" ;
+import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -20,13 +21,7 @@ describe( "ledgerRepository" , () => {
 
   beforeEach( async () => {
     // 1. Limpiar base de datos
-    await db.delete( outboxEvents       ) ;
-    await db.delete( ledgerEntries      ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( categoryAccounts   ) ;
-    await db.delete( categories         ) ;
-    await db.delete( accounts           ) ;
-    await db.delete( organizations      ) ;
+    await limpiarBase() ;
 
     // 2. Crear Organización
     const [ org ] = await db
@@ -219,5 +214,9 @@ describe( "ledgerRepository" , () => {
       expect( updated!.description ).toBe( "Actualizada" ) ;
       expect( updated!.merchantName ).toBe( "Nuevo Comercio" ) ;
     } ) ;
+  } ) ;
+
+  afterAll( async () => {
+    await limpiarBase() ;
   } ) ;
 } ) ;

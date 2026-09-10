@@ -10,7 +10,8 @@ import { getServerSession }                                                 from
 import type { Session }                                                     from "next-auth" ;
 
 // Shared
-import { db } from "@/shared/db/client" ;
+import { db }          from "@/shared/db/client" ;
+import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Accounting & Auth
 import { accounts , categoryAccounts , ledgerTransactions , ledgerEntries , financialEntities } from "@/features/accounting/schema.db" ;
@@ -25,22 +26,11 @@ vi.mock( "next-auth" , () => ( {
   getServerSession: vi.fn() ,
 } ) ) ;
 
-vi.mock( "next/cache" , () => ( {
-  revalidatePath: vi.fn() ,
-} ) ) ;
-
 describe( "cardsActions.ts — Server Actions de Tarjetas" , () => {
   let orgId: string ;
 
   const cleanDb = async () => {
-    await db.delete( cardAccounts ) ;
-    await db.delete( cards ) ;
-    await db.delete( ledgerEntries ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( categoryAccounts ) ;
-    await db.delete( accounts ) ;
-    await db.delete( financialEntities ) ;
-    await db.delete( organizations ) ;
+    await limpiarBase() ;
   } ;
 
   beforeEach( async () => {

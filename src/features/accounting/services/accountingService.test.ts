@@ -1,10 +1,11 @@
 // Librerías externas
-import { describe , it , expect , beforeEach , afterEach } from "vitest" ;
-import { eq } from "drizzle-orm" ;
+import { describe , it , expect , beforeEach , afterEach , afterAll } from "vitest" ;
+import { eq }                                                       from "drizzle-orm" ;
 
 // Shared
 import { executeIdempotent } from "@/shared/services/idempotencyService" ;
-import { db } from "@/shared/db/client" ;
+import { db }                from "@/shared/db/client" ;
+import { limpiarBase }       from "@/shared/db/testCleanup" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -33,13 +34,7 @@ describe( "accountingService" , () => {
 
   beforeEach( async () => {
     // 1. Limpiar base de datos antes de cada prueba
-    await db.delete( outboxEvents       ) ;
-    await db.delete( idempotencyKeys    ) ;
-    await db.delete( ledgerEntries      ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( categoryAccounts   ) ;
-    await db.delete( accounts           ) ;
-    await db.delete( organizations      ) ;
+    await limpiarBase() ;
 
     // 2. Crear Organización de prueba
     const [ org ] = await db
@@ -100,12 +95,11 @@ describe( "accountingService" , () => {
 
   afterEach( async () => {
     // Limpieza posterior de los registros de prueba
-    await db.delete( outboxEvents       ) ;
-    await db.delete( idempotencyKeys    ) ;
-    await db.delete( ledgerEntries      ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( accounts           ) ;
-    await db.delete( organizations      ) ;
+    await limpiarBase() ;
+  } ) ;
+
+  afterAll( async () => {
+    await limpiarBase() ;
   } ) ;
 
   it( "debería registrar una transacción balanceada y actualizar los saldos correctamente" , async () => {

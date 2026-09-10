@@ -7,7 +7,8 @@
 import { describe , it , expect , beforeEach , afterEach , afterAll } from "vitest" ;
 
 // Shared
-import { db } from "@/shared/db/client" ;
+import { db }          from "@/shared/db/client" ;
+import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Accounting & Auth
 import { accounts , categories , categoryAccounts , financialEntities , ledgerEntries , ledgerTransactions } from "@/features/accounting/schema.db" ;
@@ -24,15 +25,7 @@ describe( "contactsRepository — DAL de Contactos y Métodos de Cobro" , () => 
   let entityId: string ;
 
   const cleanDb = async() => {
-    await db.delete( contactPaymentMethods ) ;
-    await db.delete( contacts ) ;
-    await db.delete( categoryAccounts ) ;
-    await db.delete( categories ) ;
-    await db.delete( ledgerEntries      ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( accounts ) ;
-    await db.delete( financialEntities ) ;
-    await db.delete( organizations ) ;
+    await limpiarBase() ;
   } ;
 
   beforeEach( async() => {
