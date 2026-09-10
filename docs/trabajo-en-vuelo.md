@@ -12,31 +12,27 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** ninguna. `master` quedó **sin ramas vivas** tras consolidar el RFC 022 el
-2026-09-10 por fast-forward.
+**Rama activa:** `feat/bandeja-recurrencias`, encadenada sobre `master`. **Próximo paso:** ejecutar
+[`planes/bandeja-de-recurrencias.md`](planes/bandeja-de-recurrencias.md).
 
-**Estado:** 🟢 **Nada a medias.** Lo último cerrado fue la clasificación unificada — la categoría es
-la cuenta contable— en sus dos tajadas más una tanda de limpieza. Congelado en
-[`registro/2026-09-10-cierre-rfc022.md`](registro/2026-09-10-cierre-rfc022.md), que lleva el detalle,
-la deuda que dejó y **el defecto de limpieza entre suites de test que casi entra a `master`**.
+**Estado:** 🟡 **Ronda abierta — bandeja de recurrencias (RFC 023).** Hoy una suscripción es una fila
+en un treemap y **no toca la contabilidad**: el usuario carga Netflix y el libro mayor no se entera.
+Esta tanda cierra el circuito sin meter supuestos en el libro — la suscripción *pregunta* una vez por
+período y el asiento nace **al confirmar**.
 
-**Batería sobre `master`:** 51 archivos de test, **376 tests**, lint 0 errores / 0 warnings,
-`tsc --noEmit` 0 errores, build verde. Verificada de forma independiente, con la suite corrida
-**tres veces consecutivas** para probar que es estable.
+*   **RFC 023 `APPROVED` (2026-09-10)**, acotado al origen recurrente: las otras dos bandejas
+    —lo que entra de afuera y lo de terceros— no tienen productor todavía.
+*   **Sin tabla de pendientes.** Se derivan de un único campo nuevo, `subscriptions.resolved_through`.
+    Es lo que el diseño ya pedía y **es lo que hace que esta ronda no dependa de los crons de la
+    Fase 3**: un pendiente materializado necesita quién lo cree; uno derivado aparece al leer.
+*   **Enmienda al RFC 004:** sus §3 (worker nocturno) y §4 (`needs_review` dentro del libro) quedaron
+    **revocadas**. Anotada en el propio RFC 004, como su §6.
+*   **Dos deudas dejaron de ser deudas y pasaron a requisito:** `addInterval` —que hoy manda una
+    suscripción del 31 de enero al 3 de marzo, y es la función que genera toda la serie de períodos—
+    y la resolución categoría padre → hoja duplicada en `transactionsActions`.
 
-**Próximo paso: sin decidir.** Lo que está sobre la mesa, sin orden todavía:
-
-*   **Suscripciones al libro mayor (RFC 004).** Era el destino original de la ronda que abrió el
-    RFC 022. Ahora tiene lo que le faltaba: la categoría llega a la contabilidad y
-    `subscriptions.categoryId` ya apunta al catálogo. **Antes de empezar**, extraer la resolución
-    padre → hoja que hoy está duplicada en `transactionsActions`
-    ([`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §4): sería el tercer duplicado.
-*   **Las propuestas que la sesión de diseño dejó sin escribir**, del §7 de
-    [`diseno/rediseno-clasificacion-y-propuestas.md`](diseno/rediseno-clasificacion-y-propuestas.md).
-*   **La página de estadísticas** (mock: `/reportes`), **sin RFC**: es donde el diseño manda el
-    Patrimonio Neto y el agrupamiento por categoría, que recién ahora es posible.
-*   **El helper de limpieza compartido de los tests** ([`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §7),
-    si se quiere cerrar de raíz el patrón que ya produjo un defecto.
+**Batería sobre `master` (`2ae7186`):** 51 archivos de test, **376 tests**, lint 0 errores /
+0 warnings, `tsc --noEmit` 0 errores, build verde, **compuerta CI remota en verde**.
 
 > **Enmienda al RFC 015 (2026-09-09):** no hay ruta `/profile`. El perfil pasa a ser otra pestaña de
 > `/settings`, por la duplicación que trae la referencia del mock. Anotada en el propio RFC.
@@ -44,12 +40,8 @@ la deuda que dejó y **el defecto de limpieza entre suites de test que casi entr
 > **Convención asentada (2026-09-08):** los segmentos de ruta van **en inglés**
 > (`ARCHITECTURE.md` §4).
 
-> **Corrección de rumbo (2026-09-07):** **Tarjetas (RFC 007) es Fase 2 y Metas (RFC 011) es Fase 3.**
-> Metas en la primera fase es el error que el artifact documenta del `ROADMAP.md` viejo.
-
 **Pendiente de la gobernanza:** revisar la duplicación entre `ARCHITECTURE.md` y `.agents/AGENTS.md`
-§2–§5. Y el artifact de la hoja de ruta quedó desactualizado: dice 321 tests, da tarjetas por
-pendiente, dice `/tarjetas` donde el repo tiene `/cards`, y no conoce `/settings` ni el RFC 022.
+§2–§5.
 
 ---
 

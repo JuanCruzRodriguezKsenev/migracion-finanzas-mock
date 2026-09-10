@@ -116,7 +116,25 @@ En el día de vencimiento, el usuario recibe un recordatorio interactivo para au
 
 ---
 
-## 6. Adenda de Implementación (2026-07-09)
+## 6. Enmienda (2026-09-10) — las secciones 3 y 4 quedan revocadas
+
+Aprobada junto con el [RFC 023](023-proposed-transactions.md), que las reemplaza.
+
+*   **§4 — `needs_review: true` en el libro mayor. Revocada.** Lo propuesto **no entra al libro
+    mayor**: el libro guarda hechos ocurridos y una propuesta es una hipótesis. El fundamento es la
+    invariante que declara el propio esquema en las columnas de reversión de `ledger_transactions`
+    (*«el libro diario es inmutable»*). Un cargo de suscripción se registra **al confirmarlo**, y
+    hasta entonces vive fuera, como pendiente derivado.
+*   **§3 — el worker nocturno. Revocada en su forma.** No hay proceso en segundo plano: los
+    pendientes se derivan al leer, de un puntero por suscripción. Cuando existan los crons de la
+    Fase 3 podrán **avisar** que hay pendientes, pero no resolverlos solos — resolver es afirmar que
+    algo ocurrió, y eso lo hace una persona.
+
+El resto del RFC 004 sigue vigente, incluida la adenda de julio.
+
+---
+
+## 7. Adenda de Implementación (2026-07-09)
 
 Primera entrega implementada incorporando el dashboard visual de treemap (portado desde el proyecto `finanzasMock` y adaptado a las convenciones de este repositorio). Decisiones registradas:
 
