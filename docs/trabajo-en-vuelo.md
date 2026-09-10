@@ -12,8 +12,25 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `feat/bandeja-recurrencias`, encadenada sobre `master`. **Próximo paso:** verificación
-independiente con `verificador` y preparación para merge sobre `master`.
+**Rama activa:** `fix/cabos-rfc023-y-limpieza-de-tests`, encadenada sobre `feat/bandeja-recurrencias`.
+**Próximo paso:** ejecutar [`docs/planes/cabos-rfc023-y-limpieza-de-tests.md`](planes/cabos-rfc023-y-limpieza-de-tests.md).
+
+**`feat/bandeja-recurrencias` quedó verificada y lista para consolidar** (2026-09-10, `dd7388d`):
+`verificador` la corrió entera y dio **53 archivos, 392 tests en verde, lint 0, `tsc --noEmit` 0,
+build verde**, con la suite corrida **dos veces seguidas** y conteo idéntico en ambas. Pasa la
+compuerta de CI. No se mergeó todavía: la ronda siguiente se encadena sobre ella, como es la
+convención del repo.
+
+**Lo que la revisión encontró y el plan de la ronda siguiente corrige:**
+
+*   **La guarda del puntero se evalúa fuera de la transacción** (`resolveSubscriptionAction.ts:87-100`
+    lee, `:137` abre la transacción). Dos confirmaciones concurrentes pasan las dos y generan dos
+    asientos para la misma ocurrencia. No fue desvío de la ejecución: el plan anterior decidió que el
+    puntero era la guarda; lo que faltaba era leerlo bajo bloqueo.
+*   **El backfill de la 0025 manda `weekly`/`quarterly`/`custom` al fallback** `start_date - 1 mes`,
+    que a una semanal le abre unas cuatro ocurrencias juntas en la bandeja.
+*   **La deuda §7 pasó de 14 a 18 suites** en una sola tanda. Los tres hallazgos del informe de
+    ejecución apuntan todos ahí.
 
 **Estado:** 🟢 **Bandeja de recurrencias implementada (RFC 023).** La confirmación de recurrencias
 emite asientos contables en el libro mayor de forma atómica (partida doble con fecha civil de ocurrencia),
