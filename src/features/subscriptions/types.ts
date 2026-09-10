@@ -18,18 +18,6 @@ export type InsertSubscription = InferInsertModel< typeof subscriptions > ;
 export type SubscriptionFrequency = "weekly" | "monthly" | "quarterly" | "yearly" | "custom" ;
 
 /**
- * Categorías de presentación para agrupar suscripciones en el dashboard.
- */
-export type SubscriptionCategory =
-  | "design"
-  | "productivity"
-  | "entertainment"
-  | "fitness"
-  | "security"
-  | "storage"
-  | "other" ;
-
-/**
  * Datos que el formulario de alta/edición envía a las Server Actions.
  * El monto viaja en centavos enteros; organizationId lo aporta la sesión.
  */

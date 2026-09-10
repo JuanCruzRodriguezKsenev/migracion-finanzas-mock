@@ -209,6 +209,65 @@ describe( "categoryActions — Reglas del RFC 022 (R3, R4, R5)" , () => {
         .where( eq(categories.id , cat.id) ) ;
       expect( catRestored.archivedAt ).toBeNull() ;
     } ) ;
+
+    it( "archivar un padre archiva en cascada a sus subcategorías y oculta la rama en el árbol activo" , async () => {
+      // 1. Crear un padre y dos subcategorías reales bajo él
+      const resParent = await createCategoryAction( {
+        name: "Alimentación" ,
+        type: "expense" ,
+      } ) ;
+      expect( resParent.success ).toBe( true ) ;
+      if( !resParent.success ) { return ; }
+      const parentCat = resParent.value ;
+
+      const resChild1 = await createCategoryAction( {
+        name:     "Supermercado" ,
+        type:     "expense" ,
+        parentId: parentCat.id ,
+      } ) ;
+      expect( resChild1.success ).toBe( true ) ;
+      if( !resChild1.success ) { return ; }
+      const child1 = resChild1.value ;
+
+      const resChild2 = await createCategoryAction( {
+        name:     "Verdulería" ,
+        type:     "expense" ,
+        parentId: parentCat.id ,
+      } ) ;
+      expect( resChild2.success ).toBe( true ) ;
+      if( !resChild2.success ) { return ; }
+      const child2 = resChild2.value ;
+
+      // 2. archiveCategoryAction( { id: padre.id } ) → success
+      const resArchive = await archiveCategoryAction( { id: parentCat.id } ) ;
+      expect( resArchive.success ).toBe( true ) ;
+
+      // 3. Releer las dos hijas: ambas con archivedAt no nulo
+      const [ child1Archived ] = await db
+        .select()
+        .from( categories )
+        .where( eq(categories.id , child1.id) ) ;
+      expect( child1Archived.archivedAt ).not.toBeNull() ;
+
+      const [ child2Archived ] = await db
+        .select()
+        .from( categories )
+        .where( eq(categories.id , child2.id) ) ;
+      expect( child2Archived.archivedAt ).not.toBeNull() ;
+
+      // 4. getCategoryTreeAction() sin includeArchived no devuelve ese padre; con { includeArchived: true } sí
+      const treeActiveRes = await getCategoryTreeAction() ;
+      expect( treeActiveRes.success ).toBe( true ) ;
+      if( !treeActiveRes.success ) { return ; }
+      const foundInActive = treeActiveRes.value.find( ( node ) => node.id === parentCat.id ) ;
+      expect( foundInActive ).toBeUndefined() ;
+
+      const treeAllRes = await getCategoryTreeAction( { includeArchived: true } ) ;
+      expect( treeAllRes.success ).toBe( true ) ;
+      if( !treeAllRes.success ) { return ; }
+      const foundInAll = treeAllRes.value.find( ( node ) => node.id === parentCat.id ) ;
+      expect( foundInAll ).toBeDefined() ;
+    } ) ;
   } ) ;
 
   describe( "R5 — Cuenta por divisa sin duplicar la categoría" , () => {

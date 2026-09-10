@@ -11,13 +11,7 @@ import { getCategoryTreeAction }       from "@/features/accounting/actions/categ
 import { CategoriesSettingsContainer } from "@/features/accounting/components/CategoriesSettings/CategoriesSettingsContainer" ;
 
 
-interface SettingsPageProps {
-  params: Promise< {lang: string} > ;
-}
-
-export default async function SettingsPage( {params}: SettingsPageProps ) {
-  const { lang } = await params ;
-
+export default async function SettingsPage() {
   const categoryTreeRes = await getCategoryTreeAction() ;
   const categoryTree    = ( categoryTreeRes.success ? categoryTreeRes.value : [] ) ;
 
@@ -25,7 +19,6 @@ export default async function SettingsPage( {params}: SettingsPageProps ) {
     <div className={styles.container}>
       <CategoriesSettingsContainer
         initialTree={categoryTree}
-        lang={lang}
       />
     </div>
   ) ;

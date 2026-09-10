@@ -12,13 +12,12 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `feat/gestion-categorias`. **Próximo paso:** ejecutar
-[`planes/limpieza-rfc022.md`](planes/limpieza-rfc022.md) y, con eso en verde, consolidar la rama a
-`master` por fast-forward, escribir el registro en [`registro/`](registro/) y podar
-`feat/tarjetas` (ya contenida en `master`) y `feat/clasificacion-unificada` (ancestro de ésta).
+**Rama activa:** `feat/gestion-categorias`. **Próximo paso:** consolidar la rama a `master` por
+fast-forward, escribir el registro en [`registro/`](registro/) y podar `feat/tarjetas` (ya contenida
+en `master`) y `feat/clasificacion-unificada` (ancestro de ésta).
 
-**Estado:** 🟢 **RFC 022 completo — sus dos tajadas ejecutadas y verificadas de forma
-independiente.**
+**Estado:** 🟢 **RFC 022 completo y saneado — sus dos tajadas y su tanda de limpieza ejecutadas y
+verificadas de forma independiente.**
 
 *   **Primera tajada** (`6d365ba`): el backend entero. Tabla `categories` jerárquica con
     `account_code`, `is_system_leaf` y `archived_at`; las cinco Server Actions; imputación contable
@@ -30,17 +29,16 @@ independiente.**
     navegación a `/settings` y `/cards`; y migración **0024**, que reemplaza `subscriptions.category`
     (enum de siete valores) por `categoryId` con FK `onDelete: "set null"`, backfill de los siete
     valores al catálogo y baja de la columna vieja.
+*   **Limpieza de cabos sueltos**: borrado del tipo muerto `SubscriptionCategory`, reapunte de imports
+    de `CategoryTreeNode` en componentes cliente a `@/features/accounting/types`, remoción de la prop
+    `lang` sin uso en `CategoriesSettingsContainer` y `settings/page.tsx`, y test de cascada de
+    archivado en `categoryActions.test.ts`.
 
-**Batería sobre `a71d439`** (subagente `verificador`, 2026-09-10, con el esquema real contrastado
-contra `finanzas_db`): **51 archivos de test, 375 tests, lint 0 errores / 0 warnings,
-`tsc --noEmit` 0 errores, build verde.** La rama pasaría la compuerta CI.
+**Batería sobre la limpieza** (subagente `verificador`, 2026-09-10): **51 archivos de test, 376 tests,
+lint 0 errores / 0 warnings, `tsc --noEmit` 0 errores, build verde.** La rama pasaría la compuerta CI.
 
-**Lo que la verificación encontró y no se hizo.** Cuatro cabos sueltos, ninguno rompe nada hoy y los
-cuatro son cosas que el plan anterior no nombró: un tipo muerto (`SubscriptionCategory`), dos
-componentes cliente importando un tipo desde el módulo del repositorio, una prop `lang` sin uso, y
-el test de cascada de archivado que el plan pedía y no se escribió. **Van en la tanda de limpieza.**
-Los otros dos —desarchivado asimétrico y resolución padre→hoja duplicada— son cambios de
-comportamiento y bajaron a [`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §4.
+**Deuda técnica pendiente registrada:** desarchivado asimétrico y resolución padre→hoja duplicada en
+[`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §4, e internacionalización pendiente de `/settings` en §3.
 
 > **Enmienda al RFC 015 (2026-09-09):** no hay ruta `/profile`. El perfil pasa a ser otra pestaña de
 > `/settings`, por la duplicación que trae la referencia del mock. Anotada en el propio RFC.

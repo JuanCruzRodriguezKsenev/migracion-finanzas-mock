@@ -14,8 +14,8 @@ import { Column } from "@/shared/ui/display/Toolbar/ColumnSelector" ;
 
 // Feature: Accounting
 import { TransactionWithEntries }                      from "@/features/accounting/repositories/ledgerRepository" ;
-import { CategoryTreeNode }                            from "@/features/accounting/repositories/categoryRepository" ;
-import { Account , Category , FinancialEntity }         from "@/features/accounting/types" ;
+import { Account , Category , FinancialEntity }        from "@/features/accounting/types" ;
+import { CategoryTreeNode }                            from "@/features/accounting/types" ;
 
 // Feature: Transactions
 import {

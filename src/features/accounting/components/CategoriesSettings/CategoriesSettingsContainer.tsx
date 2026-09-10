@@ -20,7 +20,7 @@ import { Modal }       from "@/shared/ui/feedback/Modal/Modal" ;
 import { Tabs }        from "@/shared/ui/display/Tabs/Tabs" ;
 
 // Feature: Accounting
-import { CategoryTreeNode }                                                                                               from "../../repositories/categoryRepository" ;
+import { CategoryTreeNode }                                                                                               from "@/features/accounting/types" ;
 import { getCategoryTreeAction , createCategoryAction , updateCategoryAction , archiveCategoryAction , unarchiveCategoryAction , getCategoryMovementsCountAction } from "../../actions/categoryActions" ;
 import { iconoDeCategoria }                                                                                               from "../../utils/categoryIcons" ;
 import { Category }                                                                                                       from "../../types" ;
@@ -29,7 +29,6 @@ import styles                                                                   
 
 export interface CategoriesSettingsContainerProps {
   initialTree: CategoryTreeNode[] ;
-  lang?:       string ;
 }
 
 const SETTINGS_TABS = [
