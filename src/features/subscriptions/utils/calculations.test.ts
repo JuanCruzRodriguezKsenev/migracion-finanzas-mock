@@ -20,6 +20,7 @@ function makeSubscription( overrides: Partial<Subscription> ): Subscription {
     intervalCount:   1 ,
     startDate:       now ,
     nextPaymentDate: now ,
+    resolvedThrough: null ,
     autoDebit:       false ,
     accountId:       null ,
     status:          "active" ,
@@ -93,6 +94,18 @@ describe( "calculations" , () => {
     it( "debería sumar un año para frecuencia anual" , () => {
       const next = addInterval( new Date( 2026 , 5 , 1 ) , "yearly" ) ;
       expect( next.getFullYear() ).toBe( 2027 ) ;
+    } ) ;
+
+    it( "debería recortar al último día del mes sin desbordar (31 de enero a 28 de febrero)" , () => {
+      const enero31 = new Date( 2026 , 0 , 31 ) ;
+      const febrero = addInterval( enero31 , "monthly" ) ;
+      expect( febrero.getMonth() ).toBe( 1 ) ;
+      expect( febrero.getDate() ).toBe( 28 ) ;
+
+      // Con ancla en el nominal (intervalCount = 2), proyecta al 31 de marzo
+      const marzo = addInterval( enero31 , "monthly" , 2 ) ;
+      expect( marzo.getMonth() ).toBe( 2 ) ;
+      expect( marzo.getDate() ).toBe( 31 ) ;
     } ) ;
   } ) ;
 

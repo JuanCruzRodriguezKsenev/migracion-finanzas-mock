@@ -1,0 +1,174 @@
+.inboxWrapper {
+  width: 100% ;
+  display: flex ;
+  flex-direction: column ;
+  margin-bottom: 1.5rem ;
+  background-color: var(--bg-card) ;
+  border: 1px solid var(--border-card) ;
+  border-radius: var(--radius-lg) ;
+  box-shadow: var(--shadow-sm) ;
+  padding: 1.25rem ;
+}
+
+.inboxHeader {
+  display: flex ;
+  align-items: center ;
+  justify-content: space-between ;
+  margin-bottom: 1rem ;
+}
+
+.titleGroup {
+  display: flex ;
+  align-items: center ;
+  gap: 0.625rem ;
+}
+
+.title {
+  font-family: var(--font-display) ;
+  font-size: var(--fs-md) ;
+  font-weight: 700 ;
+  color: var(--text-main) ;
+  margin: 0 ;
+}
+
+.badge {
+  display: inline-flex ;
+  align-items: center ;
+  padding: 0.125rem 0.5rem ;
+  border-radius: var(--radius-xl) ;
+  font-size: var(--fs-xs) ;
+  font-weight: 600 ;
+  background-color: var(--color-primary-light) ;
+  color: var(--color-primary) ;
+}
+
+.description {
+  font-size: var(--fs-xs) ;
+  color: var(--text-muted) ;
+  margin: 0 ;
+}
+
+.itemsList {
+  display: flex ;
+  flex-direction: column ;
+  gap: 0.75rem ;
+}
+
+.itemCard {
+  display: flex ;
+  align-items: center ;
+  justify-content: space-between ;
+  flex-wrap: wrap ;
+  gap: 1rem ;
+  padding: 0.875rem 1rem ;
+  background-color: var(--bg-inset) ;
+  border: 1px solid var(--border-subtle) ;
+  border-radius: var(--radius-md) ;
+  transition: border-color var(--transition-smooth) , background-color var(--transition-smooth) ;
+}
+
+.itemCard:hover {
+  border-color: var(--border-strong) ;
+}
+
+.itemInfo {
+  display: flex ;
+  align-items: center ;
+  gap: 0.875rem ;
+  min-width: clamp(12rem, 30vw, 20rem) ;
+}
+
+.itemIcon {
+  width: 2.5rem ;
+  height: 2.5rem ;
+  border-radius: var(--radius-md) ;
+  display: flex ;
+  align-items: center ;
+  justify-content: center ;
+  flex-shrink: 0 ;
+  overflow: hidden ;
+}
+
+.itemDetails {
+  display: flex ;
+  flex-direction: column ;
+}
+
+.itemName {
+  font-size: var(--fs-base) ;
+  font-weight: 600 ;
+  color: var(--text-main) ;
+  margin: 0 ;
+}
+
+.itemPeriod {
+  font-size: var(--fs-xs) ;
+  color: var(--text-muted) ;
+  margin: 0 ;
+}
+
+.itemAmountSection {
+  display: flex ;
+  flex-direction: column ;
+  align-items: flex-start ;
+}
+
+.amountLabel {
+  font-size: var(--fs-xs) ;
+  color: var(--text-muted) ;
+  margin: 0 ;
+}
+
+.amountValue {
+  font-size: var(--fs-base) ;
+  font-weight: 700 ;
+  color: var(--text-main) ;
+  margin: 0 ;
+}
+
+.actionsGroup {
+  display: flex ;
+  align-items: center ;
+  gap: 0.5rem ;
+  flex-wrap: wrap ;
+}
+
+.errorBanner {
+  margin-top: 0.75rem ;
+}
+
+/* Estilos de modales */
+.modalContent {
+  display: flex ;
+  flex-direction: column ;
+  gap: 1rem ;
+  padding-top: 0.5rem ;
+}
+
+.modalQuestion {
+  font-size: var(--fs-base) ;
+  font-weight: 600 ;
+  color: var(--text-main) ;
+  margin: 0 ;
+}
+
+.modalDescription {
+  font-size: var(--fs-sm) ;
+  color: var(--text-muted) ;
+  margin: 0 ;
+  line-height: 1.5 ;
+}
+
+.modalActions {
+  display: flex ;
+  justify-content: flex-end ;
+  gap: 0.75rem ;
+  margin-top: 0.5rem ;
+}
+
+.questionActions {
+  display: flex ;
+  flex-direction: column ;
+  gap: 0.75rem ;
+  margin-top: 0.5rem ;
+}

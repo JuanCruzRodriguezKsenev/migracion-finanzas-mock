@@ -146,25 +146,8 @@ export async function createTransactionFromFormAction(
         currency ,
       } ) ;
 
-      // Imputar por categoría contable (RFC 022 §5)
-      let targetCat: Category ;
-      if( !data.categoryId ) {
-        targetCat = await categoryRepository.findOrCreateTypeGeneralLeaf( "expense" , organizationId ) ;
-      } else {
-        const cat = await categoryRepository.findById( data.categoryId , organizationId ) ;
-        if( !cat ) {
-          targetCat = await categoryRepository.findOrCreateTypeGeneralLeaf( "expense" , organizationId ) ;
-        } else {
-          const children     = await categoryRepository.findChildren( cat.id , organizationId ) ;
-          const realChildren = children.filter( ( c ) => !c.isSystemLeaf ) ;
-          if( realChildren.length > 0 ) {
-            targetCat = await categoryRepository.findOrCreateGeneralLeaf( cat.id , organizationId ) ;
-          } else {
-            targetCat = cat ;
-          }
-        }
-      }
-
+      // Imputar por categoría contable (RFC 022 §5, RFC 023 §6.2)
+      const targetCat    = await categoryRepository.resolveToLeaf( data.categoryId , "expense" , organizationId ) ;
       resolvedCategoryId = targetCat.id ;
 
       const expenseAccount = await categoryRepository.findOrCreateAccountForCurrency( targetCat.id , currency ) ;
@@ -184,25 +167,8 @@ export async function createTransactionFromFormAction(
         currency ,
       } ) ;
 
-      // Imputar por categoría contable (RFC 022 §5)
-      let targetCat: Category ;
-      if( !data.categoryId ) {
-        targetCat = await categoryRepository.findOrCreateTypeGeneralLeaf( "revenue" , organizationId ) ;
-      } else {
-        const cat = await categoryRepository.findById( data.categoryId , organizationId ) ;
-        if( !cat ) {
-          targetCat = await categoryRepository.findOrCreateTypeGeneralLeaf( "revenue" , organizationId ) ;
-        } else {
-          const children     = await categoryRepository.findChildren( cat.id , organizationId ) ;
-          const realChildren = children.filter( ( c ) => !c.isSystemLeaf ) ;
-          if( realChildren.length > 0 ) {
-            targetCat = await categoryRepository.findOrCreateGeneralLeaf( cat.id , organizationId ) ;
-          } else {
-            targetCat = cat ;
-          }
-        }
-      }
-
+      // Imputar por categoría contable (RFC 022 §5, RFC 023 §6.2)
+      const targetCat    = await categoryRepository.resolveToLeaf( data.categoryId , "revenue" , organizationId ) ;
       resolvedCategoryId = targetCat.id ;
 
       const revenueAccount = await categoryRepository.findOrCreateAccountForCurrency( targetCat.id , currency ) ;

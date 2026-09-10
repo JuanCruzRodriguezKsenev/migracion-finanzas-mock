@@ -5,7 +5,7 @@
  * a cuentas contables para el débito automático (worker pendiente según RFC).
  */
 // Librerías externas
-import { pgTable , uuid , varchar , integer , bigint , boolean , timestamp , text } from "drizzle-orm/pg-core" ;
+import { pgTable , uuid , varchar , integer , bigint , boolean , timestamp , text , date } from "drizzle-orm/pg-core" ;
 
 // Feature: Accounting
 import { accounts , categories } from "@/features/accounting/schema.db" ;
@@ -34,6 +34,7 @@ export const subscriptions = pgTable( "subscriptions" , {
   // Fechas clave
   startDate:       timestamp( "start_date"        , {withTimezone: true} ).notNull() ,
   nextPaymentDate: timestamp( "next_payment_date" , {withTimezone: true} ).notNull() ,
+  resolvedThrough: date( "resolved_through" ) , // Puntero de última ocurrencia resuelta (RFC 023)
 
   // Configuración del débito automático (worker fuera de alcance en esta entrega)
   autoDebit:       boolean( "auto_debit" ).default( false ).notNull() ,

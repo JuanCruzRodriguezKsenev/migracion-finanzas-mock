@@ -14,10 +14,17 @@ import { ok , fail , Result } from "@/shared/lib/result" ;
 import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
 
+// Feature: Profile
+import { profileRepository } from "@/features/profile/repositories/profileRepository" ;
+
 // Feature: Subscriptions
 import { createSubscriptionSchema , updateSubscriptionSchema } from "../schemas/subscriptions.schema" ;
+import {
+  calcularPunteroInicial ,
+  proximaOcurrenciaPosteriorA ,
+  obtenerHoyCivil
+} from "../services/recurrenceService" ;
 import { subscriptionRepository }                              from "../repositories/subscriptionRepository" ;
-import { addInterval }                                         from "../utils/calculations" ;
 import { Subscription }                                        from "../types" ;
 
 /**
@@ -65,12 +72,20 @@ export async function createSubscriptionAction( params: unknown ): Promise< Resu
   }
 
   try {
-    const startDate = new Date() ;
-    const creada    = await subscriptionRepository.create( {
+    const startDate       = new Date() ;
+    const sessionUserId   = session.user.id ;
+    const profile         = ( sessionUserId ? await profileRepository.findByUserId( sessionUserId ) : null ) ;
+    const timeZone        = ( profile?.timezone || "America/Argentina/Buenos_Aires" ) ;
+    const hoyCivil        = obtenerHoyCivil( timeZone , startDate ) ;
+    const resolvedThrough = calcularPunteroInicial( startDate , validation.data.frequency , 1 , hoyCivil ) ;
+    const nextPaymentDate = proximaOcurrenciaPosteriorA( startDate , validation.data.frequency , 1 , resolvedThrough ) ;
+
+    const creada = await subscriptionRepository.create( {
       ...validation.data ,
       organizationId:  session.user.organizationId ,
       startDate ,
-      nextPaymentDate: addInterval( startDate , validation.data.frequency , 1 ) ,
+      nextPaymentDate ,
+      resolvedThrough ,
     } ) ;
 
     revalidatePath( "/[lang]/(main)/subscriptions" , "page" ) ;

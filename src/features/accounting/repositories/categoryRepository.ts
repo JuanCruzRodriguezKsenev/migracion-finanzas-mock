@@ -194,6 +194,42 @@ export const categoryRepository = {
   } ,
 
   /**
+   * Resuelve la categoría contable imputable como hoja (RFC 023 §6.2).
+   * Si no hay categoría o no existe, recurre a la hoja General del tipo contable.
+   * Si la categoría tiene subcategorías reales, recurre a su hoja General (.99).
+   * Si ya es una hoja real, devuelve la categoría misma.
+   *
+   * @param categoryId - ID opcional de la categoría.
+   * @param type - Tipo contable por defecto ("expense" | "revenue").
+   * @param organizationId - ID de la organización.
+   * @param tx - Instancia de transacción opcional.
+   * @returns La categoría hoja donde imputar.
+   */
+  async resolveToLeaf(
+    categoryId:     string | null | undefined ,
+    type:           "expense" | "revenue" ,
+    organizationId: string ,
+    tx:             DBOrTx = db
+  ): Promise< Category > {
+    if( !categoryId ) {
+      return( await this.findOrCreateTypeGeneralLeaf( type , organizationId , tx ) ) ;
+    }
+
+    const cat = await this.findById( categoryId , organizationId , tx ) ;
+    if( !cat ) {
+      return( await this.findOrCreateTypeGeneralLeaf( type , organizationId , tx ) ) ;
+    }
+
+    const children     = await this.findChildren( cat.id , organizationId , tx ) ;
+    const realChildren = children.filter( ( c ) => !c.isSystemLeaf ) ;
+    if( realChildren.length > 0 ) {
+      return( await this.findOrCreateGeneralLeaf( cat.id , organizationId , tx ) ) ;
+    }
+
+    return( cat ) ;
+  } ,
+
+  /**
    * Busca o crea la cuenta contable y su vínculo en category_accounts para una categoría y divisa (R5).
    * 
    * @param categoryId - ID de la categoría.

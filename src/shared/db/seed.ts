@@ -595,17 +595,22 @@ async function main() {
     console.log( "Sembrando suscripciones recurrentes demo..." ) ;
 
     const inicioSuscripciones = new Date( ahora.getFullYear() , ahora.getMonth() - 3 , 5 , 9 , 0 ) ;
-    const proximoCobro        = new Date( ahora.getFullYear() , ahora.getMonth() + 1 , 5 , 9 , 0 ) ;
+    const mesAnterior         = new Date( ahora.getFullYear() , ahora.getMonth() - 1 , 5 ) ;
+    const punteroMensual      = `${mesAnterior.getFullYear()}-${String( mesAnterior.getMonth() + 1 ).padStart( 2 , "0" )}-05` ;
+    const proximoCobroMensual = new Date( ahora.getFullYear() , ahora.getMonth() + 1 , 5 , 9 , 0 ) ;
+
+    const punteroAnual        = `${inicioSuscripciones.getFullYear()}-${String( inicioSuscripciones.getMonth() + 1 ).padStart( 2 , "0" )}-05` ;
+    const proximoCobroAnual   = new Date( inicioSuscripciones.getFullYear() + 1 , inicioSuscripciones.getMonth() , 5 , 9 , 0 ) ;
 
     await db.insert( subscriptions ).values( [
-      { organizationId: org.id , name: "Netflix"              , amount: 1599000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/netflix.com" , color: "#E50914" , categoryId: ( subCatByCode.get( "5.1.09.01" ) ?? null ) } ,
-      { organizationId: org.id , name: "Spotify"              , amount: 649900  , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/spotify.com" , color: "#1DB954" , categoryId: ( subCatByCode.get( "5.1.09.01" ) ?? null ) } ,
-      { organizationId: org.id , name: "ChatGPT Plus"         , amount: 2000000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/openai.com"  , color: "#10A37F" , categoryId: ( subCatByCode.get( "5.1.09.02" ) ?? null ) } ,
-      { organizationId: org.id , name: "Adobe Creative Cloud" , amount: 5499000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/adobe.com"   , color: "#FF0000" , categoryId: ( subCatByCode.get( "5.1.09.03" ) ?? null ) } ,
-      { organizationId: org.id , name: "Gimnasio"             , amount: 3500000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "gym"                                   , color: "#DBEAFE" , categoryId: ( subCatByCode.get( "5.1.09.04" ) ?? null ) } ,
-      { organizationId: org.id , name: "iCloud+"              , amount: 129900  , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/apple.com"   , color: "#000000" , categoryId: ( subCatByCode.get( "5.1.09.06" ) ?? null ) } ,
-      { organizationId: org.id , name: "NordVPN"              , amount: 4800000 , frequency: "yearly"  , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/nordvpn.com" , color: "#4687FF" , categoryId: ( subCatByCode.get( "5.1.09.05" ) ?? null ) } ,
-      { organizationId: org.id , name: "Figma"                , amount: 1200000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/figma.com"   , color: "#F24E1E" , categoryId: ( subCatByCode.get( "5.1.09.03" ) ?? null ) } ,
+      { organizationId: org.id , name: "Netflix"              , amount: 1599000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobroMensual , resolvedThrough: punteroMensual , logoKey: "https://logo.clearbit.com/netflix.com" , color: "#E50914" , categoryId: ( subCatByCode.get( "5.1.09.01" ) ?? null ) } ,
+      { organizationId: org.id , name: "Spotify"              , amount: 649900  , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobroMensual , resolvedThrough: punteroMensual , logoKey: "https://logo.clearbit.com/spotify.com" , color: "#1DB954" , categoryId: ( subCatByCode.get( "5.1.09.01" ) ?? null ) } ,
+      { organizationId: org.id , name: "ChatGPT Plus"         , amount: 2000000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobroMensual , resolvedThrough: punteroMensual , logoKey: "https://logo.clearbit.com/openai.com"  , color: "#10A37F" , categoryId: ( subCatByCode.get( "5.1.09.02" ) ?? null ) } ,
+      { organizationId: org.id , name: "Adobe Creative Cloud" , amount: 5499000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobroMensual , resolvedThrough: punteroMensual , logoKey: "https://logo.clearbit.com/adobe.com"   , color: "#FF0000" , categoryId: ( subCatByCode.get( "5.1.09.03" ) ?? null ) } ,
+      { organizationId: org.id , name: "Gimnasio"             , amount: 3500000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobroMensual , resolvedThrough: punteroMensual , logoKey: "gym"                                   , color: "#DBEAFE" , categoryId: ( subCatByCode.get( "5.1.09.04" ) ?? null ) } ,
+      { organizationId: org.id , name: "iCloud+"              , amount: 129900  , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobroMensual , resolvedThrough: punteroMensual , logoKey: "https://logo.clearbit.com/apple.com"   , color: "#000000" , categoryId: ( subCatByCode.get( "5.1.09.06" ) ?? null ) } ,
+      { organizationId: org.id , name: "NordVPN"              , amount: 4800000 , frequency: "yearly"  , startDate: inicioSuscripciones , nextPaymentDate: proximoCobroAnual   , resolvedThrough: punteroAnual   , logoKey: "https://logo.clearbit.com/nordvpn.com" , color: "#4687FF" , categoryId: ( subCatByCode.get( "5.1.09.05" ) ?? null ) } ,
+      { organizationId: org.id , name: "Figma"                , amount: 1200000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobroMensual , resolvedThrough: punteroMensual , logoKey: "https://logo.clearbit.com/figma.com"   , color: "#F24E1E" , categoryId: ( subCatByCode.get( "5.1.09.03" ) ?? null ) } ,
     ] ) ;
 
     console.log( "Suscripciones demo sembradas con éxito." ) ;

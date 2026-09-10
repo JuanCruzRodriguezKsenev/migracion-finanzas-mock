@@ -3,6 +3,9 @@
  * Utilidades puras para normalizar montos de suscripciones a base mensual/anual
  * y construir el resumen agregado del dashboard. Todos los montos en centavos enteros.
  */
+// Feature: Cards
+import { recortarDia } from "@/features/cards/utils/ciclo" ;
+
 // Feature: Subscriptions
 import { Subscription , SubscriptionWithStats , SubscriptionSummary , SubscriptionFrequency } from "../types" ;
 
@@ -46,6 +49,7 @@ export function toYearlyAmount( amount: number , frequency: SubscriptionFrequenc
 
 /**
  * Suma la fecha del próximo cobro a partir de una fecha base y la frecuencia.
+ * Soporta recorte de fin de mes para evitar desbordes (ej: 31 de enero a 28 de febrero).
  *
  * @param from - Fecha base del cálculo.
  * @param frequency - Frecuencia del ciclo de cobro.
@@ -56,16 +60,30 @@ export function addInterval( from: Date , frequency: SubscriptionFrequency , int
   const next         = new Date( from ) ;
   const safeInterval = ( intervalCount > 0 ? intervalCount : 1 ) ;
 
-  if( frequency === "weekly" ){
+  if( frequency === "weekly" ) {
     next.setDate( next.getDate() + (7 * safeInterval) ) ;
-  } else if( frequency === "quarterly" ){
-    next.setMonth( next.getMonth() + (3 * safeInterval) ) ;
-  } else if( frequency === "yearly" ){
-    next.setFullYear( next.getFullYear() + safeInterval ) ;
+    return( next ) ;
+  }
+
+  let mesesASumar: number ;
+  if( frequency === "quarterly" ) {
+    mesesASumar = ( 3 * safeInterval ) ;
+  } else if( frequency === "yearly" ) {
+    mesesASumar = ( 12 * safeInterval ) ;
   } else {
     // 'monthly' y 'custom' (base mensual)
-    next.setMonth( next.getMonth() + safeInterval ) ;
+    mesesASumar = safeInterval ;
   }
+
+  const totalMonths = ( from.getFullYear() * 12 ) + from.getMonth() + mesesASumar ;
+  const targetYear  = Math.floor( totalMonths / 12 ) ;
+  const targetMonth = ( (totalMonths % 12) + 1 ) ;
+  const targetDay   = recortarDia( from.getDate() , targetYear , targetMonth ) ;
+
+  next.setDate( 1 ) ;
+  next.setFullYear( targetYear ) ;
+  next.setMonth( targetMonth - 1 ) ;
+  next.setDate( targetDay ) ;
 
   return( next ) ;
 }

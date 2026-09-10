@@ -261,5 +261,32 @@ En FinanzIA, las categorías de gasto e ingreso no son meras etiquetas informati
 *   **Correlativos de ancho fijo:** `NN` va de `01` a `98` formateado con `padStart(2, "0")`. Al alcanzar 98 hermanos, el generador lanza una excepción explícita impidiendo desbordes hacia tres dígitos.
 *   **Reserva estricta del `.99`:** El sufijo `.99` está reservado en cada nivel para las hojas del sistema `General` (`isSystemLeaf = true`), impidiendo que categorías creadas por usuarios colisionen con las cuentas de absorción del sistema.
 
+---
+
+## 10. Transacciones Propuestas y Puntero de Idempotencia (RFC 023)
+
+En FinanzIA, los compromisos y cobros periódicos recurrentes (como las suscripciones) no emiten transacciones tentativas ni ensucian el libro mayor con marcas provisionales. **Lo propuesto vive fuera del libro diario; el asiento nace únicamente cuando el usuario lo confirma, y el puntero `resolved_through` actúa como la guarda de idempotencia y secuencia.**
+
+### Tablas involucradas
+*   [`subscriptions`](../src/features/subscriptions/schema.db.ts): Entidad del compromiso recurrente (`startDate`, `frequency`, `intervalCount`, `amount`, `currency`, `accountId`, `categoryId`, `resolvedThrough`).
+*   [`ledgerTransactions`](../src/features/accounting/schema.db.ts): Asiento contable emitido al confirmar.
+*   [`ledgerEntries`](../src/features/accounting/schema.db.ts): Débito en la cuenta de categoría de gasto y Crédito en la cuenta de pago.
+
+### Principios e Invariantes del Circuito
+
+1.  **Lo propuesto no entra al libro diario:**
+    Se revoca el concepto de asientos con `needs_review: true`. El libro mayor es inmutable y sólo registra hechos económicos afirmados. La serie de cobros se proyecta en memoria mediante funciones matemáticas puras (`recurrenceService.ts`) a partir de `startDate` y `frequency`, anclando siempre en el día nominal de inicio para evitar la degradación de fin de mes.
+2.  **Un solo campo en vez de una tabla de pendientes:**
+    Los cobros pendientes se derivan al consultar la suscripción comparando las ocurrencias proyectadas con la columna `resolved_through` (tipo `date` civil `YYYY-MM-DD`). Toda ocurrencia cuya fecha de cobro sea menor o igual al puntero ya fue resuelta. No se materializan filas temporales de pendientes, eliminando la necesidad de procesos en segundo plano o crons de generación.
+3.  **El puntero es la guarda de idempotencia y orden:**
+    Al resolver una ocurrencia propuesta (`resolveSubscriptionAction.ts`), la acción exige que la fecha enviada sea **la más antigua pendiente** de esa suscripción. Si dos sesiones intentan confirmar el mismo período, la primera avanza el puntero y la segunda falla inmediatamente sin escribir ningún movimiento contable, garantizando idempotencia estricta sin consumir tablas adicionales de claves.
+4.  **Atomicidad ACID estricta:**
+    La emisión del asiento contable de partida doble, el avance del puntero `resolved_through` y el recálculo derivado de `next_payment_date` ocurren dentro de la misma transacción de base de datos. Si el puntero avanzó, el asiento contable existe; si algo falla, no se escribe nada.
+5.  **Fecha civil y fecha de ocurrencia:**
+    El asiento contable se emite con `occurredAt` fijado en la fecha nominal de la ocurrencia (no la fecha en que el usuario hace clic), preservando la exactitud de los cierres mensuales históricos. La evaluación de fechas se realiza siempre en la zona horaria del perfil del usuario en formato civil `YYYY-MM-DD` sin desfases de medianoche.
+6.  **Concordancia de divisas:**
+    La divisa de la suscripción y de la cuenta de pago deben coincidir estrictamente. El motor rechaza resolver la ocurrencia si las divisas difieren, impidiendo asientos desbalanceados o conversiones implícitas sin cotización real.
+
+
 
 

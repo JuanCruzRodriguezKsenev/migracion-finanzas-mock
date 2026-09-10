@@ -40,6 +40,7 @@ export function useSubscriptions( initialData: Subscription[] ) {
       intervalCount:   1 ,
       startDate:       now ,
       nextPaymentDate: now ,
+      resolvedThrough: null ,
       autoDebit:       false ,
       accountId:       null ,
       status:          "active" ,

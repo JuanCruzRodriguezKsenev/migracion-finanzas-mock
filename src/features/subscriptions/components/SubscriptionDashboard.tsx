@@ -19,13 +19,18 @@ import { FormError }          from "@/shared/ui/forms/Form/FormError" ;
 // Feature: Profile
 import { useProfileContext } from "@/features/profile/context/ProfileContext" ;
 
+// Feature: Accounting
+import { Account } from "@/features/accounting/types" ;
+
 // Feature: Subscriptions
-import { useSubscriptions }  from "../hooks/useSubscriptions" ;
-import { SubscriptionCard }  from "./SubscriptionCard" ;
-import { computeTreemap }    from "../utils/treemap" ;
-import { Subscription }      from "../types" ;
-import { SummaryBar }        from "./SummaryBar" ;
-import styles                from "./SubscriptionDashboard.module.css" ;
+import { PendingOccurrencesInbox } from "./PendingOccurrencesInbox" ;
+import { PendienteRecurrencia }     from "../services/recurrenceService" ;
+import { useSubscriptions }         from "../hooks/useSubscriptions" ;
+import { SubscriptionCard }         from "./SubscriptionCard" ;
+import { computeTreemap }           from "../utils/treemap" ;
+import { Subscription }             from "../types" ;
+import { SummaryBar }               from "./SummaryBar" ;
+import styles                       from "./SubscriptionDashboard.module.css" ;
 
 // Modal cargado solo cuando el usuario abre el alta/edición (fuera del bundle inicial)
 const AddSubscriptionModal = dynamic(
@@ -39,8 +44,10 @@ const AddSubscriptionModal = dynamic(
 export type SubscriptionsDict = Awaited< ReturnType< typeof getDictionary > >["subscriptionsPage"] ;
 
 interface SubscriptionDashboardProps {
-  initialData: Subscription[] ;
-  dict:        SubscriptionsDict ;
+  initialData:    Subscription[] ;
+  initialPending: PendienteRecurrencia[] ;
+  accounts:       Account[] ;
+  dict:           SubscriptionsDict ;
 }
 
 // SVG del botón fuera del componente — no se recrea en cada render
@@ -56,7 +63,12 @@ const WEIGHT_OFFSET = 500 ;
 /**
  * Dashboard de treemap de suscripciones con mutaciones optimistas.
  */
-export function SubscriptionDashboard( { initialData , dict }: SubscriptionDashboardProps ) {
+export function SubscriptionDashboard( {
+  initialData ,
+  initialPending ,
+  accounts ,
+  dict ,
+}: SubscriptionDashboardProps ) {
   const { profile }                                 = useProfileContext() ;
   const locale                                      = ( profile?.numberFormat || "es-AR" ) ;
   const { summary , error , add , update , remove } = useSubscriptions( initialData ) ;
@@ -147,6 +159,13 @@ export function SubscriptionDashboard( { initialData , dict }: SubscriptionDashb
           <FormError error={error} />
         </div>
       )}
+
+      {/* Bandeja de recurrencias propuestas (RFC 023) */}
+      <PendingOccurrencesInbox
+        initialPending={initialPending}
+        accounts={accounts}
+        locale={locale}
+      />
 
       {summary.count === 0 ? (
         <EmptyState

@@ -4,14 +4,14 @@
  */
 // Shared
 import { Result , ok , fail } from "@/shared/lib/result" ;
-import { logger } from "@/shared/lib/logger" ;
-import { db } from "@/shared/db/client" ;
+import { db , DBOrTx }        from "@/shared/db/client" ;
+import { logger }             from "@/shared/lib/logger" ;
 
 // Feature: Accounting
 import { CreateTransactionParams , LedgerTransaction , InsertLedgerEntry } from "../types" ;
 import { accountRepository } from "../repositories/accountRepository" ;
-import { ledgerRepository } from "../repositories/ledgerRepository" ;
-import { outboxEvents } from "../schema.db" ;
+import { ledgerRepository }  from "../repositories/ledgerRepository" ;
+import { outboxEvents }      from "../schema.db" ;
 
 
 /** Moneda que se asume cuando un asiento no declara la suya y la cuenta tampoco pudo resolverse. */
@@ -24,10 +24,12 @@ export const MONEDA_POR_DEFECTO = "ARS" ;
  * Registra un evento outbox para su propagación.
  * 
  * @param params - Parámetros de creación (cabecera y líneas del diario).
+ * @param tx - Transacción externa opcional para composición ACID.
  * @returns Objeto Result con la transacción creada o error descriptivo.
  */
 export async function createLedgerTransaction(
-  params: CreateTransactionParams
+  params:     CreateTransactionParams ,
+  externalTx?: DBOrTx
 ): Promise< Result<LedgerTransaction , string> > {
   const { organizationId , categoryId , description , merchantName , merchantDomain , occurredAt , entries } = params ;
 
@@ -41,8 +43,7 @@ export async function createLedgerTransaction(
   // antes de leer las cuentas. Validarlo acá afuera obligaría a asumir una moneda y a repetir la
   // regla en dos lugares, que es precisamente lo que este repositorio cobra caro.
   try {
-    // 3. Ejecutar operaciones dentro de una transacción ACID de base de datos
-    return( await db.transaction( async (tx) => {
+    const execute = async ( tx: DBOrTx ) => {
       
       // A. Insertar cabecera de la transacción usando el DAL
       const insertedTx = await ledgerRepository.createTransaction( {
@@ -160,7 +161,13 @@ export async function createLedgerTransaction(
       } ) ;
 
       return( ok(insertedTx) ) ;
-    } ) ) ;
+    } ;
+
+    if( externalTx ) {
+      return( await execute( externalTx ) ) ;
+    }
+
+    return( await db.transaction( execute ) ) ;
   } catch( error ) {
     logger.error( "Error crítico al registrar transacción contable." , { error: String(error) } ) ;
     return( fail(((error as Error).message) || "Error al procesar la transacción contable.") ) ;
