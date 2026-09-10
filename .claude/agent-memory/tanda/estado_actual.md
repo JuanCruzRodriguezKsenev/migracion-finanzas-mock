@@ -24,13 +24,30 @@ Historia lineal, cero merge commits, todo fast-forwardeable. **El merge lo decid
 *   Del RFC 023 **no hay que rehacer nada**: `limpiarBase()`, la guarda releída bajo bloqueo, el
     backfill `0026` y el factory `makeSubscription` están correctos y verificados.
 
-## En vuelo
+## En cola — dos planes escritos, ninguno ejecutado
 
-`docs/planes/alinear-lint-y-refresh-de-tarjetas.md`, a ejecutar **en la misma rama**. Los dos
-hallazgos que dejó `obra`: alinear el script `lint` de `package.json` con el flag de la compuerta
-(más las cuatro notas de doc que hoy advierten lo contrario), y sacar el `window.location.reload()`
-de `CardsContainer`. **Decidido con el usuario:** entran acá y recién después se consolidan las dos
-ramas.
+1.  **`docs/planes/alinear-lint-y-refresh-de-tarjetas.md`**, en la rama actual. Los dos hallazgos que
+    dejó `obra`: alinear el script `lint` con el flag de la compuerta (más las cuatro notas de doc que
+    advierten lo contrario) y sacar el `window.location.reload()` de `CardsContainer`.
+2.  **`docs/planes/page-header-unico-por-pagina.md`**, en rama nueva, después de consolidar.
+
+**Van secuenciados a propósito:** los dos tocan `CardsContainer`, en bloques distintos del archivo.
+
+### El doble encabezado (plan 2), porque el diagnóstico costó la ronda
+
+`shared/ui/layout/Header/Header.tsx:50-74` decide su título **sniffeando el `pathname`** con ternarios
+que conocen cuatro rutas; el resto cae en un `else` con el saludo del dashboard. Afecta a **4 de 8
+rutas**: `/sandbox` repite el título, y `/cards`, `/contacts` y `/settings` reciben "Hola, {nombre}".
+El mismo vicio decide el selector de mes (`:55`), que hoy sale en seis rutas **por descarte**.
+
+Decidido con el usuario: el layout deja de dibujar encabezado y **cada página compone un `PageHeader`
+compartido con `title` obligatoria**; el selector queda sólo en dashboard y transacciones. Dos cabos
+que el cambio destapa y el plan nombra: `Header.module.css:138` **oculta el título en móvil**, que
+pasaría a ser el único, y el botón hamburguesa pierde su `onMenuClick` al salir del `AppShell`.
+
+Datos que no hay que volver a averiguar: `.globalHeader` es `position: relative`, **no sticky**; y los
+tres providers (`Session`, `Profile`, `Notifications`) viven en `[lang]/layout.tsx:105-111`, **por
+encima** de `(main)`, así que un componente instanciado dentro de la página los sigue teniendo.
 
 ## Sobre la mesa después
 
