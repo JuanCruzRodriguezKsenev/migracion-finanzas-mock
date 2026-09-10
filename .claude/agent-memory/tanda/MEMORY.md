@@ -163,7 +163,7 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     `tsc --noEmit` 0, build verde**, con la suite corrida **tres veces seguidas** para probar
     estabilidad. Registro en `docs/registro/2026-09-10-cierre-rfc022.md`.
     Modelo y cabos en [[rfc022-clasificacion-unificada]].
-*   **`master` está 22 commits adelante de `origin/master`: no se hizo push.** Hay remoto configurado.
+*   **`master` pusheado a `origin` el 2026-09-10** (`e4d8cb3..08704ae`). **La compuerta CI remota pasó en verde** en 2m10s — confirmación de que el fix de la limpieza entre suites también aguanta donde la suite corre **una sola vez**, que es lo que el flaky ponía en riesgo. Consultarla con `gh run list`.
 *   **Próximo paso sin decidir.** Sobre la mesa, en `trabajo-en-vuelo.md`: suscripciones al libro
     mayor (RFC 004, y antes extraer la resolución padre→hoja duplicada), las propuestas que faltan
     del §7 del doc de diseño, la página de estadísticas (sin RFC), y el helper de limpieza compartido
@@ -171,7 +171,8 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 *   **Enmienda al RFC 015 (2026-09-09): no hay ruta `/profile`.** El perfil pasa a ser otra pestaña de
     `/settings`, que ya existe con Perfil, Preferencias y Seguridad deshabilitadas.
 *   **Convención asentada:** los segmentos de ruta van en inglés (`ARCHITECTURE.md` §4).
-*   **El artifact de la hoja de ruta quedó desactualizado** desde el merge de tarjetas: dice 321 tests
-    (hoy 376), da tarjetas por pendiente en la Fase 2 y en el grafo, dice `/tarjetas` donde el repo
-    tiene `/cards`, no conoce `/settings` ni el RFC 022, y se contradice solo en el total de ítems
-    (18 / 23 / 24).
+*   **El artifact de la hoja de ruta está al día** (actualizado el 2026-09-10, etiqueta *Cierre RFC 022*):
+    376 tests, 20 de 28 ítems pendientes, 7 de 17 rutas, Fase 2 con dos de seis, la clasificación
+    marcada como construida en el grafo y en la tabla, y el único habilitador que queda es la
+    consolidación multimoneda. **Releerlo entero con `action: "read"` antes de editarlo** — son 1211
+    líneas y hay que leerlas todas para que la publicación no lo pise— y republicarlo con su `url`.
