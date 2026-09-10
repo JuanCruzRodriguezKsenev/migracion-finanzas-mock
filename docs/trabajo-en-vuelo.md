@@ -12,33 +12,31 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `feat/gestion-categorias`. **Próximo paso:** consolidar la rama a `master` por
-fast-forward, escribir el registro en [`registro/`](registro/) y podar `feat/tarjetas` (ya contenida
-en `master`) y `feat/clasificacion-unificada` (ancestro de ésta).
+**Rama activa:** ninguna. `master` quedó **sin ramas vivas** tras consolidar el RFC 022 el
+2026-09-10 por fast-forward.
 
-**Estado:** 🟢 **RFC 022 completo y saneado — sus dos tajadas y su tanda de limpieza ejecutadas y
-verificadas de forma independiente.**
+**Estado:** 🟢 **Nada a medias.** Lo último cerrado fue la clasificación unificada — la categoría es
+la cuenta contable— en sus dos tajadas más una tanda de limpieza. Congelado en
+[`registro/2026-09-10-cierre-rfc022.md`](registro/2026-09-10-cierre-rfc022.md), que lleva el detalle,
+la deuda que dejó y **el defecto de limpieza entre suites de test que casi entra a `master`**.
 
-*   **Primera tajada** (`6d365ba`): el backend entero. Tabla `categories` jerárquica con
-    `account_code`, `is_system_leaf` y `archived_at`; las cinco Server Actions; imputación contable
-    real por categoría en `transactionsActions`; catálogo inicial de 67 categorías. Sin pantallas.
-*   **Segunda tajada** (`a71d439`): selector jerárquico con `<optgroup>` y alta al vuelo en
-    `TransactionFormModal`; pantalla de gestión en `/settings` con las pestañas Perfil, Preferencias
-    y Seguridad deshabilitadas; mapa de emoji (`accounting/utils/categoryIcons.ts`, sin dependencias
-    nuevas); confirmación de archivado informada por `ledgerRepository.countByCategories`;
-    navegación a `/settings` y `/cards`; y migración **0024**, que reemplaza `subscriptions.category`
-    (enum de siete valores) por `categoryId` con FK `onDelete: "set null"`, backfill de los siete
-    valores al catálogo y baja de la columna vieja.
-*   **Limpieza de cabos sueltos**: borrado del tipo muerto `SubscriptionCategory`, reapunte de imports
-    de `CategoryTreeNode` en componentes cliente a `@/features/accounting/types`, remoción de la prop
-    `lang` sin uso en `CategoriesSettingsContainer` y `settings/page.tsx`, y test de cascada de
-    archivado en `categoryActions.test.ts`.
+**Batería sobre `master`:** 51 archivos de test, **376 tests**, lint 0 errores / 0 warnings,
+`tsc --noEmit` 0 errores, build verde. Verificada de forma independiente, con la suite corrida
+**tres veces consecutivas** para probar que es estable.
 
-**Batería sobre la limpieza** (subagente `verificador`, 2026-09-10): **51 archivos de test, 376 tests,
-lint 0 errores / 0 warnings, `tsc --noEmit` 0 errores, build verde.** La rama pasaría la compuerta CI.
+**Próximo paso: sin decidir.** Lo que está sobre la mesa, sin orden todavía:
 
-**Deuda técnica pendiente registrada:** desarchivado asimétrico y resolución padre→hoja duplicada en
-[`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §4, e internacionalización pendiente de `/settings` en §3.
+*   **Suscripciones al libro mayor (RFC 004).** Era el destino original de la ronda que abrió el
+    RFC 022. Ahora tiene lo que le faltaba: la categoría llega a la contabilidad y
+    `subscriptions.categoryId` ya apunta al catálogo. **Antes de empezar**, extraer la resolución
+    padre → hoja que hoy está duplicada en `transactionsActions`
+    ([`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §4): sería el tercer duplicado.
+*   **Las propuestas que la sesión de diseño dejó sin escribir**, del §7 de
+    [`diseno/rediseno-clasificacion-y-propuestas.md`](diseno/rediseno-clasificacion-y-propuestas.md).
+*   **La página de estadísticas** (mock: `/reportes`), **sin RFC**: es donde el diseño manda el
+    Patrimonio Neto y el agrupamiento por categoría, que recién ahora es posible.
+*   **El helper de limpieza compartido de los tests** ([`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §7),
+    si se quiere cerrar de raíz el patrón que ya produjo un defecto.
 
 > **Enmienda al RFC 015 (2026-09-09):** no hay ruta `/profile`. El perfil pasa a ser otra pestaña de
 > `/settings`, por la duplicación que trae la referencia del mock. Anotada en el propio RFC.
