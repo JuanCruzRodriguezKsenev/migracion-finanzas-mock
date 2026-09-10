@@ -54,7 +54,7 @@ Los cuatro, siempre los cuatro, y el typecheck **como comando propio**:
 
 ```bash
 pnpm test                  # vitest — necesita Postgres vivo
-pnpm exec eslint . --max-warnings 0   # NO es `pnpm lint`: ver la nota de abajo
+pnpm exec eslint . --max-warnings 0   # el script `pnpm lint` ahora es idéntico
 pnpm exec tsc --noEmit     # SEPARADO: pnpm build NO tipa los archivos de test
 pnpm build                 # producción
 ```

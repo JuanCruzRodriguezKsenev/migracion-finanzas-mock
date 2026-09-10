@@ -13,18 +13,17 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 ## Rama y próximo paso
 
 **Rama activa:** `fix/cabos-rfc023-y-limpieza-de-tests`, encadenada sobre `feat/bandeja-recurrencias`.
-**Próximo paso:** ejecutar [`docs/planes/alinear-lint-y-refresh-de-tarjetas.md`](planes/alinear-lint-y-refresh-de-tarjetas.md) en esta misma rama; después consolidar las **dos** ramas encadenadas sobre `master`.
+**Próximo paso:** ejecutar Paso 2 de [`docs/planes/alinear-lint-y-refresh-de-tarjetas.md`](planes/alinear-lint-y-refresh-de-tarjetas.md) (`CardsContainer`) en esta misma rama; después consolidar las **dos** ramas encadenadas sobre `master`.
 
-**Estado:** 🟢 **`df53f56` verificado en verde** el 2026-09-10 por batería independiente: **393 tests / 53 suites**, `eslint . --max-warnings 0` sin warnings, `tsc --noEmit` 0 errores, build exitoso. La rama pasaría la compuerta.
+**Estado:** 🟢 Paso 1 completado (`lint` alineado con la compuerta y radio documental actualizado).
 
 **En cola, en este orden:**
 
-1.  **`docs/planes/alinear-lint-y-refresh-de-tarjetas.md`** — en esta misma rama. Los dos hallazgos de la ejecución anterior (detalle abajo).
+1.  **`docs/planes/alinear-lint-y-refresh-de-tarjetas.md`** — Paso 2 pendiente en esta misma rama (`CardsContainer`).
 2.  **[`docs/planes/page-header-unico-por-pagina.md`](planes/page-header-unico-por-pagina.md)** — **en rama nueva, después de consolidar**. Doble encabezado en cuatro de las ocho rutas: `Header.tsx` decide su título sniffeando el `pathname` con una lista cerrada de cuatro rutas, y las demás caen en el saludo del dashboard. Se da vuelta la responsabilidad: un `PageHeader` compartido que cada página compone, con `title` obligatoria. Los dos planes tocan `CardsContainer` en bloques distintos, por eso van secuenciados.
 
-**Pendiente en esta rama** — los dos hallazgos que dejó la ejecución anterior, ya contrastados y planificados:
-*   **Alinear el script `lint` de `package.json`** con el comando de la compuerta (`eslint . --max-warnings 0`) y reescribir las cuatro notas de la documentación que hoy advierten que difieren.
-*   **Sacar el `window.location.reload()` de `CardsContainer.tsx:70`.** El motivo del reload no es la caché sino que el contenedor fotografía `initialCards` en `useState`; la corrección es renderizar de props como `AccountsContainer` y montar `CardFormModal` condicionalmente, porque sus 16 `useState` no se resetean solos.
+**Pendiente en esta rama:**
+*   **Sacar el `window.location.reload()` de `CardsContainer.tsx:70` (Paso 2).** El motivo del reload no es la caché sino que el contenedor fotografía `initialCards` en `useState`; la corrección es renderizar de props como `AccountsContainer` y montar `CardFormModal` condicionalmente, porque sus 16 `useState` no se resetean solos.
 
 **Estado de la ronda anterior:** 🟢 **Cierre de cabos del RFC 023 completado y compuerta de CI desbloqueada.**
 
