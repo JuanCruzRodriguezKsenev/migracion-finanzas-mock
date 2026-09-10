@@ -23,9 +23,6 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     ante saldo inicial > 0 emite asiento contra Patrimonio (`3.1.01.01`, con fallback al primer
     `type === "equity"`) y **verifica que esa cuenta exista antes de crear nada**. El formulario tomó
     una prop `withOwnAccount` (default `true`); `PaymentMethodsPanel` la pasa en `false`.
-    La deuda pasó a `TECHNICAL_DEBT.md` § Resuelto. Queda viva sólo la basura de datos: entidad `kk`
-    con su `Cuenta Principal kk` (`1.1.01.03`, 3 centavos, 0 movimientos) en la base local; borrarla
-    exige sacar antes la cuenta, por el `onDelete: "restrict"` de `entityId`.
 *   **La cuenta que crea `createAccountForEntityAction` fija `currency: "ARS"` hardcodeado**
     (`accountingActions.ts`), en un proyecto que ya valida Debe = Haber por divisa. Una entidad que
     opera en otra moneda igual recibe cuenta en pesos.
@@ -50,6 +47,16 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     y parece intermitente porque vitest ordena por la duración de la corrida anterior. Ya produjo un
     defecto (`TECHNICAL_DEBT.md` §7). **Todo plan que agregue una tabla con FK tiene que nombrar qué
     suites la limpian.**
+*   **La deuda de limpieza entre suites crece sola: de 14 a 18 suites en una tanda.** Toda tabla
+    nueva con FK suma otra lista escrita a ojo. El grafo que importa son las siete FK `restrict`
+    (`accounts→financial_entities`, `ledger_entries→accounts`, `category_accounts→categories|accounts`,
+    `cards→financial_entities`, `card_accounts→accounts`, `contact_payment_methods→financial_entities`);
+    las `cascade` y `set null` se resuelven solas. Hoy no explota **sólo porque cinco suites tienen
+    `afterAll` que limpia al salir** — es contención por accidente. El orden topológico completo está
+    escrito en `docs/planes/cabos-rfc023-y-limpieza-de-tests.md` §Paso 3: no lo recalcules.
+*   **`categories.parentId` es una FK contra sí misma con `restrict`.** Un `DELETE` sin `WHERE` sobre
+    toda la tabla evalúa la restricción fila por fila y puede intentar borrar un padre antes que su
+    hija. Se borra hojas primero (`isNotNull(parentId)`) y después el resto.
 *   **`CircuitBreaker` (`shared/lib/circuitBreaker.ts`) no está cableado en ningún lado**: sólo lo
     importa su propio test. La "protección de Brandfetch" que dicen los docs no existe.
 *   **La búsqueda de marcas está duplicada en tres componentes** que van directo del navegador a
@@ -66,6 +73,13 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     (`{ success: true, value: T }`). Nombrarlo en el plan ahorra un tropiezo por ronda.
 *   **`createLedgerTransaction` exige `organizationId` explícito** en la cabecera: `ledger_transactions`
     tiene la FK de aislamiento no anulable. No lo deduce de la sesión quien lo llama.
+*   **`accountRepository.findByIdForUpdate( id , orgId , tx )`** (`accountRepository.ts:51`) es el molde
+    del `SELECT ... FOR UPDATE` del repo: `.for( "update" )`, `tx` obligatorio. Lo consume
+    `accountingService.ts:67`. Cuando una guarda de concurrencia haga falta, se copia esto — no se
+    inventa un mecanismo nuevo ni se agrega `idempotencyKeys` encima.
+*   **`setupFiles` de vitest corre una vez por archivo de test** (`vitest.setup.dom.ts`), y
+    `globalSetup` una sola vez para toda la suite (`src/shared/db/vitest.setup.ts`, crea la base y
+    migra). Lo que tenga que pasar por archivo va en `setupFiles`.
 *   Aislamiento multi-tenant en tablas hijas: `contact_payment_methods` cuelga de `contact_id`, así que
     la DAL **joinea contra `contacts`** para filtrar por organización. Ver `contactsRepository.ts`.
 
@@ -78,10 +92,9 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     sus cuentas, sus tarjetas y sus préstamos. `/cards`, `/debts` y patrimonio (propiedades, autos)
     van aparte; el Patrimonio Neto se muda a la página de estadísticas, junto con las categorías.
 
-*   **Cotizaciones (RFC 015, registrado en `DRAFT`):** los cierres mensuales persisten su cotización en
-    una tabla `exchange_rates`; los saldos vivos usan cotización del día cacheada. Escala fija
-    `RATE_SCALE = 1_000_000`, `rateDate` como `date`, sin columna de organización. Las **transacciones
-    de cambio no almacenan cotización**: se deduce del cociente (`patterns.md:38`).
+*   **Cotizaciones (RFC 015, `DRAFT`):** `exchange_rates` para los cierres, cotización del día cacheada
+    para los saldos vivos, `RATE_SCALE = 1_000_000`, y las transacciones de cambio **no** guardan
+    cotización: se deduce del cociente (`patterns.md:38`).
 *   **Nada de `kind` en `financial_entities`.** La especie (banco/billetera/tarjeta) es del instrumento,
     no de la institución: una marca emite varios. Ya vive en `contact_payment_methods.type`.
 
@@ -145,6 +158,11 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Qué salió bien y conviene repetir
 
+*   **Un hueco del plan vuelve como defecto del código, y hay que decirlo así.** El plan del RFC 023
+    decidió que «el puntero *es* la guarda, no hace falta `idempotencyKeys`» y `obra` lo implementó
+    tal cual — pero la guarda quedó fuera de la transacción. El defecto es real y **no fue desvío de
+    la ejecución**: lo dejó el plan. Reportarlo con esa atribución mantiene honesto el ciclo.
+
 *   **El plan con "Lo que ya existe y NO hay que construir" en tabla funcionó.** El plan de la segunda
     tajada del RFC 022 listó las cinco acciones existentes con archivo y línea, y `obra` no reescribió
     ninguna. Vale la pena la tabla en todo plan que se apoye en trabajo de una tanda anterior.
@@ -158,21 +176,21 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Estado
 
-*   **RFC 022 consolidado el 2026-09-10.** `master` en `e3af72c`, **sin ramas vivas**, árbol limpio,
-    historia lineal (`git log --merges` vacío). Batería: **51 archivos de test, 376 tests, lint 0,
-    `tsc --noEmit` 0, build verde**, con la suite corrida **tres veces seguidas** para probar
-    estabilidad. Registro en `docs/registro/2026-09-10-cierre-rfc022.md`.
-    Modelo y cabos en [[rfc022-clasificacion-unificada]].
-*   **`master` pusheado a `origin` el 2026-09-10** (`e4d8cb3..08704ae`). **La compuerta CI remota pasó en verde** en 2m10s — confirmación de que el fix de la limpieza entre suites también aguanta donde la suite corre **una sola vez**, que es lo que el flaky ponía en riesgo. Consultarla con `gh run list`.
-*   **Próximo paso sin decidir.** Sobre la mesa, en `trabajo-en-vuelo.md`: suscripciones al libro
-    mayor (RFC 004, y antes extraer la resolución padre→hoja duplicada), las propuestas que faltan
-    del §7 del doc de diseño, la página de estadísticas (sin RFC), y el helper de limpieza compartido
-    de los tests.
-*   **Enmienda al RFC 015 (2026-09-09): no hay ruta `/profile`.** El perfil pasa a ser otra pestaña de
-    `/settings`, que ya existe con Perfil, Preferencias y Seguridad deshabilitadas.
+*   **`feat/bandeja-recurrencias` (`dd7388d`) verificada en verde y SIN consolidar** (2026-09-10):
+    53 archivos, 392 tests, lint 0, `tsc --noEmit` 0, build verde, **doble corrida con conteo
+    idéntico**. Pasa la compuerta de CI. El merge a `master` lo decide el usuario; no lo hagas sola.
+*   **Rama viva: `fix/cabos-rfc023-y-limpieza-de-tests`**, encadenada sobre ella, árbol limpio,
+    con el plan `docs/planes/cabos-rfc023-y-limpieza-de-tests.md` listo para `obra` (commit `4ead5e2`).
+    Cuatro pasos: guarda del puntero bajo bloqueo, backfill de frecuencias no mensuales,
+    `limpiarBase()` en las 18 suites, y factory + mock de `next/cache` en `setupFiles`.
+*   **RFC 022 consolidado el 2026-09-10**, `master` en `e3af72c`, pusheado (`08704ae`), CI remota en
+    verde. Registro en `docs/registro/2026-09-10-cierre-rfc022.md`.
+*   **Sobre la mesa después de esta ronda:** suscripciones al libro mayor (RFC 004), las propuestas
+    que faltan del §7 del doc de diseño, la página de estadísticas (sin RFC), y el desvío de
+    `cardsActions.ts` con `revalidatePath("/cards")` contra las otras siete llamadas del repo.
+*   **Enmienda al RFC 015 (2026-09-09): no hay ruta `/profile`.** El perfil es otra pestaña de
+    `/settings`.
 *   **Convención asentada:** los segmentos de ruta van en inglés (`ARCHITECTURE.md` §4).
-*   **El artifact de la hoja de ruta está al día** (actualizado el 2026-09-10, etiqueta *Cierre RFC 022*):
-    376 tests, 20 de 28 ítems pendientes, 7 de 17 rutas, Fase 2 con dos de seis, la clasificación
-    marcada como construida en el grafo y en la tabla, y el único habilitador que queda es la
-    consolidación multimoneda. **Releerlo entero con `action: "read"` antes de editarlo** — son 1211
-    líneas y hay que leerlas todas para que la publicación no lo pise— y republicarlo con su `url`.
+*   **El artifact de la hoja de ruta está al día** (2026-09-10, etiqueta *Cierre RFC 022*). **Releerlo
+    entero con `action: "read"` antes de editarlo** — son 1211 líneas — y republicarlo con su `url`.
+    No refleja todavía el RFC 023.
