@@ -5,7 +5,7 @@ import { describe , it , expect , vi , beforeEach } from "vitest" ;
 import { render , screen , fireEvent , waitFor }     from "@testing-library/react" ;
 
 // Feature: Accounting
-import { CategoryTreeNode } from "@/features/accounting/repositories/categoryRepository" ;
+import { CategoryTreeNode } from "@/features/accounting/types" ;
 import { Account }          from "@/features/accounting/types" ;
 
 // Feature: Transactions

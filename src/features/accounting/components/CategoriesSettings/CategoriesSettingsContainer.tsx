@@ -20,10 +20,9 @@ import { Modal }       from "@/shared/ui/feedback/Modal/Modal" ;
 import { Tabs }        from "@/shared/ui/display/Tabs/Tabs" ;
 
 // Feature: Accounting
-import { CategoryTreeNode }                                                                                               from "@/features/accounting/types" ;
 import { getCategoryTreeAction , createCategoryAction , updateCategoryAction , archiveCategoryAction , unarchiveCategoryAction , getCategoryMovementsCountAction } from "../../actions/categoryActions" ;
 import { iconoDeCategoria }                                                                                               from "../../utils/categoryIcons" ;
-import { Category }                                                                                                       from "../../types" ;
+import { Category , CategoryTreeNode }                                                                                    from "../../types" ;
 import styles                                                                                                             from "./CategoriesSettingsContainer.module.css" ;
 
 

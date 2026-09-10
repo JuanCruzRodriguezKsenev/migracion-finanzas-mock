@@ -13,9 +13,8 @@ import { Button } from "@/shared/ui/display/Button/Button" ;
 import { Column } from "@/shared/ui/display/Toolbar/ColumnSelector" ;
 
 // Feature: Accounting
-import { TransactionWithEntries }                      from "@/features/accounting/repositories/ledgerRepository" ;
-import { Account , Category , FinancialEntity }        from "@/features/accounting/types" ;
-import { CategoryTreeNode }                            from "@/features/accounting/types" ;
+import { TransactionWithEntries }                                  from "@/features/accounting/repositories/ledgerRepository" ;
+import { Account , Category , FinancialEntity , CategoryTreeNode } from "@/features/accounting/types" ;
 
 // Feature: Transactions
 import {
