@@ -13,9 +13,24 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 ## Rama y próximo paso
 
 **Rama activa:** `fix/cabos-rfc023-y-limpieza-de-tests`, encadenada sobre `feat/bandeja-recurrencias`.
-**Próximo paso:** verificar con subagente `verificador` (5 comprobaciones) y consolidar/mergear hacia master.
+**Próximo paso:** ejecutar [`docs/planes/cierre-cabos-rfc023.md`](planes/cierre-cabos-rfc023.md) — la rama **no pasa la compuerta de CI** todavía.
 
-**Estado:** 🟢 **Cabos del RFC 023 cerrados y limpieza topológica de tests completada.**
+**Estado:** 🟡 **Cabos del RFC 023 cerrados y verificados, pero la compuerta de CI está en rojo.**
+
+`verificador` corrió la batería el 2026-09-10: **53 archivos / 393 tests en verde, idénticos en cuatro
+corridas consecutivas** con reordenamiento de vitest, `tsc --noEmit` 0 errores y build verde. Los
+cuatro pasos del plan salieron correctos y **no hay que rehacer ninguno**.
+
+**Lo que falta:** `pnpm exec eslint . --max-warnings 0` —el comando que corre la compuerta
+(`.github/workflows/compuerta.yml:66`)— devuelve **75 warnings** de imports huérfanos en los 18
+archivos de test que la ronda tocó, y la pone en rojo. `pnpm lint` no los ve porque el script de
+`package.json` es `eslint` a secas, **sin** el flag; la ficha decía lo contrario y ya se corrigió en
+`AGENTS.md` y `.claude/CLAUDE.md`.
+
+Queda también, del mismo plan de cierre, normalizar las tres llamadas a `revalidatePath("/cards")` de
+`cardsActions.ts`, que hoy son un no-op silencioso.
+
+**Lo que sí quedó hecho y verificado:**
 *   **Guarda bajo bloqueo (Paso 1):** `subscriptionRepository.findByIdForUpdate` agregado y consumido como primera operación dentro de `db.transaction` en `resolveSubscriptionAction`, evaluando la guarda sobre la fila releída y cerrando la condición de carrera concurrente.
 *   **Backfill de frecuencias no mensuales (Paso 2):** migración `0026_backfill_recurrence_pointers.sql` aplicada, ajustando el puntero inicial para series `weekly`, `quarterly` y `custom` a la última ocurrencia anterior a la ventana en curso.
 *   **Limpieza topológica compartida (Paso 3):** `limpiarBase()` en `src/shared/db/testCleanup.ts` ejecutada dentro de transacción única en orden topológico estricto de FK `restrict` (con autorreferencia en dos pasos para `categories`), adoptada en las 18 suites de integración con `afterAll( limpiarBase )`.

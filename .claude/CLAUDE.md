@@ -47,10 +47,16 @@ Los cuatro, siempre los cuatro, y el typecheck **como comando propio**:
 
 ```bash
 pnpm test                  # vitest. Anotar suites y tests exactos
-pnpm lint                  # eslint --max-warnings 0
+pnpm exec eslint . --max-warnings 0   # NO es `pnpm lint`: ver la nota de abajo
 pnpm exec tsc --noEmit     # SEPARADO. Contar con: | grep -c "error TS"
 pnpm build                 # produccion
 ```
+
+> **`pnpm lint` NO es lo que corre la compuerta.** El script de `package.json` es `eslint` a secas,
+> sin `--max-warnings 0`, así que **sale con código 0 aunque haya warnings**. La compuerta corre
+> `pnpm exec eslint . --max-warnings 0` (`.github/workflows/compuerta.yml:66`), donde un solo warning
+> la pone en rojo. Verificar con `pnpm lint` y reportar «lint 0» ya dejó pasar 75 warnings de imports
+> huérfanos que tumbaban CI. **Corré el comando de la compuerta, no el script.**
 
 > **`pnpm build` no es typecheck.** `next build` sólo tipa los archivos de su grafo, y **los archivos
 > de test no entran**; vitest tampoco tipa. Build verde + tests verdes ya convivieron con `tsc

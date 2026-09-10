@@ -5,6 +5,21 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 ## Trampas del repo
 
 *   [Postgres caído se disfraza de bug](entorno_postgres_caido.md) — `AggregateError` + 401 en login, o suite roja, suele ser `postgres-dev` apagado. Chequearlo primero.
+*   **`pnpm lint` NO es lo que corre la compuerta, y sale verde con warnings.** El script de
+    `package.json` es `eslint` a secas; la compuerta corre `pnpm exec eslint . --max-warnings 0`
+    (`compuerta.yml:66`), donde **un solo warning la pone en rojo**. El 2026-09-10 una ronda se
+    reportó «lint 0» con `pnpm lint` y tenía **75 warnings** que tumbaban CI. **Verificá siempre con
+    el comando de la compuerta.** La ficha decía lo contrario hasta que se corrigió.
+*   **Convertir limpieza a un helper deja imports huérfanos y nadie los ve.** Reemplazar bloques de
+    `db.delete( tabla )` por `limpiarBase()` dejó 75 símbolos sin usar en 18 archivos de test.
+    `tsc --noEmit` **no** los marca y `eslint --fix` **no** los arregla (`no-unused-vars` no es
+    autofixable). Todo plan que saque código de muchos archivos tiene que terminar con el comando de
+    la compuerta, no con `pnpm lint`.
+*   **`revalidatePath` va contra la estructura de archivos, no contra la URL.** La doc de Next 16 lo
+    dice textual y ejemplifica con el grupo adentro: `revalidatePath('/(main)/blog/[slug]', 'page')`.
+    Así que las once llamadas del repo con `"/[lang]/(main)/<ruta>" , "page"` **están bien**, y
+    `revalidatePath("/cards")` de `cardsActions.ts` (líneas 100, 178, 253) es un **no-op silencioso**.
+    No resolver el locale ni mandar `/es/cards`: el patrón literal con `[lang]` es lo correcto.
 *   **`pnpm build` no tipa los tests.** Build verde + tests verdes convivieron con 7 errores de
     `tsc --noEmit` (fixtures de `Account` sin las columnas nuevas). Es lo que rompe la compuerta CI.
 *   **Agregar una columna a una tabla rompe fixtures de tests de otras features.** `cbu_cvu` y `alias`
@@ -18,22 +33,17 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     patrimonio (propiedades, autos) no tenía propuesta: **el RFC 010 existe, está `APPROVED` desde
     junio** y cubre inmuebles, vehículos, valuaciones, inquilinos e incidencias. Son 21 RFCs y los
     nombres de archivo están en inglés, así que "patrimonio" se busca como `wealth`.
-*   **`createFinancialEntityAction` ya es alta pura** (corregido en `2ebc37e`, rama
-    `fix/entidades-financieras`). La cuenta se crea aparte con `createAccountForEntityAction`, que
-    ante saldo inicial > 0 emite asiento contra Patrimonio (`3.1.01.01`, con fallback al primer
-    `type === "equity"`) y **verifica que esa cuenta exista antes de crear nada**. El formulario tomó
-    una prop `withOwnAccount` (default `true`); `PaymentMethodsPanel` la pasa en `false`.
+*   **`createFinancialEntityAction` ya es alta pura** (`2ebc37e`). La cuenta se crea aparte con
+    `createAccountForEntityAction`, que ante saldo inicial > 0 emite asiento contra Patrimonio
+    (`3.1.01.01`, fallback al primer `type === "equity"`). El formulario tiene `withOwnAccount`
+    (default `true`); `PaymentMethodsPanel` lo pasa en `false`.
 *   **La cuenta que crea `createAccountForEntityAction` fija `currency: "ARS"` hardcodeado**
     (`accountingActions.ts`), en un proyecto que ya valida Debe = Haber por divisa. Una entidad que
     opera en otra moneda igual recibe cuenta en pesos.
-*   **`financial_entities` ya tiene `brand_domain`** (`varchar(100)`, migración `0020_soft_fixer.sql`,
-    con backfill de los dominios que vivían en `logo`). `logo` queda como nombre de ícono de respaldo,
-    y el `FormSelect` de ícono está envuelto en `{!isBrandFromApi}` para no pisar el dominio.
-    **`InstitutionLogo` tiene 4 consumidores y sólo 3 recibieron la prop `brandDomain` nueva**:
-    `AccountsContainer:254`, `PaymentMethodsPanel:211` y `ContactsTable:104` sí;
-    `TransactionsTable.tsx:188-192` **no** — sigue pasando `logoUrl={entity?.logo}`, que ahora recibe
-    un nombre de ícono y ya no resuelve la marca directo. Degrada a búsqueda por nombre, no rompe.
-    Es el archivo que el plan no nombró: exactamente el patrón de defecto de este repo.
+*   **`financial_entities` ya tiene `brand_domain`** (migración `0020`); `logo` quedó como ícono de
+    respaldo. **`InstitutionLogo` tiene 4 consumidores y sólo 3 recibieron la prop `brandDomain`**:
+    falta `TransactionsTable.tsx:188-192`, que sigue pasando `logoUrl={entity?.logo}`. Degrada a
+    búsqueda por nombre, no rompe. Es el archivo que el plan no nombró.
 *   **Los pasivos se guardan en negativo, y `/accounts` no respeta esa convención.**
     `accountingService.ts:117` trata `liability` igual que `asset` (aumenta con el Debe), así que un
     consumo de tarjeta deja la cuenta en negativo; `accountingActions.ts:99` y `CardVisual.tsx:34`
@@ -41,22 +51,14 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     negativo y suma la deuda al patrimonio.** Y `monthly_summaries.liabilitiesSnapshot` usa el signo
     **opuesto** (positivo), así que el número y su sparkline no hablan el mismo idioma. En
     `TECHNICAL_DEBT.md` §6.
-*   **Las 14 suites de test limpian la base a mano, cada una con su propia lista de `db.delete()`.**
-    Ninguna limpia al salir, así que el último test de cada archivo deja filas para el siguiente.
-    Agregar un `DELETE` de una tabla padre sin sus hijas hace explotar a la suite que corra después,
-    y parece intermitente porque vitest ordena por la duración de la corrida anterior. Ya produjo un
-    defecto (`TECHNICAL_DEBT.md` §7). **Todo plan que agregue una tabla con FK tiene que nombrar qué
-    suites la limpian.**
-*   **La deuda de limpieza entre suites crece sola: de 14 a 18 suites en una tanda.** Toda tabla
-    nueva con FK suma otra lista escrita a ojo. El grafo que importa son las siete FK `restrict`
-    (`accounts→financial_entities`, `ledger_entries→accounts`, `category_accounts→categories|accounts`,
-    `cards→financial_entities`, `card_accounts→accounts`, `contact_payment_methods→financial_entities`);
-    las `cascade` y `set null` se resuelven solas. Hoy no explota **sólo porque cinco suites tienen
-    `afterAll` que limpia al salir** — es contención por accidente. El orden topológico completo está
-    escrito en `docs/planes/cabos-rfc023-y-limpieza-de-tests.md` §Paso 3: no lo recalcules.
-*   **`categories.parentId` es una FK contra sí misma con `restrict`.** Un `DELETE` sin `WHERE` sobre
-    toda la tabla evalúa la restricción fila por fila y puede intentar borrar un padre antes que su
-    hija. Se borra hojas primero (`isNotNull(parentId)`) y después el resto.
+*   **RESUELTO: la limpieza entre suites ya es `limpiarBase()`** (`src/shared/db/testCleanup.ts`),
+    en orden topológico y transacción única, consumida por las 18 suites. **Toda tabla nueva con FK
+    hay que agregarla ahí, en su lugar del orden** — el archivo explica por qué el orden es ése.
+*   **El grafo de FK que importa son las siete `restrict`** (`accounts→financial_entities`,
+    `ledger_entries→accounts`, `category_accounts→categories|accounts`, `cards→financial_entities`,
+    `card_accounts→accounts`, `contact_payment_methods→financial_entities`); las `cascade` y
+    `set null` se resuelven solas. **No lo recalcules: el orden está en `testCleanup.ts`.** Ojo con
+    `categories.parentId`, que es `restrict` contra sí misma: se borran hojas primero.
 *   **`CircuitBreaker` (`shared/lib/circuitBreaker.ts`) no está cableado en ningún lado**: sólo lo
     importa su propio test. La "protección de Brandfetch" que dicen los docs no existe.
 *   **La búsqueda de marcas está duplicada en tres componentes** que van directo del navegador a
@@ -158,6 +160,11 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Qué salió bien y conviene repetir
 
+*   **Contrastar el hallazgo antes de enrutarlo: el informe puede acertar la conclusión y errar el
+    motivo.** `obra` reportó bien que `cardsActions.ts` estaba fuera de convención, pero lo fundamentó
+    en que las demás «usan el locale» — y no lo usan: usan el patrón de archivos, que es lo que la doc
+    manda. Escrito así en la deuda, el próximo lo hubiera «arreglado» al revés. Diez minutos de doc
+    oficial valieron más que la lista de hallazgos.
 *   **Un hueco del plan vuelve como defecto del código, y hay que decirlo así.** El plan del RFC 023
     decidió que «el puntero *es* la guarda, no hace falta `idempotencyKeys`» y `obra` lo implementó
     tal cual — pero la guarda quedó fuera de la transacción. El defecto es real y **no fue desvío de
@@ -176,21 +183,22 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 ## Estado
 
-*   **`feat/bandeja-recurrencias` (`dd7388d`) verificada en verde y SIN consolidar** (2026-09-10):
-    53 archivos, 392 tests, lint 0, `tsc --noEmit` 0, build verde, **doble corrida con conteo
-    idéntico**. Pasa la compuerta de CI. El merge a `master` lo decide el usuario; no lo hagas sola.
-*   **Rama viva: `fix/cabos-rfc023-y-limpieza-de-tests`**, encadenada sobre ella, árbol limpio,
-    con el plan `docs/planes/cabos-rfc023-y-limpieza-de-tests.md` listo para `obra` (commit `4ead5e2`).
-    Cuatro pasos: guarda del puntero bajo bloqueo, backfill de frecuencias no mensuales,
-    `limpiarBase()` en las 18 suites, y factory + mock de `next/cache` en `setupFiles`.
-*   **RFC 022 consolidado el 2026-09-10**, `master` en `e3af72c`, pusheado (`08704ae`), CI remota en
-    verde. Registro en `docs/registro/2026-09-10-cierre-rfc022.md`.
-*   **Sobre la mesa después de esta ronda:** suscripciones al libro mayor (RFC 004), las propuestas
-    que faltan del §7 del doc de diseño, la página de estadísticas (sin RFC), y el desvío de
-    `cardsActions.ts` con `revalidatePath("/cards")` contra las otras siete llamadas del repo.
+*   **Rama viva: `fix/cabos-rfc023-y-limpieza-de-tests`** (sobre `feat/bandeja-recurrencias`, ninguna
+    de las dos consolidada). Los cuatro pasos del plan salieron **correctos y verificados**: 53
+    archivos / **393 tests**, idénticos en **cuatro corridas** con reordenamiento, `tsc` 0, build
+    verde. `limpiarBase()`, la guarda releída, el backfill 0026 y el factory **no hay que rehacerlos**.
+*   **Pero la compuerta está en rojo:** 75 warnings de imports huérfanos en los 18 archivos de test.
+    Plan de cierre listo en `docs/planes/cierre-cabos-rfc023.md` (Paso 1 los borra, Paso 2 normaliza
+    las tres `revalidatePath` de `cardsActions.ts`).
+*   **`feat/bandeja-recurrencias` (`dd7388d`) quedó verificada en verde** el 2026-09-10 y **sin
+    consolidar**. El merge a `master` lo decide el usuario; no lo hagas sola.
+*   **RFC 022 consolidado el 2026-09-10**, `master` en `e3af72c`, pusheado (`08704ae`), CI en verde.
+*   **Sobre la mesa después:** suscripciones al libro mayor (RFC 004), las propuestas que faltan del §7
+    del doc de diseño, la página de estadísticas (sin RFC), y si conviene alinear el script `lint` de
+    `package.json` con el flag de la compuerta.
 *   **Enmienda al RFC 015 (2026-09-09): no hay ruta `/profile`.** El perfil es otra pestaña de
     `/settings`.
 *   **Convención asentada:** los segmentos de ruta van en inglés (`ARCHITECTURE.md` §4).
-*   **El artifact de la hoja de ruta está al día** (2026-09-10, etiqueta *Cierre RFC 022*). **Releerlo
-    entero con `action: "read"` antes de editarlo** — son 1211 líneas — y republicarlo con su `url`.
-    No refleja todavía el RFC 023.
+*   **El artifact de la hoja de ruta** (2026-09-10, *Cierre RFC 022*) **no refleja el RFC 023 ni esta
+    ronda.** Releerlo entero con `action: "read"` antes de editarlo — son 1211 líneas — y republicarlo
+    con su `url`.
