@@ -12,37 +12,38 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `feat/gestion-categorias`, ejecutando el plan
-[`planes/gestion-categorias.md`](planes/gestion-categorias.md). Rama encadenada sobre `feat/clasificacion-unificada`.
+**Rama activa:** `feat/gestion-categorias`. **Próximo paso:** ejecutar
+[`planes/limpieza-rfc022.md`](planes/limpieza-rfc022.md) y, con eso en verde, consolidar la rama a
+`master` por fast-forward, escribir el registro en [`registro/`](registro/) y podar
+`feat/tarjetas` (ya contenida en `master`) y `feat/clasificacion-unificada` (ancestro de ésta).
 
-**Estado:** 🟢 **Segunda tajada completada (Gestión de categorías, selector jerárquico y migración de suscripciones).**
-Se completaron los 10 pasos del plan del RFC 022:
-*   **Mapeo de iconos (`categoryIcons.ts`):** Función `iconoDeCategoria` que mapea cada ícono del catálogo a su emoji representativo, con fallback estándar `📦`.
-*   **Selector jerárquico en `TransactionFormModal`:** Carga dinámica del árbol de categorías (`getCategoryTreeAction`), agrupación con `<optgroup>` por padre, exclusión estricta de hojas `isSystemLeaf`, filtro según tipo de transacción (`expense`/`revenue`), opción por defecto "Sin detallar" y formulario integrado de alta rápida sin abandonar el modal.
-*   **Página de gestión `/settings`:** Server Component con layout de dos columnas (`CategoriesSettingsContainer.tsx`), listado de padres con conteo de subcategorías, ficha derecha con muestra de color e ícono, alta de subcategorías, hoja `General` no mutable, modal de confirmación de archivado informando movimientos imputados en el libro mayor (`ledgerRepository.countByCategories`), y toggle de categorías archivadas.
-*   **Soporte de pestañas en `Tabs`:** Incorporación de propiedades `disabled` (para Perfil, Preferencias y Seguridad) y `badge`.
-*   **Navegación completa:** Enlaces a `/settings` (Configuración) y `/cards` (Tarjetas) integrados en `Navbar.tsx` y `BottomNav.tsx`.
-*   **Migración de suscripciones (0024):** Columna `category_id` vinculada por FK a `categories` (`onDelete: "set null"`), backfill atómico de los 7 valores a las subcategorías contables de *Suscripciones y servicios digitales* (`5.1.09.01`–`5.1.09.06` y `5.1.09.99` para general/other), y eliminación de la columna obsoleta `category`. Esquema Zod actualizado, `AddSubscriptionModal` con selector jerárquico dinámico, y `seed.ts` demo ajustado.
-*   **Batería de tests completa:** Tests unitarios e integración pasando (iconos, selector con optgroup y exclusión de system leaves, creación al vuelo, interacción en `/settings`, archivado en cascada informado, y persistencia de suscripciones).
+**Estado:** 🟢 **RFC 022 completo — sus dos tajadas ejecutadas y verificadas de forma
+independiente.**
+
+*   **Primera tajada** (`6d365ba`): el backend entero. Tabla `categories` jerárquica con
+    `account_code`, `is_system_leaf` y `archived_at`; las cinco Server Actions; imputación contable
+    real por categoría en `transactionsActions`; catálogo inicial de 67 categorías. Sin pantallas.
+*   **Segunda tajada** (`a71d439`): selector jerárquico con `<optgroup>` y alta al vuelo en
+    `TransactionFormModal`; pantalla de gestión en `/settings` con las pestañas Perfil, Preferencias
+    y Seguridad deshabilitadas; mapa de emoji (`accounting/utils/categoryIcons.ts`, sin dependencias
+    nuevas); confirmación de archivado informada por `ledgerRepository.countByCategories`;
+    navegación a `/settings` y `/cards`; y migración **0024**, que reemplaza `subscriptions.category`
+    (enum de siete valores) por `categoryId` con FK `onDelete: "set null"`, backfill de los siete
+    valores al catálogo y baja de la columna vieja.
+
+**Batería sobre `a71d439`** (subagente `verificador`, 2026-09-10, con el esquema real contrastado
+contra `finanzas_db`): **51 archivos de test, 375 tests, lint 0 errores / 0 warnings,
+`tsc --noEmit` 0 errores, build verde.** La rama pasaría la compuerta CI.
+
+**Lo que la verificación encontró y no se hizo.** Cuatro cabos sueltos, ninguno rompe nada hoy y los
+cuatro son cosas que el plan anterior no nombró: un tipo muerto (`SubscriptionCategory`), dos
+componentes cliente importando un tipo desde el módulo del repositorio, una prop `lang` sin uso, y
+el test de cascada de archivado que el plan pedía y no se escribió. **Van en la tanda de limpieza.**
+Los otros dos —desarchivado asimétrico y resolución padre→hoja duplicada— son cambios de
+comportamiento y bajaron a [`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §4.
 
 > **Enmienda al RFC 015 (2026-09-09):** no hay ruta `/profile`. El perfil pasa a ser otra pestaña de
 > `/settings`, por la duplicación que trae la referencia del mock. Anotada en el propio RFC.
-
-
-**Por qué se frenó el código.** La ronda iba a ser suscripciones al libro mayor (RFC 004). Al
-investigar aparecieron tres decisiones de arquitectura sin tomar y sin RFC, que ese trabajo
-necesitaba: el estado de una transacción propuesta, la relación entre categoría y cuenta contable, y
-la distinción entre instrumento y cuenta. Suscripciones necesita las dos primeras; las cuotas del
-RFC 008 necesitan la primera y la tercera; los presupuestos necesitan la segunda.
-
-**El hallazgo que reordenó las prioridades:** la app hoy no puede responder *de dónde viene cada
-cosa*. Las estadísticas agrupan por tipo de cuenta contable y **nadie agrupa por categoría en ningún
-lado**; la categoría que el usuario elige no llega a la contabilidad, y todos los gastos del
-formulario se imputan a la misma cuenta. Los defectos quedaron anotados en
-[`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §4 y §5.
-
-**Batería sobre `master`:** 46 archivos de test, **348 tests**, lint 0, `tsc --noEmit` 0 errores,
-build verde. Verificada de forma independiente antes del merge de tarjetas.
 
 > **Convención asentada (2026-09-08):** los segmentos de ruta van **en inglés**
 > (`ARCHITECTURE.md` §4).
@@ -51,8 +52,8 @@ build verde. Verificada de forma independiente antes del merge de tarjetas.
 > Metas en la primera fase es el error que el artifact documenta del `ROADMAP.md` viejo.
 
 **Pendiente de la gobernanza:** revisar la duplicación entre `ARCHITECTURE.md` y `.agents/AGENTS.md`
-§2–§5. Y el artifact de la hoja de ruta quedó desactualizado tras el merge de tarjetas: dice 321
-tests y da tarjetas por pendiente.
+§2–§5. Y el artifact de la hoja de ruta quedó desactualizado: dice 321 tests, da tarjetas por
+pendiente, dice `/tarjetas` donde el repo tiene `/cards`, y no conoce `/settings` ni el RFC 022.
 
 ---
 
@@ -80,7 +81,8 @@ catálogo con el mock levantado; el encabezado decía 17 dominios y sólo se enu
 * **Mejorar plan (mock: `/mejorar-plan`)** — pantalla comercial del SaaS; se cruza con la deuda de `planName`/`planBilling` en `profiles`.
 
 **Ya portados:** cuentas (`/accounts`), contactos (`/contacts`), transacciones (`/transactions`),
-suscripciones (`/subscriptions`) y **tarjetas (`/cards`)**.
+suscripciones (`/subscriptions`), **tarjetas (`/cards`)** y **configuración (`/settings`)**, esta
+última con una sola pestaña activa —Categorías— y las otras tres deshabilitadas.
 
 #### 2. Servicios de infraestructura pendientes de portar desde `FinanceApp-WSL`
 * **Crons y Workers de Background:** Upstash QStash (`/api/cron/net-worth`, `/api/cron/statements`, `/api/webhooks/qstash`) para el cálculo automatizado de fin de mes.

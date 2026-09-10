@@ -66,6 +66,7 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 ## Decisiones tomadas
 
 *   [Rediseño de clasificación y propuestas](decisiones_modelo_clasificacion.md) — sesión **cerrada**: categoría = cuenta contable, propuestas fuera del libro, navegación por instrumento. Faltan las propuestas.
+*   [RFC 022 — clasificación unificada, ya implementado](rfc022_clasificacion_unificada.md) — hoja `General` (.99), resolución padre→hoja, cascada de archivado, y los cabos que dejó.
 *   [Cómo levantar los repos hermanos](repos_hermanos_como_levantarlos.md) — FinanzasMock está atado a Neon: sin base, con bypass de login. Y qué hay adentro de cada uno.
 *   **`/accounts` es el directorio por entidad** (decidido 2026-09-09): se entra por Galicia y se ven
     sus cuentas, sus tarjetas y sus préstamos. `/cards`, `/debts` y patrimonio (propiedades, autos)
@@ -132,21 +133,40 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
 
 *   [Página de proyecciones](idea_pagina_proyecciones.md) — por tendencia sobre recurrencias reales, ajustable por inflación. Sin discutir; idea del 2026-09-09.
 
+## Qué salió bien y conviene repetir
+
+*   **El plan con "Lo que ya existe y NO hay que construir" en tabla funcionó.** El plan de la segunda
+    tajada del RFC 022 listó las cinco acciones existentes con archivo y línea, y `obra` no reescribió
+    ninguna. Vale la pena la tabla en todo plan que se apoye en trabajo de una tanda anterior.
+*   **El estilo CSS ya no hace falta especificarlo.** `CategoriesSettingsContainer.module.css`: 468
+    líneas, **0 colores crudos, 0 px fijos estructurales, 0 `:hover` con movimiento o cambio de
+    dimensiones**. Dejar de gastar renglones del plan en esto.
+*   **Los radios de impacto nombrados salieron limpios.** Los cuatro archivos del radio D se
+    actualizaron; el grep posterior no encontró usos residuales de `subscriptions.category`. Lo que
+    quedó suelto fue todo *no nombrado*: un tipo muerto, dos imports desde el repositorio y una prop
+    sin usar. Sigue valiendo la regla: lo explícito sale bien, lo implícito es donde aparecen.
+
 ## Estado
 
-*   **Sesión de diseño cerrada el 2026-09-09**, los tres temas decididos. Lo que sigue es escribir las
-    propuestas del §7 de `docs/diseno/rediseno-clasificacion-y-propuestas.md`. Sin código todavía.
+*   **RFC 022 implementado en dos tajadas y verificado el 2026-09-09.** Rama
+    `feat/gestion-categorias` en `a71d439`, árbol limpio, **51 archivos de test, 375 tests, lint 0,
+    `tsc --noEmit` 0, build verde**, esquema real contrastado contra la base. Sin consolidar todavía:
+    `master` está en `2d7ac63` y es ancestro, así que el merge es fast-forward de 4 commits.
+    Detalle y cabos sueltos en [[rfc022-clasificacion-unificada]].
+*   **Ramas vivas:** `feat/tarjetas` (ya contenida en `master`, se puede borrar) y
+    `feat/clasificacion-unificada` (ancestro de `feat/gestion-categorias`, se borra con la
+    consolidación).
+*   **La sesión de diseño de septiembre está agotada en su parte de clasificación**: el §3 y el §4
+    bajaron al RFC 022 y ya son código. Sigue sin propuesta lo demás del §7 de
+    `docs/diseno/rediseno-clasificacion-y-propuestas.md`. Ver [[decisiones-modelo-clasificacion]].
+*   **Enmienda al RFC 015 (2026-09-09): no hay ruta `/profile`.** El perfil pasa a ser otra pestaña de
+    `/settings`, que ya existe con sus pestañas Perfil, Preferencias y Seguridad deshabilitadas.
 *   **El inventario de `trabajo-en-vuelo.md` estaba incompleto**: decía 17 dominios y listaba 12.
     Faltaban `/reportes` (la página de estadísticas), `/patrimonio`, `/configuracion` y
     `/mejorar-plan`. Corregido el 2026-09-09.
-*   **`master` en `a9303b5`, sin ramas vivas.** Tarjetas (RFC 007) consolidada el 2026-09-08:
-    46 archivos de test, 348 tests, lint 0, tsc 0, build verde, verificado de forma independiente.
-    Registro en `docs/registro/2026-09-08-cierre-tarjetas.md`.
-*   **Sesión de diseño abierta**, sin código. Se retoma por el §4 de
-    `docs/diseno/rediseno-clasificacion-y-propuestas.md`. Ver [[decisiones-modelo-clasificacion]].
-*   **Convención nueva:** los segmentos de ruta van en inglés (`ARCHITECTURE.md` §4). Existía de
-    hecho —las 5 rutas en pie nacieron así— y no estaba escrita; el artifact y el inventario
-    prometían los nombres en español del mock.
-*   **El artifact quedó desactualizado** tras el merge de tarjetas: dice 321 tests (hoy 348), da
-    tarjetas por pendiente en la Fase 2 y en el grafo, dice `/tarjetas` donde el repo tiene `/cards`,
-    cuenta 5 rutas en pie de 17 cuando son 6, y se contradice solo en el total de ítems (18 / 23 / 24).
+*   **Convención asentada:** los segmentos de ruta van en inglés (`ARCHITECTURE.md` §4). Existía de
+    hecho y no estaba escrita; el artifact y el inventario prometían los nombres en español del mock.
+*   **El artifact de la hoja de ruta quedó desactualizado** desde el merge de tarjetas: dice 321 tests
+    (hoy 375), da tarjetas por pendiente en la Fase 2 y en el grafo, dice `/tarjetas` donde el repo
+    tiene `/cards`, no conoce `/settings` ni el RFC 022, y se contradice solo en el total de ítems
+    (18 / 23 / 24).
