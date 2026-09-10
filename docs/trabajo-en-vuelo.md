@@ -12,17 +12,30 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `fix/cabos-rfc023-y-limpieza-de-tests`, encadenada sobre `feat/bandeja-recurrencias`.
-**Próximo paso:** consolidar las **dos** ramas encadenadas (`feat/bandeja-recurrencias` y `fix/cabos-rfc023-y-limpieza-de-tests`) sobre `master`; luego ejecutar [`docs/planes/page-header-unico-por-pagina.md`](planes/page-header-unico-por-pagina.md) en rama nueva.
+**Rama activa:** `fix/page-header-unico-por-pagina`, creada sobre `master` ya consolidado.
+**Próximo paso:** ejecutar [`docs/planes/page-header-unico-por-pagina.md`](planes/page-header-unico-por-pagina.md).
 
-**Estado:** 🟢 **`e280825` verificado en verde** el 2026-09-10 por batería independiente: **393 tests / 53 suites**, `eslint . --max-warnings 0` y `pnpm lint` 0 warnings, `tsc --noEmit` 0 errores, build exitoso. La rama pasaría la compuerta.
-*   **Paso 1:** Script `lint` en `package.json` alineado con la compuerta (`eslint . --max-warnings 0`) y radio documental actualizado en `.claude/CLAUDE.md` y `AGENTS.md`.
-*   **Paso 2:** Eliminado estado espejo `cards` en `CardsContainer.tsx`, reemplazado `reload()` por `router.refresh()`, y montaje condicional de `CardFormModal` para resetear sus 16 estados locales.
+**Estado:** 🟢 **Cadena de ramas consolidada sobre `master` el 2026-09-10.** `master` avanzó por
+fast-forward de `2ae7186` a `8e086d9` (15 commits, sin merge commit ni divergencia) y está pusheado
+a `origin/master`. Entraron `feat/bandeja-recurrencias` (RFC 023) y
+`fix/cabos-rfc023-y-limpieza-de-tests`, verificados en verde por batería independiente:
+**393 tests / 53 suites**, `eslint . --max-warnings 0` sin warnings, `tsc --noEmit` 0 errores,
+build exitoso.
 
-**En cola, en este orden:**
+Las dos ramas viejas quedan como referencia y **ya no reciben trabajo**; se pueden borrar.
 
-1.  Consolidación de las dos ramas encadenadas sobre `master`.
-2.  **[`docs/planes/page-header-unico-por-pagina.md`](planes/page-header-unico-por-pagina.md)** — **en rama nueva, después de consolidar**. Doble encabezado en cuatro de las ocho rutas: `Header.tsx` decide su título sniffeando el `pathname` con una lista cerrada de cuatro rutas, y las demás caen en el saludo del dashboard. Se da vuelta la responsabilidad: un `PageHeader` compartido que cada página compone, con `title` obligatoria. Los dos planes tocan `CardsContainer` en bloques distintos, por eso van secuenciados.
+**En cola:**
+
+1.  **[`docs/planes/page-header-unico-por-pagina.md`](planes/page-header-unico-por-pagina.md)** —
+    listo para `obra` en esta rama. Doble encabezado en cuatro de las ocho rutas: `Header.tsx:50-53`
+    decide su título sniffeando el `pathname` con una lista cerrada de cuatro rutas, y las demás caen
+    en el saludo del dashboard. Se da vuelta la responsabilidad: un `PageHeader` compartido que cada
+    página compone, con `title` obligatoria.
+
+> **El primer intento de ejecución no tocó una línea** (2026-09-10). Se invocó a `obra` sin que la
+> rama del plan existiera; como no puede cambiar de rama, devolvió informe de factibilidad en vez de
+> ejecutar. Confirmó que el plan coincide con el estado del repo. **Crear la rama antes del traspaso
+> es trabajo de `tanda`**, y el plan lo dice en su línea 3.
 
 **Estado de la ronda anterior:** 🟢 **Cierre de cabos del RFC 023 completado y compuerta de CI desbloqueada.**
 

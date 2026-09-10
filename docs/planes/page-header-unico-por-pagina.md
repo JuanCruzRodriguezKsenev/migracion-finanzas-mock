@@ -1,6 +1,6 @@
 # Plan — un solo encabezado por página: `PageHeader` compuesto, sin sniffeo de ruta
 
-**Rama:** a crear por `tanda` antes del traspaso. **No** es la rama del plan de lint y `reload()`.
+**Rama:** `fix/page-header-unico-por-pagina`, ya creada sobre `master` consolidado.
 **Origen:** doble encabezado detectado en `/es/cards` el 2026-09-10. Al mapearlo resultaron **cuatro
 rutas de ocho** afectadas, con dos síntomas y una sola causa.
 
