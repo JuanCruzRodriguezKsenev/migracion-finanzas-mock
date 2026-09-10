@@ -6,6 +6,7 @@
 "use client" ;
 
 // Librerías externas
+import { useRouter }                     from "next/navigation" ;
 import React , { useState , useTransition } from "react" ;
 
 // Shared
@@ -38,16 +39,16 @@ export function CardsContainer( {
   financialEntities ,
   accounts ,
 }: CardsContainerProps ) {
+  const router      = useRouter() ;
   const { profile } = useProfileContext() ;
   const locale      = ( profile.numberFormat || "es-AR" ) ;
 
-  const [ cards , setCards ]             = useState< CardWithAccountsAndEntity[] >( initialCards ) ;
   const [ activeTab , setActiveTab ]     = useState< "all" | "credit" | "debit" >( "all" ) ;
   const [ isModalOpen , setIsModalOpen ] = useState( false ) ;
 
   const [ , startTransition ] = useTransition() ;
 
-  const filteredCards = cards.filter( ( c ) => {
+  const filteredCards = initialCards.filter( ( c ) => {
     if( activeTab === "all" ) { return( true ) ; }
     return( c.type === activeTab ) ;
   } ) ;
@@ -60,14 +61,13 @@ export function CardsContainer( {
     startTransition( async () => {
       const res = await archiveCardAction( id ) ;
       if( res.success ) {
-        setCards( ( prev ) => prev.filter( ( c ) => c.id !== id ) ) ;
+        router.refresh() ;
       }
     } ) ;
   } ;
 
   const handleSuccessNewCard = () => {
-    // Si bien revalidatePath refresca el servidor, recargamos la página
-    window.location.reload() ;
+    router.refresh() ;
   } ;
 
   return(
@@ -91,21 +91,21 @@ export function CardsContainer( {
           className={ `${styles.tabButton} ${activeTab === "all" ? styles.tabButtonActive : ""}` }
           onClick={ () => setActiveTab( "all" ) }
         >
-          Todas ({ cards.length })
+          Todas ({ initialCards.length })
         </button>
         <button
           type="button"
           className={ `${styles.tabButton} ${activeTab === "credit" ? styles.tabButtonActive : ""}` }
           onClick={ () => setActiveTab( "credit" ) }
         >
-          Crédito ({ cards.filter( ( c ) => c.type === "credit" ).length })
+          Crédito ({ initialCards.filter( ( c ) => c.type === "credit" ).length })
         </button>
         <button
           type="button"
           className={ `${styles.tabButton} ${activeTab === "debit" ? styles.tabButtonActive : ""}` }
           onClick={ () => setActiveTab( "debit" ) }
         >
-          Débito ({ cards.filter( ( c ) => c.type === "debit" ).length })
+          Débito ({ initialCards.filter( ( c ) => c.type === "debit" ).length })
         </button>
       </nav>
 
@@ -133,13 +133,15 @@ export function CardsContainer( {
         </div>
       ) }
 
-      <CardFormModal
-        isOpen={isModalOpen}
-        onClose={ () => setIsModalOpen( false ) }
-        financialEntities={financialEntities}
-        accounts={accounts}
-        onSuccess={handleSuccessNewCard}
-      />
+      { isModalOpen ? (
+        <CardFormModal
+          isOpen={isModalOpen}
+          onClose={ () => setIsModalOpen( false ) }
+          financialEntities={financialEntities}
+          accounts={accounts}
+          onSuccess={handleSuccessNewCard}
+        />
+      ) : null }
     </div>
   ) ;
 }
