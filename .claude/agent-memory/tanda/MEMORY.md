@@ -44,13 +44,10 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     respaldo. **`InstitutionLogo` tiene 4 consumidores y sólo 3 recibieron la prop `brandDomain`**:
     falta `TransactionsTable.tsx:188-192`, que sigue pasando `logoUrl={entity?.logo}`. Degrada a
     búsqueda por nombre, no rompe. Es el archivo que el plan no nombró.
-*   **Los pasivos se guardan en negativo, y `/accounts` no respeta esa convención.**
-    `accountingService.ts:117` trata `liability` igual que `asset` (aumenta con el Debe), así que un
-    consumo de tarjeta deja la cuenta en negativo; `accountingActions.ts:99` y `CardVisual.tsx:34`
-    lo respetan. **`AccountsContainer.tsx:87-88` hace `totalAssets - totalLiabs` sobre un total ya
-    negativo y suma la deuda al patrimonio.** Y `monthly_summaries.liabilitiesSnapshot` usa el signo
-    **opuesto** (positivo), así que el número y su sparkline no hablan el mismo idioma. En
-    `TECHNICAL_DEBT.md` §6.
+*   **Los pasivos se guardan en negativo y `/accounts` no lo respeta:** `AccountsContainer.tsx:87-88`
+    hace `totalAssets - totalLiabs` sobre un total ya negativo, o sea **suma la deuda al patrimonio**.
+    Y `monthly_summaries.liabilitiesSnapshot` usa el signo opuesto, así que el número y su sparkline
+    no hablan el mismo idioma. `TECHNICAL_DEBT.md` §6.
 *   **RESUELTO: la limpieza entre suites ya es `limpiarBase()`** (`src/shared/db/testCleanup.ts`),
     en orden topológico y transacción única, consumida por las 18 suites. **Toda tabla nueva con FK
     hay que agregarla ahí, en su lugar del orden** — el archivo explica por qué el orden es ése.
@@ -61,9 +58,9 @@ Lo aprendido en rondas anteriores. Consultar antes de investigar de cero; actual
     `categories.parentId`, que es `restrict` contra sí misma: se borran hojas primero.
 *   **`CircuitBreaker` (`shared/lib/circuitBreaker.ts`) no está cableado en ningún lado**: sólo lo
     importa su propio test. La "protección de Brandfetch" que dicen los docs no existe.
-*   **La búsqueda de marcas está duplicada en tres componentes** que van directo del navegador a
-    `api.brandfetch.io`: `CreateFinancialEntityForm:138`, `AddSubscriptionModal:356`,
-    `InstitutionLogo:92`. `/api/brand` (servidor, autenticado) sólo sirve metadata, no búsqueda.
+*   **La búsqueda de marcas está duplicada en tres componentes** que pegan directo a
+    `api.brandfetch.io` desde el navegador (`CreateFinancialEntityForm`, `AddSubscriptionModal`,
+    `InstitutionLogo`). `/api/brand` sólo sirve metadata, no búsqueda.
 
 ## Patrones que ya existen y conviene reusar
 
