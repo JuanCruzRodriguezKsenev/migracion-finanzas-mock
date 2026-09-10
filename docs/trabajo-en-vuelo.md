@@ -15,7 +15,7 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 **Rama activa:** `fix/cabos-rfc023-y-limpieza-de-tests`, encadenada sobre `feat/bandeja-recurrencias`.
 **Próximo paso:** consolidar las **dos** ramas encadenadas (`feat/bandeja-recurrencias` y `fix/cabos-rfc023-y-limpieza-de-tests`) sobre `master`; luego ejecutar [`docs/planes/page-header-unico-por-pagina.md`](planes/page-header-unico-por-pagina.md) en rama nueva.
 
-**Estado:** 🟢 [`docs/planes/alinear-lint-y-refresh-de-tarjetas.md`](planes/alinear-lint-y-refresh-de-tarjetas.md) completado (Paso 1 y Paso 2 ejecutados, pendiente verificación final).
+**Estado:** 🟢 **`e280825` verificado en verde** el 2026-09-10 por batería independiente: **393 tests / 53 suites**, `eslint . --max-warnings 0` y `pnpm lint` 0 warnings, `tsc --noEmit` 0 errores, build exitoso. La rama pasaría la compuerta.
 *   **Paso 1:** Script `lint` en `package.json` alineado con la compuerta (`eslint . --max-warnings 0`) y radio documental actualizado en `.claude/CLAUDE.md` y `AGENTS.md`.
 *   **Paso 2:** Eliminado estado espejo `cards` en `CardsContainer.tsx`, reemplazado `reload()` por `router.refresh()`, y montaje condicional de `CardFormModal` para resetear sus 16 estados locales.
 
