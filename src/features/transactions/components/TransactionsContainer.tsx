@@ -14,6 +14,7 @@ import { Column } from "@/shared/ui/display/Toolbar/ColumnSelector" ;
 
 // Feature: Accounting
 import { TransactionWithEntries }                      from "@/features/accounting/repositories/ledgerRepository" ;
+import { CategoryTreeNode }                            from "@/features/accounting/repositories/categoryRepository" ;
 import { Account , Category , FinancialEntity }         from "@/features/accounting/types" ;
 
 // Feature: Transactions
@@ -36,6 +37,7 @@ interface TransactionsContainerProps {
   initialHasMore:      boolean ;
   accounts:            Account[] ;
   categories:          Category[] ;
+  categoryTree?:       CategoryTreeNode[] ;
   financialEntities?:  FinancialEntity[] ;
   lang?:               string ;
 }
@@ -66,6 +68,7 @@ export function TransactionsContainer( {
   initialHasMore ,
   accounts ,
   categories ,
+  categoryTree ,
   financialEntities = [] ,
 }: TransactionsContainerProps ) {
   const searchParams = useSearchParams() ;
@@ -272,6 +275,7 @@ export function TransactionsContainer( {
         onSuccess={handleDataMutated}
         accounts={accounts}
         categories={categories}
+        categoryTree={categoryTree}
       />
 
       {/* Modal de detalle, edición y reversión */}

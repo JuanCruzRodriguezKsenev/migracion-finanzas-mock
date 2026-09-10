@@ -19,12 +19,17 @@ import { FormInput }                         from "@/shared/ui/forms/Form/FormIn
 import { Button }                            from "@/shared/ui/display/Button/Button" ;
 import { Modal }                             from "@/shared/ui/feedback/Modal/Modal" ;
 
+// Feature: Accounting
+import { Category , CategoryTreeNode } from "@/features/accounting/types" ;
+import { getCategoryTreeAction }        from "@/features/accounting/actions/categoryActions" ;
+import { iconoDeCategoria }             from "@/features/accounting/utils/categoryIcons" ;
+
 // Feature: Subscriptions
-import { SubscriptionFormData , SubscriptionCategory , SubscriptionFrequency , SubscriptionWithStats } from "../types" ;
-import countriesData                                                                                   from "../data/countries.json" ;
-import { SubscriptionIcon }                                                                            from "./SubscriptionIcon" ;
-import { getLogoConfig }                                                                               from "../utils/logoMap" ;
-import styles                                                                                          from "./AddSubscriptionModal.module.css" ;
+import { SubscriptionFormData , SubscriptionFrequency , SubscriptionWithStats } from "../types" ;
+import countriesData                                                            from "../data/countries.json" ;
+import { SubscriptionIcon }                                                     from "./SubscriptionIcon" ;
+import { getLogoConfig }                                                        from "../utils/logoMap" ;
+import styles                                                                   from "./AddSubscriptionModal.module.css" ;
 
 
 type SubscriptionsDict = Awaited< ReturnType< typeof getDictionary > >["subscriptionsPage"] ;
@@ -37,12 +42,12 @@ interface Country {
 }
 
 interface BrandSuggestion {
-  kind:      "brand" ;
-  name:      string ;
-  domain:    string ;
-  logoKey?:  string ;
-  color?:    string ;
-  category?: SubscriptionCategory ;
+  kind:          "brand" ;
+  name:          string ;
+  domain:        string ;
+  logoKey?:      string ;
+  color?:        string ;
+  categoryCode?: string ;
 }
 
 interface ActionSuggestion {
@@ -79,20 +84,20 @@ const CUSTOM_COLORS = [
 const CUSTOM_ICON_KEYS = [ "gym" , "home" , "bolt" , "book" , "coffee" , "car" , "heart" , "gift" , "default" ] ;
 
 const POPULAR_BRANDS: BrandSuggestion[] = [
-  { kind: "brand" , name: "Netflix"              , domain: "netflix.com"    , color: "#E50914" , logoKey: "https://logo.clearbit.com/netflix.com"    , category: "entertainment" } ,
-  { kind: "brand" , name: "Spotify"              , domain: "spotify.com"    , color: "#1DB954" , logoKey: "https://logo.clearbit.com/spotify.com"    , category: "entertainment" } ,
-  { kind: "brand" , name: "YouTube Premium"      , domain: "youtube.com"    , color: "#FF0000" , logoKey: "https://logo.clearbit.com/youtube.com"    , category: "entertainment" } ,
-  { kind: "brand" , name: "Disney+"              , domain: "disneyplus.com" , color: "#113CCF" , logoKey: "https://logo.clearbit.com/disneyplus.com" , category: "entertainment" } ,
-  { kind: "brand" , name: "Amazon Prime"         , domain: "amazon.com"     , color: "#FF9900" , logoKey: "https://logo.clearbit.com/amazon.com"     , category: "entertainment" } ,
-  { kind: "brand" , name: "ChatGPT Plus"         , domain: "openai.com"     , color: "#10A37F" , logoKey: "https://logo.clearbit.com/openai.com"     , category: "productivity"  } ,
-  { kind: "brand" , name: "Adobe Creative Cloud" , domain: "adobe.com"      , color: "#FF0000" , logoKey: "https://logo.clearbit.com/adobe.com"      , category: "design"        } ,
-  { kind: "brand" , name: "Figma"                , domain: "figma.com"      , color: "#F24E1E" , logoKey: "https://logo.clearbit.com/figma.com"      , category: "design"        } ,
-  { kind: "brand" , name: "Notion"               , domain: "notion.so"      , color: "#000000" , logoKey: "https://logo.clearbit.com/notion.so"      , category: "productivity"  } ,
-  { kind: "brand" , name: "iCloud+"              , domain: "apple.com"      , color: "#000000" , logoKey: "https://logo.clearbit.com/apple.com"      , category: "storage"       } ,
-  { kind: "brand" , name: "NordVPN"              , domain: "nordvpn.com"    , color: "#4687FF" , logoKey: "https://logo.clearbit.com/nordvpn.com"    , category: "security"      } ,
-  { kind: "brand" , name: "GitHub"               , domain: "github.com"     , color: "#000000" , logoKey: "https://logo.clearbit.com/github.com"     , category: "other"         } ,
-  { kind: "brand" , name: "Slack"                , domain: "slack.com"      , color: "#4A154B" , logoKey: "https://logo.clearbit.com/slack.com"      , category: "productivity"  } ,
-  { kind: "brand" , name: "Canva"                , domain: "canva.com"      , color: "#00C4CC" , logoKey: "https://logo.clearbit.com/canva.com"      , category: "design"        } ,
+  { kind: "brand" , name: "Netflix"              , domain: "netflix.com"    , color: "#E50914" , logoKey: "https://logo.clearbit.com/netflix.com"    , categoryCode: "5.1.09.01" } ,
+  { kind: "brand" , name: "Spotify"              , domain: "spotify.com"    , color: "#1DB954" , logoKey: "https://logo.clearbit.com/spotify.com"    , categoryCode: "5.1.09.01" } ,
+  { kind: "brand" , name: "YouTube Premium"      , domain: "youtube.com"    , color: "#FF0000" , logoKey: "https://logo.clearbit.com/youtube.com"    , categoryCode: "5.1.09.01" } ,
+  { kind: "brand" , name: "Disney+"              , domain: "disneyplus.com" , color: "#113CCF" , logoKey: "https://logo.clearbit.com/disneyplus.com" , categoryCode: "5.1.09.01" } ,
+  { kind: "brand" , name: "Amazon Prime"         , domain: "amazon.com"     , color: "#FF9900" , logoKey: "https://logo.clearbit.com/amazon.com"     , categoryCode: "5.1.09.01" } ,
+  { kind: "brand" , name: "ChatGPT Plus"         , domain: "openai.com"     , color: "#10A37F" , logoKey: "https://logo.clearbit.com/openai.com"     , categoryCode: "5.1.09.02" } ,
+  { kind: "brand" , name: "Adobe Creative Cloud" , domain: "adobe.com"      , color: "#FF0000" , logoKey: "https://logo.clearbit.com/adobe.com"      , categoryCode: "5.1.09.03" } ,
+  { kind: "brand" , name: "Figma"                , domain: "figma.com"      , color: "#F24E1E" , logoKey: "https://logo.clearbit.com/figma.com"      , categoryCode: "5.1.09.03" } ,
+  { kind: "brand" , name: "Notion"               , domain: "notion.so"      , color: "#000000" , logoKey: "https://logo.clearbit.com/notion.so"      , categoryCode: "5.1.09.02" } ,
+  { kind: "brand" , name: "iCloud+"              , domain: "apple.com"      , color: "#000000" , logoKey: "https://logo.clearbit.com/apple.com"      , categoryCode: "5.1.09.06" } ,
+  { kind: "brand" , name: "NordVPN"              , domain: "nordvpn.com"    , color: "#4687FF" , logoKey: "https://logo.clearbit.com/nordvpn.com"    , categoryCode: "5.1.09.05" } ,
+  { kind: "brand" , name: "GitHub"               , domain: "github.com"     , color: "#000000" , logoKey: "https://logo.clearbit.com/github.com"     , categoryCode: "5.1.09.02" } ,
+  { kind: "brand" , name: "Slack"                , domain: "slack.com"      , color: "#4A154B" , logoKey: "https://logo.clearbit.com/slack.com"      , categoryCode: "5.1.09.02" } ,
+  { kind: "brand" , name: "Canva"                , domain: "canva.com"      , color: "#00C4CC" , logoKey: "https://logo.clearbit.com/canva.com"      , categoryCode: "5.1.09.03" } ,
 ] ;
 
 const SOCIAL_ICONS: Record< string , string > = {
@@ -183,21 +188,39 @@ export function AddSubscriptionModal( {
 
   const [ form , setForm ] = useState< SubscriptionFormData >( () => {
     return( isEditing && editingData ? {
-      name:      editingData.name ,
-      amount:    editingData.amount ,
-      frequency: editingData.frequency as SubscriptionFrequency ,
-      logoKey:   editingData.logoKey ,
-      color:     editingData.color ,
-      category:  editingData.category as SubscriptionCategory ,
+      name:        editingData.name ,
+      amount:      editingData.amount ,
+      frequency:   editingData.frequency as SubscriptionFrequency ,
+      logoKey:     editingData.logoKey ,
+      color:       editingData.color ,
+      categoryId:  editingData.categoryId ,
     } : {
-      name:      "" ,
-      amount:    0 ,
-      frequency: "monthly" ,
-      logoKey:   "default" ,
-      color:     CUSTOM_COLORS[0] ,
-      category:  "other" ,
+      name:        "" ,
+      amount:      0 ,
+      frequency:   "monthly" ,
+      logoKey:     "default" ,
+      color:       CUSTOM_COLORS[0] ,
+      categoryId:  null ,
     } ) ;
   } ) ;
+
+  const [ categoryTree , setCategoryTree ] = useState< CategoryTreeNode[] >( [] ) ;
+
+  useEffect( () => {
+    let active = true ;
+    getCategoryTreeAction().then( ( res ) => {
+      if( active && res.success ){
+        setCategoryTree( res.value ) ;
+      }
+    } ) ;
+    return () => {
+      active = false ;
+    } ;
+  } , [] ) ;
+
+  const expenseCategories = useMemo( () => {
+    return( categoryTree.filter( ( cat ) => cat.type === "expense" ) ) ;
+  } , [ categoryTree ] ) ;
 
   // El precio se edita como texto en pesos y se convierte a centavos al enviar
   const [ priceInput , setPriceInput ] = useState( () => (
@@ -295,6 +318,21 @@ export function AddSubscriptionModal( {
       const res  = await fetch( `/api/brand?domain=${encodeURIComponent( brand.domain || brand.name )}` ) ;
       const data: BrandMetadata | null = ( res.ok ? await res.json() : null ) ;
 
+      let matchedCategoryId: string | null = null ;
+      if( brand.categoryCode ){
+        for( const parent of categoryTree ){
+          if( parent.accountCode === brand.categoryCode ){
+            matchedCategoryId = parent.id ;
+            break ;
+          }
+          const found = parent.children.find( ( c: Category ) => c.accountCode === brand.categoryCode ) ;
+          if( found ){
+            matchedCategoryId = found.id ;
+            break ;
+          }
+        }
+      }
+
       if( data ){
         const lightLogo = data.logos?.find( ( l ) => l.theme === "light" ) ;
         const darkLogo  = data.logos?.find( ( l ) => l.theme === "dark" ) ;
@@ -305,19 +343,19 @@ export function AddSubscriptionModal( {
 
         setForm( ( f ) => ( {
           ...f ,
-          name:     data.name ,
-          logoKey:  defaultLogoKey ,
-          color:    data.primaryColor ,
-          category: ( brand.category || f.category ) ,
+          name:       data.name ,
+          logoKey:    defaultLogoKey ,
+          color:      data.primaryColor ,
+          categoryId: ( matchedCategoryId || f.categoryId ) ,
         } ) ) ;
         setBrandDetails( data ) ;
       } else {
         setForm( ( f ) => ( {
           ...f ,
-          name:     brand.name ,
-          logoKey:  brand.logoKey || "default" ,
-          color:    brand.color || CUSTOM_COLORS[0] ,
-          category: ( brand.category || f.category ) ,
+          name:       brand.name ,
+          logoKey:    brand.logoKey || "default" ,
+          color:      brand.color || CUSTOM_COLORS[0] ,
+          categoryId: ( matchedCategoryId || f.categoryId ) ,
         } ) ) ;
         setBrandDetails( null ) ;
       }
@@ -494,15 +532,6 @@ export function AddSubscriptionModal( {
     custom:    dict.cycleMonthly ,
   } ;
 
-  const categoryOptions: { value: SubscriptionCategory ; label: string }[] = [
-    { value: "design"        , label: dict.categoryDesign        } ,
-    { value: "productivity"  , label: dict.categoryProductivity  } ,
-    { value: "entertainment" , label: dict.categoryEntertainment } ,
-    { value: "fitness"       , label: dict.categoryFitness       } ,
-    { value: "security"      , label: dict.categorySecurity      } ,
-    { value: "storage"       , label: dict.categoryStorage       } ,
-    { value: "other"         , label: dict.categoryOther         } ,
-  ] ;
 
   const footer = (
     <div className={styles.modalFooter}>
@@ -976,13 +1005,32 @@ export function AddSubscriptionModal( {
 
           <FormSelect
             label={dict.categoryLabel}
-            value={form.category}
-            onChange={ ( e ) => setForm( ( f ) => ( {...f , category: e.target.value as SubscriptionCategory} ) ) }
+            value={form.categoryId || ""}
+            onChange={ ( e ) => setForm( ( f ) => ( {...f , categoryId: ( e.target.value ? e.target.value : null )} ) ) }
             disabled={isSearching}
           >
-            {categoryOptions.map( ( c ) => (
-              <option key={c.value} value={c.value}>{ c.label }</option>
-            ) )}
+            <option value="">{ dict.categoryOther || "Sin categoría" }</option>
+            {expenseCategories.map( ( parent: CategoryTreeNode ) => {
+              const visibleChildren = parent.children.filter( ( c: Category ) => !c.isSystemLeaf ) ;
+              return(
+                <optgroup
+                  key={parent.id}
+                  label={ `${iconoDeCategoria( parent.icon )} ${parent.name}` }
+                >
+                  {visibleChildren.length > 0 ? (
+                    visibleChildren.map( ( child: Category ) => (
+                      <option key={child.id} value={child.id}>
+                        {iconoDeCategoria( child.icon )} {child.name}
+                      </option>
+                    ) )
+                  ) : (
+                    <option value={parent.id}>
+                      {iconoDeCategoria( parent.icon )} {parent.name}
+                    </option>
+                  )}
+                </optgroup>
+              ) ;
+            } )}
           </FormSelect>
 
           {/* Icono y color personalizados: solo cuando NO es una marca de la API */}

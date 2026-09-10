@@ -55,3 +55,26 @@
   outline-offset: -1.5px ;
   border-radius:  var(--radius-sm) ;
 }
+
+.tabButton.disabled {
+  opacity: 0.45 ;
+  cursor:  not-allowed ;
+}
+
+.tabButton.disabled:hover {
+  color: var(--text-muted) ;
+}
+
+.badge {
+  display:          inline-block ;
+  font-size:        var(--fs-2xs) ;
+  font-weight:      600 ;
+  letter-spacing:   0.03em ;
+  text-transform:   uppercase ;
+  background-color: var(--bg-inset) ;
+  color:            var(--text-muted) ;
+  border-radius:    var(--radius-xs) ;
+  padding:          0.125rem 0.375rem ;
+  margin-left:      0.5rem ;
+  border:           1px solid var(--border-subtle) ;
+}

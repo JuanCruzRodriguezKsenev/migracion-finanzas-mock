@@ -12,8 +12,10 @@ import styles from "./Tabs.module.css" ;
 
 
 export interface TabItem {
-  key:   string ;
-  label: string ;
+  key:       string ;
+  label:     string ;
+  disabled?: boolean ;
+  badge?:    string ;
 }
 
 export interface TabsProps {
@@ -42,10 +44,17 @@ export function Tabs( {
               key={tab.key}
               role="tab"
               aria-selected={isActive}
-              className={ `${styles.tabButton} ${isActive ? styles.active : ""}` }
-              onClick={ () => onChange( tab.key ) }
+              aria-disabled={tab.disabled}
+              disabled={tab.disabled}
+              className={ `${styles.tabButton} ${isActive ? styles.active : ""} ${tab.disabled ? styles.disabled : ""}` }
+              onClick={ () => {
+                if( !tab.disabled ) {
+                  onChange( tab.key ) ;
+                }
+              } }
             >
               {tab.label}
+              {tab.badge && <span className={styles.badge}>{tab.badge}</span>}
             </button>
           ) ;
         } )}

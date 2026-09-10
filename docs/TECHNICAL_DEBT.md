@@ -62,6 +62,12 @@ Este documento registra los puntos de deuda técnica del repositorio, distinguie
 *   [x] **Nadie agrupa por `categoryId` en toda la aplicación:** La categoría es ahora la cuenta contable de resultado; los saldos quedan materializados en `accounts.balance` vinculados a través de `category_accounts`.
 *   [x] **El usuario no puede crear categorías:** Implementación completa de Server Actions (`createCategoryAction`, `updateCategoryAction`, `archiveCategoryAction`, `unarchiveCategoryAction`, `getCategoryTreeAction`), repositorio `categoryRepository` y generador correlativo `getNextCategoryCode` con reserva de la hoja `General` (`.99`), soporte de mudanza automática R3 y protección de borrado mediante archivo lógico (R4).
 
+### Gestión de Categorías y Selector Jerárquico (RFC 022 — Segunda Tajada)
+*   [x] **Selector de categorías jerárquico y alta al vuelo:** `TransactionFormModal` migrado de un `<select>` plano a un selector jerárquico `<optgroup>` filtrado por tipo contable (`expense`/`revenue`), sin hojas `isSystemLeaf` expuestas y con formulario inline de alta rápida que autoselecciona la categoría creada.
+*   [x] **Pantalla de gestión de categorías en `/settings`:** Pestaña inicial de Configuración con layout de dos columnas (padres a la izquierda con contador de subcategorías, ficha a la derecha con color e ícono a la vista), navegación accesible, exclusión de códigos contables y confirmación informada de archivado por cantidad de movimientos históricos en el libro mayor (`countByCategories`).
+*   [x] **`subscriptions.category` migrado a `categoryId`:** Migración `0024_remarkable_stepford_cuckoos.sql` con agregado de `category_id uuid references categories(id) on delete set null`, backfill automático de los 7 valores canónicos a subcategorías del catálogo (`5.1.09.01` a `5.1.09.06` y `5.1.09.99` para general/other) y eliminación de la columna obsoleta `category`. Actualización de esquema Zod, modal de alta `AddSubscriptionModal` y tests de repositorio.
+*   [x] **Navegación completa a `/settings` y `/cards`:** Integración de enlaces de navegación en `Navbar` y `BottomNav`.
+
 ## § Abierto (Pendiente de Refactorización)
 
 ### 1. Visualización y Gráficos
@@ -75,16 +81,13 @@ Este documento registra los puntos de deuda técnica del repositorio, distinguie
 *   [ ] **Intereses y comisiones de tarjetas sin devengar periódicamente:** Las columnas `interestRateFinancing`, `monthlyMaintenanceFee` y `annualRenewalFee` están modeladas en la tabla `cards`, pero ningún proceso automático las devenga contablemente en la fecha de cierre. Su devengamiento periódico depende de los crons y workers de fondo de la Fase 3.
 *   [ ] **Disponible de tarjetas de crédito no descuenta cuotas futuras pendientes:** El cálculo de disponible para compras (`Disponible = Límite − Deuda total`) no descuenta el saldo remanente de compras en cuotas hasta que se implemente el modelo relacional de cuotas (`installmentPlans`, RFC 008).
 
-
-
 ### 3. Preferencias de Usuario y Perfil
 *   [ ] **El catálogo de `preferences.ts` no tiene consumidor de producción:** los códigos canónicos (ISO 4217, IANA, BCP 47) que la migración `0021` dejó en `profiles` sólo los usan los tests. La causa es que **no existe la ruta de edición del perfil**, que quedó fuera del alcance de la ronda de preferencias canónicas (2026-09-08) a propósito. Comprometido para una ronda propia; por la convención de rutas de `ARCHITECTURE.md` §4 la ruta se llama **`/profile`**, no `/perfil`.
 *   [ ] **`roundAmounts` se persiste pero nadie lo lee:** la preferencia existe en la tabla y en el catálogo, y ningún formateador la consulta. Mismo origen que el punto anterior: sin pantalla de edición no se cerró el circuito.
 *   [ ] **`formatCurrency` no valida el locale que recibe:** `src/shared/lib/currencyFormatter.ts` pasa el locale directo a `Intl` sin protegerlo contra un valor heredado que no sea BCP 47. Las filas viejas se migraron con el `UPDATE` de la `0021`, pero una fila que escape a ese backfill —o un valor escrito por fuera de la acción— haría lanzar a `Intl` en tiempo de render. Falta un `try/catch` con fallback al locale por defecto y su test.
 
 ### 4. Clasificación por Categoría (detectado el 2026-09-09)
-Items pendientes tras la primera tajada del RFC 022:
-*   [ ] **`subscriptions.category` no alimenta ninguna vista:** existe en el tipo, el esquema, la validación Zod y un selector de siete opciones en el modal de alta. Ni el treemap ni la tarjeta lo consumen. Pendiente de migrar a `categoryId` en la segunda tanda del RFC 022.
+Items pendientes tras el RFC 022:
 *   [ ] **`accounts` no tiene jerarquía real:** el árbol del plan de cuentas existe sólo como convención dentro del texto del código (`5.1.01.01`), sin `parentId` ni relación consultable.
 
 ### 6. Signo de los pasivos en `/accounts` (detectado el 2026-09-09)

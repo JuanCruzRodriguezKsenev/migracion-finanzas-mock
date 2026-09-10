@@ -155,6 +155,7 @@ async function main() {
     let ctaGastoSuper!:     Account ;
     let ctaGastoServicios!: Account ;
     let ctaGastoAlquiler!:  Account ;
+    const subCatByCode = new Map< string , string >() ;
 
     for( const catDef of INITIAL_CATEGORIES_CATALOG ) {
       const [ parentCat ] = await db
@@ -202,6 +203,8 @@ async function main() {
             isSystemLeaf:   false ,
           } )
           .returning() ;
+
+        subCatByCode.set( subDef.code , subCat.id ) ;
 
         const [ subAcc ] = await db
           .insert( accounts )
@@ -595,14 +598,14 @@ async function main() {
     const proximoCobro        = new Date( ahora.getFullYear() , ahora.getMonth() + 1 , 5 , 9 , 0 ) ;
 
     await db.insert( subscriptions ).values( [
-      { organizationId: org.id , name: "Netflix"              , amount: 1599000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/netflix.com" , color: "#E50914" , category: "entertainment" } ,
-      { organizationId: org.id , name: "Spotify"              , amount: 649900  , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/spotify.com" , color: "#1DB954" , category: "entertainment" } ,
-      { organizationId: org.id , name: "ChatGPT Plus"         , amount: 2000000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/openai.com"  , color: "#10A37F" , category: "productivity"  } ,
-      { organizationId: org.id , name: "Adobe Creative Cloud" , amount: 5499000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/adobe.com"   , color: "#FF0000" , category: "design"        } ,
-      { organizationId: org.id , name: "Gimnasio"             , amount: 3500000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "gym"                                   , color: "#DBEAFE" , category: "fitness"       } ,
-      { organizationId: org.id , name: "iCloud+"              , amount: 129900  , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/apple.com"   , color: "#000000" , category: "storage"       } ,
-      { organizationId: org.id , name: "NordVPN"              , amount: 4800000 , frequency: "yearly"  , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/nordvpn.com" , color: "#4687FF" , category: "security"      } ,
-      { organizationId: org.id , name: "Figma"                , amount: 1200000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/figma.com"   , color: "#F24E1E" , category: "design"        }
+      { organizationId: org.id , name: "Netflix"              , amount: 1599000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/netflix.com" , color: "#E50914" , categoryId: ( subCatByCode.get( "5.1.09.01" ) ?? null ) } ,
+      { organizationId: org.id , name: "Spotify"              , amount: 649900  , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/spotify.com" , color: "#1DB954" , categoryId: ( subCatByCode.get( "5.1.09.01" ) ?? null ) } ,
+      { organizationId: org.id , name: "ChatGPT Plus"         , amount: 2000000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/openai.com"  , color: "#10A37F" , categoryId: ( subCatByCode.get( "5.1.09.02" ) ?? null ) } ,
+      { organizationId: org.id , name: "Adobe Creative Cloud" , amount: 5499000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/adobe.com"   , color: "#FF0000" , categoryId: ( subCatByCode.get( "5.1.09.03" ) ?? null ) } ,
+      { organizationId: org.id , name: "Gimnasio"             , amount: 3500000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "gym"                                   , color: "#DBEAFE" , categoryId: ( subCatByCode.get( "5.1.09.04" ) ?? null ) } ,
+      { organizationId: org.id , name: "iCloud+"              , amount: 129900  , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/apple.com"   , color: "#000000" , categoryId: ( subCatByCode.get( "5.1.09.06" ) ?? null ) } ,
+      { organizationId: org.id , name: "NordVPN"              , amount: 4800000 , frequency: "yearly"  , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/nordvpn.com" , color: "#4687FF" , categoryId: ( subCatByCode.get( "5.1.09.05" ) ?? null ) } ,
+      { organizationId: org.id , name: "Figma"                , amount: 1200000 , frequency: "monthly" , startDate: inicioSuscripciones , nextPaymentDate: proximoCobro , logoKey: "https://logo.clearbit.com/figma.com"   , color: "#F24E1E" , categoryId: ( subCatByCode.get( "5.1.09.03" ) ?? null ) } ,
     ] ) ;
 
     console.log( "Suscripciones demo sembradas con éxito." ) ;

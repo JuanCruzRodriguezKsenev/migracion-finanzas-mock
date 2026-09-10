@@ -24,6 +24,7 @@ import {
   UnarchiveCategoryInput
 } from "../schemas/category.schema" ;
 import { categoryRepository , CategoryTreeNode } from "../repositories/categoryRepository" ;
+import { ledgerRepository }                       from "../repositories/ledgerRepository" ;
 import { getNextCategoryCode }                   from "../utils/categoryCodes" ;
 import { Category }                              from "../types" ;
 
@@ -252,3 +253,39 @@ export async function getCategoryTreeAction(
     return( fail("Error al consultar el árbol de categorías.") ) ;
   }
 }
+
+/**
+ * Obtiene la cantidad de movimientos contables imputados a una categoría y a sus subcategorías.
+ * Informa el impacto real antes de archivar (Paso 6).
+ *
+ * @param categoryId - ID de la categoría a consultar.
+ * @returns Result con la cantidad de movimientos.
+ */
+export async function getCategoryMovementsCountAction(
+  categoryId: string
+): Promise< Result< number , string > > {
+  const session = await getServerSession( authOptions ) ;
+
+  if( !session?.user?.organizationId ) {
+    return( fail("No autorizado para consultar movimientos de categorías.") ) ;
+  }
+
+  const organizationId = session.user.organizationId ;
+
+  try {
+    const category = await categoryRepository.findById( categoryId , organizationId ) ;
+    if( !category ) {
+      return( fail("Categoría no encontrada.") ) ;
+    }
+
+    const children = await categoryRepository.findChildren( categoryId , organizationId ) ;
+    const allIds   = [ categoryId , ...children.map( ( c ) => c.id ) ] ;
+
+    const count = await ledgerRepository.countByCategories( allIds , organizationId ) ;
+    return( ok(count) ) ;
+  } catch( error ) {
+    logger.error( "Error en getCategoryMovementsCountAction:" , {error: String(error)} ) ;
+    return( fail("Error al consultar los movimientos de la categoría.") ) ;
+  }
+}
+

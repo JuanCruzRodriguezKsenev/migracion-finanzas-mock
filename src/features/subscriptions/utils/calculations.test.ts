@@ -25,7 +25,7 @@ function makeSubscription( overrides: Partial<Subscription> ): Subscription {
     status:          "active" ,
     logoKey:         "default" ,
     color:           "#EEF2FF" ,
-    category:        "other" ,
+    categoryId:      null ,
     createdAt:       now ,
     updatedAt:       now ,
     ...overrides ,

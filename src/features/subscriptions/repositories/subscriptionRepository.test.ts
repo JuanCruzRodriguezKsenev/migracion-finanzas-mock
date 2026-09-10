@@ -8,7 +8,7 @@ import { db } from "@/shared/db/client" ;
 import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
-import { accounts , categoryAccounts , ledgerEntries , ledgerTransactions , monthlySummaries , idempotencyKeys , outboxEvents } from "@/features/accounting/schema.db" ;
+import { accounts , categories , categoryAccounts , ledgerEntries , ledgerTransactions , monthlySummaries , idempotencyKeys , outboxEvents } from "@/features/accounting/schema.db" ;
 
 // Feature: Subscriptions
 import { subscriptionRepository } from "./subscriptionRepository" ;
@@ -31,6 +31,7 @@ describe( "subscriptionRepository" , () => {
     await db.delete( ledgerTransactions ) ;
     await db.delete( monthlySummaries ) ;
     await db.delete( categoryAccounts ) ;
+    await db.delete( categories ) ;
     await db.delete( accounts ) ;
     await db.delete( organizations ) ;
   } ;
@@ -123,5 +124,81 @@ describe( "subscriptionRepository" , () => {
 
     const listado = await subscriptionRepository.findAll( orgId ) ;
     expect( listado.length ).toBe( 0 ) ;
+  } ) ;
+
+  it( "debería persistir y vincular la suscripción con una categoría contable (RFC 022)" , async () => {
+    const [ cat ] = await db
+      .insert( categories )
+      .values( {
+        organizationId: orgId ,
+        name:           "Entretenimiento" ,
+        type:           "expense" ,
+        accountCode:    "5.1.09.01" ,
+      } )
+      .returning() ;
+
+    const creada = await subscriptionRepository.create( {
+      ...baseData() ,
+      categoryId: cat.id ,
+    } ) ;
+
+    expect( creada.categoryId ).toBe( cat.id ) ;
+
+    const recuperada = await subscriptionRepository.findById( creada.id , orgId ) ;
+    expect( recuperada?.categoryId ).toBe( cat.id ) ;
+  } ) ;
+
+  it( "debería asociar las categorías contables esperadas según los códigos del catálogo (backfill RFC 022)" , async () => {
+    // Padre 5.1.09
+    const [ parentCat ] = await db
+      .insert( categories )
+      .values( {
+        organizationId: orgId ,
+        name:           "Suscripciones y servicios digitales" ,
+        type:           "expense" ,
+        accountCode:    "5.1.09" ,
+      } )
+      .returning() ;
+
+    // Hojas
+    const [ entCat ] = await db
+      .insert( categories )
+      .values( {
+        organizationId: orgId ,
+        parentId:       parentCat.id ,
+        name:           "Entretenimiento" ,
+        type:           "expense" ,
+        accountCode:    "5.1.09.01" ,
+      } )
+      .returning() ;
+
+    const [ genCat ] = await db
+      .insert( categories )
+      .values( {
+        organizationId: orgId ,
+        parentId:       parentCat.id ,
+        name:           "General" ,
+        type:           "expense" ,
+        accountCode:    "5.1.09.99" ,
+        isSystemLeaf:   true ,
+      } )
+      .returning() ;
+
+    // Suscripción con entretenimiento
+    const subEnt = await subscriptionRepository.create( {
+      ...baseData() ,
+      name:       "Spotify" ,
+      categoryId: entCat.id ,
+    } ) ;
+
+    // Suscripción con hoja general (other / Sin detallar)
+    const subOther = await subscriptionRepository.create( {
+      ...baseData() ,
+      name:       "Servicio Raro" ,
+      categoryId: genCat.id ,
+    } ) ;
+
+    expect( subEnt.categoryId ).toBe( entCat.id ) ;
+    expect( subOther.categoryId ).toBe( genCat.id ) ;
   } ) ;
 } ) ;

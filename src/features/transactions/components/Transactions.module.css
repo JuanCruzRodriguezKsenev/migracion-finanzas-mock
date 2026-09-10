@@ -339,3 +339,38 @@
     background-color: var(--bg-inset) ;
     color:            var(--text-muted) ;
 }
+
+/* ── Alta rápida de categoría en modal (Paso 3) ─────────────────── */
+.quickCategoryBox {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem);
+  padding: clamp(0.75rem, 0.6rem + 0.4vw, 1rem);
+  background-color: var(--bg-inset);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.quickCategoryTitle {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.quickCategoryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(7.5rem, 6rem + 5vw, 12rem), 1fr));
+  gap: 0.75rem;
+}
+
+.quickCategoryActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}

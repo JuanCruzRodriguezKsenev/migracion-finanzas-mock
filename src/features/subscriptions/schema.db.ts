@@ -8,7 +8,7 @@
 import { pgTable , uuid , varchar , integer , bigint , boolean , timestamp , text } from "drizzle-orm/pg-core" ;
 
 // Feature: Accounting
-import { accounts } from "@/features/accounting/schema.db" ;
+import { accounts , categories } from "@/features/accounting/schema.db" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -16,8 +16,8 @@ import { organizations } from "@/features/auth/schema.db" ;
 
 /**
  * Esquema de la tabla de Suscripciones Recurrentes.
- * Extensión visual respecto al RFC 004: logoKey, color y category alimentan el
- * dashboard de treemap; currency default "ARS" por coherencia con `accounts`.
+ * Extensión visual respecto al RFC 004: logoKey y color alimentan el dashboard
+ * de treemap; categoryId vincula al árbol de categorías contables (RFC 022).
  */
 export const subscriptions = pgTable( "subscriptions" , {
   id:              uuid( "id"              ).primaryKey().defaultRandom() ,
@@ -45,7 +45,9 @@ export const subscriptions = pgTable( "subscriptions" , {
   // Presentación (extensión visual del RFC 004 para el dashboard de treemap)
   logoKey:         varchar( "logo_key" , {length: 500} ).default( "default" ).notNull() ,
   color:           varchar( "color"    , {length: 7  } ).default( "#EEF2FF" ).notNull() ,
-  category:        varchar( "category" , {length: 30 } ).default( "other" ).notNull() , // 'design' | 'productivity' | 'entertainment' | 'fitness' | 'security' | 'storage' | 'other'
+
+  // Categoría contable asociada (RFC 022)
+  categoryId:      uuid( "category_id" ).references( () => categories.id , {onDelete: "set null"} ) ,
 
   createdAt:       timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
   updatedAt:       timestamp( "updated_at" , {withTimezone: true} ).defaultNow().notNull() ,

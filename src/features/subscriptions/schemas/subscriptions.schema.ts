@@ -15,11 +15,9 @@ export const createSubscriptionSchema = z.object( {
   frequency: z.enum( [ "weekly" , "monthly" , "quarterly" , "yearly" , "custom" ] , {
     error: "La frecuencia debe ser weekly, monthly, quarterly, yearly o custom." ,
   } ) ,
-  logoKey:   z.string().min( 1 ).max( 500 ) ,
-  color:     z.string().regex( /^#[0-9A-Fa-f]{6}$/ , "El color debe ser un hexadecimal válido (#RRGGBB)." ) ,
-  category:  z.enum( [ "design" , "productivity" , "entertainment" , "fitness" , "security" , "storage" , "other" ] , {
-    error: "Categoría de suscripción no reconocida." ,
-  } ) ,
+  logoKey:    z.string().min( 1 ).max( 500 ) ,
+  color:      z.string().regex( /^#[0-9A-Fa-f]{6}$/ , "El color debe ser un hexadecimal válido (#RRGGBB)." ) ,
+  categoryId: z.string().uuid( "El ID de categoría debe ser un UUID válido." ).optional().nullable() ,
 } ) ;
 
 /**

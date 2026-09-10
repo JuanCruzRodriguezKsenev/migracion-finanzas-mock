@@ -8,10 +8,11 @@ import styles from "./page.module.css" ;
 
 // Feature: Accounting
 import { getAccountsAction , getFinancialEntitiesAction } from "@/features/accounting/actions/accountingActions" ;
+import { getCategoryTreeAction }                         from "@/features/accounting/actions/categoryActions" ;
 
 // Feature: Transactions
-import { getTransactionsPageAction , getCategoriesAction } from "@/features/transactions/actions/transactionsActions" ;
-import { TransactionsContainer }                            from "@/features/transactions/components/TransactionsContainer" ;
+import { getTransactionsPageAction } from "@/features/transactions/actions/transactionsActions" ;
+import { TransactionsContainer }     from "@/features/transactions/components/TransactionsContainer" ;
 
 
 interface TransactionsPageProps {
@@ -37,9 +38,9 @@ export default async function TransactionsPage( {params , searchParams}: Transac
   }
 
   // Carga concurrente en el servidor
-  const [ accountsRes , categoriesRes , entitiesRes , transactionsPageRes ] = await Promise.all( [
+  const [ accountsRes , categoryTreeRes , entitiesRes , transactionsPageRes ] = await Promise.all( [
     getAccountsAction() ,
-    getCategoriesAction() ,
+    getCategoryTreeAction() ,
     getFinancialEntitiesAction() ,
     getTransactionsPageAction( {
       limit: 20 ,
@@ -49,7 +50,8 @@ export default async function TransactionsPage( {params , searchParams}: Transac
   ] ) ;
 
   const accounts            = ( accountsRes.success         ? accountsRes.value                   : [] ) ;
-  const categories          = ( categoriesRes.success       ? categoriesRes.value                 : [] ) ;
+  const categoryTree        = ( categoryTreeRes.success     ? categoryTreeRes.value               : [] ) ;
+  const categories          = categoryTree.flatMap( ( c ) => [ c , ...c.children ] ) ;
   const financialEntities   = ( entitiesRes.success         ? entitiesRes.value                   : [] ) ;
   const initialTransactions = ( transactionsPageRes.success ? transactionsPageRes.value.items      : [] ) ;
   const initialNextCursor   = ( transactionsPageRes.success ? transactionsPageRes.value.nextCursor : null ) ;
@@ -63,6 +65,7 @@ export default async function TransactionsPage( {params , searchParams}: Transac
         initialHasMore={initialHasMore}
         accounts={accounts}
         categories={categories}
+        categoryTree={categoryTree}
         financialEntities={financialEntities}
         lang={lang}
       />

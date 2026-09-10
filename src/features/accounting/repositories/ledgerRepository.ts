@@ -401,4 +401,34 @@ export const ledgerRepository = {
       credit: Number( result?.credit || 0 ) ,
     } ) ;
   } ,
+
+  /**
+   * Cuenta la cantidad de transacciones vinculadas a una lista de categorías en una organización.
+   * 
+   * @param categoryIds - Array de identificadores de categoría.
+   * @param organizationId - ID de la organización.
+   * @param tx - Instancia de transacción opcional.
+   * @returns Cantidad de transacciones encontradas.
+   */
+  async countByCategories(
+    categoryIds:    string[] ,
+    organizationId: string ,
+    tx:             DBOrTx = db
+  ): Promise< number > {
+    if( categoryIds.length === 0 ) {
+      return( 0 ) ;
+    }
+
+    const [ result ] = await tx
+      .select( { count: sql< number >`count(*)::int` } )
+      .from( ledgerTransactions )
+      .where(
+        and(
+          eq( ledgerTransactions.organizationId , organizationId ) ,
+          inArray( ledgerTransactions.categoryId , categoryIds ) ,
+        )
+      ) ;
+
+    return( result?.count ?? 0 ) ;
+  } ,
 } ;

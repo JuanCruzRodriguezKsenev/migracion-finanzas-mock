@@ -12,6 +12,13 @@ import { categories , accounts , ledgerTransactions , ledgerEntries , monthlySum
 export type Category       = InferSelectModel< typeof categories > ;
 export type InsertCategory = InferInsertModel< typeof categories > ;
 
+/**
+ * Nodo del árbol de categorías contables con sus hijas anidadas (RFC 022).
+ */
+export interface CategoryTreeNode extends Category {
+  children: Category[] ;
+}
+
 export type CategoryAccount       = InferSelectModel< typeof categoryAccounts > ;
 export type InsertCategoryAccount = InferInsertModel< typeof categoryAccounts > ;
 

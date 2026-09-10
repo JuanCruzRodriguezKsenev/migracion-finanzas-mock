@@ -10,7 +10,15 @@ import { useParams , usePathname } from "next/navigation" ;
 import Link from "next/link" ;
 
 // Shared
-import { IconDashboard , IconAccounts , IconRepeat , IconContacts , IconMenu } from "@/shared/ui/display/Icons/Icons" ;
+import {
+  IconDashboard ,
+  IconAccounts ,
+  IconCreditCard ,
+  IconRepeat ,
+  IconContacts ,
+  IconSettings ,
+  IconMenu
+} from "@/shared/ui/display/Icons/Icons" ;
 import styles from "./BottomNav.module.css" ;
 
 interface BottomNavProps {
@@ -20,6 +28,8 @@ interface BottomNavProps {
     accounts:      string ;
     subscriptions: string ;
     contacts?:     string ;
+    cards?:        string ;
+    settings?:     string ;
   } ;
 }
 
@@ -36,8 +46,10 @@ export function BottomNav( {dict , onMenuClick}: BottomNavProps ) {
   // Determinar ruta activa
   const isDashboardActive     = ( pathname === `/${lang}` ) ;
   const isAccountsActive      = ( pathname.includes("/accounts") ) ;
+  const isCardsActive         = ( pathname.includes("/cards") ) ;
   const isSubscriptionsActive = ( pathname.includes("/subscriptions") ) ;
   const isContactsActive      = ( pathname.includes("/contacts") ) ;
+  const isSettingsActive      = ( pathname.includes("/settings") ) ;
 
   return(
     <nav className={styles.bottomNav}>
@@ -58,6 +70,14 @@ export function BottomNav( {dict , onMenuClick}: BottomNavProps ) {
       </Link>
 
       <Link
+        href={ `/${lang}/cards` }
+        className={ `${styles.bottomNavLink} ${isCardsActive ? styles.active : ""}` }
+      >
+        <IconCreditCard size={20} />
+        <span>{dict.cards || "Tarjetas"}</span>
+      </Link>
+
+      <Link
         href={ `/${lang}/subscriptions` }
         className={ `${styles.bottomNavLink} ${isSubscriptionsActive ? styles.active : ""}` }
       >
@@ -71,6 +91,14 @@ export function BottomNav( {dict , onMenuClick}: BottomNavProps ) {
       >
         <IconContacts size={20} />
         <span>{dict.contacts || "Contactos"}</span>
+      </Link>
+
+      <Link
+        href={ `/${lang}/settings` }
+        className={ `${styles.bottomNavLink} ${isSettingsActive ? styles.active : ""}` }
+      >
+        <IconSettings size={20} />
+        <span>{dict.settings || "Ajustes"}</span>
       </Link>
 
       <button className={styles.bottomNavLink} onClick={onMenuClick}>

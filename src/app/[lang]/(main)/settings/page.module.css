@@ -1,0 +1,5 @@
+.container {
+  width:     100% ;
+  max-width: clamp(60rem, 50rem + 25vw, 85rem) ;
+  margin:    0 auto ;
+}

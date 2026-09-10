@@ -5,17 +5,21 @@
 "use client" ;
 
 // Librerías externas
-import React , { useState , useTransition } from "react" ;
+import React , { useState , useMemo , useTransition } from "react" ;
 
 // Shared
-import { Modal }       from "@/shared/ui/feedback/Modal/Modal" ;
-import { FormInput }   from "@/shared/ui/forms/Form/FormInput" ;
-import { FormSelect }  from "@/shared/ui/forms/Form/FormSelect" ;
-import { FormError }   from "@/shared/ui/forms/Form/FormError" ;
 import { FormActions } from "@/shared/ui/forms/Form/FormActions" ;
+import { FormSelect }  from "@/shared/ui/forms/Form/FormSelect" ;
+import { FormInput }   from "@/shared/ui/forms/Form/FormInput" ;
+import { FormError }   from "@/shared/ui/forms/Form/FormError" ;
+import { Button }      from "@/shared/ui/display/Button/Button" ;
+import { Modal }       from "@/shared/ui/feedback/Modal/Modal" ;
 
 // Feature: Accounting
-import { Account , Category } from "@/features/accounting/types" ;
+import { CategoryTreeNode }     from "@/features/accounting/types" ;
+import { createCategoryAction } from "@/features/accounting/actions/categoryActions" ;
+import { iconoDeCategoria }     from "@/features/accounting/utils/categoryIcons" ;
+import { Account , Category }   from "@/features/accounting/types" ;
 
 // Feature: Transactions
 import { createTransactionFromFormAction } from "../actions/transactionsActions" ;
@@ -24,11 +28,36 @@ import styles                              from "./Transactions.module.css" ;
 
 
 interface TransactionFormModalProps {
-  isOpen:     boolean ;
-  onClose:    () => void ;
-  onSuccess:  () => void ;
-  accounts:   Account[] ;
-  categories: Category[] ;
+  isOpen:        boolean ;
+  onClose:       () => void ;
+  onSuccess:     () => void ;
+  accounts:      Account[] ;
+  categories?:   Category[] ;
+  categoryTree?: CategoryTreeNode[] ;
+}
+
+/**
+ * Reconstruye la estructura arbórea cuando sólo se dispone de una lista plana de categorías.
+ */
+function buildTreeFromFlatCategories( flat: Category[] ): CategoryTreeNode[] {
+  const parents:     CategoryTreeNode[]        = [] ;
+  const childrenMap: Map< string , Category[] > = new Map() ;
+
+  for( const cat of flat ) {
+    if( !cat.parentId ) {
+      parents.push( { ...cat , children: [] } ) ;
+    } else {
+      const list = ( childrenMap.get( cat.parentId ) || [] ) ;
+      list.push( cat ) ;
+      childrenMap.set( cat.parentId , list ) ;
+    }
+  }
+
+  for( const p of parents ) {
+    p.children = ( childrenMap.get( p.id ) || [] ) ;
+  }
+
+  return( parents ) ;
 }
 
 export function TransactionFormModal( {
@@ -37,8 +66,10 @@ export function TransactionFormModal( {
   onSuccess ,
   accounts ,
   categories ,
+  categoryTree ,
 }: TransactionFormModalProps ) {
-  const [ isPending , startTransition ] = useTransition() ;
+  const [ isPending , startTransition ]                           = useTransition() ;
+  const [ isQuickCategoryPending , startQuickCategoryTransition ] = useTransition() ;
 
   const todayStr = new Date().toISOString().slice( 0 , 10 ) ;
 
@@ -53,6 +84,23 @@ export function TransactionFormModal( {
   const [ merchantName , setMerchantName ]                 = useState( "" ) ;
   const [ occurredAt , setOccurredAt ]                     = useState( todayStr ) ;
   const [ errorMessage , setErrorMessage ]                 = useState( "" ) ;
+
+  // Estado para creación de categorías al vuelo (Paso 3)
+  const [ isCreatingCategory , setIsCreatingCategory ]       = useState( false ) ;
+  const [ quickCategoryName , setQuickCategoryName ]         = useState( "" ) ;
+  const [ quickCategoryParentId , setQuickCategoryParentId ] = useState( "" ) ;
+  const [ quickCategoryIcon , setQuickCategoryIcon ]         = useState( "" ) ;
+  const [ quickCategoryColor , setQuickCategoryColor ]       = useState( "" ) ;
+  const [ quickCategoryError , setQuickCategoryError ]       = useState( "" ) ;
+
+  const baseTree = useMemo( () => {
+    return( (categoryTree && (categoryTree.length > 0))
+      ? categoryTree
+      : ( categories ? buildTreeFromFlatCategories( categories ) : [] ) ) ;
+  } , [ categoryTree , categories ] ) ;
+
+  const [ customTree , setCustomTree ] = useState< CategoryTreeNode[] | null >( null ) ;
+  const tree = ( customTree ?? baseTree ) ;
 
   // Filtrar cuentas de pago/cobro (Activos y Pasivos como tarjetas)
   const liquidityAccounts = accounts.filter( ( a ) => ( (a.type === "asset") || (a.type === "liability") ) ) ;
@@ -73,6 +121,13 @@ export function TransactionFormModal( {
     setOccurredAt( todayStr ) ;
     setErrorMessage( "" ) ;
     setType( "expense" ) ;
+    setIsCreatingCategory( false ) ;
+    setQuickCategoryName( "" ) ;
+    setQuickCategoryParentId( "" ) ;
+    setQuickCategoryIcon( "" ) ;
+    setQuickCategoryColor( "" ) ;
+    setQuickCategoryError( "" ) ;
+    setCustomTree( null ) ;
   } ;
 
   const handleSourceAccountChange = ( id: string ) => {
@@ -81,6 +136,55 @@ export function TransactionFormModal( {
     if( acc?.currency ) {
       setCurrency( acc.currency ) ;
     }
+  } ;
+
+  const handleCreateQuickCategory = () => {
+    if( !quickCategoryName.trim() ) {
+      setQuickCategoryError( "Ingresá un nombre para la categoría." ) ;
+      return ;
+    }
+
+    startQuickCategoryTransition( async () => {
+      const res = await createCategoryAction( {
+        name:     quickCategoryName.trim() ,
+        type:     ( (type === "income") ? "revenue" : "expense" ) ,
+        parentId: ( quickCategoryParentId ? quickCategoryParentId : undefined ) ,
+        icon:     ( quickCategoryIcon.trim() || undefined ) ,
+        color:    ( quickCategoryColor.trim() || undefined ) ,
+      } ) ;
+
+      if( !res.success ) {
+        setQuickCategoryError( res.error ) ;
+        return ;
+      }
+
+      const created = res.value ;
+
+      setCustomTree( ( prevTree ) => {
+        const current = ( prevTree ?? baseTree ) ;
+        if( created.parentId ) {
+          return( current.map( ( p ) => {
+            if( p.id === created.parentId ) {
+              return( {
+                ...p ,
+                children: [ ...p.children , created ] ,
+              } ) ;
+            }
+            return( p ) ;
+          } ) ) ;
+        } else {
+          return( [ ...current , { ...created , children: [] } ] ) ;
+        }
+      } ) ;
+
+      setCategoryId( created.id ) ;
+      setIsCreatingCategory( false ) ;
+      setQuickCategoryName( "" ) ;
+      setQuickCategoryParentId( "" ) ;
+      setQuickCategoryIcon( "" ) ;
+      setQuickCategoryColor( "" ) ;
+      setQuickCategoryError( "" ) ;
+    } ) ;
   } ;
 
   const handleSubmit = ( e: React.FormEvent ) => {
@@ -154,6 +258,9 @@ export function TransactionFormModal( {
     } ) ;
   } ;
 
+  const targetCategoryType = ( (type === "income") ? "revenue" : "expense" ) ;
+  const currentTypeTree    = tree.filter( ( p ) => ( (p.type === targetCategoryType) && (!p.isSystemLeaf) ) ) ;
+
   return(
     <Modal
       isOpen={isOpen}
@@ -168,28 +275,34 @@ export function TransactionFormModal( {
           <button
             type="button"
             className={ `${styles.typeTabBtn} ${type === "expense" ? styles.typeTabBtnActive : ""}` }
-            onClick={ () => setType("expense") }
+            onClick={ () => {
+              setType( "expense" ) ;
+              setCategoryId( "" ) ;
+            } }
           >
             Gasto
           </button>
           <button
             type="button"
             className={ `${styles.typeTabBtn} ${type === "income" ? styles.typeTabBtnActive : ""}` }
-            onClick={ () => setType("income") }
+            onClick={ () => {
+              setType( "income" ) ;
+              setCategoryId( "" ) ;
+            } }
           >
             Ingreso
           </button>
           <button
             type="button"
             className={ `${styles.typeTabBtn} ${type === "transfer" ? styles.typeTabBtnActive : ""}` }
-            onClick={ () => setType("transfer") }
+            onClick={ () => setType( "transfer" ) }
           >
             Transferencia
           </button>
           <button
             type="button"
             className={ `${styles.typeTabBtn} ${type === "exchange" ? styles.typeTabBtnActive : ""}` }
-            onClick={ () => setType("exchange") }
+            onClick={ () => setType( "exchange" ) }
           >
             Cambio
           </button>
@@ -277,13 +390,106 @@ export function TransactionFormModal( {
             <FormSelect
               label="Categoría"
               value={categoryId}
-              onChange={ ( e ) => setCategoryId( e.target.value ) }
+              onChange={ ( e ) => {
+                if( e.target.value === "__NEW_CATEGORY__" ) {
+                  setIsCreatingCategory( true ) ;
+                  setQuickCategoryError( "" ) ;
+                } else {
+                  setCategoryId( e.target.value ) ;
+                }
+              } }
             >
-              <option value="">Sin categoría / General</option>
-              {categories.map( ( c ) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ) )}
+              <option value="">Sin detallar</option>
+              {currentTypeTree.map( ( parent ) => {
+                const visibleChildren = parent.children.filter( ( c ) => !c.isSystemLeaf ) ;
+                return(
+                  <optgroup
+                    key={parent.id}
+                    label={ `${iconoDeCategoria( parent.icon )} ${parent.name}` }
+                  >
+                    {visibleChildren.length > 0 ? (
+                      visibleChildren.map( ( child ) => (
+                        <option key={child.id} value={child.id}>
+                          {iconoDeCategoria( child.icon )} {child.name}
+                        </option>
+                      ) )
+                    ) : (
+                      <option value={parent.id}>
+                        {iconoDeCategoria( parent.icon )} {parent.name}
+                      </option>
+                    )}
+                  </optgroup>
+                ) ;
+              } )}
+              <option value="__NEW_CATEGORY__">＋ Crear categoría nueva</option>
             </FormSelect>
+
+            {isCreatingCategory && (
+              <div className={styles.quickCategoryBox}>
+                <h4 className={styles.quickCategoryTitle}>
+                  Nueva categoría de { (type === "income") ? "ingresos" : "gastos" }
+                </h4>
+
+                {quickCategoryError && <FormError error={quickCategoryError} />}
+
+                <FormInput
+                  label="Nombre"
+                  placeholder="Ej: Cursos, Mascotas, Software..."
+                  value={quickCategoryName}
+                  onChange={ ( e ) => setQuickCategoryName( e.target.value ) }
+                  required
+                />
+
+                <FormSelect
+                  label="Va dentro de"
+                  value={quickCategoryParentId}
+                  onChange={ ( e ) => setQuickCategoryParentId( e.target.value ) }
+                >
+                  <option value="">Que sea una categoría principal</option>
+                  {currentTypeTree.map( ( p ) => (
+                    <option key={p.id} value={p.id}>
+                      {iconoDeCategoria( p.icon )} {p.name}
+                    </option>
+                  ) )}
+                </FormSelect>
+
+                <div className={styles.quickCategoryGrid}>
+                  <FormInput
+                    label="Ícono (opcional)"
+                    placeholder="Ej: 📚 o book"
+                    value={quickCategoryIcon}
+                    onChange={ ( e ) => setQuickCategoryIcon( e.target.value ) }
+                  />
+                  <FormInput
+                    label="Color (hex opcional)"
+                    placeholder="#3498db"
+                    value={quickCategoryColor}
+                    onChange={ ( e ) => setQuickCategoryColor( e.target.value ) }
+                  />
+                </div>
+
+                <div className={styles.quickCategoryActions}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={ () => {
+                      setIsCreatingCategory( false ) ;
+                      setQuickCategoryError( "" ) ;
+                    } }
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    isLoading={isQuickCategoryPending}
+                    onClick={handleCreateQuickCategory}
+                  >
+                    Guardar categoría
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <FormInput
               label="Comercio o Entidad (opcional)"

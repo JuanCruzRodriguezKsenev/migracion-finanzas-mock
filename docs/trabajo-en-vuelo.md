@@ -12,42 +12,18 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `feat/clasificacion-unificada`, ejecutando el plan
-[`planes/clasificacion-unificada.md`](planes/clasificacion-unificada.md). Sale de `master` en `c980d93`.
+**Rama activa:** `feat/gestion-categorias`, ejecutando el plan
+[`planes/gestion-categorias.md`](planes/gestion-categorias.md). Rama encadenada sobre `feat/clasificacion-unificada`.
 
-**Estado:** 🟢 **Primera tajada completada (Backend e imputación contable).**
-Se implementó el núcleo contable del RFC 022:
-*   Esquema de base de datos (`categories` enriquecida con `type`, `account_code`, `archived_at`, `is_system_leaf` y `parentId` auto-referenciado; tabla puente `category_accounts` multidivisa).
-*   Migración `0023_amusing_omega_red.sql` con backfill limpio de categorías gemelas, adopción de cuentas `5.1.01.99` y `4.1.01.99` como hojas del sistema `General`, e índices/FKs estrictos.
-*   Generador correlativo de códigos `getNextCategoryCode` con soporte estricto de dos niveles, reserva de `.99` para hojas `General` y fallo explícito al superar 98 hermanos.
-*   Catálogo inicial del RFC 022 §10 (18 categorías y 42 subcategorías) sembrado por organización en `seed.ts`.
-*   Repositorio `categoryRepository` y Server Actions de categorías (`createCategoryAction`, `updateCategoryAction`, `archiveCategoryAction`, `unarchiveCategoryAction`, `getCategoryTreeAction`) con soporte de mudanza atómica R3 y archivo lógico R4.
-*   Imputación contable real por categoría en `createTransactionFromFormAction` con resolución bajo demanda por divisa (`findOrCreateAccountForCurrency`).
-*   Corrección del defecto D1 en `obtenerCuentaPorMoneda` (búsqueda por código exacto `${codigoBase}-${currency}`).
-*   Tests completos de unidad e integración (radio A, radio B, mudanza R3, borrado protegido R4, multidivisa R5, codificación y defecto D1).
-
-**Verificación independiente de la rama (2026-09-09, subagente `verificador`):** 48 archivos de test,
-**365 tests** (+17 sobre `master`), lint 0, `tsc --noEmit` 0 errores, build verde. `pnpm db:migrate` y
-`pnpm db:seed` corrieron limpios; en la base quedaron 67 categorías y 67 filas de `category_accounts`.
-**La rama pasaría la compuerta CI.** Falta mergear.
-
-**Rama en curso: `feat/gestion-categorias`**, encadenada sobre `feat/clasificacion-unificada`, con el
-plan [`planes/gestion-categorias.md`](planes/gestion-categorias.md) listo para ejecutar y sin código
-escrito todavía. La rama padre sigue **sin mergear a `master`**.
-
-**Layout decidido:** dos columnas —padres a la izquierda, ficha del padre seleccionado a la
-derecha—, **sin montos**: en Configuración no van. El código contable tampoco se muestra (RFC 022 §2).
-
-**Segunda tajada del RFC 022**, con el alcance ya decidido (ver §4bis del documento de diseño):
-
-1.  **Arreglar el selector de categorías** de `TransactionFormModal.tsx:277-286`, que quedó como un
-    `<select>` plano de **67 opciones** sin jerarquía: agrupar con `<optgroup>` por padre y sumar un
-    `+ Crear categoría` que llame a `createCategoryAction` sin salir del modal. **Es lo más urgente:
-    la pantalla está rota hoy**, y la rama del RFC 022 no tocó ese archivo.
-2.  **Pantalla de gestión del árbol**, como **pestaña de `/settings`** —no ruta propia, y `/settings`
-    nace con esa única pestaña—: árbol colapsable, alta, edición y archivado lógico.
-3.  Migración de `subscriptions.category` (reemplazo del `z.enum` de siete valores por relación a
-    `categoryId`).
+**Estado:** 🟢 **Segunda tajada completada (Gestión de categorías, selector jerárquico y migración de suscripciones).**
+Se completaron los 10 pasos del plan del RFC 022:
+*   **Mapeo de iconos (`categoryIcons.ts`):** Función `iconoDeCategoria` que mapea cada ícono del catálogo a su emoji representativo, con fallback estándar `📦`.
+*   **Selector jerárquico en `TransactionFormModal`:** Carga dinámica del árbol de categorías (`getCategoryTreeAction`), agrupación con `<optgroup>` por padre, exclusión estricta de hojas `isSystemLeaf`, filtro según tipo de transacción (`expense`/`revenue`), opción por defecto "Sin detallar" y formulario integrado de alta rápida sin abandonar el modal.
+*   **Página de gestión `/settings`:** Server Component con layout de dos columnas (`CategoriesSettingsContainer.tsx`), listado de padres con conteo de subcategorías, ficha derecha con muestra de color e ícono, alta de subcategorías, hoja `General` no mutable, modal de confirmación de archivado informando movimientos imputados en el libro mayor (`ledgerRepository.countByCategories`), y toggle de categorías archivadas.
+*   **Soporte de pestañas en `Tabs`:** Incorporación de propiedades `disabled` (para Perfil, Preferencias y Seguridad) y `badge`.
+*   **Navegación completa:** Enlaces a `/settings` (Configuración) y `/cards` (Tarjetas) integrados en `Navbar.tsx` y `BottomNav.tsx`.
+*   **Migración de suscripciones (0024):** Columna `category_id` vinculada por FK a `categories` (`onDelete: "set null"`), backfill atómico de los 7 valores a las subcategorías contables de *Suscripciones y servicios digitales* (`5.1.09.01`–`5.1.09.06` y `5.1.09.99` para general/other), y eliminación de la columna obsoleta `category`. Esquema Zod actualizado, `AddSubscriptionModal` con selector jerárquico dinámico, y `seed.ts` demo ajustado.
+*   **Batería de tests completa:** Tests unitarios e integración pasando (iconos, selector con optgroup y exclusión de system leaves, creación al vuelo, interacción en `/settings`, archivado en cascada informado, y persistencia de suscripciones).
 
 > **Enmienda al RFC 015 (2026-09-09):** no hay ruta `/profile`. El perfil pasa a ser otra pestaña de
 > `/settings`, por la duplicación que trae la referencia del mock. Anotada en el propio RFC.

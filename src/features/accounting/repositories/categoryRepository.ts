@@ -9,16 +9,10 @@ import { eq , and , asc , isNull , sql } from "drizzle-orm" ;
 import { db , DBOrTx } from "@/shared/db/client" ;
 
 // Feature: Accounting
-import { Category , InsertCategory , Account }                               from "../types" ;
+import { Category , InsertCategory , Account , CategoryTreeNode } from "../types" ;
 import { categories , accounts , categoryAccounts , ledgerEntries , ledgerTransactions } from "../schema.db" ;
 
-
-/**
- * Nodo del árbol de categorías contables con sus hijas anidadas.
- */
-export interface CategoryTreeNode extends Category {
-  children: Category[] ;
-}
+export type { CategoryTreeNode } ;
 
 /**
  * Repositorio de Categorías Contables.

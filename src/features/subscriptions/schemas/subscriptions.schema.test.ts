@@ -6,12 +6,12 @@ import { createSubscriptionSchema , updateSubscriptionSchema } from "./subscript
 
 
 const VALID_INPUT = {
-  name:      "Netflix" ,
-  amount:    1599000 ,
-  frequency: "monthly" ,
-  logoKey:   "https://logo.clearbit.com/netflix.com" ,
-  color:     "#E50914" ,
-  category:  "entertainment" ,
+  name:       "Netflix" ,
+  amount:     1599000 ,
+  frequency:  "monthly" ,
+  logoKey:    "https://logo.clearbit.com/netflix.com" ,
+  color:      "#E50914" ,
+  categoryId: "123e4567-e89b-12d3-a456-426614174000" ,
 } ;
 
 /**
@@ -45,8 +45,8 @@ describe( "subscriptions.schema" , () => {
       expect( createSubscriptionSchema.safeParse( {...VALID_INPUT , color: "#FFF"} ).success ).toBe( false ) ;
     } ) ;
 
-    it( "debería rechazar una categoría desconocida" , () => {
-      expect( createSubscriptionSchema.safeParse( {...VALID_INPUT , category: "gaming"} ).success ).toBe( false ) ;
+    it( "debería rechazar un identificador de categoría que no sea un UUID válido" , () => {
+      expect( createSubscriptionSchema.safeParse( {...VALID_INPUT , categoryId: "gaming-no-uuid"} ).success ).toBe( false ) ;
     } ) ;
   } ) ;
 

@@ -34,12 +34,12 @@ export type SubscriptionCategory =
  * El monto viaja en centavos enteros; organizationId lo aporta la sesión.
  */
 export interface SubscriptionFormData {
-  name:      string ;
-  amount:    number ;
-  frequency: SubscriptionFrequency ;
-  logoKey:   string ;
-  color:     string ;
-  category:  SubscriptionCategory ;
+  name:        string ;
+  amount:      number ;
+  frequency:   SubscriptionFrequency ;
+  logoKey:     string ;
+  color:       string ;
+  categoryId?: string | null ;
 }
 
 /**

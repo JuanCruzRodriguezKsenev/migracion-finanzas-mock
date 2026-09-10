@@ -46,6 +46,7 @@ export function useSubscriptions( initialData: Subscription[] ) {
       createdAt:       now ,
       updatedAt:       now ,
       ...data ,
+      categoryId:      ( data.categoryId ?? null ) ,
     } ;
 
     setItems( ( prev ) => [ ...prev , optimistic ] ) ;

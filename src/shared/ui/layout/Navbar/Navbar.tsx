@@ -15,9 +15,11 @@ import {
   IconDashboard ,
   IconTransactions ,
   IconAccounts ,
+  IconCreditCard ,
   IconRepeat ,
   IconContacts ,
   IconSandbox ,
+  IconSettings ,
   IconClose
 } from "@/shared/ui/display/Icons/Icons" ;
 import { ProfileMenu } from "@/shared/ui/feedback/ProfileMenu/ProfileMenu" ;
@@ -53,8 +55,10 @@ export function Navbar( {dict , isOpen , onClose}: NavbarProps ) {
   const lang                 = ( params?.lang || "es" ) ;
   const isDashboardActive    = ( pathname === `/${lang}` ) ;
   const isSandboxActive      = ( pathname === `/${lang}/sandbox` ) ;
+  const isSettingsActive     = ( pathname === `/${lang}/settings` ) ;
   const isTransactionsActive = ( pathname === `/${lang}/transactions` ) ;
   const isAccountsActive      = ( pathname === `/${lang}/accounts` ) ;
+  const isCardsActive         = ( pathname === `/${lang}/cards` ) ;
   const isSubscriptionsActive = ( pathname === `/${lang}/subscriptions` ) ;
   const isContactsActive      = ( pathname === `/${lang}/contacts` ) ;
 
@@ -84,6 +88,12 @@ export function Navbar( {dict , isOpen , onClose}: NavbarProps ) {
               </Link>
             </li>
             <li>
+              <Link href={ `/${lang}/settings` } className={ `${styles.link} ${isSettingsActive ? styles.active : ""}` }>
+                <IconSettings size={15} />
+                <span>{dict.settings || "Configuración"}</span>
+              </Link>
+            </li>
+            <li>
               <Link href={ `/${lang}/sandbox` } className={ `${styles.link} ${isSandboxActive ? styles.active : ""}` }>
                 <IconSandbox size={15} />
                 <span>{dict.sandbox}</span>
@@ -105,6 +115,12 @@ export function Navbar( {dict , isOpen , onClose}: NavbarProps ) {
               <Link href={ `/${lang}/accounts` } className={ `${styles.link} ${isAccountsActive ? styles.active : ""}` }>
                 <IconAccounts size={15} />
                 <span>{dict.accounts}</span>
+              </Link>
+            </li>
+            <li>
+              <Link href={ `/${lang}/cards` } className={ `${styles.link} ${isCardsActive ? styles.active : ""}` }>
+                <IconCreditCard size={15} />
+                <span>Tarjetas</span>
               </Link>
             </li>
             <li>
