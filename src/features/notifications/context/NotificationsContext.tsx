@@ -7,6 +7,9 @@
 // Librerías externas
 import React , { createContext , useContext , useSyncExternalStore , useCallback } from "react" ;
 
+// Shared
+import { readStorage , writeStorage } from "@/shared/lib/safeStorage" ;
+
 // Feature: Notifications
 import { getUnreadNotificationsCount } from "../lib/notificationHelpers" ;
 import { Notification }                from "../types" ;
@@ -58,7 +61,7 @@ function getStoredNotifications(): Notification[] {
   if( memoryNotifications !== null ) {
     return( memoryNotifications ) ;
   }
-  const saved = localStorage.getItem( STORAGE_KEY ) ;
+  const saved = readStorage( STORAGE_KEY ) ;
   if( saved ) {
     try {
       memoryNotifications = JSON.parse( saved ) ;
@@ -107,16 +110,12 @@ const notificationStore = {
     const prev = getStoredNotifications() ;
     const next = updater( prev ) ;
     memoryNotifications = next ;
-    if( typeof window !== "undefined" ) {
-      localStorage.setItem( STORAGE_KEY , JSON.stringify( next ) ) ;
-    }
+    writeStorage( STORAGE_KEY , JSON.stringify( next ) ) ;
     emitChange() ;
   } ,
   resetDemo() {
     memoryNotifications = DEMO_NOTIFICATIONS ;
-    if( typeof window !== "undefined" ) {
-      localStorage.setItem( STORAGE_KEY , JSON.stringify( DEMO_NOTIFICATIONS ) ) ;
-    }
+    writeStorage( STORAGE_KEY , JSON.stringify( DEMO_NOTIFICATIONS ) ) ;
     emitChange() ;
   }
 } ;

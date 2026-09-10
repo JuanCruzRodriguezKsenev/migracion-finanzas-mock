@@ -9,6 +9,7 @@ import React , { createContext , useState , useEffect , useContext } from "react
 
 // Shared
 import { Result , ok , fail } from "@/shared/lib/result" ;
+import { writeStorage } from "@/shared/lib/safeStorage" ;
 
 // Feature: Profile
 import { updateProfileAction }  from "../actions/profileActions" ;
@@ -46,7 +47,7 @@ export function ProfileProvider( {children , initialProfile}: {children: React.R
     }
 
     document.documentElement.setAttribute( "data-theme" , activeTheme ) ;
-    localStorage.setItem( "theme" , theme ) ;
+    writeStorage( "theme" , theme ) ;
   } , [ theme ] ) ;
 
   async function updateProfile( newData: UpdateProfileInput ): Promise< Result<ProfileData , string> > {

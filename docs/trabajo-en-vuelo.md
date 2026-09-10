@@ -15,11 +15,18 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 **Rama activa:** `fix/mocks-de-ui-y-dict-obligatorio`, encadenada sobre `master` ya consolidado.
 **Próximo paso:** revisión y consolidación sobre `master`.
 
-**Estado:** 🟢 **Plan ejecutado (2026-09-10).** Se cerraron los dos hallazgos de la ronda de `PageHeader`:
-la prop `dict` de `CategoriesSettingsContainer` es estrictamente obligatoria (sin diccionario de respaldo
-ni cast `as unknown as`), el setup global de vitest mockea exclusivamente dependencias de framework
-(`next/cache`, `next/navigation` con `routerMock` estable vía `vi.hoisted`), el código propio del proyecto
-se monta real con `<NotificationsProvider>`, y quedó asentado el patrón §12 en [`patterns.md`](patterns.md).
+**Estado:** 🟢 **Plan ejecutado (2026-09-10).** Se cerraron `dict` obligatorio, la política de mocks de UI
+y el acceso tolerante a Storage:
+1. La prop `dict` de `CategoriesSettingsContainer` es estrictamente obligatoria (sin diccionario de respaldo
+   ni cast `as unknown as`).
+2. El setup global de vitest mockea exclusivamente dependencias de framework (`next/cache`, `next/navigation`
+   con `routerMock` hoisted y exportado), y el código propio del proyecto se monta real con `<NotificationsProvider>`.
+3. Se implementó el helper tolerante `@/shared/lib/safeStorage` (`readStorage` / `writeStorage`), migrando
+   todos los accesos directos a `localStorage` de producción (`NotificationsContext`, `MetricsVisibilityContext`,
+   `ProfileContext` y `AddSubscriptionModal`) para tolerar SSR, Storage bloqueado (`SecurityError`) y jsdom en Node (`undefined`).
+4. Se actualizó el patrón §12 en [`patterns.md`](patterns.md) incorporando la Regla 5 (Storage no garantizado)
+   y precisando la sintaxis hoisted.
+5. Total de pruebas en verde: 53 suites, 399 tests.
 
 **Lo consolidado el 2026-09-10 quedó congelado en `registro/`:**
 [`2026-09-10-cierre-rfc023-y-compuerta.md`](registro/2026-09-10-cierre-rfc023-y-compuerta.md)

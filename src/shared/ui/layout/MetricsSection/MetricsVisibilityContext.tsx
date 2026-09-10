@@ -8,6 +8,9 @@
 // Librerías externas
 import React , { createContext , useContext , useSyncExternalStore } from "react" ;
 
+// Shared
+import { readStorage , writeStorage } from "@/shared/lib/safeStorage" ;
+
 export interface MetricsVisibilityContextType {
   isContentVisible: boolean ;
   toggleVisibility: () => void ;
@@ -31,7 +34,7 @@ function subscribe( callback: () => void ) {
 }
 
 function getSnapshot(): boolean {
-  const stored = localStorage.getItem( STORAGE_KEY ) ;
+  const stored = readStorage( STORAGE_KEY ) ;
   return( stored === null ? true : (stored === "true") ) ;
 }
 
@@ -46,7 +49,7 @@ export function MetricsVisibilityProvider( {children}: MetricsVisibilityProvider
   const isContentVisible = useSyncExternalStore( subscribe , getSnapshot , getServerSnapshot ) ;
 
   function toggleVisibility() {
-    localStorage.setItem( STORAGE_KEY , String( !isContentVisible ) ) ;
+    writeStorage( STORAGE_KEY , String( !isContentVisible ) ) ;
     // El evento "storage" nativo solo se dispara en otras pestañas: se despacha
     // manualmente para notificar al suscriptor local y forzar la relectura del snapshot.
     window.dispatchEvent( new Event( "storage" ) ) ;

@@ -13,11 +13,12 @@ import React , { useState , useMemo , useEffect } from "react" ;
 // Shared
 import { Autocomplete , AutocompleteOption } from "@/shared/ui/forms/Autocomplete/Autocomplete" ;
 import type { BrandMetadata }                from "@/shared/services/brand/brandService" ;
-import type { getDictionary }                from "@/shared/lib/dictionary" ;
 import { FormSelect }                        from "@/shared/ui/forms/Form/FormSelect" ;
-import { FormInput }                         from "@/shared/ui/forms/Form/FormInput" ;
 import { Button }                            from "@/shared/ui/display/Button/Button" ;
+import { FormInput }                         from "@/shared/ui/forms/Form/FormInput" ;
 import { Modal }                             from "@/shared/ui/feedback/Modal/Modal" ;
+import { readStorage , writeStorage }        from "@/shared/lib/safeStorage" ;
+import type { getDictionary }                from "@/shared/lib/dictionary" ;
 
 // Feature: Accounting
 import { Category , CategoryTreeNode } from "@/features/accounting/types" ;
@@ -116,14 +117,10 @@ const SOCIAL_ICONS: Record< string , string > = {
 function resolveInitialCountry(): Country {
   const countries = countriesData as Country[] ;
 
-  try {
-    const savedCode = localStorage.getItem( COUNTRY_STORAGE_KEY ) ;
-    if( savedCode ){
-      const found = countries.find( ( c ) => c.code === savedCode ) ;
-      if( found ){ return( found ) ; }
-    }
-  } catch {
-    // localStorage bloqueado — continuar con la detección por zona horaria
+  const savedCode = readStorage( COUNTRY_STORAGE_KEY ) ;
+  if( savedCode ){
+    const found = countries.find( ( c ) => c.code === savedCode ) ;
+    if( found ){ return( found ) ; }
   }
 
   try {
@@ -486,11 +483,7 @@ export function AddSubscriptionModal( {
     const found = countries.find( ( c ) => c.code === code ) ;
     if( found ){
       setSelectedCountry( found ) ;
-      try {
-        localStorage.setItem( COUNTRY_STORAGE_KEY , found.code ) ;
-      } catch {
-        // localStorage bloqueado — la preferencia no se persiste
-      }
+      writeStorage( COUNTRY_STORAGE_KEY , found.code ) ;
     }
   }
 

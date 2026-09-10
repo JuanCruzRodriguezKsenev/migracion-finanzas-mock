@@ -336,7 +336,7 @@ Cuando cada suite mantiene su propia lista de `db.delete(...)`:
 
 Mientras que el [§11](#11-limpieza-unificada-de-base-de-datos-en-orden-topológico-test-database-cleanup) gobierna las suites de **integración** que interactúan contra PostgreSQL (`finanzas_db_test`) en entorno Node, esta sección gobierna las pruebas unitarias y de integración visual de **componentes cliente** ejecutadas sobre `jsdom` (`// @vitest-environment jsdom`).
 
-Para evitar falsos positivos y componentes que fallan en producción por falta de traducciones o contextos faltantes, los tests de UI siguen cuatro reglas estrictas de montaje:
+Para evitar falsos positivos y componentes que fallan en producción por falta de traducciones o contextos faltantes, los tests de UI siguen cinco reglas estrictas de montaje:
 
 ### Reglas e Invariantes
 
@@ -347,7 +347,15 @@ Para evitar falsos positivos y componentes que fallan en producción por falta d
 3.  **Se mockea el framework, no el código del proyecto:**
     El archivo de configuración global `src/shared/lib/vitest.setup.mocks.ts` sólo puede mockear módulos de infraestructura o framework que en `jsdom` no existen (`next/cache`, `next/navigation`). Los contextos, hooks o stores propios del proyecto (como `NotificationsContext` o `NotificationsProvider`) deben montarse reales en el árbol de componentes. Si un caso de prueba extremo requiriera forzar un estado puntual de un contexto propio, el mock debe declararse **local al archivo de test**, jamás en el setup global, para no anular en silencio la suite propia de dicha feature.
 4.  **Los dobles de framework son estables y aseverables:**
-    Los dobles de Next.js provistos por el setup global se declaran mediante `vi.hoisted` y se exportan (ej: `routerMock` exportado desde `vitest.setup.mocks.ts`). Esto garantiza que no se instancien objetos nuevos por cada invocación del hook, permitiendo a los tests espiar y aseverar sobre métodos como `routerMock.refresh()` o `routerMock.push()`. La suite que requiera aseverar sobre estos dobles es responsable de limpiar su estado en su propio `beforeEach`.
+    Los dobles de Next.js provistos por el setup global se declaran mediante `vi.hoisted` y se exportan (ej: `routerMock` exportado desde `vitest.setup.mocks.ts`). Notar la restricción sintáctica: `export const x = vi.hoisted( ... )` **no compila** — el transformador de vitest corta con `SyntaxError: Cannot export hoisted variable`. La forma que funciona es declarar y exportar por separado:
+    ```ts
+    const routerMock = vi.hoisted( () => ( { push: vi.fn() , /* ... */ } ) ) ;
+
+    export { routerMock } ;
+    ```
+    Esto garantiza que no se instancien objetos nuevos por cada invocación del hook, permitiendo a los tests espiar y aseverar sobre métodos como `routerMock.refresh()` o `routerMock.push()`. La suite que requiera aseverar sobre estos dobles es responsable de limpiar su estado en su propio `beforeEach`.
+5.  **El Storage no está garantizado:**
+    Todo acceso a `localStorage` desde código propio pasa por `readStorage`/`writeStorage` de `@/shared/lib/safeStorage`. Nunca `localStorage.getItem` directo, ni siquiera detrás de `typeof window !== "undefined"`: esa guardia cubre SSR pero no cubre ni al navegador con Storage bloqueado (donde **leer la propiedad** lanza `SecurityError`) ni a jsdom bajo Node, donde el accessor nativo devuelve `undefined`. Corolario explícito: **el harness de tests no debe polyfillear `localStorage`** — si un componente no monta en jsdom por Storage, el defecto está en el componente.
 
 ### Ejemplo de Referencia
-La suite de [`CategoriesSettingsContainer.test.tsx`](../src/features/accounting/components/CategoriesSettings/CategoriesSettingsContainer.test.tsx) implementa este patrón íntegro: carga `getDictionary( "es" )` en `beforeAll`, envuelve el render con el `<NotificationsProvider>` real y delega en el `routerMock` hoisted del harness global.
+La suite de [`CategoriesSettingsContainer.test.tsx`](../src/features/accounting/components/CategoriesSettings/CategoriesSettingsContainer.test.tsx) implementa este patrón íntegro: carga `getDictionary( "es" )` en `beforeAll`, envuelve el render con el `<NotificationsProvider>` real (que gracias a `safeStorage` monta de forma tolerante sin requerir dobles ni polyfills de storage en el harness) y delega en el `routerMock` hoisted del harness global.
