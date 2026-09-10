@@ -12,34 +12,32 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `fix/mocks-de-ui-y-dict-obligatorio`, encadenada sobre `master` ya consolidado.
-**Próximo paso:** **decisión del usuario** — la rama está terminada y verificada en verde, lista para consolidar sobre `master`. El merge no se hace por cuenta propia.
+**Rama activa:** ninguna. `master` (`90bee72`) está consolidado y verde, con el árbol limpio.
 
-**Estado:** 🟢 **Plan ejecutado (2026-09-10).** Se cerraron `dict` obligatorio, la política de mocks de UI
-y el acceso tolerante a Storage:
-1. La prop `dict` de `CategoriesSettingsContainer` es estrictamente obligatoria (sin diccionario de respaldo
-   ni cast `as unknown as`).
-2. El setup global de vitest mockea exclusivamente dependencias de framework (`next/cache`, `next/navigation`
-   con `routerMock` hoisted y exportado), y el código propio del proyecto se monta real con `<NotificationsProvider>`.
-3. Se implementó el helper tolerante `@/shared/lib/safeStorage` (`readStorage` / `writeStorage`), migrando
-   todos los accesos directos a `localStorage` de producción (`NotificationsContext`, `MetricsVisibilityContext`,
-   `ProfileContext` y `AddSubscriptionModal`) para tolerar SSR, Storage bloqueado (`SecurityError`) y jsdom en Node (`undefined`).
-4. Se actualizó el patrón §12 en [`patterns.md`](patterns.md) incorporando la Regla 5 (Storage no garantizado)
-   y precisando la sintaxis hoisted.
-5. Total de pruebas en verde: **54 archivos de test, 399 tests**. (El plan predijo «53 suites»: sumó los 6 tests nuevos de `safeStorage.test.ts` pero no el archivo que los trae. Error de aritmética del plan, no defecto de la ejecución.)
+**Próximo paso:** **sin decidir.** Lo que está sobre la mesa, en orden de cercanía:
 
-**Verificado de forma independiente el 2026-09-10** sobre `e5f1e4f`, con la batería completa de la
-ficha y `postgres-dev` arriba: `pnpm test` 54 archivos / 399 tests en verde · `pnpm exec eslint . --max-warnings 0` 0 errores y 0 warnings ·
-`pnpm exec tsc --noEmit` 0 errores TS · `pnpm build` exitoso (estáticas 4/4). **La rama pasaría la compuerta.**
+1.  **Las 5 declaraciones de `dict?:` opcional heredadas** — `ContactsTable.tsx:26`,
+    `PaymentMethodsPanel.tsx:45`, `ContactFormModal.tsx:26` y `:43`, `MonthSelector.tsx:39`. Es la
+    continuación directa de lo recién consolidado; shape acotado y sin cast, así que es más benigno.
+2.  **Las cuatro rutas del mock sin RFC** — `/reportes`, `/patrimonio`, `/configuracion`,
+    `/mejorar-plan`. Ninguna puede recibir código hasta que su propuesta esté `APPROVED`.
+3.  **Las propuestas que faltan de la sesión de diseño de clasificación** (`docs/diseno/`), cerrada
+    pero sin partir en RFCs.
+
+**Dos pendientes de higiene, conscientes y no pedidos:**
+
+*   **`master` no está pusheado:** queda **14 commits por delante de `origin/master`** (`8e086d9`).
+*   **Cuatro ramas ya contenidas en `master`, borrables:** `feat/bandeja-recurrencias`,
+    `fix/cabos-rfc023-y-limpieza-de-tests`, `fix/page-header-unico-por-pagina` y
+    `fix/mocks-de-ui-y-dict-obligatorio`.
 
 **Lo consolidado el 2026-09-10 quedó congelado en `registro/`:**
 [`2026-09-10-cierre-rfc023-y-compuerta.md`](registro/2026-09-10-cierre-rfc023-y-compuerta.md)
-(`2ae7186..8e086d9`) y
+(`2ae7186..8e086d9`),
 [`2026-09-10-cierre-page-header.md`](registro/2026-09-10-cierre-page-header.md)
-(`8e086d9..2fe778b`). El código consolidado llega hasta `2fe778b`.
-
-**Ramas que se pueden borrar:** `feat/bandeja-recurrencias`, `fix/cabos-rfc023-y-limpieza-de-tests`
-y `fix/page-header-unico-por-pagina`, las tres ya contenidas en `master`.
+(`8e086d9..2fe778b`) y
+[`2026-09-10-cierre-mocks-ui-y-storage.md`](registro/2026-09-10-cierre-mocks-ui-y-storage.md)
+(`ba8b7ca..90bee72`). El código consolidado llega hasta `90bee72`.
 
 ---
 
