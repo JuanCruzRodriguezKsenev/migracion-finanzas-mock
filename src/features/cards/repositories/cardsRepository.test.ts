@@ -11,16 +11,15 @@ import { db }          from "@/shared/db/client" ;
 import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Accounting
-import { accounts , categoryAccounts , ledgerTransactions , ledgerEntries , financialEntities } from "@/features/accounting/schema.db" ;
-import { ledgerRepository }                                                                      from "@/features/accounting/repositories/ledgerRepository" ;
-import { accountRepository }                                                                     from "@/features/accounting/repositories/accountRepository" ;
+import { ledgerTransactions , ledgerEntries } from "@/features/accounting/schema.db" ;
+import { ledgerRepository }                   from "@/features/accounting/repositories/ledgerRepository" ;
+import { accountRepository }                  from "@/features/accounting/repositories/accountRepository" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Cards
-import { cardsRepository }       from "./cardsRepository" ;
-import { cards , cardAccounts } from "../schema.db" ;
+import { cardsRepository } from "./cardsRepository" ;
 
 
 describe( "cardsRepository — DAL de Tarjetas y Partición de Saldos por Fecha" , () => {

@@ -9,11 +9,10 @@ import { limpiarBase } from "@/shared/db/testCleanup" ;
 import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
-import { accounts , categories , categoryAccounts , ledgerEntries , ledgerTransactions , monthlySummaries , idempotencyKeys , outboxEvents } from "@/features/accounting/schema.db" ;
+import { categories } from "@/features/accounting/schema.db" ;
 
 // Feature: Subscriptions
 import { subscriptionRepository } from "./subscriptionRepository" ;
-import { subscriptions }          from "../schema.db" ;
 
 
 /**

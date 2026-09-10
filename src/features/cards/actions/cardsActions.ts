@@ -97,7 +97,7 @@ export async function createCardAction( params: CreateCardInput ): Promise< Resu
       } ) ;
 
       logger.info( `[createCardAction] Tarjeta de débito creada: ${tarjetaCreada.id} (${tarjetaCreada.label})` ) ;
-      revalidatePath( "/cards" ) ;
+      revalidatePath( "/[lang]/(main)/cards" , "page" ) ;
       return( ok( tarjetaCreada ) ) ;
     }
 
@@ -175,7 +175,7 @@ export async function createCardAction( params: CreateCardInput ): Promise< Resu
     }
 
     logger.info( `[createCardAction] Tarjeta de crédito creada: ${tarjetaCreada.id} con cuenta contable ${cuentaPasivo.code}` ) ;
-    revalidatePath( "/cards" ) ;
+    revalidatePath( "/[lang]/(main)/cards" , "page" ) ;
     return( ok( tarjetaCreada ) ) ;
   } catch( error ) {
     // El alta de una tarjeta de crédito son cuatro escrituras encadenadas —tarjeta, cuenta de
@@ -250,7 +250,7 @@ export async function archiveCardAction( id: string ): Promise< Result<Card , st
     if( !tarjeta ) {
       return( fail( "Tarjeta no encontrada." ) ) ;
     }
-    revalidatePath( "/cards" ) ;
+    revalidatePath( "/[lang]/(main)/cards" , "page" ) ;
     return( ok( tarjeta ) ) ;
   } catch( error ) {
     logger.error( `[archiveCardAction] Error: ${error}` ) ;

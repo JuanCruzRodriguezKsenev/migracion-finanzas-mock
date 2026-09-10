@@ -13,8 +13,6 @@ import { organizations } from "@/features/auth/schema.db" ;
 import {
   financialEntities ,
   accounts ,
-  categoryAccounts ,
-  ledgerTransactions ,
   ledgerEntries
 } from "../schema.db" ;
 import {

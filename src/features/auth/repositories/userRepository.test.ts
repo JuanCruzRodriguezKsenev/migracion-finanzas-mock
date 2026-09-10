@@ -6,8 +6,6 @@ import { eq }                                                         from "driz
 import { db }          from "@/shared/db/client" ;
 import { limpiarBase } from "@/shared/db/testCleanup" ;
 
-// Feature: Accounting
-import { accounts , categories , categoryAccounts , ledgerEntries , ledgerTransactions } from "@/features/accounting/schema.db" ;
 
 // Feature: Auth
 import { organizations , users } from "../schema.db" ;

@@ -12,8 +12,8 @@ import { db }          from "@/shared/db/client" ;
 import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Accounting & Auth
-import { accounts , categories , categoryAccounts , financialEntities , ledgerEntries , ledgerTransactions } from "@/features/accounting/schema.db" ;
-import { organizations }                                               from "@/features/auth/schema.db" ;
+import { financialEntities } from "@/features/accounting/schema.db" ;
+import { organizations }     from "@/features/auth/schema.db" ;
 
 // Feature: Contacts
 import {
@@ -27,7 +27,7 @@ import {
   deletePaymentMethodAction ,
   setDefaultPaymentMethodAction
 } from "./contactsActions" ;
-import { contacts , contactPaymentMethods } from "../schema.db" ;
+import { contacts } from "../schema.db" ;
 
 
 vi.mock( "next-auth" , () => ( {

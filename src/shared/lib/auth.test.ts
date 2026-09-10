@@ -8,8 +8,6 @@ import { db }          from "@/shared/db/client" ;
 import { limpiarBase } from "@/shared/db/testCleanup" ;
 import { authOptions } from "./auth" ;
 
-// Feature: Accounting
-import { accounts , categories , categoryAccounts , ledgerEntries , ledgerTransactions } from "@/features/accounting/schema.db" ;
 
 // Feature: Auth
 import { organizations , users } from "@/features/auth/schema.db" ;

@@ -11,12 +11,11 @@ import { db }          from "@/shared/db/client" ;
 import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Accounting & Auth
-import { accounts , categories , categoryAccounts , financialEntities , ledgerEntries , ledgerTransactions } from "@/features/accounting/schema.db" ;
-import { organizations }                                               from "@/features/auth/schema.db" ;
+import { financialEntities } from "@/features/accounting/schema.db" ;
+import { organizations }     from "@/features/auth/schema.db" ;
 
 // Feature: Contacts
-import { contactsRepository }               from "./contactsRepository" ;
-import { contacts , contactPaymentMethods } from "../schema.db" ;
+import { contactsRepository } from "./contactsRepository" ;
 
 
 describe( "contactsRepository — DAL de Contactos y Métodos de Cobro" , () => {

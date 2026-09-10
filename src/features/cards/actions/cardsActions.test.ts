@@ -14,12 +14,12 @@ import { db }          from "@/shared/db/client" ;
 import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Accounting & Auth
-import { accounts , categoryAccounts , ledgerTransactions , ledgerEntries , financialEntities } from "@/features/accounting/schema.db" ;
-import { organizations }                                                                        from "@/features/auth/schema.db" ;
+import { accounts , ledgerTransactions , ledgerEntries } from "@/features/accounting/schema.db" ;
+import { organizations }                                 from "@/features/auth/schema.db" ;
 
 // Feature: Cards
-import { createCardAction }      from "./cardsActions" ;
-import { cards , cardAccounts } from "../schema.db" ;
+import { createCardAction } from "./cardsActions" ;
+import { cardAccounts }     from "../schema.db" ;
 
 
 vi.mock( "next-auth" , () => ( {

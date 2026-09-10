@@ -4,7 +4,6 @@ import { describe , it , expect } from "vitest" ;
 // Feature: Subscriptions
 import { toMonthlyAmount , toYearlyAmount , addInterval , enrichSubscriptions , buildSummary } from "./calculations" ;
 import { makeSubscription }                                                                    from "../testing/subscriptionFactory" ;
-import { Subscription }                                                                        from "../types" ;
 
 /**
  * Suite de pruebas unitarias para las conversiones de montos de suscripciones.

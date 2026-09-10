@@ -11,7 +11,7 @@ import { limpiarBase } from "@/shared/db/testCleanup" ;
 import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
-import { accounts , categories , categoryAccounts , ledgerEntries , ledgerTransactions , idempotencyKeys , outboxEvents , monthlySummaries } from "@/features/accounting/schema.db" ;
+import { accounts , categories , ledgerEntries } from "@/features/accounting/schema.db" ;
 
 // Feature: Transactions
 import { createTransactionFromFormAction , obtenerCuentaPorMoneda } from "./transactionsActions" ;

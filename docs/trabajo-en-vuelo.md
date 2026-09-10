@@ -13,29 +13,20 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 ## Rama y próximo paso
 
 **Rama activa:** `fix/cabos-rfc023-y-limpieza-de-tests`, encadenada sobre `feat/bandeja-recurrencias`.
-**Próximo paso:** ejecutar [`docs/planes/cierre-cabos-rfc023.md`](planes/cierre-cabos-rfc023.md) — la rama **no pasa la compuerta de CI** todavía.
+**Próximo paso:** consolidar / mergear la rama sobre `feat/bandeja-recurrencias` tras la verificación de la suite completa.
 
-**Estado:** 🟡 **Cabos del RFC 023 cerrados y verificados, pero la compuerta de CI está en rojo.**
+**Estado:** 🟢 **Cierre de cabos del RFC 023 completado y compuerta de CI desbloqueada.**
 
-`verificador` corrió la batería el 2026-09-10: **53 archivos / 393 tests en verde, idénticos en cuatro
-corridas consecutivas** con reordenamiento de vitest, `tsc --noEmit` 0 errores y build verde. Los
-cuatro pasos del plan salieron correctos y **no hay que rehacer ninguno**.
+Se ejecutó [`docs/planes/cierre-cabos-rfc023.md`](planes/cierre-cabos-rfc023.md):
+*   **75 warnings huérfanos eliminados (Paso 1):** saneamiento de imports no utilizados en los 18 archivos de test afectados por `limpiarBase()` y la centralización del factory, dejando `pnpm exec eslint . --max-warnings 0` en código de salida 0 sin advertencias.
+*   **Normalización de `revalidatePath` (Paso 2):** se actualizaron las tres llamadas en `src/features/cards/actions/cardsActions.ts` a `revalidatePath( "/[lang]/(main)/cards" , "page" )`, alineadas con la estructura física de archivos de ruta de Next.js y cubriendo todos los idiomas.
+*   **Deuda técnica actualizada (Paso 3):** ítem §7 resuelto y documentado en `docs/TECHNICAL_DEBT.md`, y registro de dos nuevos ítems de deuda preventiva (§ Abierto: cobertura de métodos en el mock de `next/cache` y retroceso potencial de punteros en la migración 0026).
 
-**Lo que falta:** `pnpm exec eslint . --max-warnings 0` —el comando que corre la compuerta
-(`.github/workflows/compuerta.yml:66`)— devuelve **75 warnings** de imports huérfanos en los 18
-archivos de test que la ronda tocó, y la pone en rojo. `pnpm lint` no los ve porque el script de
-`package.json` es `eslint` a secas, **sin** el flag; la ficha decía lo contrario y ya se corrigió en
-`AGENTS.md` y `.claude/CLAUDE.md`.
-
-Queda también, del mismo plan de cierre, normalizar las tres llamadas a `revalidatePath("/cards")` de
-`cardsActions.ts`, que hoy son un no-op silencioso.
-
-**Lo que sí quedó hecho y verificado:**
-*   **Guarda bajo bloqueo (Paso 1):** `subscriptionRepository.findByIdForUpdate` agregado y consumido como primera operación dentro de `db.transaction` en `resolveSubscriptionAction`, evaluando la guarda sobre la fila releída y cerrando la condición de carrera concurrente.
-*   **Backfill de frecuencias no mensuales (Paso 2):** migración `0026_backfill_recurrence_pointers.sql` aplicada, ajustando el puntero inicial para series `weekly`, `quarterly` y `custom` a la última ocurrencia anterior a la ventana en curso.
-*   **Limpieza topológica compartida (Paso 3):** `limpiarBase()` en `src/shared/db/testCleanup.ts` ejecutada dentro de transacción única en orden topológico estricto de FK `restrict` (con autorreferencia en dos pasos para `categories`), adoptada en las 18 suites de integración con `afterAll( limpiarBase )`.
-*   **Factory y mock de setup (Paso 4):** `makeSubscription` centralizado en `src/features/subscriptions/testing/subscriptionFactory.ts` y mock global de `next/cache` en `src/shared/lib/vitest.setup.mocks.ts` registrado en `setupFiles` de `vitest.config.ts`.
-*   **Documentación (Paso 5):** Patrón 11 documentado en `docs/patterns.md`, deuda §7 resuelta en `docs/TECHNICAL_DEBT.md`, y comentario de `fileParallelism` rectificado en `vitest.config.ts`.
+**Lo que ya estaba verificado de la ronda anterior:**
+*   **Guarda bajo bloqueo:** `subscriptionRepository.findByIdForUpdate` consumido en `resolveSubscriptionAction` con guarda releída.
+*   **Backfill de frecuencias no mensuales:** migración `0026_backfill_recurrence_pointers.sql` aplicada.
+*   **Limpieza topológica compartida:** `limpiarBase()` en las 18 suites de integración con `afterAll( limpiarBase )`.
+*   **Factory y mock de setup:** `makeSubscription` y mock de `next/cache`.
 
 ---
 

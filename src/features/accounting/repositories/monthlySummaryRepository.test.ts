@@ -10,15 +10,7 @@ import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
 import { monthlySummaryRepository } from "./monthlySummaryRepository" ;
-import {
-  accounts ,
-  categoryAccounts ,
-  ledgerTransactions ,
-  ledgerEntries ,
-  idempotencyKeys ,
-  outboxEvents ,
-  monthlySummaries
-} from "../schema.db" ;
+import { monthlySummaries } from "../schema.db" ;
 
 
 describe( "monthlySummaryRepository" , () => {

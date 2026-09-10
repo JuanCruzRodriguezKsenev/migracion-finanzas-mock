@@ -11,7 +11,7 @@ import { limpiarBase }       from "@/shared/db/testCleanup" ;
 import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
-import { accounts , categoryAccounts , ledgerTransactions , ledgerEntries , idempotencyKeys , outboxEvents } from "../schema.db" ;
+import { accounts , ledgerTransactions , ledgerEntries , idempotencyKeys , outboxEvents } from "../schema.db" ;
 import {
   createLedgerTransaction ,
   deleteLedgerTransaction ,

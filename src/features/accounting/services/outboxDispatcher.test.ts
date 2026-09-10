@@ -19,7 +19,7 @@ import {
   MAX_ATTEMPTS ,
   PROCESSING_TTL_MS
 } from "./outboxDispatcher" ;
-import { accounts , categories , categoryAccounts , ledgerEntries , ledgerTransactions , outboxEvents } from "../schema.db" ;
+import { outboxEvents } from "../schema.db" ;
 
 
 /**

@@ -10,7 +10,6 @@ import {
   proximaOcurrenciaPosteriorA
 } from "./recurrenceService" ;
 import { makeSubscription } from "../testing/subscriptionFactory" ;
-import { Subscription }     from "../types" ;
 
 describe( "recurrenceService" , () => {
   describe( "ocurrenciaN" , () => {

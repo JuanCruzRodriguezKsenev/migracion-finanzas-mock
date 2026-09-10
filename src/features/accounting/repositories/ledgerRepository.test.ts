@@ -10,7 +10,7 @@ import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
 import { ledgerRepository }                                                                                 from "./ledgerRepository" ;
-import { accounts , categories , categoryAccounts , ledgerTransactions , ledgerEntries , outboxEvents }       from "../schema.db" ;
+import { accounts , categories } from "../schema.db" ;
 
 
 describe( "ledgerRepository" , () => {

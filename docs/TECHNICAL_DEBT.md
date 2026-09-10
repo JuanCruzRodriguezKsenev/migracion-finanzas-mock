@@ -26,6 +26,7 @@ Este documento registra los puntos de deuda técnica del repositorio, distinguie
 ### Límites de Navegación y Rutas
 *   [x] **M2 (Contextualización del Selector):** Ocultamiento del `MonthSelector` en `/accounts` y `/subscriptions`, donde las vistas no admiten filtro por mes.
 *   [x] **M3 (Límite Mínimo de Navegación):** Cálculo de `minKey` en base de datos (`findEarliestMonthKey`) y bloqueo de navegación retroactiva anterior al primer registro de la organización.
+*   [x] **Normalización de `revalidatePath` en `cardsActions.ts`:** Reemplazo de `revalidatePath("/cards")` por `revalidatePath("/[lang]/(main)/cards", "page")`. Según la documentación oficial de Next.js, `revalidatePath` opera sobre la estructura física de archivos de ruta (`src/app/[lang]/(main)/cards/page.tsx`) y no sobre la URL visible, requiriendo además el segundo parámetro `"page"` al contener un segmento dinámico como `[lang]`.
 
 ### Calidad de Código, Entorno y CI
 *   [x] **ESLint (0 advertencias y 0 errores en repo completo):**
@@ -85,6 +86,7 @@ Este documento registra los puntos de deuda técnica del repositorio, distinguie
 ### 2. Persistencia y Modelado de Datos
 *   [ ] **`createAccountForEntityAction` fija `currency: "ARS"` en duro:** la cuenta principal que se crea para una entidad financiera nace siempre en pesos, en un motor que ya valida Debe = Haber por divisa y opera transacciones de cambio. Una entidad que opera en otra moneda igual recibe cuenta en ARS y obliga a corregirla a mano. Detectado al verificar la rama `fix/entidades-financieras` (2026-09-07); no lo introdujo esa rama, venía del alta anterior.
 *   [x] **Vincular suscripciones recurrentes con asientos de `ledgerTransactions`:** Resuelto con la bandeja de transacciones propuestas (RFC 023). Las suscripciones emiten asientos de partida doble al confirmarse y registran el avance mediante el puntero `resolved_through`.
+*   [ ] **La migración 0026 no filtra por `resolved_through`:** pisa lo que dejó la 0025 en todas las filas de esas frecuencias (`weekly`, `quarterly`, `custom`). Inocuo acá porque no hay producción y la 0025 se aplicó el mismo día, pero sobre una base en uso retrocedería punteros que el usuario ya avanzó desde la bandeja, y las ocurrencias confirmadas reaparecerían.
 *   [ ] **Separación de datos de suscripción comercial de la tabla `profiles`:** `planName`, `planBilling` y `planNextCharge` son datos de suscripción comercial SaaS mezclados en la tabla de preferencias y perfil de usuario. Aunque la acción `updateProfileAction` fue asegurada con Zod estricto para impedir su manipulación desde el cliente, deberían residir en su propia tabla relacional.
 *   [ ] **Intereses y comisiones de tarjetas sin devengar periódicamente:** Las columnas `interestRateFinancing`, `monthlyMaintenanceFee` y `annualRenewalFee` están modeladas en la tabla `cards`, pero ningún proceso automático las devenga contablemente en la fecha de cierre. Su devengamiento periódico depende de los crons y workers de fondo de la Fase 3.
 *   [ ] **Disponible de tarjetas de crédito no descuenta cuotas futuras pendientes:** El cálculo de disponible para compras (`Disponible = Límite − Deuda total`) no descuenta el saldo remanente de compras en cuotas hasta que se implemente el modelo relacional de cuotas (`installmentPlans`, RFC 008).
@@ -112,5 +114,5 @@ Items pendientes tras el RFC 022:
 *   [ ] **`1.1.01.02 Efectivo en Billetera` tiene balance negativo** (`-1.032.300` en la base local): un activo de efectivo en negativo es imposible. Dato del seed o falta de validación de sobregiro para cuentas de caja.
 
 
-### 7. Navegación y Rutas (detectado el 2026-09-10)
-*   [ ] **`cardsActions.ts` utiliza una ruta no localizada en `revalidatePath`:** `createCardAction` llama a `revalidatePath("/cards")` a secas, mientras que las demás Server Actions del repositorio usan la convención localizada `"/[lang]/(main)/<ruta>"`. Debe normalizarse para evitar invalidaciones parciales.
+### 7. Infraestructura de Pruebas y Entorno (detectado el 2026-09-10)
+*   [ ] **El mock de `next/cache` sólo expone `revalidatePath`** (`vitest.setup.mocks.ts`): el día que alguien use `revalidateTag` o `updateTag` va a recibir `undefined` y un error confuso.

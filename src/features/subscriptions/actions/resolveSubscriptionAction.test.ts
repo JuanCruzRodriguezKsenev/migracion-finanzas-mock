@@ -17,12 +17,8 @@ import { profiles } from "@/features/profile/schema.db" ;
 import {
   accounts ,
   categories ,
-  categoryAccounts ,
   ledgerEntries ,
-  ledgerTransactions ,
-  idempotencyKeys ,
-  outboxEvents ,
-  monthlySummaries
+  ledgerTransactions
 } from "@/features/accounting/schema.db" ;
 
 // Feature: Subscriptions

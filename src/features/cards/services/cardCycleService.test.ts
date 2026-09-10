@@ -12,8 +12,8 @@ import { db }          from "@/shared/db/client" ;
 import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Accounting
-import { accounts , categoryAccounts , ledgerTransactions , ledgerEntries , financialEntities } from "@/features/accounting/schema.db" ;
-import { accountRepository }                                                                     from "@/features/accounting/repositories/accountRepository" ;
+import { ledgerTransactions , ledgerEntries } from "@/features/accounting/schema.db" ;
+import { accountRepository }                  from "@/features/accounting/repositories/accountRepository" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;

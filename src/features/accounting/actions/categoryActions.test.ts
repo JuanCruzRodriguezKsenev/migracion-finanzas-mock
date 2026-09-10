@@ -16,11 +16,7 @@ import {
   accounts ,
   categories ,
   categoryAccounts ,
-  ledgerEntries ,
-  ledgerTransactions ,
-  idempotencyKeys ,
-  outboxEvents ,
-  monthlySummaries
+  ledgerEntries
 } from "../schema.db" ;
 import {
   createCategoryAction ,
