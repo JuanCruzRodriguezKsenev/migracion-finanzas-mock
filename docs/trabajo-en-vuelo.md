@@ -13,29 +13,17 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 ## Rama y próximo paso
 
 **Rama activa:** `fix/page-header-unico-por-pagina`, creada sobre `master` ya consolidado.
-**Próximo paso:** ejecutar [`docs/planes/page-header-unico-por-pagina.md`](planes/page-header-unico-por-pagina.md).
+**Próximo paso:** revisión y consolidación sobre `master`.
 
-**Estado:** 🟢 **Cadena de ramas consolidada sobre `master` el 2026-09-10.** `master` avanzó por
-fast-forward de `2ae7186` a `8e086d9` (15 commits, sin merge commit ni divergencia) y está pusheado
-a `origin/master`. Entraron `feat/bandeja-recurrencias` (RFC 023) y
-`fix/cabos-rfc023-y-limpieza-de-tests`, verificados en verde por batería independiente:
-**393 tests / 53 suites**, `eslint . --max-warnings 0` sin warnings, `tsc --noEmit` 0 errores,
-build exitoso.
-
-Las dos ramas viejas quedan como referencia y **ya no reciben trabajo**; se pueden borrar.
-
-**En cola:**
-
-1.  **[`docs/planes/page-header-unico-por-pagina.md`](planes/page-header-unico-por-pagina.md)** —
-    listo para `obra` en esta rama. Doble encabezado en cuatro de las ocho rutas: `Header.tsx:50-53`
-    decide su título sniffeando el `pathname` con una lista cerrada de cuatro rutas, y las demás caen
-    en el saludo del dashboard. Se da vuelta la responsabilidad: un `PageHeader` compartido que cada
-    página compone, con `title` obligatoria.
-
-> **El primer intento de ejecución no tocó una línea** (2026-09-10). Se invocó a `obra` sin que la
-> rama del plan existiera; como no puede cambiar de rama, devolvió informe de factibilidad en vez de
-> ejecutar. Confirmó que el plan coincide con el estado del repo. **Crear la rama antes del traspaso
-> es trabajo de `tanda`**, y el plan lo dice en su línea 3.
+**Estado:** 🟢 **Plan de PageHeader único por página ejecutado y verificado en verde por batería independiente (2026-09-10).**
+*   **Encabezado único por página:** se extrajo `Header` de `AppShell` y se transformó en `PageHeader` compuesto en `src/shared/ui/layout/PageHeader/PageHeader.tsx`, con prop `title` obligatoria (`<h1>`), `subtitle` opcional, `actions` contextuales y selector de mes condicional (únicamente en `/` y `/transactions`).
+*   **Eliminación de sniffeo de rutas:** removidas todas las cadenas de ternarios y comprobaciones de `pathname` en el encabezado.
+*   **Ocho páginas migradas:** compuestas con `PageHeader` y sus acciones contextuales (`/`, `/transactions`, `/accounts`, `/subscriptions`, `/cards`, `/contacts`, `/settings`, `/sandbox`).
+*   **Responsividad móvil corregida:** invertida la regla CSS en móvil para asegurar que el título de la página siempre se visualice y la marca redundante se oculte.
+*   **Internacionalización:** añadidas claves `cardsPage` y `settingsPage` en `es.json`, `en.json` y `br.json`.
+*   **Limpieza CSS:** eliminadas clases huérfanas en los `.module.css` de los contenedores afectados.
+*   **Batería en verde:** **393 tests / 53 suites** (0 fallos), `eslint . --max-warnings 0` (0 errores, 0 warnings), `tsc --noEmit` (0 errores), build de producción exitoso. Mocks de `next/navigation` y `NotificationsContext` incorporados a `vitest.setup.mocks.ts` y fallback defensivo en `CategoriesSettingsContainer`.
+*   **Cabo conocido documentado:** registrado en `docs/TECHNICAL_DEBT.md` §8 el botón hamburguesa inerte de `PageHeader` en móvil.
 
 **Estado de la ronda anterior:** 🟢 **Cierre de cabos del RFC 023 completado y compuerta de CI desbloqueada.**
 

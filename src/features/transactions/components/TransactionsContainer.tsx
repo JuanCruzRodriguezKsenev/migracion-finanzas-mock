@@ -9,8 +9,10 @@ import React , { useState , useEffect , useTransition , useCallback } from "reac
 import { useSearchParams }                                             from "next/navigation" ;
 
 // Shared
-import { Button } from "@/shared/ui/display/Button/Button" ;
-import { Column } from "@/shared/ui/display/Toolbar/ColumnSelector" ;
+import { PageHeader }          from "@/shared/ui/layout/PageHeader/PageHeader" ;
+import { Column }              from "@/shared/ui/display/Toolbar/ColumnSelector" ;
+import { Button }              from "@/shared/ui/display/Button/Button" ;
+import type { getDictionary } from "@/shared/lib/dictionary" ;
 
 // Feature: Accounting
 import { TransactionWithEntries }                                  from "@/features/accounting/repositories/ledgerRepository" ;
@@ -36,9 +38,12 @@ interface TransactionsContainerProps {
   initialHasMore:      boolean ;
   accounts:            Account[] ;
   categories:          Category[] ;
+  dict:                Awaited< ReturnType< typeof getDictionary > > ;
   categoryTree?:       CategoryTreeNode[] ;
   financialEntities?:  FinancialEntity[] ;
   lang?:               string ;
+  currentMonthKey?:    string ;
+  minKey?:             string ;
 }
 
 const ALL_COLUMNS: Column< TransactionTableColumns >[] = [
@@ -67,8 +72,12 @@ export function TransactionsContainer( {
   initialHasMore ,
   accounts ,
   categories ,
+  dict ,
   categoryTree ,
   financialEntities = [] ,
+  lang = "es" ,
+  currentMonthKey ,
+  minKey ,
 }: TransactionsContainerProps ) {
   const searchParams = useSearchParams() ;
   const monthParam   = searchParams?.get( "month" ) ;
@@ -217,11 +226,20 @@ export function TransactionsContainer( {
 
   return(
     <div className={styles.container}>
-      <div className={styles.actionBar}>
-        <Button variant="primary" onClick={ () => setIsFormModalOpen( true ) }>
-          + Nueva Transacción
-        </Button>
-      </div>
+      <PageHeader
+        title={dict.transactionsPage?.title || "Libro Diario"}
+        subtitle={dict.transactionsPage?.subtitle || "Historial de movimientos y asientos contables de partida doble."}
+        actions={
+          <Button variant="primary" onClick={ () => setIsFormModalOpen( true ) }>
+            + Nueva Transacción
+          </Button>
+        }
+        showMonthSelector={true}
+        dict={dict}
+        lang={lang}
+        currentMonthKey={currentMonthKey}
+        minKey={minKey}
+      />
 
       <TransactionsControls
         searchTerm={searchTerm}

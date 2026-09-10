@@ -10,36 +10,6 @@
   width: 100%;
 }
 
-.header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  width: 100%;
-}
-
-.headerInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.titleRow {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.title {
-  font-family: var(--font-display);
-  font-size: var(--fs-xl);
-  font-weight: 800;
-  color: var(--text-main);
-  letter-spacing: -0.02em;
-  margin: 0;
-}
-
 .countBadge {
   display: inline-flex;
   align-items: center;
@@ -51,13 +21,6 @@
   color: var(--color-primary);
   background-color: var(--color-primary-light);
   border-radius: var(--radius-xl);
-}
-
-.subtitle {
-  font-family: var(--font-sans);
-  font-size: var(--fs-sm);
-  color: var(--text-muted);
-  margin: 0;
 }
 
 /* ── Barra de Controles y Búsqueda ────────────────────────────── */

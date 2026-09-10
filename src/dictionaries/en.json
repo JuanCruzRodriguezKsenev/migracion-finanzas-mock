@@ -78,6 +78,10 @@
     "brandColorFetchError": "Couldn't fetch the brand color. You can choose one manually.",
     "entityRequiredError": "The entity name is required."
   },
+  "cardsPage": {
+    "title": "Cards",
+    "subtitle": "Manage your credit and debit cards, limits, and liability accounts."
+  },
   "notifications": {
     "title": "Notifications",
     "empty": "No pending alerts",
@@ -179,6 +183,10 @@
     "tabAccounts": "Account Simulator (Coming soon)",
     "accountsPlaceholderTitle": "Account and Balance Simulator",
     "accountsPlaceholderDescription": "This sandbox will allow simulating the creation of asset, liability, and equity accounts, and modeling double-entry accounting transfers. Coming soon!"
+  },
+  "settingsPage": {
+    "title": "Settings",
+    "subtitle": "Manage the accounting expense and income categories of your organization."
   },
   "transactionsPage": {
     "title": "General Ledger",

@@ -135,14 +135,18 @@
     }
     .mobileMenuBtn:hover { box-shadow: var(--shadow-sm); }
 
-    .headerGreetingWrap { display: none !important; }
-
-    .headerBrandMobile {
-        display:        block !important;
-        font-family:    var(--font-display);
-        font-size:      1.1rem;
-        font-weight:    800;
-        color:          var(--color-primary);
-        letter-spacing: -0.02em;
+    .headerGreetingWrap {
+        display:   block !important;
+        min-width: 0;
     }
+
+    .headerGreeting {
+        font-size: var(--fs-lg);
+    }
+
+    .headerSubtitle {
+        font-size: var(--fs-xs);
+    }
+
+    .headerBrandMobile { display: none !important; }
 }

@@ -38,6 +38,7 @@ export default async function ContactsPage( { params }: ContactsPageProps ) {
         initialContacts={contacts}
         financialEntities={financialEntities}
         dict={dict}
+        lang={lang}
       />
     </div>
   ) ;

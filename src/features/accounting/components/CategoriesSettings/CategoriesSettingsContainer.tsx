@@ -9,15 +9,17 @@
 import React , { useState } from "react" ;
 
 // Shared
-import { SearchInput } from "@/shared/ui/forms/SearchInput/SearchInput" ;
-import { FormActions } from "@/shared/ui/forms/Form/FormActions" ;
-import { FormSelect }  from "@/shared/ui/forms/Form/FormSelect" ;
-import { FormInput }   from "@/shared/ui/forms/Form/FormInput" ;
-import { FormError }   from "@/shared/ui/forms/Form/FormError" ;
-import { EmptyState }  from "@/shared/ui/feedback/EmptyState/EmptyState" ;
-import { Button }      from "@/shared/ui/display/Button/Button" ;
-import { Modal }       from "@/shared/ui/feedback/Modal/Modal" ;
-import { Tabs }        from "@/shared/ui/display/Tabs/Tabs" ;
+import { PageHeader }          from "@/shared/ui/layout/PageHeader/PageHeader" ;
+import { SearchInput }         from "@/shared/ui/forms/SearchInput/SearchInput" ;
+import { FormActions }         from "@/shared/ui/forms/Form/FormActions" ;
+import { FormSelect }          from "@/shared/ui/forms/Form/FormSelect" ;
+import { FormInput }           from "@/shared/ui/forms/Form/FormInput" ;
+import { FormError }           from "@/shared/ui/forms/Form/FormError" ;
+import { EmptyState }          from "@/shared/ui/feedback/EmptyState/EmptyState" ;
+import { Button }              from "@/shared/ui/display/Button/Button" ;
+import type { getDictionary } from "@/shared/lib/dictionary" ;
+import { Modal }               from "@/shared/ui/feedback/Modal/Modal" ;
+import { Tabs }                from "@/shared/ui/display/Tabs/Tabs" ;
 
 // Feature: Accounting
 import { getCategoryTreeAction , createCategoryAction , updateCategoryAction , archiveCategoryAction , unarchiveCategoryAction , getCategoryMovementsCountAction } from "../../actions/categoryActions" ;
@@ -28,7 +30,34 @@ import styles                                                                   
 
 export interface CategoriesSettingsContainerProps {
   initialTree: CategoryTreeNode[] ;
+  dict?:       Awaited< ReturnType< typeof getDictionary > > ;
+  lang?:       string ;
 }
+
+const FALLBACK_DICT = {
+  header: {
+    greeting: "Hola" ,
+    subtitle: "" ,
+    thisMonth: "" ,
+    monthSelector: {
+      prevMonth: "" ,
+      nextMonth: "" ,
+      prevYear: "" ,
+      nextYear: "" ,
+      currentMonth: "" ,
+      selectMonth: "" ,
+      dialogAriaLabel: "" ,
+    } ,
+  } ,
+  notifications: {
+    title: "Notificaciones" ,
+    empty: "" ,
+  } ,
+  settingsPage: {
+    title: "Configuración" ,
+    subtitle: "Administrá las categorías contables de gastos e ingresos de tu organización." ,
+  } ,
+} as unknown as Awaited< ReturnType< typeof getDictionary > > ;
 
 const SETTINGS_TABS = [
   { key: "categories"   , label: "Categorías" } ,
@@ -42,6 +71,8 @@ const SETTINGS_TABS = [
  */
 export function CategoriesSettingsContainer( {
   initialTree ,
+  dict = FALLBACK_DICT ,
+  lang = "es" ,
 }: CategoriesSettingsContainerProps ) {
   const [ tree , setTree ]                                 = useState< CategoryTreeNode[] >( initialTree ) ;
   const [ isActionLoading , setIsActionLoading ]           = useState( false ) ;
@@ -294,12 +325,13 @@ export function CategoriesSettingsContainer( {
 
   return(
     <div className={styles.container}>
-      <div className={styles.headerSection}>
-        <h1 className={styles.pageTitle}>Configuración</h1>
-        <p className={styles.pageSubtitle}>
-          Administrá las categorías contables de gastos e ingresos de tu organización.
-        </p>
-      </div>
+      <PageHeader
+        title={dict.settingsPage?.title || "Configuración"}
+        subtitle={dict.settingsPage?.subtitle || "Administrá las categorías contables de gastos e ingresos de tu organización."}
+        showMonthSelector={false}
+        dict={dict}
+        lang={lang}
+      />
 
       <Tabs
         tabs={SETTINGS_TABS}

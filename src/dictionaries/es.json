@@ -78,6 +78,10 @@
     "brandColorFetchError": "No se pudo obtener el color corporativo. Podés elegir uno manual.",
     "entityRequiredError": "El nombre de la entidad es requerido."
   },
+  "cardsPage": {
+    "title": "Tarjetas",
+    "subtitle": "Administrá tus plásticos de crédito y débito, límites y cuentas de pasivo."
+  },
   "notifications": {
     "title": "Notificaciones",
     "empty": "No tienes alertas pendientes",
@@ -179,6 +183,10 @@
     "tabAccounts": "Simulador de Cuentas (Próximamente)",
     "accountsPlaceholderTitle": "Simulador de Cuentas y Saldos",
     "accountsPlaceholderDescription": "Este sandbox permitirá simular la creación de cuentas de activos, pasivos y patrimonios, y modelar transferencias contables de partida doble. ¡Próximamente disponible!"
+  },
+  "settingsPage": {
+    "title": "Configuración",
+    "subtitle": "Administrá las categorías contables de gastos e ingresos de tu organización."
   },
   "transactionsPage": {
     "title": "Libro Diario",

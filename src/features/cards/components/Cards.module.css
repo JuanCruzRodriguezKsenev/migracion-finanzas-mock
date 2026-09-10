@@ -14,34 +14,6 @@
   box-sizing: border-box;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.titleArea {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.title {
-  font-family: var(--font-display, sans-serif);
-  font-size: var(--fs-xl);
-  font-weight: 800;
-  color: var(--text-main);
-  margin: 0;
-}
-
-.subtitle {
-  font-size: var(--fs-sm);
-  color: var(--text-muted);
-  margin: 0;
-}
-
 .tabsRow {
   display: flex;
   gap: 0.5rem;

@@ -10,6 +10,7 @@ import React , { useState } from "react" ;
 
 // Shared
 import type { getDictionary } from "@/shared/lib/dictionary" ;
+import { PageHeader }         from "@/shared/ui/layout/PageHeader/PageHeader" ;
 import { EmptyState }         from "@/shared/ui/feedback/EmptyState/EmptyState" ;
 import { Tabs }                from "@/shared/ui/display/Tabs/Tabs" ;
 
@@ -37,12 +38,13 @@ export function SandboxContainer( {dict , lang}: SandboxContainerProps ) {
 
   return(
     <div className={styles.container}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>{ sandboxDict.title }</h1>
-        <p className={styles.subtitle}>
-          { sandboxDict.subtitle }
-        </p>
-      </div>
+      <PageHeader
+        title={sandboxDict.title}
+        subtitle={sandboxDict.subtitle}
+        showMonthSelector={false}
+        dict={dict}
+        lang={lang}
+      />
 
       {/* Navegación de Pestañas (Tabs) */}
       <Tabs

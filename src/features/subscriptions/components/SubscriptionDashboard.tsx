@@ -11,10 +11,11 @@ import React , { useState , useMemo , useRef , useEffect , useCallback } from "r
 import dynamic                                                           from "next/dynamic" ;
 
 // Shared
-import type { getDictionary } from "@/shared/lib/dictionary" ;
+import { PageHeader }         from "@/shared/ui/layout/PageHeader/PageHeader" ;
 import { EmptyState }         from "@/shared/ui/feedback/EmptyState/EmptyState" ;
 import { Button }             from "@/shared/ui/display/Button/Button" ;
 import { FormError }          from "@/shared/ui/forms/Form/FormError" ;
+import type { getDictionary } from "@/shared/lib/dictionary" ;
 
 // Feature: Profile
 import { useProfileContext } from "@/features/profile/context/ProfileContext" ;
@@ -47,7 +48,8 @@ interface SubscriptionDashboardProps {
   initialData:    Subscription[] ;
   initialPending: PendienteRecurrencia[] ;
   accounts:       Account[] ;
-  dict:           SubscriptionsDict ;
+  dict:           Awaited< ReturnType< typeof getDictionary > > ;
+  lang?:          string ;
 }
 
 // SVG del botón fuera del componente — no se recrea en cada render
@@ -68,7 +70,9 @@ export function SubscriptionDashboard( {
   initialPending ,
   accounts ,
   dict ,
+  lang = "es" ,
 }: SubscriptionDashboardProps ) {
+  const pageDict = dict.subscriptionsPage ;
   const { profile }                                 = useProfileContext() ;
   const locale                                      = ( profile?.numberFormat || "es-AR" ) ;
   const { summary , error , add , update , remove } = useSubscriptions( initialData ) ;
@@ -144,15 +148,23 @@ export function SubscriptionDashboard( {
 
   return(
     <div className={styles.container}>
-      {/* Barra de acciones: contador de servicios + alta */}
-      <div className={styles.actionBar}>
-        <span className={styles.countLabel}>
-          { summary.count } { dict.activeServices }
-        </span>
-        <Button variant="primary" icon={PLUS_ICON} onClick={handleOpenModal}>
-          { dict.addBtn }
-        </Button>
-      </div>
+      <PageHeader
+        title={pageDict.title}
+        subtitle={pageDict.subtitle}
+        actions={
+          <>
+            <span className={styles.countLabel}>
+              { summary.count } { pageDict.activeServices }
+            </span>
+            <Button variant="primary" icon={PLUS_ICON} onClick={handleOpenModal}>
+              { pageDict.addBtn }
+            </Button>
+          </>
+        }
+        showMonthSelector={false}
+        dict={dict}
+        lang={lang}
+      />
 
       {error && (
         <div className={styles.errorBanner}>
@@ -169,11 +181,11 @@ export function SubscriptionDashboard( {
 
       {summary.count === 0 ? (
         <EmptyState
-          title={dict.emptyStateTitle}
-          description={dict.emptyStateDescription}
+          title={pageDict.emptyStateTitle}
+          description={pageDict.emptyStateDescription}
           action={
             <Button variant="primary" icon={PLUS_ICON} onClick={handleOpenModal}>
-              { dict.addBtn }
+              { pageDict.addBtn }
             </Button>
           }
         />
@@ -210,9 +222,9 @@ export function SubscriptionDashboard( {
                 <SubscriptionCard
                   subscription={sub}
                   size={size}
-                  yearlySuffix={dict.perYearSuffix}
-                  editTitle={dict.editTitle}
-                  deleteTitle={dict.deleteTitle}
+                  yearlySuffix={pageDict.perYearSuffix}
+                  editTitle={pageDict.editTitle}
+                  deleteTitle={pageDict.deleteTitle}
                   onEdit={handleEdit}
                   onDelete={remove}
                 />
@@ -225,8 +237,8 @@ export function SubscriptionDashboard( {
       <SummaryBar
         totalMonthly={summary.totalMonthly}
         totalYearly={summary.totalYearly}
-        monthlyLabel={dict.totalMonthLabel}
-        yearlyLabel={dict.yearlyProjectionLabel}
+        monthlyLabel={pageDict.totalMonthLabel}
+        yearlyLabel={pageDict.yearlyProjectionLabel}
         locale={locale}
       />
 
@@ -238,7 +250,7 @@ export function SubscriptionDashboard( {
         onAdd={add}
         onUpdate={update}
         editingData={ editingSubscription ?? undefined }
-        dict={dict}
+        dict={pageDict}
       />
     </div>
   ) ;

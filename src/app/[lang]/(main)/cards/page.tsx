@@ -4,7 +4,8 @@
  * Server Component fino que orquesta la carga concurrente sin cascadas (Promise.all).
  */
 // Shared
-import styles from "./page.module.css" ;
+import { getDictionary } from "@/shared/lib/dictionary" ;
+import styles            from "./page.module.css" ;
 
 // Feature: Accounting
 import { getAccountsAction , getFinancialEntitiesAction } from "@/features/accounting/actions/accountingActions" ;
@@ -14,9 +15,16 @@ import { CardsContainer } from "@/features/cards/components/CardsContainer" ;
 import { getCardsAction } from "@/features/cards/actions/cardsActions" ;
 
 
-export default async function CardsPage() {
+interface CardsPageProps {
+  params: Promise< {lang: string} > ;
+}
+
+export default async function CardsPage( {params}: CardsPageProps ) {
+  const { lang } = await params ;
+
   // Carga concurrente en el servidor sin cascadas (async-parallel de Vercel y RFC 007 §8D)
-  const [ cardsRes , accountsRes , entitiesRes ] = await Promise.all( [
+  const [ dict , cardsRes , accountsRes , entitiesRes ] = await Promise.all( [
+    getDictionary( lang ) ,
     getCardsAction() ,
     getAccountsAction() ,
     getFinancialEntitiesAction() ,
@@ -32,6 +40,8 @@ export default async function CardsPage() {
         initialCards={cards}
         accounts={accounts}
         financialEntities={financialEntities}
+        dict={dict}
+        lang={lang}
       />
     </div>
   ) ;

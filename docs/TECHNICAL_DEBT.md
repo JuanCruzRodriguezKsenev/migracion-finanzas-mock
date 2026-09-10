@@ -116,3 +116,6 @@ Items pendientes tras el RFC 022:
 
 ### 7. Infraestructura de Pruebas y Entorno (detectado el 2026-09-10)
 *   [ ] **El mock de `next/cache` sólo expone `revalidatePath`** (`vitest.setup.mocks.ts`): el día que alguien use `revalidateTag` o `updateTag` va a recibir `undefined` y un error confuso.
+
+### 8. Navegación y Layout (detectado el 2026-09-10)
+*   [ ] **Botón hamburguesa de `PageHeader` inerte en móvil:** Con la extracción de `PageHeader` fuera del `AppShell`, el botón hamburguesa del encabezado recibe `onMenuClick` opcional pero ninguna página se lo pasa, quedando inerte. El drawer en móvil se sigue abriendo a través del botón homólogo en `BottomNav` (`shared/ui/layout/BottomNav/BottomNav.tsx:63-66`). Cablear el botón superior requiere elevar el estado del drawer (`isDrawerOpen`) a un contexto global de layout/navegación.

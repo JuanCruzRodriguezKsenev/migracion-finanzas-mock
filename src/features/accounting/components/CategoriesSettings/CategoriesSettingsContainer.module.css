@@ -5,26 +5,6 @@
   width:          100% ;
 }
 
-.headerSection {
-  display:        flex ;
-  flex-direction: column ;
-  gap:            0.5rem ;
-}
-
-.pageTitle {
-  font-size:      clamp(1.25rem, 1.1rem + 0.8vw, 1.75rem) ;
-  font-weight:    700 ;
-  color:          var(--text-main) ;
-  margin:         0 ;
-  letter-spacing: -0.02em ;
-}
-
-.pageSubtitle {
-  font-size: var(--fs-sm) ;
-  color:     var(--text-muted) ;
-  margin:    0 ;
-}
-
 /* ── Barra de Herramientas ─────────────────────────────────────── */
 .toolbar {
   display:         flex ;

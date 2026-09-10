@@ -1,38 +1,49 @@
 /**
- * @file Header.tsx
- * Componente global de cabecera (Header) para el App Shell de la aplicación.
- * Muestra el saludo al usuario autenticado y las acciones rápidas del panel con selector de mes interactivo.
- * Utiliza CSS Modules para el encapsulamiento de estilos.
+ * @file PageHeader.tsx
+ * Componente unificado de cabecera de página (PageHeader).
+ * Compuesto por cada página individual, contiene el título de sección (h1), subtítulo,
+ * acciones contextuales, selector de mes opcional y panel de notificaciones global.
  */
 "use client" ;
 
 // Librerías externas
 import { useRouter , usePathname , useSearchParams }          from "next/navigation" ;
 import React , { useState , useMemo , useTransition , useRef } from "react" ;
-import { useSession }                                         from "next-auth/react" ;
 
 // Shared
 import { MonthSelector }                     from "@/shared/ui/display/MonthSelector/MonthSelector" ;
 import { IconCalendar , IconBell , IconMenu } from "@/shared/ui/display/Icons/Icons" ;
 import type { getDictionary }                from "@/shared/lib/dictionary" ;
 import { Popup }                             from "@/shared/ui/feedback/Popup/Popup" ;
-import styles                                 from "./Header.module.css" ;
+import styles                                 from "./PageHeader.module.css" ;
 
 // Feature: Notifications
 import { NotificationsDropdown } from "@/features/notifications/components/NotificationsDropdown" ;
 import { useNotifications }      from "@/features/notifications/context/NotificationsContext" ;
 
-interface HeaderProps {
-  onMenuClick?:     () => void ;
-  dict:             Awaited< ReturnType< typeof getDictionary > > ;
-  lang?:            string ;
-  currentMonthKey?: string ;
-  minKey?:          string ;
+export interface PageHeaderProps {
+  title:              string ;
+  subtitle?:          string ;
+  actions?:           React.ReactNode ;
+  showMonthSelector?: boolean ;
+  dict:               Awaited< ReturnType< typeof getDictionary > > ;
+  lang?:              string ;
+  currentMonthKey?:   string ;
+  minKey?:            string ;
+  onMenuClick?:       () => void ;
 }
 
-export function Header( {dict , onMenuClick , lang = "es" , currentMonthKey , minKey}: HeaderProps ) {
-  const { data: session } = useSession() ;
-
+export function PageHeader( {
+  title ,
+  subtitle ,
+  actions ,
+  showMonthSelector = false ,
+  dict ,
+  lang = "es" ,
+  currentMonthKey ,
+  minKey ,
+  onMenuClick
+}: PageHeaderProps ) {
   const router       = useRouter() ;
   const pathname     = usePathname() ;
   const searchParams = useSearchParams() ;
@@ -41,37 +52,6 @@ export function Header( {dict , onMenuClick , lang = "es" , currentMonthKey , mi
   const { unreadCount }                 = useNotifications() ;
   const [ open , setOpen ]              = useState( false ) ;
   const triggerRef                      = useRef<HTMLButtonElement>( null ) ;
-
-  const greetingKey   = ( dict.header?.greeting || "Hola" ) ;
-  const nombreDefecto = ( greetingKey === "Hello" ? "User" : greetingKey === "Olá" ? "Usuário" : "Usuario" ) ;
-  const nombreUsuario = session?.user?.name || nombreDefecto ;
-  const primerNombre  = ( nombreUsuario.split( " " )[0] ) ;
-
-  const isAccounts        = pathname.includes( "/accounts" ) ;
-  const isSandbox         = pathname.includes( "/sandbox" ) ;
-  const isSubscriptions   = pathname.includes( "/subscriptions" ) ;
-  const isTransactions    = pathname.includes( "/transactions" ) ;
-  const showMonthSelector = ( !isAccounts && !isSubscriptions ) ;
-
-  const titleText = isAccounts
-    ? ( dict.accountsPage?.title || "Cuentas Financieras" )
-    : isSubscriptions
-    ? dict.subscriptionsPage.title
-    : isTransactions
-    ? ( dict.transactionsPage?.title || "Libro Diario" )
-    : isSandbox
-    ? dict.sandboxPage.title
-    : `${dict.header.greeting}, ${primerNombre}` ;
-
-  const subtitleText = isAccounts
-    ? ( dict.accountsPage?.subtitle || "Administra tus cuentas bancarias, billeteras virtuales y tarjetas." )
-    : isSubscriptions
-    ? dict.subscriptionsPage.subtitle
-    : isTransactions
-    ? ( dict.transactionsPage?.subtitle || "Consulta, busca y gestiona tus transacciones contables." )
-    : isSandbox
-    ? dict.sandboxPage.subtitle
-    : dict.header.subtitle ;
 
   // Determinar la clave inicial (mes actual) y límites de futuro dinámicamente
   const [ currentKey , maxKey ] = useMemo( () => {
@@ -103,8 +83,10 @@ export function Header( {dict , onMenuClick , lang = "es" , currentMonthKey , mi
       </button>
 
       <div className={styles.headerGreetingWrap}>
-        <h1 className={styles.headerGreeting}>{ titleText }</h1>
-        <p className={styles.headerSubtitle}>{ subtitleText }</p>
+        <h1 className={styles.headerGreeting}>{ title }</h1>
+        {subtitle && (
+          <p className={styles.headerSubtitle}>{ subtitle }</p>
+        )}
       </div>
 
       <div className={styles.headerBrandMobile}>
@@ -112,6 +94,7 @@ export function Header( {dict , onMenuClick , lang = "es" , currentMonthKey , mi
       </div>
 
       <div className={styles.headerActions}>
+        {actions}
         {showMonthSelector && (
           <div className={ `${styles.monthSelectorWrap} ${isPending ? styles.pending : ""}` }>
             <MonthSelector

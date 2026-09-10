@@ -10,9 +10,11 @@ import { useRouter }                     from "next/navigation" ;
 import React , { useState , useTransition } from "react" ;
 
 // Shared
-import { EmptyState }   from "@/shared/ui/feedback/EmptyState/EmptyState" ;
-import { Button }       from "@/shared/ui/display/Button/Button" ;
-import { IconAccounts } from "@/shared/ui/display/Icons/Icons" ;
+import { PageHeader }         from "@/shared/ui/layout/PageHeader/PageHeader" ;
+import { EmptyState }         from "@/shared/ui/feedback/EmptyState/EmptyState" ;
+import { Button }             from "@/shared/ui/display/Button/Button" ;
+import { IconAccounts }       from "@/shared/ui/display/Icons/Icons" ;
+import type { getDictionary } from "@/shared/lib/dictionary" ;
 
 // Feature: Profile
 import { useProfileContext } from "@/features/profile/context/ProfileContext" ;
@@ -32,12 +34,16 @@ interface CardsContainerProps {
   initialCards:      CardWithAccountsAndEntity[] ;
   financialEntities: FinancialEntity[] ;
   accounts:          Account[] ;
+  dict:              Awaited< ReturnType< typeof getDictionary > > ;
+  lang?:             string ;
 }
 
 export function CardsContainer( {
   initialCards ,
   financialEntities ,
   accounts ,
+  dict ,
+  lang = "es" ,
 }: CardsContainerProps ) {
   const router      = useRouter() ;
   const { profile } = useProfileContext() ;
@@ -72,18 +78,18 @@ export function CardsContainer( {
 
   return(
     <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.titleArea}>
-          <h1 className={styles.title}>Tarjetas</h1>
-          <p className={styles.subtitle}>
-            Administrá tus plásticos de crédito y débito, límites y cuentas de pasivo.
-          </p>
-        </div>
-
-        <Button variant="primary" onClick={ () => setIsModalOpen( true ) }>
-          Nueva Tarjeta
-        </Button>
-      </header>
+      <PageHeader
+        title={dict.cardsPage?.title || "Tarjetas"}
+        subtitle={dict.cardsPage?.subtitle || "Administrá tus plásticos de crédito y débito, límites y cuentas de pasivo."}
+        actions={
+          <Button variant="primary" onClick={ () => setIsModalOpen( true ) }>
+            Nueva Tarjeta
+          </Button>
+        }
+        showMonthSelector={false}
+        dict={dict}
+        lang={lang}
+      />
 
       <nav className={styles.tabsRow}>
         <button

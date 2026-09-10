@@ -58,7 +58,8 @@ export default async function SubscriptionsPage( {params}: SubscriptionsPageProp
       initialData={subscriptions}
       initialPending={pendingOccurrences}
       accounts={paymentAccounts}
-      dict={dict.subscriptionsPage}
+      dict={dict}
+      lang={lang}
     />
   ) ;
 }

@@ -4,13 +4,6 @@
   flex-direction: column ;
 }
 
-.actionBar {
-  display: flex ;
-  align-items: center ;
-  justify-content: space-between ;
-  margin-bottom: 1.25rem ;
-}
-
 .countLabel {
   font-size: var(--fs-sm) ;
   color: var(--text-muted) ;

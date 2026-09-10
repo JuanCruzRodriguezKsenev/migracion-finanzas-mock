@@ -78,6 +78,10 @@
     "brandColorFetchError": "Não foi possível obter a cor corporativa. Você pode escolher uma manualmente.",
     "entityRequiredError": "O nome da entidade é obrigatório."
   },
+  "cardsPage": {
+    "title": "Cartões",
+    "subtitle": "Gerencie seus cartões de crédito e débito, limites e contas de passivo."
+  },
   "notifications": {
     "title": "Notificações",
     "empty": "Sem alertas pendentes",
@@ -179,6 +183,10 @@
     "tabAccounts": "Simulador de Contas (Em breve)",
     "accountsPlaceholderTitle": "Simulador de Contas e Saldos",
     "accountsPlaceholderDescription": "Este sandbox permitirá simular a criação de contas de ativos, passivos e patrimônio, e modelar transferências contábeis de partida dobrada. Em breve disponível!"
+  },
+  "settingsPage": {
+    "title": "Configurações",
+    "subtitle": "Gerencie as categorias contábeis de despesas e receitas da sua organização."
   },
   "transactionsPage": {
     "title": "Livro Diário",

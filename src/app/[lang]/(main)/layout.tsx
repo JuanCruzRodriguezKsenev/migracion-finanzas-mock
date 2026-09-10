@@ -13,9 +13,6 @@ import { AppShell }                  from "@/shared/ui/layout/AppShell/AppShell"
 import { getDictionary }             from "@/shared/lib/dictionary" ;
 import { authOptions }               from "@/shared/lib/auth" ;
 
-// Feature: Accounting
-import { getEarliestMonthKeyAction } from "@/features/accounting/actions/accountingActions" ;
-
 
 interface MainLayoutProps {
   children: React.ReactNode ;
@@ -34,18 +31,11 @@ export default async function MainLayout( {children , params}: MainLayoutProps )
     redirect( `/${lang}/auth/signin?expired=1` ) ;
   }
 
-  const [ dict , earliestMonthResult ] = await Promise.all( [
-    getDictionary( lang ) ,
-    getEarliestMonthKeyAction() ,
-  ] ) ;
-
-  const ahora           = new Date() ;
-  const currentMonthKey = `${ahora.getFullYear()}-${String( ahora.getMonth() + 1 ).padStart( 2 , "0" )}` ;
-  const minKey          = earliestMonthResult.success ? earliestMonthResult.value : undefined ;
+  const dict = await getDictionary( lang ) ;
 
   return(
     <MetricsVisibilityProvider>
-      <AppShell dict={dict} lang={lang} currentMonthKey={currentMonthKey} minKey={minKey}>
+      <AppShell dict={dict}>
         { children }
       </AppShell>
     </MetricsVisibilityProvider>

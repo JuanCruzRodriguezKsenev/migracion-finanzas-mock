@@ -3,22 +3,26 @@
  * Página de inicio (Dashboard) — conectada a datos reales de la DB.
  */
 // Librerías externas
-import Link from "next/link" ;
+import { getServerSession } from "next-auth" ;
+import Link                 from "next/link" ;
 
 // Shared
 import { MetricsSection } from "@/shared/ui/layout/MetricsSection/MetricsSection" ;
 import { Sparkline }      from "@/shared/ui/display/RechartsSparkline/Sparkline" ;
+import { PageHeader }     from "@/shared/ui/layout/PageHeader/PageHeader" ;
 import { EmptyState }     from "@/shared/ui/feedback/EmptyState/EmptyState" ;
 import { MetricCard }     from "@/shared/ui/MetricCard/MetricCard" ;
 import { Button }         from "@/shared/ui/display/Button/Button" ;
 import { getDictionary }  from "@/shared/lib/dictionary" ;
+import { authOptions }    from "@/shared/lib/auth" ;
 import styles             from "./page.module.css" ;
 
 // Actions
 import {
   getTransactionsAction ,
   getAccountsAction ,
-  getMonthlySummariesAction
+  getMonthlySummariesAction ,
+  getEarliestMonthKeyAction
 } from "@/features/accounting/actions/accountingActions" ;
 
 // Utils
@@ -64,16 +68,24 @@ export default async function HomePage( {params , searchParams}: HomePageProps )
   }
 
   // ── Obtener datos reales de la DB (Optimizado) ─────────────────────────────
-  const [ accountsResult , monthlySummariesResult , transactionsResult ] = await Promise.all( [
+  const [ session , accountsResult , monthlySummariesResult , transactionsResult , earliestMonthResult ] = await Promise.all( [
+    getServerSession( authOptions ) ,
     getAccountsAction() ,
     getMonthlySummariesAction( 12 , fromDate.getFullYear() , fromDate.getMonth() + 1 ) ,
-    getTransactionsAction( {fromDate , toDate} )
+    getTransactionsAction( {fromDate , toDate} ) ,
+    getEarliestMonthKeyAction() ,
   ] ) ;
 
   // Si hay error, usar valores vacíos
   const accounts         = accountsResult.success         ? accountsResult.value         : [] ;
   const monthlySummaries = monthlySummariesResult.success ? monthlySummariesResult.value : [] ;
   const transactions     = transactionsResult.success     ? transactionsResult.value     : [] ;
+  const minKey          = earliestMonthResult.success    ? earliestMonthResult.value    : undefined ;
+
+  const greetingKey   = ( dict.header?.greeting || "Hola" ) ;
+  const nombreDefecto = ( greetingKey === "Hello" ? "User" : greetingKey === "Olá" ? "Usuário" : "Usuario" ) ;
+  const nombreUsuario = session?.user?.name || nombreDefecto ;
+  const primerNombre  = ( nombreUsuario.split( " " )[0] ) ;
 
   // ── Determinar si es un mes histórico cerrado o mes activo ─────────────────
   const selectedYear  = fromDate.getFullYear() ;
@@ -183,6 +195,15 @@ export default async function HomePage( {params , searchParams}: HomePageProps )
   if( accounts.length === 0 ) {
     return(
       <div className={styles.container}>
+        <PageHeader
+          title={ `${dict.header.greeting}, ${primerNombre}` }
+          subtitle={dict.header.subtitle}
+          showMonthSelector={true}
+          dict={dict}
+          lang={lang}
+          currentMonthKey={currentMonthKey}
+          minKey={minKey}
+        />
         <DashboardAlerts lang={lang} />
         <EmptyState
           title={dict.dashboard.emptyStateTitle}
@@ -199,6 +220,15 @@ export default async function HomePage( {params , searchParams}: HomePageProps )
 
   return(
     <div className={styles.container}>
+      <PageHeader
+        title={ `${dict.header.greeting}, ${primerNombre}` }
+        subtitle={dict.header.subtitle}
+        showMonthSelector={true}
+        dict={dict}
+        lang={lang}
+        currentMonthKey={currentMonthKey}
+        minKey={minKey}
+      />
       <DashboardAlerts lang={lang} />
       <MetricsSection
         allowVisibilityToggle={true}

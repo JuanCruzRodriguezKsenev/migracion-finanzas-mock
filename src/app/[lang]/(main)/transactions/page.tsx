@@ -4,11 +4,16 @@
  * Server Component fino que compone datos de cuentas, categorías y transacciones iniciales.
  */
 // Shared
-import styles from "./page.module.css" ;
+import { getDictionary } from "@/shared/lib/dictionary" ;
+import styles            from "./page.module.css" ;
 
 // Feature: Accounting
-import { getAccountsAction , getFinancialEntitiesAction } from "@/features/accounting/actions/accountingActions" ;
-import { getCategoryTreeAction }                         from "@/features/accounting/actions/categoryActions" ;
+import {
+  getAccountsAction ,
+  getFinancialEntitiesAction ,
+  getEarliestMonthKeyAction
+} from "@/features/accounting/actions/accountingActions" ;
+import { getCategoryTreeAction } from "@/features/accounting/actions/categoryActions" ;
 
 // Feature: Transactions
 import { getTransactionsPageAction } from "@/features/transactions/actions/transactionsActions" ;
@@ -38,7 +43,9 @@ export default async function TransactionsPage( {params , searchParams}: Transac
   }
 
   // Carga concurrente en el servidor
-  const [ accountsRes , categoryTreeRes , entitiesRes , transactionsPageRes ] = await Promise.all( [
+  const [ dict , earliestMonthRes , accountsRes , categoryTreeRes , entitiesRes , transactionsPageRes ] = await Promise.all( [
+    getDictionary( lang ) ,
+    getEarliestMonthKeyAction() ,
     getAccountsAction() ,
     getCategoryTreeAction() ,
     getFinancialEntitiesAction() ,
@@ -48,6 +55,10 @@ export default async function TransactionsPage( {params , searchParams}: Transac
       toDate ,
     } )
   ] ) ;
+
+  const ahora           = new Date() ;
+  const currentMonthKey = `${ahora.getFullYear()}-${String( ahora.getMonth() + 1 ).padStart( 2 , "0" )}` ;
+  const minKey          = earliestMonthRes.success ? earliestMonthRes.value : undefined ;
 
   const accounts            = ( accountsRes.success         ? accountsRes.value                   : [] ) ;
   const categoryTree        = ( categoryTreeRes.success     ? categoryTreeRes.value               : [] ) ;
@@ -67,7 +78,10 @@ export default async function TransactionsPage( {params , searchParams}: Transac
         categories={categories}
         categoryTree={categoryTree}
         financialEntities={financialEntities}
+        dict={dict}
         lang={lang}
+        currentMonthKey={currentMonthKey}
+        minKey={minKey}
       />
     </div>
   ) ;

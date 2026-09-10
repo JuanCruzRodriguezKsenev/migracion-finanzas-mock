@@ -9,9 +9,10 @@
 import React , { useState , useTransition , useMemo } from "react" ;
 
 // Shared
-import type { getDictionary } from "@/shared/lib/dictionary" ;
+import { PageHeader }         from "@/shared/ui/layout/PageHeader/PageHeader" ;
 import { SearchInput }        from "@/shared/ui/forms/SearchInput/SearchInput" ;
 import { Button }             from "@/shared/ui/display/Button/Button" ;
+import type { getDictionary } from "@/shared/lib/dictionary" ;
 
 // Feature: Accounting
 import { FinancialEntity } from "@/features/accounting/types" ;
@@ -28,13 +29,15 @@ import styles                                       from "./Contacts.module.css"
 interface ContactsContainerProps {
   initialContacts:   ContactWithPaymentMethods[] ;
   financialEntities: FinancialEntity[] ;
-  dict?:             Awaited< ReturnType< typeof getDictionary > > ;
+  dict:              Awaited< ReturnType< typeof getDictionary > > ;
+  lang?:             string ;
 }
 
 export function ContactsContainer( {
   initialContacts ,
   financialEntities ,
   dict ,
+  lang = "es" ,
 }: ContactsContainerProps ) {
   const [ contacts , setContacts ]                         = useState< ContactWithPaymentMethods[] >( initialContacts ) ;
   const [ search , setSearch ]                             = useState( "" ) ;
@@ -112,25 +115,23 @@ export function ContactsContainer( {
   return(
     <div className={styles.container}>
       {/* Encabezado */}
-      <div className={styles.header}>
-        <div className={styles.headerInfo}>
-          <div className={styles.titleRow}>
-            <h1 className={styles.title}>
-              {pageDict?.title || "Agenda de Contactos"}
-            </h1>
+      <PageHeader
+        title={pageDict?.title || "Agenda de Contactos"}
+        subtitle={pageDict?.subtitle || "Administra tus contactos, destinatarios y sus cuentas de cobro (CBU/CVU y Alias)."}
+        actions={
+          <>
             <span className={styles.countBadge}>
               {contacts.length} {contacts.length === 1 ? "contacto" : "contactos"}
             </span>
-          </div>
-          <p className={styles.subtitle}>
-            {pageDict?.subtitle || "Administra tus contactos, destinatarios y sus cuentas de cobro (CBU/CVU y Alias)."}
-          </p>
-        </div>
-
-        <Button variant="primary" onClick={handleOpenCreate}>
-          {pageDict?.btnNew || "Nuevo Contacto"}
-        </Button>
-      </div>
+            <Button variant="primary" onClick={handleOpenCreate}>
+              {pageDict?.btnNew || "Nuevo Contacto"}
+            </Button>
+          </>
+        }
+        showMonthSelector={false}
+        dict={dict}
+        lang={lang}
+      />
 
       {/* Controles de Búsqueda */}
       <div className={styles.controlsBar}>

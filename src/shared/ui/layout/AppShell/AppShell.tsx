@@ -13,22 +13,18 @@ import React , { useState } from "react" ;
 import type { getDictionary } from "@/shared/lib/dictionary" ;
 import { BottomNav }          from "@/shared/ui/layout/BottomNav/BottomNav" ;
 import { Navbar }             from "@/shared/ui/layout/Navbar/Navbar" ;
-import { Header }             from "@/shared/ui/layout/Header/Header" ;
 import styles from "./AppShell.module.css" ;
 
 interface AppShellProps {
-  children:         React.ReactNode ;
-  lang:             string ;
-  dict:             Awaited< ReturnType< typeof getDictionary > > ;
-  currentMonthKey?: string ;
-  minKey?:          string ;
+  children: React.ReactNode ;
+  dict:     Awaited< ReturnType< typeof getDictionary > > ;
 }
 
 /**
  * App Shell unificado para la aplicación.
  * Maneja el estado de visibilidad del sidebar en móvil (Drawer).
  */
-export function AppShell( {children , lang , dict , currentMonthKey , minKey}: AppShellProps ) {
+export function AppShell( {children , dict}: AppShellProps ) {
   const [ isDrawerOpen , setIsDrawerOpen ] = useState( false ) ;
 
   const openDrawer  = () => setIsDrawerOpen( true ) ;
@@ -49,13 +45,6 @@ export function AppShell( {children , lang , dict , currentMonthKey , minKey}: A
       />
 
       <div className={styles.mainWrapper}>
-        <Header
-          dict={dict}
-          onMenuClick={openDrawer}
-          lang={lang}
-          currentMonthKey={currentMonthKey}
-          minKey={minKey}
-        />
         <main className={styles.contentContainer}>
           {children}
         </main>

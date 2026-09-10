@@ -9,14 +9,15 @@
 import React , { useState } from "react" ;
 
 // Shared
-import type { getDictionary }   from "@/shared/lib/dictionary" ;
 import { useMetricsVisibility } from "@/shared/ui/layout/MetricsSection/MetricsVisibilityContext" ;
 import { InstitutionLogo }      from "@/shared/ui/display/InstitutionLogo/InstitutionLogo" ;
 import { MetricsSection }       from "@/shared/ui/layout/MetricsSection/MetricsSection" ;
 import { Sparkline }            from "@/shared/ui/display/RechartsSparkline/Sparkline" ;
+import { PageHeader }           from "@/shared/ui/layout/PageHeader/PageHeader" ;
 import { EmptyState }           from "@/shared/ui/feedback/EmptyState/EmptyState" ;
 import { MetricCard }           from "@/shared/ui/MetricCard/MetricCard" ;
 import { Button }               from "@/shared/ui/display/Button/Button" ;
+import type { getDictionary }   from "@/shared/lib/dictionary" ;
 import { Modal }                from "@/shared/ui/feedback/Modal/Modal" ;
 import { Card }                 from "@/shared/ui/display/Card/Card" ;
 import { Tabs }                 from "@/shared/ui/display/Tabs/Tabs" ;
@@ -117,27 +118,34 @@ export function AccountsContainer( {
 
   return(
     <div className={styles.container}>
-      {/* Botones superiores de Acción */}
-      <div className={styles.actionBar}>
-        <div className={styles.actionBarButtons}>
-          <Button
-            variant="outline"
-            className={styles.createBtn}
-            onClick={ () => setIsEntityModalOpen( true ) }
-          >
-            + Nueva Entidad
-          </Button>
-          <Button
-            className={styles.createBtn}
-            onClick={ () => {
-              setPreselectedEntityId( null ) ;
-              setIsModalOpen( true ) ;
-            } }
-          >
-            + Nueva Cuenta
-          </Button>
-        </div>
-      </div>
+      {/* Encabezado unificado de página */}
+      <PageHeader
+        title={accountsPageDict.title}
+        subtitle={accountsPageDict.subtitle}
+        actions={
+          <div className={styles.actionBarButtons}>
+            <Button
+              variant="outline"
+              className={styles.createBtn}
+              onClick={ () => setIsEntityModalOpen( true ) }
+            >
+              + Nueva Entidad
+            </Button>
+            <Button
+              className={styles.createBtn}
+              onClick={ () => {
+                setPreselectedEntityId( null ) ;
+                setIsModalOpen( true ) ;
+              } }
+            >
+              + Nueva Cuenta
+            </Button>
+          </div>
+        }
+        showMonthSelector={false}
+        dict={dict}
+        lang={lang}
+      />
 
       {/* Indicadores de Balance Superior utilizando MetricsSection en modo Hero Layout */}
       <MetricsSection
