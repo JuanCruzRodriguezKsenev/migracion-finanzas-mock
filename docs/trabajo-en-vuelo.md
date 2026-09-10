@@ -13,15 +13,13 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 ## Rama y próximo paso
 
 **Rama activa:** `fix/mocks-de-ui-y-dict-obligatorio`, encadenada sobre `master` ya consolidado.
-**Próximo paso:** ejecutar `docs/planes/mocks-de-ui-y-dict-obligatorio.md` — el plan vive en esa
-rama y llega a `master` cuando se consolide.
+**Próximo paso:** revisión y consolidación sobre `master`.
 
-**Estado:** 🟡 **Plan escrito y listo para ejecutar (2026-09-10).** Cierra los dos hallazgos que dejó
-la ronda del `PageHeader`: la prop `dict` de `CategoriesSettingsContainer` quedó opcional con un
-diccionario de respaldo casteado con `as unknown as`, y el setup global de vitest pasó a mockear
-`NotificationsContext` —código propio— para las 53 suites. **Decisión del usuario:** el setup global
-mockea sólo dependencias de framework; el código propio se monta real. El plan deja el patrón §12 en
-[`patterns.md`](patterns.md), que hoy no tiene ninguno de testing de UI.
+**Estado:** 🟢 **Plan ejecutado (2026-09-10).** Se cerraron los dos hallazgos de la ronda de `PageHeader`:
+la prop `dict` de `CategoriesSettingsContainer` es estrictamente obligatoria (sin diccionario de respaldo
+ni cast `as unknown as`), el setup global de vitest mockea exclusivamente dependencias de framework
+(`next/cache`, `next/navigation` con `routerMock` estable vía `vi.hoisted`), el código propio del proyecto
+se monta real con `<NotificationsProvider>`, y quedó asentado el patrón §12 en [`patterns.md`](patterns.md).
 
 **Lo consolidado el 2026-09-10 quedó congelado en `registro/`:**
 [`2026-09-10-cierre-rfc023-y-compuerta.md`](registro/2026-09-10-cierre-rfc023-y-compuerta.md)

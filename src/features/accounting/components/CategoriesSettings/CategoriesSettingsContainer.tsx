@@ -30,34 +30,9 @@ import styles                                                                   
 
 export interface CategoriesSettingsContainerProps {
   initialTree: CategoryTreeNode[] ;
-  dict?:       Awaited< ReturnType< typeof getDictionary > > ;
-  lang?:       string ;
+  dict:        Awaited< ReturnType< typeof getDictionary > > ;
+  lang:        string ;
 }
-
-const FALLBACK_DICT = {
-  header: {
-    greeting: "Hola" ,
-    subtitle: "" ,
-    thisMonth: "" ,
-    monthSelector: {
-      prevMonth: "" ,
-      nextMonth: "" ,
-      prevYear: "" ,
-      nextYear: "" ,
-      currentMonth: "" ,
-      selectMonth: "" ,
-      dialogAriaLabel: "" ,
-    } ,
-  } ,
-  notifications: {
-    title: "Notificaciones" ,
-    empty: "" ,
-  } ,
-  settingsPage: {
-    title: "Configuración" ,
-    subtitle: "Administrá las categorías contables de gastos e ingresos de tu organización." ,
-  } ,
-} as unknown as Awaited< ReturnType< typeof getDictionary > > ;
 
 const SETTINGS_TABS = [
   { key: "categories"   , label: "Categorías" } ,
@@ -71,8 +46,8 @@ const SETTINGS_TABS = [
  */
 export function CategoriesSettingsContainer( {
   initialTree ,
-  dict = FALLBACK_DICT ,
-  lang = "es" ,
+  dict ,
+  lang ,
 }: CategoriesSettingsContainerProps ) {
   const [ tree , setTree ]                                 = useState< CategoryTreeNode[] >( initialTree ) ;
   const [ isActionLoading , setIsActionLoading ]           = useState( false ) ;
@@ -326,8 +301,8 @@ export function CategoriesSettingsContainer( {
   return(
     <div className={styles.container}>
       <PageHeader
-        title={dict.settingsPage?.title || "Configuración"}
-        subtitle={dict.settingsPage?.subtitle || "Administrá las categorías contables de gastos e ingresos de tu organización."}
+        title={dict.settingsPage.title}
+        subtitle={dict.settingsPage.subtitle}
         showMonthSelector={false}
         dict={dict}
         lang={lang}

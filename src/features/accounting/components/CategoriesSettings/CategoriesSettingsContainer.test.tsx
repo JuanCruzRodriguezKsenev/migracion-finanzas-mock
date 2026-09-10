@@ -1,12 +1,18 @@
 // @vitest-environment jsdom
 
 // Librerías externas
-import { describe , it , expect , vi , beforeEach } from "vitest" ;
-import { render , screen , fireEvent , waitFor }     from "@testing-library/react" ;
+import { describe , it , expect , vi , beforeAll , beforeEach } from "vitest" ;
+import { render , screen , fireEvent , waitFor }                 from "@testing-library/react" ;
+
+// Shared
+import { getDictionary } from "@/shared/lib/dictionary" ;
+
+// Feature: Notifications
+import { NotificationsProvider } from "@/features/notifications/context/NotificationsContext" ;
 
 // Feature: Accounting
-import { CategoryTreeNode } from "../../types" ;
 import { CategoriesSettingsContainer } from "./CategoriesSettingsContainer" ;
+import { CategoryTreeNode }            from "../../types" ;
 
 // Mocks
 vi.mock( "../../actions/categoryActions" , () => ( {
@@ -98,12 +104,26 @@ describe( "CategoriesSettingsContainer - Dos columnas y gestión de categorías"
     } ,
   ] ;
 
+  let dict: Awaited< ReturnType< typeof getDictionary > > ;
+
+  beforeAll( async () => {
+    dict = await getDictionary( "es" ) ;
+  } ) ;
+
   beforeEach( () => {
     vi.clearAllMocks() ;
   } ) ;
 
+  const renderContainer = ( tree: CategoryTreeNode[] ) => (
+    render(
+      <NotificationsProvider>
+        <CategoriesSettingsContainer initialTree={tree} dict={dict} lang="es" />
+      </NotificationsProvider>
+    )
+  ) ;
+
   it( "seleccionar un padre muestra sus hijas y no muestra el código contable" , () => {
-    render( <CategoriesSettingsContainer initialTree={sampleTree} /> ) ;
+    renderContainer( sampleTree ) ;
 
     // Por defecto el primer padre seleccionado es Vivienda
     expect( screen.getByRole( "heading" , { name: "Vivienda" , level: 2 } ) ).toBeTruthy() ;
@@ -128,7 +148,7 @@ describe( "CategoriesSettingsContainer - Dos columnas y gestión de categorías"
       value:   sampleTree ,
     } ) ;
 
-    render( <CategoriesSettingsContainer initialTree={sampleTree} /> ) ;
+    renderContainer( sampleTree ) ;
 
     const checkbox = screen.getByLabelText( /Ver archivadas/i ) ;
     fireEvent.click( checkbox ) ;
@@ -154,7 +174,7 @@ describe( "CategoriesSettingsContainer - Dos columnas y gestión de categorías"
       value:   sampleTree ,
     } ) ;
 
-    render( <CategoriesSettingsContainer initialTree={sampleTree} /> ) ;
+    renderContainer( sampleTree ) ;
 
     // Botón archivar de la cabecera del padre Vivienda
     const archiveBtns = screen.getAllByRole( "button" , { name: /^Archivar$/i } ) ;

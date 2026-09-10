@@ -330,7 +330,24 @@ Cuando cada suite mantiene su propia lista de `db.delete(...)`:
 5.  **Limpieza de entrada y salida:**
     Las suites que interactúan con la base de datos ejecutan `await limpiarBase()` al inicio de cada caso (`beforeEach`) y garantizan un cierre limpio al finalizar el archivo (`afterAll( limpiarBase )`).
 
+---
 
+## 12. Montaje de Tests de Componentes Cliente (Client Component Test Harness)
 
+Mientras que el [§11](#11-limpieza-unificada-de-base-de-datos-en-orden-topológico-test-database-cleanup) gobierna las suites de **integración** que interactúan contra PostgreSQL (`finanzas_db_test`) en entorno Node, esta sección gobierna las pruebas unitarias y de integración visual de **componentes cliente** ejecutadas sobre `jsdom` (`// @vitest-environment jsdom`).
 
+Para evitar falsos positivos y componentes que fallan en producción por falta de traducciones o contextos faltantes, los tests de UI siguen cuatro reglas estrictas de montaje:
 
+### Reglas e Invariantes
+
+1.  **El diccionario nunca es opcional:**
+    Un componente cliente que renderiza texto traducible recibe `dict` como prop **obligatoria** (y `lang` correspondiente). Está prohibido definir diccionarios de respaldo embebidos (`FALLBACK_DICT`) en los componentes y prohibido el casteo `as unknown as` sobre la forma del diccionario: relajar la prop o falsear el tipo apaga la única verificación de que las claves existen con la misma estructura en `es.json`, `en.json` y `br.json`.
+2.  **El test usa el diccionario real:**
+    En lugar de armar diccionarios dummy o parciales, la suite carga el diccionario canónico real con `dict = await getDictionary( "es" )` dentro de un bloque `beforeAll`. De este modo, la ejecución de la prueba valida de forma pasiva que las claves accedidas por la interfaz existen en el archivo de localización.
+3.  **Se mockea el framework, no el código del proyecto:**
+    El archivo de configuración global `src/shared/lib/vitest.setup.mocks.ts` sólo puede mockear módulos de infraestructura o framework que en `jsdom` no existen (`next/cache`, `next/navigation`). Los contextos, hooks o stores propios del proyecto (como `NotificationsContext` o `NotificationsProvider`) deben montarse reales en el árbol de componentes. Si un caso de prueba extremo requiriera forzar un estado puntual de un contexto propio, el mock debe declararse **local al archivo de test**, jamás en el setup global, para no anular en silencio la suite propia de dicha feature.
+4.  **Los dobles de framework son estables y aseverables:**
+    Los dobles de Next.js provistos por el setup global se declaran mediante `vi.hoisted` y se exportan (ej: `routerMock` exportado desde `vitest.setup.mocks.ts`). Esto garantiza que no se instancien objetos nuevos por cada invocación del hook, permitiendo a los tests espiar y aseverar sobre métodos como `routerMock.refresh()` o `routerMock.push()`. La suite que requiera aseverar sobre estos dobles es responsable de limpiar su estado en su propio `beforeEach`.
+
+### Ejemplo de Referencia
+La suite de [`CategoriesSettingsContainer.test.tsx`](../src/features/accounting/components/CategoriesSettings/CategoriesSettingsContainer.test.tsx) implementa este patrón íntegro: carga `getDictionary( "es" )` en `beforeAll`, envuelve el render con el `<NotificationsProvider>` real y delega en el `routerMock` hoisted del harness global.
