@@ -333,6 +333,44 @@ lo que produjo la mezcla:
 
 ---
 
+## 4bis. Decisiones de interfaz (2026-09-09, después de ejecutar la primera tajada del RFC 022)
+
+Tomadas una por una, con el estado del repositorio verificado antes de cada una.
+
+1.  **La gestión del árbol de categorías vive en `/settings`, como pestaña.** No es una ruta propia:
+    es ajuste de la aplicación, no operación diaria.
+    *Verificado antes de decidir:* la navegación de este repositorio ya está desactualizada —
+    `Navbar.tsx` lista dashboard, sandbox, transactions, accounts, subscriptions y contacts, y
+    **`/cards` no figura** pese a existir desde el 2026-09-08. Sumar entradas al menú no era el
+    camino.
+
+2.  **No hay ruta `/profile`: el perfil es otra pestaña de `/settings`.** Enmienda al RFC 015, ya
+    anotada en ese documento.
+    *Fundamento:* el mock **duplica** la pantalla — `/perfil` y `/configuracion` muestran ambas
+    *Información personal* y *Preferencias*, y las ocho pestañas de `/configuracion` son
+    decorativas (`activeTab` no condiciona ningún render). Se unifica en vez de portar la
+    duplicación.
+
+3.  **`/settings` nace con una sola pestaña: Categorías.** De las ocho del mock, sólo cuatro tienen
+    backend en este repositorio —Perfil, Preferencias, Categorías y Seguridad, esta última sobre el
+    `userRepository.updatePasswordHash` que ya existe—; **Etiquetas no existe en ningún lado**
+    (ni tabla, ni RFC, ni concepto) y Notificaciones **no persiste**: es contexto de UI en memoria.
+    Las preferencias quedan para la pestaña siguiente, con su deuda de "sin consumidor de
+    producción" todavía abierta.
+
+4.  **El selector de categorías del formulario se agrupa por padre y permite crear al vuelo.**
+    *Por qué es urgente:* `TransactionFormModal.tsx:277-286` dibuja un `<select>` plano con un
+    `.map()` sobre todas las categorías. Con 6 funcionaba; **el catálogo del RFC 022 lo dejó en 67**,
+    ordenadas alfabéticamente, sin jerarquía, con ingresos y gastos mezclados y con nombres
+    repetidos —cada padre tiene su hoja `General`, y *Entretenimiento* existe dos veces—.
+    **La rama del RFC 022 no tocó ese archivo**, porque el plan decía explícitamente que la UI de
+    transacciones no cambiaba: es un defecto que el plan no nombró.
+    Se resuelve con `<optgroup>` por padre, más un `+ Crear categoría` que llame a
+    `createCategoryAction` sin salir del modal. **Crear al vuelo exige resolver padre y tipo**, así
+    que no es un campo de texto suelto: es un mini-formulario dentro del modal.
+
+---
+
 ## 5. Defectos verificados durante la discusión
 
 Todos comprobados contra el código o la base, no inferidos. Los que son defectos vivos quedaron

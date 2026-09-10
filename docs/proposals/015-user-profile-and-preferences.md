@@ -74,6 +74,15 @@ Sólo los objetivos **1 y 2**. Quedan explícitamente fuera:
 *   **`exchange_rates` y consolidación de patrimonio.** Su diseño queda asentado en §5, pero no hay nada que consolidar mientras todas las cuentas estén en una sola divisa y falten las tablas de riqueza.
 *   **La ruta `/perfil`.** La UI de edición es un módulo aparte del catálogo pendiente.
 
+    > **Enmienda del 2026-09-09, decidida por el usuario: no hay ruta `/profile`.** El perfil pasa a
+    > ser **una pestaña dentro de `/settings`**, junto con preferencias, categorías y seguridad.
+    > *Motivo:* la referencia del mock **duplica** — `/perfil` (363 líneas) muestra *Información
+    > personal* y *Preferencias de la aplicación*, y `/configuracion` (491 líneas) repite las dos
+    > como sus pestañas `Perfil` y `Preferencias`, todas decorativas (`activeTab` no condiciona
+    > ningún render). Se unifica en una sola página con pestañas en vez de portar la duplicación.
+    > **Lo demás de este RFC no cambia:** el esquema, los códigos canónicos y el cableado del
+    > formateo se sostienen tal como fueron aprobados.
+
 ### Decisión: la moneda base es del usuario
 
 La moneda de consolidación sale de `profiles.currency`, no de la organización. Es una **preferencia de visualización**: dos miembros de la misma organización pueden ver el mismo patrimonio expresado en monedas distintas. Los importes contables y los cierres persistidos no cambian de divisa por esto — lo que cambia es cómo se presentan.

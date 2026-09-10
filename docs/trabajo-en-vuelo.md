@@ -26,9 +26,25 @@ Se implementó el núcleo contable del RFC 022:
 *   Corrección del defecto D1 en `obtenerCuentaPorMoneda` (búsqueda por código exacto `${codigoBase}-${currency}`).
 *   Tests completos de unidad e integración (radio A, radio B, mudanza R3, borrado protegido R4, multidivisa R5, codificación y defecto D1).
 
-**Próximo paso: Segunda tajada del RFC 022.**
-1.  Pantalla de gestión de categorías en la UI (árbol jerárquico, modal de creación, edición, archivado lógico).
-2.  Migración de `subscriptions.category` (reemplazo del `z.enum` de siete valores por relación a `categoryId`).
+**Verificación independiente de la rama (2026-09-09, subagente `verificador`):** 48 archivos de test,
+**365 tests** (+17 sobre `master`), lint 0, `tsc --noEmit` 0 errores, build verde. `pnpm db:migrate` y
+`pnpm db:seed` corrieron limpios; en la base quedaron 67 categorías y 67 filas de `category_accounts`.
+**La rama pasaría la compuerta CI.** Falta mergear.
+
+**Próximo paso: Segunda tajada del RFC 022**, con el alcance ya decidido (ver §4bis del documento de
+diseño):
+
+1.  **Arreglar el selector de categorías** de `TransactionFormModal.tsx:277-286`, que quedó como un
+    `<select>` plano de **67 opciones** sin jerarquía: agrupar con `<optgroup>` por padre y sumar un
+    `+ Crear categoría` que llame a `createCategoryAction` sin salir del modal. **Es lo más urgente:
+    la pantalla está rota hoy**, y la rama del RFC 022 no tocó ese archivo.
+2.  **Pantalla de gestión del árbol**, como **pestaña de `/settings`** —no ruta propia, y `/settings`
+    nace con esa única pestaña—: árbol colapsable, alta, edición y archivado lógico.
+3.  Migración de `subscriptions.category` (reemplazo del `z.enum` de siete valores por relación a
+    `categoryId`).
+
+> **Enmienda al RFC 015 (2026-09-09):** no hay ruta `/profile`. El perfil pasa a ser otra pestaña de
+> `/settings`, por la duplicación que trae la referencia del mock. Anotada en el propio RFC.
 
 
 **Por qué se frenó el código.** La ronda iba a ser suscripciones al libro mayor (RFC 004). Al

@@ -22,3 +22,9 @@ lee esto, cuántos archivos se tocan, qué se rompe) → lo expongo con las ruta
 Distinto es una tanda de preguntas **operativas** sobre trabajo ya mapeado (qué rama, qué toma la
 próxima ronda, dónde va la deuda): ésas sí las aceptó juntas el mismo día, sin objeción. Ver
 [[preferencias-consulta-mapa-primero]].
+
+**Reincidencia el 2026-09-09, y ojo con esta trampa:** el usuario dijo *"haceme las preguntas q
+necesites"* y le mandé cuatro juntas. Las rechazó igual: *"vamos pregunta a pregunta y antes de
+decidir analicemos bien cada caso"*. **Esa frase no es permiso para agrupar**: es permiso para
+preguntar, de a una. Y las opciones bien redactadas **no** cuentan como análisis — el análisis va
+en el mensaje, con rutas y líneas del repo, antes de que aparezca la pregunta.
