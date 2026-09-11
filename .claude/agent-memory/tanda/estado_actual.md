@@ -1,38 +1,53 @@
-# Estado al cerrar la ronda del 2026-09-10 (quinta del día)
+# Estado al cerrar la ronda del 2026-09-10 (sexta del día)
 
 **Verificar con `git log` antes de actuar: esto se desactualiza rápido.**
 
 ## Ramas
 
 ```
-origin/master   al día
-master          consolidado, verde, árbol limpio, SIN rama activa encima
+origin/master                          al día (se pusheó el 2026-09-10, era el primer push)
+master                                 consolidado y verde
+  └─ docs/rfc-024-navegacion-por-entidad   rama activa, árbol limpio, sólo docs
 ```
 
-**`master` se pusheó a `origin` el 2026-09-10** (era el primer push del repo desde `8e086d9`; venía
-16 commits atrasado) **y las cuatro ramas ya contenidas se borraron.** No queda ninguna rama local
-fuera de `master`, así que la próxima ronda **crea la suya** antes de traspasarle nada a `obra`.
+Las cuatro ramas viejas ya contenidas se borraron. **No quedaba ninguna rama local fuera de
+`master`**, así que esta ronda creó la suya.
 
-## Qué se consolidó
+## Dónde quedó esta ronda
 
-`fix/mocks-de-ui-y-dict-obligatorio` entró por **fast-forward puro** (`git log --merges` sigue en 0).
-Registro congelado en `docs/registro/2026-09-10-cierre-mocks-ui-y-storage.md`: `dict` obligatorio,
-la política «se mockea el framework, no el proyecto» en el setup de vitest, y
-`@/shared/lib/safeStorage` adoptado en los cuatro sitios de producción que tocaban Storage.
+**Escrito el RFC 024** —`docs/proposals/024-instruments-and-entity-navigation.md`, en `DRAFT`—, que
+cubre el §4 de la sesión de diseño: `/accounts` como directorio por entidad, el instrumento
+presentado como instrumento, el plan de cuentas mudado a `/settings` en sólo lectura, y el Patrimonio
+Neto desalojado de `/accounts`.
 
-**Verificado de forma independiente** con `verificador` sobre `e5f1e4f`, los cuatro en verde:
-**54 archivos de test / 399 tests**, eslint 0/0, `tsc --noEmit` 0 errores, build exitoso.
+**Dos decisiones que tomó el usuario en esta ronda:**
 
-**Ojo con el conteo:** el plan predijo «53 suites / 399 tests» y `obra` repitió ese número en vez de
-la salida real. Eran 54: el plan sumó los 6 tests de `safeStorage.test.ts` pero no contó el archivo
-nuevo que los trae. No fue defecto de ejecución, fue aritmética del plan.
+1.  **Propuesta nueva (024), no enmienda al RFC 007.** De las cinco decisiones del §4 sólo una es
+    sobre tarjetas, y el 008 y el 010 van a tener que referenciarla.
+2.  **El plan de cuentas se muda a `/settings` como pestaña de sólo lectura**, y `CreateAccountForm`
+    pierde los tres tipos nominales.
 
-**Artifact de la hoja de ruta (versión 8):** refleja `ba8b7ca`, 393 tests, Fase 2 en 4 de 6.
-**Desactualizado**: no incluye esta consolidación. **Trampa al republicar:** lo que devuelve
-`action: "read"` viene con el envoltorio `<!doctype><head><body>` que agrega la publicación — hay que
-quitarlo antes de republicar. Y el `favicon` (📒) hay que pasarlo explícito o la publicación se rechaza.
+**Lo que el contraste destapó, y es lo más valioso de la ronda:**
 
-## Los dos hallazgos de la ronda, ya enrutados
+*   **No lleva migración.** `financial_entities` ya existe con `logo`/`brandDomain`/`color`, y
+    `accounts`, `cards` y `contact_payment_methods` ya tienen su columna de entidad.
+*   **Dos defectos activos**, ahora requisitos del RFC: el Patrimonio Neto de `AccountsContainer.tsx:87-89`
+    **resta** los pasivos que ya vienen negados, así que infla el patrimonio; y `CreateAccountForm`
+    + `createAccountAction` crean cuentas de gasto **huérfanas del árbol de categorías**, que es la
+    puerta de atrás que el RFC 022 no cerró.
+*   **Tres afirmaciones de la sesión de diseño resultaron falsas** — ver
+    [[decisiones-modelo-clasificacion]], que ahora las lista.
+
+**Próximo paso: que el usuario apruebe o corrija el 024.** Recién con `APPROVED` se escribe el plan
+para `obra`. El RFC **no lo apruebo yo**.
+
+**Artifact de la hoja de ruta (versión 8):** refleja `ba8b7ca` y 393 tests. **Desactualizado**: no
+incluye la consolidación de mocks/storage ni este RFC. **Trampas al republicar:** lo que devuelve
+`action: "read"` viene con el envoltorio `<!doctype><head><body>` que agrega la publicación, hay que
+quitarlo; el `favicon` (📒) va explícito o se rechaza; y el archivo es de ~1218 líneas, así que hay
+que leerlo entero antes de republicar.
+
+## Los dos hallazgos de la ronda anterior, ya enrutados
 
 1.  **`NotificationsContext.test.tsx` es un placeholder** → bajado a `TECHNICAL_DEBT.md` §7, con la
     trampa del estado mutable de módulo anotada. Prioridad baja: sirve datos de demo hardcodeados.
@@ -41,8 +56,6 @@ quitarlo antes de republicar. Y el `favicon` (📒) hay que pasarlo explícito o
     escribe `ProfileContext.tsx:50`. Lo que sí estaba mal era la Regla 5 recién escrita, que decía
     «nunca directo» sin nombrar esta excepción permanente. Corregido en `ece10ba`.
 
-## En cola — ningún plan escrito sin ejecutar
-
 ## Sobre la mesa, sin plan
 
 *   `dict?:` opcional heredado, **5 declaraciones en 4 archivos**: `ContactsTable.tsx:26`,
@@ -50,8 +63,11 @@ quitarlo antes de republicar. Y el `favicon` (📒) hay que pasarlo explícito o
     acotado y sin cast, así que es menos grave que el caso ya cerrado; es la continuación natural.
 *   Las cuatro rutas del mock que el inventario no listaba: `/reportes`, `/patrimonio`,
     `/configuracion`, `/mejorar-plan`. **Ninguna tiene RFC.**
-*   Las propuestas que faltan de la sesión de diseño de clasificación — ver
-    [[decisiones-modelo-clasificacion]].
+*   Las tres propuestas que **siguen** faltando de la sesión de diseño: reescritura del RFC 008,
+    enmienda al RFC 010 y enmienda al RFC 003. Las dos primeras referencian al 024, así que van
+    después de que se apruebe. Ver [[decisiones-modelo-clasificacion]].
+*   **La página de estadísticas**: sin RFC y sin nombre de ruta elegido. Es la que recibe el
+    Patrimonio Neto que el 024 desaloja, y la que lee la dimensión de categoría del RFC 022.
 *   Deuda preventiva abierta en `TECHNICAL_DEBT.md`: cobertura de métodos en el mock de `next/cache`,
     retroceso potencial de punteros en la migración `0026`, y el botón hamburguesa inerte del
     `PageHeader` (§8).
