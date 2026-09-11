@@ -160,7 +160,7 @@ export async function createCardAction( params: CreateCardInput ): Promise< Resu
     if( (deuda > 0) && ctaPatrimonio ) {
       const txResult = await createLedgerTransaction( {
         organizationId ,
-        description:    `Apertura deuda inicial ${tarjetaCreada.label}` ,
+        description:    `Apertura ${tarjetaCreada.label}` ,
         occurredAt:     new Date() ,
         entries: [
           { accountId: ctaPatrimonio.id , debit: deuda , credit: 0     } ,

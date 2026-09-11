@@ -159,6 +159,7 @@ describe( "cardsActions.ts — Server Actions de Tarjetas" , () => {
       // 4. Verificar el asiento contable de apertura: Debe Patrimonio / Haber Tarjeta
       const txRows = await db.select().from( ledgerTransactions ) ;
       expect( txRows.length ).toBe( 1 ) ;
+      expect( txRows[0].description ).toBe( "Apertura Visa Galicia Gold" ) ;
 
       const entries = await db.select().from( ledgerEntries ) ;
       expect( entries.length ).toBe( 2 ) ;

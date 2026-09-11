@@ -37,43 +37,16 @@
 }
 
 
-.tabsRow {
-  margin-top: 0.5rem ;
-  border-bottom: 1px solid var(--border-card) ;
-  padding-bottom: 0.5rem ;
-}
-
 .gridContent {
   display: flex ;
   flex-direction: column ;
   gap: 2rem ;
 }
 
-.entitySection {
-  display: flex ;
-  flex-direction: column ;
-  gap: 0.85rem ;
-}
-
-.entityTitle {
-  font-size: 0.95rem ;
-  font-weight: 700 ;
-  color: var(--text-main) ;
-  border-left: 3px solid var(--color-primary) ;
-  padding-left: 0.6rem ;
-}
-
 .cardsGrid {
   display: grid ;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) ;
   gap: 1.25rem ;
-  width: 100% ;
-}
-
-.cardsGridPlan {
-  display: grid ;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) ;
-  gap: 1rem ;
   width: 100% ;
 }
 
@@ -234,12 +207,6 @@
   color: var(--text-muted) ;
   text-transform: uppercase ;
   letter-spacing: 0.02em ;
-}
-
-.accountBalanceMuted {
-  font-size: 1.1rem ;
-  font-weight: 700 ;
-  color: var(--text-main) ;
 }
 
 .greenText {

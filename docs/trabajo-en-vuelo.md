@@ -14,7 +14,7 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 **Rama activa:** `docs/rfc-024-navegacion-por-entidad`, encadenada sobre `master` consolidado.
 
-**Estado:** 🟢 **RFC 024 `APPROVED`; tanda 1 ejecutada y verificada en verde; tanda 2 con plan escrito, en cola para `obra`.**
+**Estado:** 🟢 **RFC 024 `APPROVED`; tandas 1 y 2 ejecutadas y verificadas en verde; RFC 024 cerrado entero.**
 
 El RFC es [`024-instruments-and-entity-navigation.md`](proposals/024-instruments-and-entity-navigation.md)
 y cubre el §4 de la sesión de diseño: `/accounts` como directorio por entidad, el instrumento
@@ -30,11 +30,11 @@ Patrimonio Neto (`51f1a50`) y la puerta de atrás de `CreateAccountForm`, cuyo e
 restringido a `asset` y `liability` con test de rechazo (`72d06ff`).
 Verificado por `verificador`: **54 archivos, 400 tests, 0 errores ESLint, 0 errores TS, build exitoso**.
 
-**Tanda 2 — plan escrito, sin ejecutar.** Plan: [`024-tanda-2-plan-contable-en-settings.md`](planes/024-tanda-2-plan-contable-en-settings.md).
+**Tanda 2 — hecha.** Plan: [`024-tanda-2-plan-contable-en-settings.md`](planes/024-tanda-2-plan-contable-en-settings.md).
 Muda el plan de cuentas de `/accounts` a `/settings` como **tabla de auditoría de sólo lectura con el
-plan completo** (los cinco tipos, con la divisa real de cada cuenta en lugar del literal `ARS` que hay
-hoy), crea la feature `src/features/settings/` con el shell que pasa a ser dueño del `PageHeader` y de
-las tabs —que hoy son inertes—, localiza sus labels en los tres diccionarios, y cierra el §7 del RFC
+plan completo** (los cinco tipos, con la divisa real de cada cuenta en lugar del literal `ARS` que había),
+crea la feature `src/features/settings/` con el shell que pasa a ser dueño del `PageHeader` y de
+las tabs, localiza sus labels en los tres diccionarios, y cierra el §7 del RFC
 unificando la descripción del asiento de apertura de tarjetas. Con esa tanda **el RFC 024 queda
 cerrado entero**.
 
@@ -42,7 +42,7 @@ cerrado entero**.
 `patterns.md` §8 y `.agents/AGENTS.md` §8.6 seguían declarando **vivo** el defecto del Patrimonio Neto
 que la tanda 1 ya había corregido. Los tres quedaron al día.
 
-**Próximo paso:** ejecutar la tanda 2 con `obra`, y después verificar con `verificador`.
+**Próximo paso:** compuerta final y merge de `docs/rfc-024-navegacion-por-entidad` a `master`.
 
 Detrás, en orden de cercanía:
 

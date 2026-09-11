@@ -9,17 +9,14 @@
 import React , { useState } from "react" ;
 
 // Shared
-import { PageHeader }          from "@/shared/ui/layout/PageHeader/PageHeader" ;
-import { SearchInput }         from "@/shared/ui/forms/SearchInput/SearchInput" ;
-import { FormActions }         from "@/shared/ui/forms/Form/FormActions" ;
-import { FormSelect }          from "@/shared/ui/forms/Form/FormSelect" ;
-import { FormInput }           from "@/shared/ui/forms/Form/FormInput" ;
-import { FormError }           from "@/shared/ui/forms/Form/FormError" ;
-import { EmptyState }          from "@/shared/ui/feedback/EmptyState/EmptyState" ;
-import { Button }              from "@/shared/ui/display/Button/Button" ;
-import type { getDictionary } from "@/shared/lib/dictionary" ;
-import { Modal }               from "@/shared/ui/feedback/Modal/Modal" ;
-import { Tabs }                from "@/shared/ui/display/Tabs/Tabs" ;
+import { SearchInput } from "@/shared/ui/forms/SearchInput/SearchInput" ;
+import { EmptyState }  from "@/shared/ui/feedback/EmptyState/EmptyState" ;
+import { FormActions } from "@/shared/ui/forms/Form/FormActions" ;
+import { FormSelect }  from "@/shared/ui/forms/Form/FormSelect" ;
+import { FormInput }   from "@/shared/ui/forms/Form/FormInput" ;
+import { FormError }   from "@/shared/ui/forms/Form/FormError" ;
+import { Button }      from "@/shared/ui/display/Button/Button" ;
+import { Modal }       from "@/shared/ui/feedback/Modal/Modal" ;
 
 // Feature: Accounting
 import { getCategoryTreeAction , createCategoryAction , updateCategoryAction , archiveCategoryAction , unarchiveCategoryAction , getCategoryMovementsCountAction } from "../../actions/categoryActions" ;
@@ -30,24 +27,13 @@ import styles                                                                   
 
 export interface CategoriesSettingsContainerProps {
   initialTree: CategoryTreeNode[] ;
-  dict:        Awaited< ReturnType< typeof getDictionary > > ;
-  lang:        string ;
 }
-
-const SETTINGS_TABS = [
-  { key: "categories"   , label: "Categorías" } ,
-  { key: "profile"      , label: "Perfil"        , disabled: true , badge: "Próximamente" } ,
-  { key: "preferences"  , label: "Preferencias"  , disabled: true , badge: "Próximamente" } ,
-  { key: "security"     , label: "Seguridad"     , disabled: true , badge: "Próximamente" } ,
-] ;
 
 /**
  * Contenedor orquestador para la gestión y configuración del árbol de categorías.
  */
 export function CategoriesSettingsContainer( {
   initialTree ,
-  dict ,
-  lang ,
 }: CategoriesSettingsContainerProps ) {
   const [ tree , setTree ]                                 = useState< CategoryTreeNode[] >( initialTree ) ;
   const [ isActionLoading , setIsActionLoading ]           = useState( false ) ;
@@ -300,20 +286,6 @@ export function CategoriesSettingsContainer( {
 
   return(
     <div className={styles.container}>
-      <PageHeader
-        title={dict.settingsPage.title}
-        subtitle={dict.settingsPage.subtitle}
-        showMonthSelector={false}
-        dict={dict}
-        lang={lang}
-      />
-
-      <Tabs
-        tabs={SETTINGS_TABS}
-        activeTab="categories"
-        onChange={ () => {} }
-      />
-
       {/* Barra de herramientas superior */}
       <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>

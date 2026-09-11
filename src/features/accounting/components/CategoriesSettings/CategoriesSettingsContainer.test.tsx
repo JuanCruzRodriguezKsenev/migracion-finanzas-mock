@@ -1,11 +1,8 @@
 // @vitest-environment jsdom
 
 // Librerías externas
-import { describe , it , expect , vi , beforeAll , beforeEach } from "vitest" ;
-import { render , screen , fireEvent , waitFor }                 from "@testing-library/react" ;
-
-// Shared
-import { getDictionary } from "@/shared/lib/dictionary" ;
+import { describe , it , expect , vi , beforeEach } from "vitest" ;
+import { render , screen , fireEvent , waitFor }   from "@testing-library/react" ;
 
 // Feature: Notifications
 import { NotificationsProvider } from "@/features/notifications/context/NotificationsContext" ;
@@ -104,12 +101,6 @@ describe( "CategoriesSettingsContainer - Dos columnas y gestión de categorías"
     } ,
   ] ;
 
-  let dict: Awaited< ReturnType< typeof getDictionary > > ;
-
-  beforeAll( async () => {
-    dict = await getDictionary( "es" ) ;
-  } ) ;
-
   beforeEach( () => {
     vi.clearAllMocks() ;
   } ) ;
@@ -117,7 +108,7 @@ describe( "CategoriesSettingsContainer - Dos columnas y gestión de categorías"
   const renderContainer = ( tree: CategoryTreeNode[] ) => (
     render(
       <NotificationsProvider>
-        <CategoriesSettingsContainer initialTree={tree} dict={dict} lang="es" />
+        <CategoriesSettingsContainer initialTree={tree} />
       </NotificationsProvider>
     )
   ) ;

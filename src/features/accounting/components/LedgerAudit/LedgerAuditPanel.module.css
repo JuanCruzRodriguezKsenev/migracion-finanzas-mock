@@ -1,0 +1,32 @@
+.container {
+  display:        flex ;
+  flex-direction: column ;
+  gap:            clamp(1rem, 0.8rem + 1vw, 1.75rem) ;
+  width:          100% ;
+}
+
+.toolbar {
+  display:         flex ;
+  flex-wrap:       wrap ;
+  align-items:     center ;
+  justify-content: space-between ;
+  gap:             0.75rem ;
+  padding:         clamp(0.625rem, 0.5rem + 0.5vw, 1rem) ;
+  background:      var(--bg-card) ;
+  border:          1px solid var(--border-card) ;
+  border-radius:   var(--radius-md) ;
+  box-shadow:      var(--shadow-xs) ;
+}
+
+.searchBox {
+  flex:      1 ;
+  max-width: clamp(16rem, 14rem + 10vw, 24rem) ;
+}
+
+.code {
+  font-size: var(--fs-sm) ;
+}
+
+.negative {
+  color: var(--color-danger) ;
+}

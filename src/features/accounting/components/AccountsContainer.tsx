@@ -20,7 +20,6 @@ import { Button }               from "@/shared/ui/display/Button/Button" ;
 import type { getDictionary }   from "@/shared/lib/dictionary" ;
 import { Modal }                from "@/shared/ui/feedback/Modal/Modal" ;
 import { Card }                 from "@/shared/ui/display/Card/Card" ;
-import { Tabs }                 from "@/shared/ui/display/Tabs/Tabs" ;
 
 // Feature: Accounting
 import {
@@ -57,17 +56,15 @@ export function AccountsContainer( {
   dict ,
   lang
 }: AccountsContainerProps ) {
-  const { isContentVisible }                   = useMetricsVisibility() ;
-  const [ activeTab , setActiveTab ]           = useState< "wallets" | "ledger" >( "wallets" ) ;
-  const [ isModalOpen , setIsModalOpen ]       = useState( false ) ;
+  const { isContentVisible }                         = useMetricsVisibility() ;
+  const [ isModalOpen , setIsModalOpen ]             = useState( false ) ;
   const [ isEntityModalOpen , setIsEntityModalOpen ] = useState( false ) ;
-  const [ selectedEntity , setSelectedEntity ] = useState< string | null >( null ) ;
+  const [ selectedEntity , setSelectedEntity ]       = useState< string | null >( null ) ;
   const [ preselectedEntityId , setPreselectedEntityId ] = useState< string | null >( null ) ;
 
   const accountsPageDict = ( dict.accountsPage || {} ) ;
 
-  // Separar cuentas de balance vs nominales
-  const ledgerAccounts = accounts.filter( ( a ) => (a.type === "equity") || (a.type === "revenue") || (a.type === "expense") ) ;
+  // Separar cuentas de balance
   const walletAccounts = accounts.filter( ( a ) => (a.type === "asset") || (a.type === "liability") ) ;
 
   // Agrupar cuentas financieras por Entidad/Institución
@@ -84,16 +81,6 @@ export function AccountsContainer( {
   const cardAccountIds = new Set(
     cards.flatMap( ( c ) => c.accounts.map( ( ca ) => ca.account.id ) )
   ) ;
-
-  // Agrupar plan contable por tipo contable
-  const groupedLedger = ledgerAccounts.reduce( ( acc , val ) => {
-    const key = val.type ;
-    if( !acc[key] ) {
-      acc[key] = [] ;
-    }
-    acc[key].push( val ) ;
-    return( acc ) ;
-  } , {} as Record< string , Account[] > ) ;
 
   // Calcular métricas (patterns.md §8: pasivos almacenados negativos, el neto es suma)
   const totalAssets = walletAccounts.filter( ( a ) => a.type === "asset" ).reduce( ( sum , a ) => (sum + a.balance) , 0 ) ;
@@ -122,11 +109,6 @@ export function AccountsContainer( {
   const tendenciaLiabs    = calcularTendenciaDesdeSparkline( sparklinePointsLiabs , true ) ; // Invertida para pasivos
 
   const labelTrend = ( dict.dashboard?.savingTrend || "vs mes anterior" ) ;
-
-  const tabsConfig = [
-    { key: "wallets" , label: accountsPageDict.tabWallets } ,
-    { key: "ledger"  , label: accountsPageDict.tabLedger }
-  ] ;
 
   return(
     <div className={styles.container}>
@@ -223,97 +205,58 @@ export function AccountsContainer( {
         />
       </MetricsSection>
 
-      {/* Tabs Reutilizable */}
-      <div className={styles.tabsRow}>
-        <Tabs
-          tabs={tabsConfig}
-          activeTab={activeTab}
-          onChange={ ( key ) => setActiveTab( key as "wallets" | "ledger" ) }
-        />
-      </div>
-
       {/* Grilla de Cuentas */}
       <div className={styles.gridContent}>
-        {activeTab === "wallets" ? (
-          Object.keys( groupedWallets ).length === 0 ? (
-            <EmptyState title={accountsPageDict.emptyState} />
-          ) : (
-            <div className={styles.cardsGrid}>
-              {Object.entries( groupedWallets ).map( ( [ institution , list ] ) => {
-                const netBalance = list.reduce( ( sum , a ) => sum + a.balance , 0 ) ;
-                const totalLiabsCount  = list.filter( ( a ) => a.type === "liability" ).length ;
-                const totalAssetsCount = list.filter( ( a ) => a.type === "asset" ).length ;
+        {Object.keys( groupedWallets ).length === 0 ? (
+          <EmptyState title={accountsPageDict.emptyState} />
+        ) : (
+          <div className={styles.cardsGrid}>
+            {Object.entries( groupedWallets ).map( ( [ institution , list ] ) => {
+              const netBalance = list.reduce( ( sum , a ) => sum + a.balance , 0 ) ;
+              const totalLiabsCount  = list.filter( ( a ) => a.type === "liability" ).length ;
+              const totalAssetsCount = list.filter( ( a ) => a.type === "asset" ).length ;
 
-                const entityObj = financialEntities.find( ( e ) => e.name === institution ) ;
-                const hasColor  = !!entityObj?.color ;
+              const entityObj = financialEntities.find( ( e ) => e.name === institution ) ;
+              const hasColor  = !!entityObj?.color ;
 
-                const cardStyle = entityObj?.color ? {
-                  background: `linear-gradient(135deg, ${entityObj.color}d5 0%, ${entityObj.color} 100%)` ,
-                  boxShadow: `0 8px 24px -6px ${entityObj.color}50` ,
-                  border: "none"
-                } : undefined ;
+              const cardStyle = entityObj?.color ? {
+                background: `linear-gradient(135deg, ${entityObj.color}d5 0%, ${entityObj.color} 100%)` ,
+                boxShadow: `0 8px 24px -6px ${entityObj.color}50` ,
+                border: "none"
+              } : undefined ;
 
-                return(
-                  <Card
-                    key={institution}
-                    className={ `${styles.entitySummaryCard} ${hasColor ? styles.hasBrandColor : ""}` }
-                    interactive={true}
-                    onClick={ () => setSelectedEntity( institution ) }
-                    style={cardStyle}
-                  >
-                    <div className={styles.entityCardTop}>
-                      <div className={styles.entityMeta}>
-                        <h3 className={styles.entityNameMain}>{ institution }</h3>
-                        <span className={styles.subAccountsCount}>
-                          {list.length} {list.length === 1 ? "cuenta" : "cuentas"} ({totalAssetsCount} act / {totalLiabsCount} pas)
-                        </span>
-                      </div>
-                      <div className={styles.entityLogoBadge}>
-                        <InstitutionLogo
-                          institution={institution}
-                          brandDomain={financialEntities.find( ( e ) => e.name === institution )?.brandDomain}
-                        />
-                      </div>
-                    </div>
-                    <div className={styles.entityCardBottom}>
-                      <span className={styles.netBalanceLabel}>Saldo Neto</span>
-                      <span className={ `${styles.entityNetBalance} ${netBalance >= 0 ? styles.greenText : styles.redText}` }>
-                        {isContentVisible ? formatCents( netBalance ) : ""}
+              return(
+                <Card
+                  key={institution}
+                  className={ `${styles.entitySummaryCard} ${hasColor ? styles.hasBrandColor : ""}` }
+                  interactive={true}
+                  onClick={ () => setSelectedEntity( institution ) }
+                  style={cardStyle}
+                >
+                  <div className={styles.entityCardTop}>
+                    <div className={styles.entityMeta}>
+                      <h3 className={styles.entityNameMain}>{ institution }</h3>
+                      <span className={styles.subAccountsCount}>
+                        {list.length} {list.length === 1 ? "cuenta" : "cuentas"} ({totalAssetsCount} act / {totalLiabsCount} pas)
                       </span>
                     </div>
-                  </Card>
-                ) ;
-              } )}
-            </div>
-          )
-        ) : (
-          Object.keys( groupedLedger ).length === 0 ? (
-            <EmptyState title={accountsPageDict.emptyState} />
-          ) : (
-            Object.entries( groupedLedger ).map( ( [ type , list ] ) => (
-              <div key={type} className={styles.entitySection}>
-                <h3 className={styles.entityTitle}>
-                  {type === "equity" ? accountsPageDict.typeEquity : type === "revenue" ? accountsPageDict.typeRevenue : accountsPageDict.typeExpense}
-                </h3>
-                <div className={styles.cardsGridPlan}>
-                  {list.map( ( a ) => (
-                    <Card key={a.id} className={styles.accountCardDetailed}>
-                      <div className={styles.cardHeader}>
-                        <span className={styles.accountNameDetailed}>{ a.name }</span>
-                        <span className={styles.accountCode}>{ a.code }</span>
-                      </div>
-                      <div className={styles.cardFooterDetailed}>
-                        <span className={styles.accountType}>ARS</span>
-                        <span className={styles.accountBalanceMuted}>
-                          {isContentVisible ? formatCents( a.balance ) : ""}
-                        </span>
-                      </div>
-                    </Card>
-                  ) )}
-                </div>
-              </div>
-            ) )
-          )
+                    <div className={styles.entityLogoBadge}>
+                      <InstitutionLogo
+                        institution={institution}
+                        brandDomain={financialEntities.find( ( e ) => e.name === institution )?.brandDomain}
+                      />
+                    </div>
+                  </div>
+                  <div className={styles.entityCardBottom}>
+                    <span className={styles.netBalanceLabel}>Saldo Neto</span>
+                    <span className={ `${styles.entityNetBalance} ${netBalance >= 0 ? styles.greenText : styles.redText}` }>
+                      {isContentVisible ? formatCents( netBalance ) : ""}
+                    </span>
+                  </div>
+                </Card>
+              ) ;
+            } )}
+          </div>
         )}
       </div>
 
