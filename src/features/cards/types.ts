@@ -6,7 +6,7 @@
 import { Account , FinancialEntity } from "@/features/accounting/types" ;
 
 // Feature: Cards
-import { cards , cardAccounts } from "./schema.db" ;
+import { cards , cardAccounts , cardInstallmentPlans } from "./schema.db" ;
 
 
 export type Card = typeof cards.$inferSelect ;
@@ -15,8 +15,18 @@ export type InsertCard = typeof cards.$inferInsert ;
 export type CardAccount = typeof cardAccounts.$inferSelect ;
 export type InsertCardAccount = typeof cardAccounts.$inferInsert ;
 
+export type CardInstallmentPlan = typeof cardInstallmentPlans.$inferSelect ;
+export type InsertCardInstallmentPlan = typeof cardInstallmentPlans.$inferInsert ;
+
 export interface CardAccountWithAccount extends CardAccount {
   account: Account ;
+}
+
+export interface PendienteCuota {
+  planId:      string ;
+  numeroCuota: number ;
+  fechaCuota:  string ;
+  plan:        CardInstallmentPlan ;
 }
 
 /**
@@ -30,6 +40,7 @@ export interface CicloTarjeta {
   vencimiento:    string ;
   facturado:      number ; // Centavos ya congelados por el cierre: es lo que vence
   enCurso:        number ; // Centavos consumidos después del cierre: vencen el mes que viene
+  cuotasFuturas:  Record< string , number > ; // divisa → centavos no imputados
 }
 
 export interface CardWithAccountsAndEntity extends Card {

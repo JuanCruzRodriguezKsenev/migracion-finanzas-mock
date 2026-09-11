@@ -4,10 +4,10 @@
  * Modela atributos de plásticos y sus cuentas de pasivo asociadas por divisa.
  */
 // Librerías externas
-import { pgTable , uuid , varchar , integer , bigint , timestamp , index , uniqueIndex } from "drizzle-orm/pg-core" ;
+import { pgTable , uuid , varchar , integer , bigint , timestamp , date , index , uniqueIndex } from "drizzle-orm/pg-core" ;
 
 // Feature: Accounting
-import { accounts , financialEntities } from "@/features/accounting/schema.db" ;
+import { accounts , categories , financialEntities } from "@/features/accounting/schema.db" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -69,3 +69,34 @@ export const cardAccounts = pgTable( "card_accounts" , {
 } , ( table ) => { return( {
   uniqueCardCurrency: uniqueIndex( "card_accounts_card_currency_unique" ).on( table.cardId , table.currency ) ,
 } ) ; } ) ;
+
+/**
+ * Plan de cuotas de una compra con tarjeta de crédito (RFC 025).
+ * Cero dinero acumulado: cada cuota imputada vive como asiento contra la cuenta de la tarjeta.
+ */
+export const cardInstallmentPlans = pgTable( "card_installment_plans" , {
+  id:             uuid( "id"              ).primaryKey().defaultRandom() ,
+  organizationId: uuid( "organization_id" ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
+  cardId:         uuid( "card_id"         ).references( () => cards.id         , {onDelete: "cascade"} ).notNull() ,
+
+  description:  varchar( "description"   , {length: 255} ).notNull() , // Ej: "Heladera Samsung"
+  merchantName: varchar( "merchant_name" , {length: 150} ) ,
+  categoryId:   uuid( "category_id" ).references( () => categories.id , {onDelete: "set null"} ) ,
+
+  // El importe de CADA cuota, en centavos. El total de la compra es derivado (§3.4)
+  installmentAmount: bigint( "installment_amount" , {mode: "number"} ).notNull() ,
+  totalInstallments: integer( "total_installments" ).notNull() , // NO es dinero: integer
+  currency:          varchar( "currency" , {length: 10} ).default( "ARS" ).notNull() ,
+
+  // Comprar y empezar a facturar son dos fechas distintas (§3.2)
+  purchasedAt:          timestamp( "purchased_at" , {withTimezone: true} ).notNull() , // Informativa: no emite asiento
+  firstInstallmentDate: date( "first_installment_date" ).notNull() ,                   // Ancla del cronograma. Civil
+  resolvedThrough:      date( "resolved_through" ) ,                                   // Puntero (RFC 023)
+
+  archivedAt: timestamp( "archived_at" , {withTimezone: true} ) , // Baja lógica
+  createdAt:  timestamp( "created_at"  , {withTimezone: true} ).defaultNow().notNull() ,
+  updatedAt:  timestamp( "updated_at"  , {withTimezone: true} ).defaultNow().notNull() ,
+} , ( table ) => { return( {
+  orgCardIdx: index( "card_installment_plans_org_card_idx" ).on( table.organizationId , table.cardId ) ,
+} ) ; } ) ;
+

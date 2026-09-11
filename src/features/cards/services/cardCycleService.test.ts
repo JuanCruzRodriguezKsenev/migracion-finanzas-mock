@@ -128,12 +128,16 @@ describe( "cardCycleService — Partición del saldo de una tarjeta de crédito"
     expect( ciclo?.enCurso ).toBe( 400000 ) ;
   } ) ;
 
-  it( "no calcula ciclo para una tarjeta de crédito sin día de cierre" , async () => {
+  it( "devuelve ciclo sin fechas congeladas pero con cuotas futuras para tarjeta de crédito sin día de cierre" , async () => {
     const { tarjeta } = await armarTarjeta( null ) ;
 
     const ciclo = await calcularCicloDeTarjeta( tarjeta , orgId , "America/Argentina/Buenos_Aires" ) ;
 
-    expect( ciclo ).toBeNull() ;
+    expect( ciclo ).not.toBeNull() ;
+    expect( ciclo?.cierreActual ).toBe( "" ) ;
+    expect( ciclo?.facturado ).toBe( 0 ) ;
+    expect( ciclo?.enCurso ).toBe( 0 ) ;
+    expect( ciclo?.cuotasFuturas ).toEqual( {} ) ;
   } ) ;
 
   it( "no calcula ciclo para una tarjeta de débito" , async () => {

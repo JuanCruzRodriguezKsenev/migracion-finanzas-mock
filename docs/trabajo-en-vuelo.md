@@ -15,14 +15,9 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 **Rama activa:** `docs/rfc-025-cuotas-de-tarjeta`, creada el 2026-09-11 sobre `07aadb3`. **No cambiar
 de rama.** `master` quedó consolidado y pusheado hasta `07aadb3`.
 
-**Estado:** 🟡 **Dos RFC aprobados el 2026-09-11 y el primer plan en cola.** El RFC 024 quedó cerrado
-y verde sobre `master` (**405 tests en 56 archivos, 0 ESLint, 0 TS, build exitoso**); desde entonces
-sólo se tocaron documentos.
+**Estado:** 🟡 **Tanda 1 del RFC 025 ejecutada y verificada en verde (429 tests en 58 archivos, 0 ESLint, 0 TS, build exitoso).** El backend del RFC 025 quedó completo: tabla `card_installment_plans` con su migración, `limpiarBase()`, servicio de cuotas, repositorio, server actions y cálculo de cuotas futuras integrado en `cardCycleService`.
 
-**Próximo paso:** ejecutar [`planes/025-tanda-1-planes-de-cuotas.md`](planes/025-tanda-1-planes-de-cuotas.md)
-con `obra`. Es **backend completo del RFC 025, sin interfaz**: tabla `card_installment_plans` con su
-migración, `limpiarBase()`, servicio de cuotas, repositorio, acciones y el cálculo de cuotas futuras.
-La ficha de cuotas en `/cards` es la tanda 2 y no está escrita.
+**Próximo paso:** escribir y ejecutar la **tanda 2 del RFC 025** con `tanda`/`obra`: la ficha de cuotas en `/cards`, la bandeja de imputación interactiva y el reflejo del disponible en la interfaz (`CardVisual.tsx`).
 
 **Por qué el 025 va antes que el 008**, que es más grande y crea la feature `/loans` entera: el RFC 007
 —`APPROVED` y reaprobado el 2026-09-08— calcula el disponible de la tarjeta restando una tabla

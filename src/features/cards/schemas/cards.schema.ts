@@ -108,3 +108,21 @@ export const createCardSchema = z.object( {
  * Tipo inferido de los datos válidos para creación de tarjetas.
  */
 export type CreateCardInput = z.input< typeof createCardSchema > ;
+
+/**
+ * Esquema de validación para el alta de un plan de cuotas de tarjeta (RFC 025).
+ */
+export const createInstallmentPlanSchema = z.object( {
+  cardId:               z.string().uuid( "ID de tarjeta inválido." ) ,
+  description:          z.string().min( 3 , "La descripción debe tener al menos 3 caracteres." ).max( 255 , "Máximo 255 caracteres." ) ,
+  merchantName:         z.string().max( 150 , "El comercio no puede superar los 150 caracteres." ).optional().nullable() ,
+  categoryId:           z.string().uuid( "ID de categoría inválido." ).optional().nullable() ,
+  installmentAmount:    z.number().int( "El importe de la cuota debe expresarse en centavos enteros." ).positive( "El importe de la cuota debe ser mayor a cero." ) ,
+  totalInstallments:    z.number().int( "La cantidad de cuotas debe ser un número entero." ).min( 1 , "La cantidad de cuotas debe ser al menos 1." ) ,
+  currency:             z.string().min( 1 ).max( 10 ).default( "ARS" ) ,
+  purchasedAt:          z.coerce.date() ,
+  firstInstallmentDate: z.string().regex( /^\d{4}-\d{2}-\d{2}$/ , "La fecha de la primera cuota debe tener formato YYYY-MM-DD." ) ,
+} ) ;
+
+export type CreateInstallmentPlanInput = z.infer< typeof createInstallmentPlanSchema > ;
+

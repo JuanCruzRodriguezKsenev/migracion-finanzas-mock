@@ -8,12 +8,15 @@
 import { ledgerRepository } from "@/features/accounting/repositories/ledgerRepository" ;
 
 // Feature: Cards
+import { installmentPlansRepository }               from "../repositories/installmentPlansRepository" ;
 import { CardWithAccountsAndEntity , CicloTarjeta } from "../types" ;
-import { calcularPeriodos }                        from "../utils/ciclo" ;
+import { cuotasFuturasPorDivisa }                   from "./installmentService" ;
+import { CardInstallmentPlan }                      from "../types" ;
+import { calcularPeriodos }                         from "../utils/ciclo" ;
 
 
 /**
- * Resuelve el ciclo y la partición de saldo de una única tarjeta de crédito.
+ * Resuelve el ciclo, la partición de saldo y las cuotas futuras de una tarjeta de crédito.
  *
  * La deuda de un pasivo crece con el **crédito** del asiento, así que la partición es
  * `credit - debit` y no al revés: un consumo acredita la tarjeta. Es el mismo cambio de signo que
@@ -22,17 +25,38 @@ import { calcularPeriodos }                        from "../utils/ciclo" ;
  * @param card - Tarjeta con sus cuentas contables ya resueltas.
  * @param organizationId - Organización dueña, para el aislamiento multi-tenant de la agregación.
  * @param zonaHoraria - Identificador IANA con el que se decide a qué día del mes pertenece un consumo.
- * @returns El ciclo con su partición, o `null` si la tarjeta no tiene ciclo que calcular.
+ * @param planes - Planes de cuotas de la tarjeta opcionales (si se omiten, se consultan del DAL).
+ * @returns El ciclo con su partición y cuotas futuras, o `null` si la tarjeta es de débito.
  */
 export async function calcularCicloDeTarjeta(
   card:           CardWithAccountsAndEntity ,
   organizationId: string ,
-  zonaHoraria:    string
+  zonaHoraria:    string ,
+  planes?:        CardInstallmentPlan[]
 ): Promise< CicloTarjeta | null > {
-  // Una tarjeta de débito no tiene ciclo, y una de crédito sin día de cierre tampoco: sin cierre no
-  // hay nada que congelar, así que todo su saldo está en curso.
-  if( (card.type !== "credit") || !card.closingDay ){
+  // Una tarjeta de débito no financia compromisos futuros ni posee ciclo
+  if( card.type !== "credit" ) {
     return( null ) ;
+  }
+
+  // 1. Calcular cuotas futuras antes de verificar día de cierre (RFC 025 §8)
+  const planesTarjeta = ( planes !== undefined
+    ? planes
+    : await installmentPlansRepository.findByCard( card.id , organizationId )
+  ) ;
+  const cuotasFuturas = cuotasFuturasPorDivisa( planesTarjeta ) ;
+
+  // 2. Si no tiene día de cierre, todo su saldo está en curso y no hay fechas que congelar,
+  // pero sus cuotas futuras deben quedar expuestas para deducir del disponible.
+  if( !card.closingDay ) {
+    return( {
+      cierreAnterior: "" ,
+      cierreActual:   "" ,
+      vencimiento:    "" ,
+      facturado:      0 ,
+      enCurso:        0 ,
+      cuotasFuturas ,
+    } ) ;
   }
 
   const periodos = calcularPeriodos(
@@ -43,7 +67,7 @@ export async function calcularCicloDeTarjeta(
   ) ;
 
   // Dos consultas por cuenta, todas en paralelo: la cascada es lo que el §8D del RFC prohíbe.
-  const porCuenta = await Promise.all( card.accounts.map( async (ca) => {
+  const porCuenta = await Promise.all( card.accounts.map( async ( ca ) => {
     const [ facturado , enCurso ] = await Promise.all( [
       ledgerRepository.sumEntriesByAccountInRange(
         ca.accountId , organizationId , periodos.cierreAnterior , periodos.cierreActual
@@ -65,11 +89,13 @@ export async function calcularCicloDeTarjeta(
     vencimiento:    periodos.vencimiento.toISOString() ,
     facturado:      porCuenta.reduce( ( suma , p ) => suma + p.facturado , 0 ) ,
     enCurso:        porCuenta.reduce( ( suma , p ) => suma + p.enCurso   , 0 ) ,
+    cuotasFuturas ,
   } ) ;
 }
 
 /**
- * Resuelve el ciclo de un lote de tarjetas en paralelo.
+ * Resuelve el ciclo y cuotas futuras de un lote de tarjetas en paralelo.
+ * Realiza una única consulta agregada de planes activos de la organización para evitar consultas N+1.
  *
  * @param cards - Tarjetas a resolver.
  * @param organizationId - Organización dueña.
@@ -81,8 +107,13 @@ export async function calcularCiclosDeTarjetas(
   organizationId: string ,
   zonaHoraria:    string
 ): Promise< CardWithAccountsAndEntity[] > {
-  return( await Promise.all( cards.map( async (card) => ( {
-    ...card ,
-    ciclo: await calcularCicloDeTarjeta( card , organizationId , zonaHoraria ) ,
-  } ) ) ) ) ;
+  const planesActivos = await installmentPlansRepository.findActiveByOrganization( organizationId ) ;
+
+  return( await Promise.all( cards.map( async ( card ) => {
+    const planesDeTarjeta = planesActivos.filter( ( p ) => p.cardId === card.id ) ;
+    return( {
+      ...card ,
+      ciclo: await calcularCicloDeTarjeta( card , organizationId , zonaHoraria , planesDeTarjeta ) ,
+    } ) ;
+  } ) ) ) ;
 }

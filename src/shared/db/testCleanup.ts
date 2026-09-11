@@ -18,6 +18,7 @@ import {
   monthlySummaries ,
   ledgerEntries ,
   ledgerTransactions ,
+  cardInstallmentPlans ,
   cardAccounts ,
   cards ,
   contactPaymentMethods ,
@@ -64,41 +65,44 @@ export async function limpiarBase(): Promise< void > {
     // 6. ledger_transactions
     await tx.delete( ledgerTransactions ) ;
 
-    // 7. card_accounts → restrict a accounts; antes que cards
+    // 7. card_installment_plans → cascade a cards, set null a categories; antes que cards
+    await tx.delete( cardInstallmentPlans ) ;
+
+    // 8. card_accounts → restrict a accounts; antes que cards
     await tx.delete( cardAccounts ) ;
 
-    // 8. cards → restrict a financial_entities y accounts
+    // 9. cards → restrict a financial_entities y accounts
     await tx.delete( cards ) ;
 
-    // 9. contact_payment_methods → restrict a financial_entities y contacts
+    // 10. contact_payment_methods → restrict a financial_entities y contacts
     await tx.delete( contactPaymentMethods ) ;
 
-    // 10. contacts
+    // 11. contacts
     await tx.delete( contacts ) ;
 
-    // 11. subscriptions → antes que accounts y categories
+    // 12. subscriptions → antes que accounts y categories
     await tx.delete( subscriptions ) ;
 
-    // 12. category_accounts → restrict a categories y accounts
+    // 13. category_accounts → restrict a categories y accounts
     await tx.delete( categoryAccounts ) ;
 
-    // 13. accounts → restrict a financial_entities
+    // 14. accounts → restrict a financial_entities
     await tx.delete( accounts ) ;
 
-    // 14. financial_entities
+    // 15. financial_entities
     await tx.delete( financialEntities ) ;
 
-    // 15. categories → primero hojas con parentId no nulo, luego padres
+    // 16. categories → primero hojas con parentId no nulo, luego padres
     await tx.delete( categories ).where( isNotNull( categories.parentId ) ) ;
     await tx.delete( categories ) ;
 
-    // 16. profiles → antes que users
+    // 17. profiles → antes que users
     await tx.delete( profiles ) ;
 
-    // 17. users
+    // 18. users
     await tx.delete( users ) ;
 
-    // 18. organizations
+    // 19. organizations
     await tx.delete( organizations ) ;
   } ) ;
 }
