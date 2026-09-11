@@ -12,17 +12,30 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** ninguna. `master` (`90bee72`) está consolidado y verde, con el árbol limpio.
+**Rama activa:** `docs/rfc-024-navegacion-por-entidad`, encadenada sobre `master` consolidado.
 
-**Próximo paso:** **sin decidir.** Lo que está sobre la mesa, en orden de cercanía:
+**Estado:** 🟡 **RFC 024 escrito, en `DRAFT`, esperando aprobación del usuario.**
+[`024-instruments-and-entity-navigation.md`](proposals/024-instruments-and-entity-navigation.md)
+cubre el §4 de la sesión de diseño: `/accounts` como directorio por entidad, el instrumento
+presentado como instrumento, el plan de cuentas mudado a `/settings` en sólo lectura, y el
+Patrimonio Neto fuera de `/accounts`. **No lleva migración de base de datos**: `financial_entities`
+y las tres columnas `entityId` ya existen. **No habilita código hasta que el usuario lo apruebe.**
 
-1.  **Las 5 declaraciones de `dict?:` opcional heredadas** — `ContactsTable.tsx:26`,
-    `PaymentMethodsPanel.tsx:45`, `ContactFormModal.tsx:26` y `:43`, `MonthSelector.tsx:39`. Es la
-    continuación directa de lo recién consolidado; shape acotado y sin cast, así que es más benigno.
-2.  **Las cuatro rutas del mock sin RFC** — `/reportes`, `/patrimonio`, `/configuracion`,
-    `/mejorar-plan`. Ninguna puede recibir código hasta que su propuesta esté `APPROVED`.
-3.  **Las propuestas que faltan de la sesión de diseño de clasificación** (`docs/diseno/`), cerrada
-    pero sin partir en RFCs.
+Dejó **dos defectos activos convertidos en requisitos** —el Patrimonio Neto suma la deuda en vez de
+restarla (`AccountsContainer.tsx:87-89`), y `CreateAccountForm` crea cuentas de gasto huérfanas del
+árbol de categorías (`:122-126`)— y corrigió **tres afirmaciones inexactas** de la sesión de diseño.
+
+**Próximo paso:** **que el usuario apruebe o corrija el RFC 024.** Recién con `APPROVED` se puede
+escribir el plan de ejecución para `obra`.
+
+Detrás, en orden de cercanía:
+
+1.  **Reescritura del RFC 008** (deudas y cuotas) y **contraste del RFC 010** (patrimonio físico).
+    Las dos referencian al 024, así que van después.
+2.  **La página de estadísticas** — sin RFC y sin nombre de ruta elegido. Es la que lee la dimensión
+    de categoría que construyó el RFC 022, y la que recibe el Patrimonio Neto que el 024 desaloja.
+3.  **Las 5 declaraciones de `dict?:` opcional heredadas** — `ContactsTable.tsx:26`,
+    `PaymentMethodsPanel.tsx:45`, `ContactFormModal.tsx:26` y `:43`, `MonthSelector.tsx:39`.
 
 **Higiene al día (2026-09-10):** `master` quedó **pusheado a `origin`** y las cuatro ramas ya
 contenidas se borraron (`feat/bandeja-recurrencias`, `fix/cabos-rfc023-y-limpieza-de-tests`,
