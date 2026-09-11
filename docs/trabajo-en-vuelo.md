@@ -14,7 +14,10 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 **Rama activa:** `docs/rfc-024-navegacion-por-entidad`, encadenada sobre `master` consolidado.
 
-**Estado:** 🟡 **RFC 024 escrito, en `DRAFT`, esperando aprobación del usuario.**
+**Estado:** 🟡 **RFC 024 `APPROVED`; plan de la tanda 1 escrito y listo para `obra`, sin ejecutar.**
+El plan es [`docs/planes/024-tanda-1-directorio-por-entidad.md`](planes/024-tanda-1-directorio-por-entidad.md)
+y cubre el directorio por entidad, el cierre de la puerta de atrás de `CreateAccountForm` y el signo
+del Patrimonio Neto. **La tanda 2 —mudar el plan de cuentas a `/settings`— todavía no tiene plan.**
 [`024-instruments-and-entity-navigation.md`](proposals/024-instruments-and-entity-navigation.md)
 cubre el §4 de la sesión de diseño: `/accounts` como directorio por entidad, el instrumento
 presentado como instrumento, el plan de cuentas mudado a `/settings` en sólo lectura, y el
@@ -25,8 +28,8 @@ Dejó **dos defectos activos convertidos en requisitos** —el Patrimonio Neto s
 restarla (`AccountsContainer.tsx:87-89`), y `CreateAccountForm` crea cuentas de gasto huérfanas del
 árbol de categorías (`:122-126`)— y corrigió **tres afirmaciones inexactas** de la sesión de diseño.
 
-**Próximo paso:** **que el usuario apruebe o corrija el RFC 024.** Recién con `APPROVED` se puede
-escribir el plan de ejecución para `obra`.
+**Próximo paso:** **ejecutar la tanda 1 con `obra`**, sobre esta misma rama y con el árbol limpio.
+Después, escribir el plan de la tanda 2.
 
 Detrás, en orden de cercanía:
 

@@ -2,8 +2,10 @@
 
 *   **ID de la Propuesta:** 024
 *   **Título:** `/accounts` como directorio por entidad, el instrumento presentado como instrumento, y el plan de cuentas fuera de la operación diaria
-*   **Estado:** `DRAFT` — **no habilita código.** Requiere aprobación explícita del usuario.
+*   **Estado:** `APPROVED` (2026-09-10) — aprobado por el usuario. Habilita código contra este texto.
 *   **Fecha de Creación:** 2026-09-10
+*   **Fecha de Aprobación:** 2026-09-10
+*   **Ejecución:** partida en dos tandas por decisión del usuario. Tanda 1 en [`docs/planes/024-tanda-1-directorio-por-entidad.md`](../planes/024-tanda-1-directorio-por-entidad.md)
 *   **Autor:** `tanda`
 *   **Origen:** §4 de [`docs/diseno/rediseno-clasificacion-y-propuestas.md`](../diseno/rediseno-clasificacion-y-propuestas.md), donde se tomaron las cinco decisiones con su fundamento, y §7 del mismo documento, que dejó pedida esta propuesta.
 *   **Decisiones de forma tomadas antes de escribir:** propuesta **nueva** y no enmienda al RFC 007 —de las cinco decisiones del §4 sólo una es sobre tarjetas—; y el plan de cuentas **se muda a `/settings` como pestaña de sólo lectura**.
