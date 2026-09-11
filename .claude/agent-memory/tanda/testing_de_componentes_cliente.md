@@ -75,5 +75,16 @@ export { routerMock } ;
     `DEMO_NOTIFICATIONS`, así que `unreadCount > 0` y `PageHeader` pinta el badge.
 *   `NotificationsContext.test.tsx` es un **placeholder vacío** (`expect( true ).toBe( true )`), no
     importa nada del módulo. Escribirlo de verdad es deuda abierta.
-*   Sólo `CategoriesSettingsContainer` tiene test entre los siete contenedores que montan
-    `PageHeader`. Los otros seis lo van a necesitar cuando se testeen.
+*   Entre los contenedores que montan `PageHeader`, los testeados son `SettingsContainer`
+    (`src/features/settings/`, desde `0a2f841`) y —indirectamente— `CategoriesSettingsContainer`,
+    que desde la tanda 2 del RFC 024 **ya no monta `PageHeader`**: el shell es su dueño. Los demás
+    lo van a necesitar cuando se testeen.
+*   **`Tabs` no expone botones: expone `role="tab"`** (`src/shared/ui/display/Tabs/Tabs.tsx:39,45`,
+    con el contenedor en `role="tablist"`). En un test hay que pedir
+    `getByRole( "tab" , { name: /…/ } )`; `getByRole( "button" )` no encuentra nada. Costó una
+    corrección en la tanda 2 porque el plan había escrito `button`.
+*   **Un fixture de `Account` lleva `cbuCvu` y `alias`.** El tipo es
+    `InferSelectModel< typeof accounts >` (`src/features/accounting/types.ts:28`) y el esquema tiene
+    las dos columnas de datos de transferencia propios (`schema.db.ts:58`). Omitirlas compila en
+    vitest pero rompe `tsc --noEmit`, que es lo que corre la compuerta. Mismo cuidado con cualquier
+    fixture derivado de `InferSelectModel`: la lista de campos la manda el esquema, no el test.

@@ -37,12 +37,17 @@ crea la feature `src/features/settings/` con el shell que pasa a ser dueño del 
 las tabs, localiza sus labels en los tres diccionarios, y cierra el §7 del RFC
 unificando la descripción del asiento de apertura de tarjetas. Con esa tanda **el RFC 024 queda
 cerrado entero**.
+Verificado por `verificador` sobre `0a2f841`, corrida independiente del 2026-09-10:
+**56 archivos de test, 405 tests pasados / 405, 0 errores y 0 warnings de ESLint, 0 errores TS,
+build exitoso.** La rama pasa la compuerta.
 
 **Sincronización documental hecha en la ronda de planificación:** `TECHNICAL_DEBT.md` §6,
 `patterns.md` §8 y `.agents/AGENTS.md` §8.6 seguían declarando **vivo** el defecto del Patrimonio Neto
 que la tanda 1 ya había corregido. Los tres quedaron al día.
 
-**Próximo paso:** compuerta final y merge de `docs/rfc-024-navegacion-por-entidad` a `master`.
+**Próximo paso:** consolidar `docs/rfc-024-navegacion-por-entidad` en `master` por fast-forward
+—la batería ya está corrida y en verde—, escribir su `registro/` y podar de este doc la sección del
+RFC 024. **Lo decide el usuario.**
 
 Detrás, en orden de cercanía:
 
@@ -93,7 +98,8 @@ catálogo con el mock levantado; el encabezado decía 17 dominios y sólo se enu
 
 **Ya portados:** cuentas (`/accounts`), contactos (`/contacts`), transacciones (`/transactions`),
 suscripciones (`/subscriptions`), **tarjetas (`/cards`)** y **configuración (`/settings`)**, esta
-última con una sola pestaña activa —Categorías— y las otras tres deshabilitadas.
+última con dos pestañas activas —Categorías y Plan contable, la segunda desde la tanda 2 del RFC
+024— y las otras tres (Perfil, Preferencias, Seguridad) deshabilitadas.
 
 #### 2. Servicios de infraestructura pendientes de portar desde `FinanceApp-WSL`
 * **Crons y Workers de Background:** Upstash QStash (`/api/cron/net-worth`, `/api/cron/statements`, `/api/webhooks/qstash`) para el cálculo automatizado de fin de mes.
