@@ -83,10 +83,10 @@ export function AccountsContainer( {
     return( acc ) ;
   } , {} as Record< string , Account[] > ) ;
 
-  // Calcular métricas
+  // Calcular métricas (patterns.md §8: pasivos almacenados negativos, el neto es suma)
   const totalAssets = walletAccounts.filter( ( a ) => a.type === "asset" ).reduce( ( sum , a ) => (sum + a.balance) , 0 ) ;
   const totalLiabs  = walletAccounts.filter( ( a ) => a.type === "liability" ).reduce( ( sum , a ) => (sum + a.balance) , 0 ) ;
-  const netWorth    = ( totalAssets - totalLiabs ) ;
+  const netWorth    = ( totalAssets + totalLiabs ) ; // patterns.md §8: suma porque los pasivos ya guardan saldo negativo
 
   // Procesar series temporales reales para Patrimonio Neto, Activos y Pasivos
   const sparklinePointsNetWorth: SparklinePoint[] = summaries.map( ( s ) => ( {

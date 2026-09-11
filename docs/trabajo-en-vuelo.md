@@ -14,7 +14,8 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 **Rama activa:** `docs/rfc-024-navegacion-por-entidad`, encadenada sobre `master` consolidado.
 
-**Estado:** 🟡 **RFC 024 `APPROVED`; plan de la tanda 1 escrito y listo para `obra`, sin ejecutar.**
+**Estado:** 🟡 **RFC 024 `APPROVED`; tanda 1 en ejecución.**
+Paso 1 completado (signo del Patrimonio Neto corregido en `AccountsContainer.tsx`).
 El plan es [`docs/planes/024-tanda-1-directorio-por-entidad.md`](planes/024-tanda-1-directorio-por-entidad.md)
 y cubre el directorio por entidad, el cierre de la puerta de atrás de `CreateAccountForm` y el signo
 del Patrimonio Neto. **La tanda 2 —mudar el plan de cuentas a `/settings`— todavía no tiene plan.**
@@ -22,14 +23,13 @@ del Patrimonio Neto. **La tanda 2 —mudar el plan de cuentas a `/settings`— t
 cubre el §4 de la sesión de diseño: `/accounts` como directorio por entidad, el instrumento
 presentado como instrumento, el plan de cuentas mudado a `/settings` en sólo lectura, y el
 Patrimonio Neto fuera de `/accounts`. **No lleva migración de base de datos**: `financial_entities`
-y las tres columnas `entityId` ya existen. **No habilita código hasta que el usuario lo apruebe.**
+y las tres columnas `entityId` ya existen.
 
 Dejó **dos defectos activos convertidos en requisitos** —el Patrimonio Neto suma la deuda en vez de
-restarla (`AccountsContainer.tsx:87-89`), y `CreateAccountForm` crea cuentas de gasto huérfanas del
-árbol de categorías (`:122-126`)— y corrigió **tres afirmaciones inexactas** de la sesión de diseño.
+restarla (`AccountsContainer.tsx:87-89`, corregido en paso 1), y `CreateAccountForm` crea cuentas de gasto huérfanas del
+árbol de categorías (`:122-126`, abordado en paso 2)— y corrigió **tres afirmaciones inexactas** de la sesión de diseño.
 
-**Próximo paso:** **ejecutar la tanda 1 con `obra`**, sobre esta misma rama y con el árbol limpio.
-Después, escribir el plan de la tanda 2.
+**Próximo paso:** **Paso 2 del plan** — Cerrar la puerta de atrás de `CreateAccountForm` (`accounting.schema.ts`, `CreateAccountForm.tsx`, tests).
 
 Detrás, en orden de cercanía:
 
