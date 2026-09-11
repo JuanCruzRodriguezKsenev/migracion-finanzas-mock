@@ -112,6 +112,14 @@ describe( "accounting.schema" , () => {
       expect( resultado.success ).toBe( false ) ;
     } ) ;
 
+    it( "debería rechazar tipos nominales como expense y nombrar tipos admitidos" , () => {
+      const resultado = createAccountSchema.safeParse( { name: "Gasto Almuerzo" , type: "expense" } ) ;
+      expect( resultado.success ).toBe( false ) ;
+      if( !resultado.success ) {
+        expect( resultado.error.issues[0]?.message ).toBe( "El tipo de cuenta debe ser asset o liability." ) ;
+      }
+    } ) ;
+
     it( "debería rechazar un saldo con decimales (no entero en centavos)" , () => {
       const resultado = createAccountSchema.safeParse( {name: "Banco" , type: "asset" , balance: 100.5} ) ;
       expect( resultado.success ).toBe( false ) ;

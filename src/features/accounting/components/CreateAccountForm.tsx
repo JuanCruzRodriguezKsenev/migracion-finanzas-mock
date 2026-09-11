@@ -38,21 +38,11 @@ export function CreateAccountForm( {
   const [ balance , setBalance ]         = useState( "" ) ;
   const [ selectedEntityId , setSelectedEntityId ] = useState( defaultEntityId || "" ) ;
 
-  // Sincronizar preselección y resetear entidad al elegir una cuenta nominal/contable.
-  // Se ajusta durante el render (patrón oficial de React para "resetear estado ante
-  // un cambio de prop/estado") en vez de en un efecto, evitando un ciclo de render extra.
+  // Sincronizar preselección de entidad ante cambios de prop
   const [ prevDefaultEntityId , setPrevDefaultEntityId ] = useState( defaultEntityId ) ;
   if( defaultEntityId !== prevDefaultEntityId ) {
     setPrevDefaultEntityId( defaultEntityId ) ;
     if( defaultEntityId ) { setSelectedEntityId( defaultEntityId ) ; }
-  }
-
-  const [ prevType , setPrevType ] = useState( type ) ;
-  if( type !== prevType ) {
-    setPrevType( type ) ;
-    if( ( type === "equity" ) || ( type === "revenue" ) || ( type === "expense" ) ) {
-      setSelectedEntityId( "" ) ;
-    }
   }
 
   const handleSubmit = ( e: React.FormEvent ) => {
@@ -64,8 +54,8 @@ export function CreateAccountForm( {
       return ;
     }
 
-    // Validar que se seleccione una entidad si es una cuenta financiera activa
-    if( ( ( type === "asset" ) || ( type === "liability" ) ) && !selectedEntityId ) {
+    // Al permitirse sólo asset y liability, la entidad financiera es siempre obligatoria
+    if( !selectedEntityId ) {
       setError( "Debe seleccionar una entidad financiera." ) ;
       return ;
     }
@@ -121,19 +111,16 @@ export function CreateAccountForm( {
         >
           <option value="asset">{ dict.typeAsset || "Activo (Dinero/Bienes)" }</option>
           <option value="liability">{ dict.typeLiability || "Pasivo (Deudas/Tarjetas)" }</option>
-          <option value="equity">{ dict.typeEquity || "Patrimonio Neto" }</option>
-          <option value="revenue">{ dict.typeRevenue || "Ingreso" }</option>
-          <option value="expense">{ dict.typeExpense || "Egreso / Gasto" }</option>
         </FormSelect>
 
         <FormSelect
           label={dict.formInstitution || "Entidad Financiera"}
           value={selectedEntityId}
           onChange={ ( e ) => setSelectedEntityId( e.target.value ) }
-          disabled={ isTransitioning || ( type === "equity" ) || ( type === "revenue" ) || ( type === "expense" ) }
-          required={ ( type === "asset" ) || ( type === "liability" ) }
+          disabled={isTransitioning}
+          required
         >
-          <option value="">{ ( type === "equity" ) || ( type === "revenue" ) || ( type === "expense" ) ? "Contabilidad" : "Seleccionar Entidad..." }</option>
+          <option value="">Seleccionar Entidad...</option>
           {financialEntities.map( ( ent ) => (
             <option key={ent.id} value={ent.id}>{ ent.name }</option>
           ) )}

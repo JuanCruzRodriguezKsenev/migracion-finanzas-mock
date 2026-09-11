@@ -51,8 +51,8 @@ export type CreateTransactionInput = z.infer< typeof createTransactionSchema > ;
  */
 export const createAccountSchema = z.object( {
   name:     z.string().min( 2 , "El nombre de la cuenta debe tener al menos 2 caracteres." ).max( 150 ) ,
-  type:     z.enum( [ "asset" , "liability" , "equity" , "revenue" , "expense" ] , {
-    error: "El tipo de cuenta debe ser asset, liability, equity, revenue o expense." ,
+  type:     z.enum( [ "asset" , "liability" ] , {
+    error: "El tipo de cuenta debe ser asset o liability." ,
   } ) ,
   code:     z.string().max( 50 ).optional() ,
   balance:  z.number().int( "El saldo debe expresarse en centavos enteros." ).optional() ,
