@@ -38,8 +38,25 @@ Neto desalojado de `/accounts`.
 *   **Tres afirmaciones de la sesión de diseño resultaron falsas** — ver
     [[decisiones-modelo-clasificacion]], que ahora las lista.
 
-**Próximo paso: que el usuario apruebe o corrija el 024.** Recién con `APPROVED` se escribe el plan
-para `obra`. El RFC **no lo apruebo yo**.
+**El usuario aprobó el 024** y pidió el plan. Está escrito y **en cola para `obra`, sin ejecutar**:
+`docs/planes/024-tanda-1-directorio-por-entidad.md`.
+
+**Decidió partir la ejecución en dos tandas:**
+
+*   **Tanda 1 (plan escrito):** directorio por entidad —tarjetas como tarjetas dentro de la entidad,
+    con la regla de no contar dos veces la deuda—, cierre de la puerta de atrás de
+    `CreateAccountForm`, y corrección del signo del Patrimonio Neto.
+*   **Tanda 2 (sin plan todavía):** mudar el plan de cuentas a `/settings`. **Arrastra darle a
+    `/settings` su primera navegación de pestañas real**: hoy `CategoriesSettingsContainer` pasa
+    `activeTab="categories"` fijo y un `onChange` vacío, con las otras tres deshabilitadas.
+*   **El Patrimonio Neto NO se quita todavía**, por decisión suya: se corrige y se queda en
+    `/accounts` hasta que exista la página de estadísticas que lo recibe.
+
+**Radio de impacto ya verificado para la tanda 1** (sirve igual si hay que rehacer el plan):
+`createAccountSchema` tiene **un solo** consumidor (`createAccountAction`) y éste **un solo** llamador
+(`CreateAccountForm`). El alta de categorías del RFC 022 crea sus cuentas con `insert( accounts )`
+directo en `categoryRepository.ts`, **sin pasar por ninguno de los dos**: restringir el enum no la
+toca.
 
 **Artifact de la hoja de ruta (versión 8):** refleja `ba8b7ca` y 393 tests. **Desactualizado**: no
 incluye la consolidación de mocks/storage ni este RFC. **Trampas al republicar:** lo que devuelve
