@@ -17,6 +17,8 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 ## Decisiones tomadas
 
 - [Rediseño de clasificación y propuestas](decisiones_modelo_clasificacion.md) — sesión **cerrada**: categoría = cuenta contable, propuestas fuera del libro, navegación por instrumento. Faltan las propuestas.
+- [RFC 008 reescrito — préstamos y `/loans`](decisiones_rfc008_loans.md) — bidireccional, sin `remainingBalance`; por qué `/loans` y no `/debts`, y por qué **no** hay `/activos`.
+- [RFC 025 — compras en cuotas con tarjeta](decisiones_rfc025_cuotas_tarjeta.md) — una cuota por mes y no el total al comprar; la asimetría declarada con el 008 y quién la cierra.
 - [RFC 022 — clasificación unificada, ya implementado](rfc022_clasificacion_unificada.md) — hoja `General` (.99), resolución padre→hoja, cascada de archivado, y los cabos que dejó.
 - [Feature `profile`](feature_profile.md) — los códigos canónicos ya se migraron; por qué las preferencias todavía no afectan a nada y qué quedó abierto.
 - [Cómo levantar los repos hermanos](repos_hermanos_como_levantarlos.md) — FinanzasMock está atado a Neon: sin base, con bypass de login. Y qué hay adentro de cada uno.

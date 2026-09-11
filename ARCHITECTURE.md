@@ -78,7 +78,7 @@ pie nacieron en inglés mientras el catálogo de referencia de **FinanzasMock** 
 traduce al inglés; el contenido visible al usuario sigue en español**, que es lo que resuelve el
 segmento `[lang]` de i18n.
 
-Los módulos que faltan portar toman entonces: `/debts`, `/goals`, `/budgets`, `/investments`,
+Los módulos que faltan portar toman entonces: `/loans`, `/goals`, `/budgets`, `/investments`,
 `/billing`, `/wealth`, `/integrations`, `/reports`, `/upgrade-plan`.
 
 ### Documentación de Código (Estándar TSDoc):

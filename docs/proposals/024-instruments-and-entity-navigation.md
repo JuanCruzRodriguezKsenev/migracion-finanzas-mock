@@ -59,8 +59,11 @@ instrumento.**
 
 ### No objetivos
 
-*   **No se construye `/debts` ni `/wealth`.** Este RFC fija que existen como vistas transversales y
+*   **No se construye `/loans` ni `/wealth`.** Este RFC fija que existen como vistas transversales y
     dónde encajan; sus contenidos son el RFC 008 —a reescribir— y el RFC 010 —a contrastar—.
+    **Renombrada el 2026-09-11:** este RFC la llamaba `/debts`; el [RFC 008](008-loans-and-installments.md) §2
+    la renombró a **`/loans`** porque el eje 2 agrupa por tipo de instrumento, no por clase contable,
+    y un préstamo dado es un activo. Renombre puramente documental: `/debts` nunca existió en el código.
 *   **No se toca el motor contable.** Ni el plan de cuentas, ni `category_accounts`, ni el signo
     almacenado. Todo lo de acá es capa de lectura y presentación.
 *   **No se construye la página de estadísticas.** El §6 manda el Patrimonio Neto hacia allá, pero
@@ -76,14 +79,14 @@ Un mismo instrumento se ve desde dos preguntas distintas, y las dos son legítim
 | Eje | Ruta | Pregunta que contesta |
 | :--- | :--- | :--- |
 | Por **quién lo emite** | `/accounts` | *¿Qué tengo con Galicia?* |
-| Por **qué tipo de cosa es** | `/cards`, `/debts`, `/wealth` | *¿Cómo vienen mis tarjetas?* |
+| Por **qué tipo de cosa es** | `/cards`, `/loans`, `/wealth` | *¿Cómo vienen mis tarjetas?* |
 
 **Que un instrumento aparezca dos veces no es duplicación**: es la misma fila leída por dos criterios.
 La fuente es única —la tabla del instrumento— y ninguno de los dos ejes guarda estado propio.
 
 Por `ARCHITECTURE.md` §4 los segmentos van en inglés, así que las vistas transversales futuras se
-llaman **`/debts`** y **`/wealth`**. La página de estadísticas queda sin nombre elegido: no es alcance
-de este RFC.
+llaman **`/loans`** (renombrada desde `/debts` por el RFC 008 §2, el 2026-09-11) y **`/wealth`**. La
+página de estadísticas queda sin nombre elegido: no es alcance de este RFC.
 
 ---
 
@@ -288,12 +291,13 @@ No son deuda a mirar después: la pantalla nueva los hereda si no se corrigen pr
     calcula con pasivos en positivo, al revés que el motor. Pertenece a la propuesta de estadísticas.
 *   **El nombre de la ruta de estadísticas.** El mock la llama `/reportes`, lo que daría `/reports`;
     se habló de ella como *stats*. Se decide en su propia propuesta.
-*   **`/debts` y `/wealth` no tienen contenido acá.** El RFC 008 hay que reescribirlo —usa `integer`
-    para dinero y guarda un `remainingBalance` propio que duplicaría `accounts.balance`— y el RFC 010
-    hay que contrastarlo: sus siete columnas monetarias son `integer` y el repositorio migró a
-    `bigint` en el RFC 019.
+*   **`/loans` y `/wealth` no tienen contenido acá.** ~~El RFC 008 hay que reescribirlo~~ — **hecho el
+    2026-09-11**: el [RFC 008](008-loans-and-installments.md) está reescrito y `APPROVED`, y de él se
+    escindió el [RFC 025](025-card-installment-plans.md) para las compras en cuotas con tarjeta. El
+    RFC 010 sigue pendiente de contraste: sus siete columnas monetarias son `integer` y el repositorio
+    migró a `bigint` en el RFC 019.
 *   **La navegación lateral ya está al día, contra lo que decía la sesión de diseño.** El §4bis
     afirmaba que «`/cards` no figura» en `Navbar.tsx`; hoy sí figura (`:121`), y `/settings` también
-    (`:91`). No hay nada que rehacer ahí. Lo que sí habrá que decidir es dónde entran `/debts` y
+    (`:91`). No hay nada que rehacer ahí. Lo que sí habrá que decidir es dónde entran `/loans` y
     `/wealth` cuando existan.
 *   **Si el modal de entidad debe promoverse a ruta** (§3.3). Se revisa cuando existan préstamos.

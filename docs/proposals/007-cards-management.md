@@ -316,9 +316,25 @@ Una tarjeta de crédito es una cuenta de pasivo que muestra múltiples capas de 
 2.  **Saldo Consumido Total:** La suma de toda la deuda acumulada en la tarjeta. Se divide visualmente en:
     *   *Saldo Facturado (A pagar este mes):* Consumos del período cerrado que vencen pronto.
     *   *Saldo en Curso (Siguiente período):* Consumos realizados tras la fecha de cierre que vencerán el próximo mes.
-    *   *Cuotas Futuras Pendientes:* Saldo total remanente de compras en cuotas (`installmentPlans`) que aún no se han facturado, pero que restan del límite disponible (ej: si compraste en 10 cuotas, las 9 restantes).
+    *   *Cuotas Futuras Pendientes:* Saldo total remanente de compras en cuotas que aún no se han facturado, pero que restan del límite disponible (ej: si compraste en 10 cuotas, las 9 restantes).
 3.  **Disponible para Compras:** El límite que le queda al usuario para seguir gastando:
     $$\text{Disponible} = \text{Límite} - (\text{Saldo Facturado} + \text{Saldo en Curso} + \text{Cuotas Futuras})$$
+
+> [!WARNING]
+> **Esta fórmula está corregida por el [RFC 025](025-card-installment-plans.md) §6 (2026-09-11).**
+> `Saldo Facturado` y `Saldo en Curso` son los asientos de un rango de fechas del ciclo vigente
+> ([`cardCycleService.ts`](../../src/features/cards/services/cardCycleService.ts)), así que el saldo
+> impago de ciclos anteriores no cae en ninguno de los dos y la resta deja deuda afuera: **la fórmula
+> sobrestima el disponible.** El cálculo vigente es `Límite − Deuda total − Cuotas futuras`, donde la
+> deuda total sale de `deudaDe()` sobre las cuentas de la tarjeta. **El código ya lo hacía así**
+> ([`CardVisual.tsx:40`](../../src/features/cards/components/CardVisual.tsx)); lo que le faltaba era
+> el término de cuotas futuras.
+>
+> **La tabla que este párrafo llamaba `installmentPlans` no existía al escribirse.** La modela el
+> RFC 025 como `card_installment_plans`, y allí se define también cómo se cuentan las cuotas no
+> imputadas: proyección con `ocurrenciaN()` contra el puntero `resolved_through`, sin columna
+> contadora.
+
 4.  **Resumen de Intereses y Mínimo:** Muestra la tasa de financiación (TNA) y el Pago Mínimo calculado para evitar mora.
 
 ---

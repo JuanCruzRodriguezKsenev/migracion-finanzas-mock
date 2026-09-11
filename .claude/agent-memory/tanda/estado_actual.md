@@ -5,6 +5,31 @@ metadata:
   type: project
 ---
 
+# Estado al cerrar la ronda del 2026-09-11 (RFC 008 y 025 aprobados, plan del 025 en cola)
+
+**Rama activa: `docs/rfc-025-cuotas-de-tarjeta`**, creada sobre `07aadb3`. `master` está consolidado
+y pusheado hasta ahí.
+
+**Lo que pasó:** se reescribió el **RFC 008** (préstamos, `/loans`) y se escribió el **RFC 025**
+(compras en cuotas con tarjeta). **El usuario aprobó los dos el 2026-09-11**, así que habilitan
+código. Ver [[decisiones-rfc008-loans]] y [[decisiones-rfc025-cuotas-tarjeta]].
+
+**Entregado a `obra`:** `docs/planes/025-tanda-1-planes-de-cuotas.md` — backend completo del 025, sin
+interfaz. La tanda 2 (UI en `/cards`) **no está escrita**: se escribe con el informe de la 1 en la
+mano. El plan del **RFC 008 tampoco existe todavía**, y conviene escribirlo después de verificar la
+tanda 1 del 025, que estrena el mismo patrón a menor escala.
+
+**Aplicado en la misma ronda:** el rename `/debts` → `/loans` (RFC 024 líneas 62/79/85/291/297,
+`ARCHITECTURE.md:81`, inventario de `trabajo-en-vuelo.md`), y la nota de corrección al **RFC 007**
+tras la fórmula del disponible de su §8B. **No se tocaron** `docs/registro/`, `docs/diseno/` ni los
+planes ya ejecutados.
+
+**Tres hallazgos enrutados a `TECHNICAL_DEBT.md`** (§3, §8 y el §9 nuevo): `/cards` sin
+internacionalizar en `CardVisual`, el `<span>Tarjetas</span>` en duro del `Navbar`, y **la suma de
+divisas distintas en `deudaTotal`**.
+
+---
+
 # Estado al cerrar la ronda del 2026-09-10 (octava del día)
 
 **Verificar con `git log` antes de actuar: esto se desactualiza rápido.**
