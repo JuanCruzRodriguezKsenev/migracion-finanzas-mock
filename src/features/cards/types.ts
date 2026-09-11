@@ -30,22 +30,31 @@ export interface PendienteCuota {
 }
 
 /**
+ * Plan de cuotas enriquecido con cálculo de avance y cuotas pendientes de imputación.
+ */
+export interface CardInstallmentPlanWithDetails extends CardInstallmentPlan {
+  cuotasImputadas: number ;
+  pendientes:      PendienteCuota[] ;
+}
+
+/**
  * Ciclo de facturación resuelto de una tarjeta de crédito, con su partición de saldo.
- * Las fechas viajan como ISO 8601 y no como Date: este objeto cruza del Server Component al
- * cliente, y un Date no sobrevive esa frontera sin deserializarse.
+ * Las fechas viajan como ISO 8601 (o null si no tiene cierre declarado) y no como Date:
+ * este objeto cruza del Server Component al cliente, y un Date no sobrevive esa frontera sin deserializarse.
  */
 export interface CicloTarjeta {
-  cierreAnterior: string ;
-  cierreActual:   string ;
-  vencimiento:    string ;
+  cierreAnterior: string | null ; // null: la tarjeta no tiene día de cierre declarado
+  cierreActual:   string | null ;
+  vencimiento:    string | null ;
   facturado:      number ; // Centavos ya congelados por el cierre: es lo que vence
   enCurso:        number ; // Centavos consumidos después del cierre: vencen el mes que viene
   cuotasFuturas:  Record< string , number > ; // divisa → centavos no imputados
 }
 
 export interface CardWithAccountsAndEntity extends Card {
-  entity?: FinancialEntity | null ;
+  entity?:        FinancialEntity | null ;
   linkedAccount?: Account | null ;
-  accounts: CardAccountWithAccount[] ;
-  ciclo?: CicloTarjeta | null ;
+  accounts:       CardAccountWithAccount[] ;
+  ciclo?:         CicloTarjeta | null ;
+  planes?:        CardInstallmentPlanWithDetails[] | null ;
 }

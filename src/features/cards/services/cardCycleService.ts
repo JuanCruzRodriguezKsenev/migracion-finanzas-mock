@@ -7,12 +7,23 @@
 // Feature: Accounting
 import { ledgerRepository } from "@/features/accounting/repositories/ledgerRepository" ;
 
+// Feature: Subscriptions
+import { obtenerHoyCivil } from "@/features/subscriptions/services/recurrenceService" ;
+
 // Feature: Cards
-import { installmentPlansRepository }               from "../repositories/installmentPlansRepository" ;
-import { CardWithAccountsAndEntity , CicloTarjeta } from "../types" ;
-import { cuotasFuturasPorDivisa }                   from "./installmentService" ;
-import { CardInstallmentPlan }                      from "../types" ;
-import { calcularPeriodos }                         from "../utils/ciclo" ;
+import {
+  CardWithAccountsAndEntity ,
+  CardInstallmentPlanWithDetails ,
+  CardInstallmentPlan ,
+  CicloTarjeta
+} from "../types" ;
+import {
+  cuotasFuturasPorDivisa ,
+  cuotasImputadasDe ,
+  pendientesDeCuotas
+} from "./installmentService" ;
+import { installmentPlansRepository } from "../repositories/installmentPlansRepository" ;
+import { calcularPeriodos }           from "../utils/ciclo" ;
 
 
 /**
@@ -50,9 +61,9 @@ export async function calcularCicloDeTarjeta(
   // pero sus cuotas futuras deben quedar expuestas para deducir del disponible.
   if( !card.closingDay ) {
     return( {
-      cierreAnterior: "" ,
-      cierreActual:   "" ,
-      vencimiento:    "" ,
+      cierreAnterior: null ,
+      cierreActual:   null ,
+      vencimiento:    null ,
       facturado:      0 ,
       enCurso:        0 ,
       cuotasFuturas ,
@@ -94,13 +105,13 @@ export async function calcularCicloDeTarjeta(
 }
 
 /**
- * Resuelve el ciclo y cuotas futuras de un lote de tarjetas en paralelo.
+ * Resuelve el ciclo, cuotas futuras y planes enriquecidos de un lote de tarjetas en paralelo.
  * Realiza una única consulta agregada de planes activos de la organización para evitar consultas N+1.
  *
  * @param cards - Tarjetas a resolver.
  * @param organizationId - Organización dueña.
  * @param zonaHoraria - Identificador IANA de la zona horaria del usuario.
- * @returns Las mismas tarjetas, cada una con su `ciclo` resuelto (o `null` si no le corresponde).
+ * @returns Las mismas tarjetas, cada una con su `ciclo` y `planes` resueltos (o `null` / `[]` si no le corresponde).
  */
 export async function calcularCiclosDeTarjetas(
   cards:          CardWithAccountsAndEntity[] ,
@@ -108,12 +119,28 @@ export async function calcularCiclosDeTarjetas(
   zonaHoraria:    string
 ): Promise< CardWithAccountsAndEntity[] > {
   const planesActivos = await installmentPlansRepository.findActiveByOrganization( organizationId ) ;
+  const hoyCivil      = obtenerHoyCivil( zonaHoraria ) ;
 
   return( await Promise.all( cards.map( async ( card ) => {
+    if( card.type !== "credit" ) {
+      return( {
+        ...card ,
+        ciclo:  null ,
+        planes: [] ,
+      } ) ;
+    }
+
     const planesDeTarjeta = planesActivos.filter( ( p ) => p.cardId === card.id ) ;
+    const planesEnriquecidos: CardInstallmentPlanWithDetails[] = planesDeTarjeta.map( ( plan ) => ( {
+      ...plan ,
+      cuotasImputadas: cuotasImputadasDe( plan ) ,
+      pendientes:      pendientesDeCuotas( plan , hoyCivil ) ,
+    } ) ) ;
+
     return( {
       ...card ,
-      ciclo: await calcularCicloDeTarjeta( card , organizationId , zonaHoraria , planesDeTarjeta ) ,
+      ciclo:  await calcularCicloDeTarjeta( card , organizationId , zonaHoraria , planesDeTarjeta ) ,
+      planes: planesEnriquecidos ,
     } ) ;
   } ) ) ) ;
 }

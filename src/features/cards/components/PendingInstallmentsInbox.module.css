@@ -1,0 +1,137 @@
+/**
+ * @file PendingInstallmentsInbox.module.css
+ * Estilos para la bandeja global de cuotas de tarjeta pendientes de confirmación (RFC 025).
+ * Basado en tokens semánticos del sistema y respetando reglas anti-layout-shift.
+ */
+
+.inboxWrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.5rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem;
+}
+
+.inboxHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-xl);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.description {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.itemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.itemCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  background-color: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
+
+.itemCard:hover {
+  border-color: var(--border-strong);
+}
+
+.itemInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-width: clamp(12rem, 30vw, 20rem);
+}
+
+.itemDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.itemName {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.itemMeta {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.itemAmountActions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.itemAmount {
+  font-size: var(--fs-base);
+  font-weight: 700;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+}
+
+.itemActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.skipButton {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+}
+
+.skipButton:hover {
+  color: var(--color-danger);
+}

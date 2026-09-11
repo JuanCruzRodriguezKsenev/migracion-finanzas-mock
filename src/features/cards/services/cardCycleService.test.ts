@@ -19,8 +19,8 @@ import { accountRepository }                  from "@/features/accounting/reposi
 import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Cards
-import { calcularCicloDeTarjeta }    from "./cardCycleService" ;
-import { cards , cardAccounts }      from "../schema.db" ;
+import { calcularCicloDeTarjeta , calcularCiclosDeTarjetas } from "./cardCycleService" ;
+import { cards , cardAccounts , cardInstallmentPlans } from "../schema.db" ;
 import { CardWithAccountsAndEntity } from "../types" ;
 
 
@@ -51,11 +51,11 @@ describe( "cardCycleService — Partición del saldo de una tarjeta de crédito"
   } ) ;
 
   /** Arma una tarjeta de crédito con su cuenta de pasivo, tal como la devuelve el DAL. */
-  const armarTarjeta = async ( closingDay: number | null ) => {
+  const armarTarjeta = async ( closingDay: number | null , codigo = "2.1.01.01" ) => {
     const cuenta = await accountRepository.create( {
       organizationId: orgId ,
-      code:           "2.1.01.01" ,
-      name:           "Tarjeta Visa Ciclo" ,
+      code:           codigo ,
+      name:           `Tarjeta Visa Ciclo ${codigo}` ,
       type:           "liability" ,
       balance:        0 ,
       currency:       "ARS" ,
@@ -134,10 +134,35 @@ describe( "cardCycleService — Partición del saldo de una tarjeta de crédito"
     const ciclo = await calcularCicloDeTarjeta( tarjeta , orgId , "America/Argentina/Buenos_Aires" ) ;
 
     expect( ciclo ).not.toBeNull() ;
-    expect( ciclo?.cierreActual ).toBe( "" ) ;
+    expect( ciclo?.cierreActual ).toBeNull() ;
+    expect( ciclo?.cierreAnterior ).toBeNull() ;
+    expect( ciclo?.vencimiento ).toBeNull() ;
     expect( ciclo?.facturado ).toBe( 0 ) ;
     expect( ciclo?.enCurso ).toBe( 0 ) ;
     expect( ciclo?.cuotasFuturas ).toEqual( {} ) ;
+  } ) ;
+
+  it( "devuelve ciclo sin fechas congeladas pero con cuotas futuras pobladas para tarjeta sin cierre con planes" , async () => {
+    const { tarjeta } = await armarTarjeta( null ) ;
+
+    await db.insert( cardInstallmentPlans ).values( {
+      organizationId:       orgId ,
+      cardId:               tarjeta.id ,
+      description:          "Compra sin cierre" ,
+      installmentAmount:    100000 ,
+      totalInstallments:    6 ,
+      currency:             "ARS" ,
+      purchasedAt:          new Date( "2026-03-01T12:00:00Z" ) ,
+      firstInstallmentDate: "2026-04-10" ,
+    } ) ;
+
+    const ciclo = await calcularCicloDeTarjeta( tarjeta , orgId , "America/Argentina/Buenos_Aires" ) ;
+
+    expect( ciclo ).not.toBeNull() ;
+    expect( ciclo?.cierreActual ).toBeNull() ;
+    expect( ciclo?.cierreAnterior ).toBeNull() ;
+    expect( ciclo?.vencimiento ).toBeNull() ;
+    expect( ciclo?.cuotasFuturas ).toEqual( { ARS: 600000 } ) ;
   } ) ;
 
   it( "no calcula ciclo para una tarjeta de débito" , async () => {
@@ -147,5 +172,35 @@ describe( "cardCycleService — Partición del saldo de una tarjeta de crédito"
     const ciclo  = await calcularCicloDeTarjeta( debito , orgId , "America/Argentina/Buenos_Aires" ) ;
 
     expect( ciclo ).toBeNull() ;
+  } ) ;
+
+  it( "calcularCiclosDeTarjetas adjunta planes enriquecidos y deja débito con ciclo null y planes vacíos" , async () => {
+    const { tarjeta: credito }    = await armarTarjeta( 25 , "2.1.01.01" ) ;
+    const { tarjeta: debitoBase } = await armarTarjeta( null , "2.1.01.02" ) ;
+    const debito                  = { ...debitoBase , type: "debit" } as CardWithAccountsAndEntity ;
+
+    await db.insert( cardInstallmentPlans ).values( {
+      organizationId:       orgId ,
+      cardId:               credito.id ,
+      description:          "TV Samsung" ,
+      installmentAmount:    50000 ,
+      totalInstallments:    6 ,
+      currency:             "ARS" ,
+      purchasedAt:          new Date( "2026-03-01T12:00:00Z" ) ,
+      firstInstallmentDate: "2026-04-10" ,
+    } ) ;
+
+    const resueltas = await calcularCiclosDeTarjetas( [ credito , debito ] , orgId , "America/Argentina/Buenos_Aires" ) ;
+
+    const resCr = resueltas.find( ( c ) => c.id === credito.id ) ;
+    const resDb = resueltas.find( ( c ) => c.id === debito.id ) ;
+
+    expect( resCr?.ciclo ).not.toBeNull() ;
+    expect( resCr?.planes ).toHaveLength( 1 ) ;
+    expect( resCr?.planes?.[0].cuotasImputadas ).toBe( 0 ) ;
+    expect( resCr?.planes?.[0].pendientes ).toBeDefined() ;
+
+    expect( resDb?.ciclo ).toBeNull() ;
+    expect( resDb?.planes ).toEqual( [] ) ;
   } ) ;
 } ) ;

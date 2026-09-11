@@ -37,8 +37,8 @@ import {
   pendientesDeCuotas
 } from "../services/installmentService" ;
 import {
-  CardInstallmentPlan ,
-  PendienteCuota
+  CardInstallmentPlanWithDetails ,
+  CardInstallmentPlan
 } from "../types" ;
 
 
@@ -63,14 +63,6 @@ export interface ResolveInstallmentParams {
 export interface ResolveInstallmentResult {
   plan:           CardInstallmentPlan ;
   transactionId?: string ;
-}
-
-/**
- * Plan de cuotas enriquecido con cálculo de avance y cuotas pendientes de imputación.
- */
-export interface CardInstallmentPlanWithDetails extends CardInstallmentPlan {
-  cuotasImputadas: number ;
-  pendientes:      PendienteCuota[] ;
 }
 
 /**

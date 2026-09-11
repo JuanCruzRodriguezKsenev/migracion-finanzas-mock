@@ -20,14 +20,16 @@ import type { getDictionary } from "@/shared/lib/dictionary" ;
 import { useProfileContext } from "@/features/profile/context/ProfileContext" ;
 
 // Feature: Accounting
-import { Account , FinancialEntity } from "@/features/accounting/types" ;
+import { Account , FinancialEntity , CategoryTreeNode } from "@/features/accounting/types" ;
 
 // Feature: Cards
-import { CardWithAccountsAndEntity } from "../types" ;
-import { archiveCardAction }          from "../actions/cardsActions" ;
-import { CardFormModal }              from "./CardFormModal" ;
-import { CardVisual }                 from "./CardVisual" ;
-import styles                         from "./Cards.module.css" ;
+import { PendingInstallmentsInbox }                 from "./PendingInstallmentsInbox" ;
+import { archiveCardAction }                         from "../actions/cardsActions" ;
+import { InstallmentPlansModal }                    from "./InstallmentPlansModal" ;
+import { CardWithAccountsAndEntity , PendienteCuota } from "../types" ;
+import styles                                        from "./Cards.module.css" ;
+import { CardFormModal }                             from "./CardFormModal" ;
+import { CardVisual }                                from "./CardVisual" ;
 
 
 interface CardsContainerProps {
@@ -35,6 +37,8 @@ interface CardsContainerProps {
   financialEntities: FinancialEntity[] ;
   accounts:          Account[] ;
   dict:              Awaited< ReturnType< typeof getDictionary > > ;
+  initialPending:    PendienteCuota[] ;
+  categoryTree:      CategoryTreeNode[] ;
   lang?:             string ;
 }
 
@@ -43,14 +47,17 @@ export function CardsContainer( {
   financialEntities ,
   accounts ,
   dict ,
+  initialPending ,
+  categoryTree ,
   lang = "es" ,
 }: CardsContainerProps ) {
   const router      = useRouter() ;
   const { profile } = useProfileContext() ;
   const locale      = ( profile.numberFormat || "es-AR" ) ;
 
-  const [ activeTab , setActiveTab ]     = useState< "all" | "credit" | "debit" >( "all" ) ;
-  const [ isModalOpen , setIsModalOpen ] = useState( false ) ;
+  const [ activeTab , setActiveTab ]                 = useState< "all" | "credit" | "debit" >( "all" ) ;
+  const [ isModalOpen , setIsModalOpen ]             = useState( false ) ;
+  const [ plansModalCard , setPlansModalCard ]       = useState< CardWithAccountsAndEntity | null >( null ) ;
 
   const [ , startTransition ] = useTransition() ;
 
@@ -60,7 +67,12 @@ export function CardsContainer( {
   } ) ;
 
   const handleArchive = ( id: string ) => {
-    if( !confirm( "¿Estás seguro de que querés dar de baja esta tarjeta?" ) ) {
+    const confirmMsg = (
+      dict.cardsPage?.archiveCardConfirm ||
+      "¿Estás seguro de que querés dar de baja esta tarjeta?"
+    ) ;
+
+    if( !confirm( confirmMsg ) ) {
       return ;
     }
 
@@ -79,16 +91,23 @@ export function CardsContainer( {
   return(
     <div className={styles.container}>
       <PageHeader
-        title={dict.cardsPage?.title || "Tarjetas"}
-        subtitle={dict.cardsPage?.subtitle || "Administrá tus plásticos de crédito y débito, límites y cuentas de pasivo."}
+        title={ dict.cardsPage?.title || "Tarjetas" }
+        subtitle={ dict.cardsPage?.subtitle || "Administrá tus plásticos de crédito y débito, límites y cuentas de pasivo." }
         actions={
           <Button variant="primary" onClick={ () => setIsModalOpen( true ) }>
-            Nueva Tarjeta
+            { dict.cardsPage?.newCard || "Nueva tarjeta" }
           </Button>
         }
         showMonthSelector={false}
         dict={dict}
         lang={lang}
+      />
+
+      <PendingInstallmentsInbox
+        initialPending={initialPending}
+        cards={initialCards}
+        dict={dict}
+        locale={locale}
       />
 
       <nav className={styles.tabsRow}>
@@ -97,32 +116,35 @@ export function CardsContainer( {
           className={ `${styles.tabButton} ${activeTab === "all" ? styles.tabButtonActive : ""}` }
           onClick={ () => setActiveTab( "all" ) }
         >
-          Todas ({ initialCards.length })
+          { dict.cardsPage?.tabAll || "Todas" } ({ initialCards.length })
         </button>
         <button
           type="button"
           className={ `${styles.tabButton} ${activeTab === "credit" ? styles.tabButtonActive : ""}` }
           onClick={ () => setActiveTab( "credit" ) }
         >
-          Crédito ({ initialCards.filter( ( c ) => c.type === "credit" ).length })
+          { dict.cardsPage?.tabCredit || "Crédito" } ({ initialCards.filter( ( c ) => c.type === "credit" ).length })
         </button>
         <button
           type="button"
           className={ `${styles.tabButton} ${activeTab === "debit" ? styles.tabButtonActive : ""}` }
           onClick={ () => setActiveTab( "debit" ) }
         >
-          Débito ({ initialCards.filter( ( c ) => c.type === "debit" ).length })
+          { dict.cardsPage?.tabDebit || "Débito" } ({ initialCards.filter( ( c ) => c.type === "debit" ).length })
         </button>
       </nav>
 
       { filteredCards.length === 0 ? (
         <EmptyState
           icon={<IconAccounts size={48} />}
-          title="No hay tarjetas registradas"
-          description="Agregá tu primera tarjeta de crédito o débito para organizar tus instrumentos de pago."
+          title={ dict.cardsPage?.emptyTitle || "No hay tarjetas registradas" }
+          description={
+            dict.cardsPage?.emptyDescription ||
+            "Agregá tu primera tarjeta de crédito o débito para organizar tus instrumentos de pago."
+          }
           action={
             <Button variant="primary" onClick={ () => setIsModalOpen( true ) }>
-              Agregar Tarjeta
+              { dict.cardsPage?.emptyAction || "Agregar tarjeta" }
             </Button>
           }
         />
@@ -133,7 +155,9 @@ export function CardsContainer( {
               key={c.id}
               card={c}
               locale={locale}
+              dict={dict}
               onArchive={handleArchive}
+              onViewPlans={ ( card ) => setPlansModalCard( card ) }
             />
           ) ) }
         </div>
@@ -146,6 +170,21 @@ export function CardsContainer( {
           financialEntities={financialEntities}
           accounts={accounts}
           onSuccess={handleSuccessNewCard}
+        />
+      ) : null }
+
+      { plansModalCard ? (
+        <InstallmentPlansModal
+          card={plansModalCard}
+          isOpen={Boolean( plansModalCard )}
+          onClose={ () => setPlansModalCard( null ) }
+          categoryTree={categoryTree}
+          dict={dict}
+          locale={locale}
+          onChanged={ () => {
+            setPlansModalCard( null ) ;
+            router.refresh() ;
+          } }
         />
       ) : null }
     </div>

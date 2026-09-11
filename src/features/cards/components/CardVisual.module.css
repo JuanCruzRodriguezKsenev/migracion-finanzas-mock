@@ -257,6 +257,40 @@
   padding-top: 0.4rem;
 }
 
+.debitAccountStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.debitAccountName {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.cardActionsRow {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.viewPlansButton {
+  background: transparent;
+  border: none;
+  color: var(--color-primary);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius-xs);
+  transition: color 0.15s ease;
+}
+
+.viewPlansButton:hover {
+  color: var(--color-primary-hover);
+}
+
 .archiveButton {
   align-self: flex-end;
   background: transparent;
