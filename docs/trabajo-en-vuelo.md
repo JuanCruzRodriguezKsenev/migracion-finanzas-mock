@@ -12,64 +12,39 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `docs/rfc-024-navegacion-por-entidad`, encadenada sobre `master` consolidado.
+**Rama activa:** ninguna. `master` absorbió `docs/rfc-024-navegacion-por-entidad` por fast-forward
+(`5f8882b..6210045` más el commit de cierre) y quedó **pusheado a `origin`**; no queda ninguna rama
+local fuera de `master`.
 
-**Estado:** 🟢 **RFC 024 `APPROVED`; tandas 1 y 2 ejecutadas y verificadas en verde; RFC 024 cerrado entero.**
+**Estado:** 🟢 **RFC 024 cerrado entero y consolidado.** Batería en verde sobre el `master` resultante:
+**405 tests en 56 archivos, 0 errores y 0 warnings de ESLint, 0 errores TS, build exitoso.**
 
-El RFC es [`024-instruments-and-entity-navigation.md`](proposals/024-instruments-and-entity-navigation.md)
-y cubre el §4 de la sesión de diseño: `/accounts` como directorio por entidad, el instrumento
-presentado como instrumento, el plan de cuentas mudado a `/settings` en sólo lectura, y el Patrimonio
-Neto fuera de `/accounts`. **No lleva migración de base de datos**: `financial_entities` y las tres
-columnas `entityId` ya existen.
+**Próximo paso:** elegir la ronda siguiente entre las tres candidatas de abajo. No hay trabajo a
+medias en el árbol.
 
-**Tanda 1 — hecha.** Plan: [`024-tanda-1-directorio-por-entidad.md`](planes/024-tanda-1-directorio-por-entidad.md).
-Directorio por entidad con separación de familias (Cuentas / Tarjetas) y `CardVisual` en el modal de
-detalle, carga concurrente de tarjetas en `accounts/page.tsx`, deuda de pasivos expresada en positivo
-con `deudaDe()`, y los **dos defectos que el RFC convirtió en requisitos** cerrados: el signo del
-Patrimonio Neto (`51f1a50`) y la puerta de atrás de `CreateAccountForm`, cuyo esquema quedó
-restringido a `asset` y `liability` con test de rechazo (`72d06ff`).
-Verificado por `verificador`: **54 archivos, 400 tests, 0 errores ESLint, 0 errores TS, build exitoso**.
-
-**Tanda 2 — hecha.** Plan: [`024-tanda-2-plan-contable-en-settings.md`](planes/024-tanda-2-plan-contable-en-settings.md).
-Muda el plan de cuentas de `/accounts` a `/settings` como **tabla de auditoría de sólo lectura con el
-plan completo** (los cinco tipos, con la divisa real de cada cuenta en lugar del literal `ARS` que había),
-crea la feature `src/features/settings/` con el shell que pasa a ser dueño del `PageHeader` y de
-las tabs, localiza sus labels en los tres diccionarios, y cierra el §7 del RFC
-unificando la descripción del asiento de apertura de tarjetas. Con esa tanda **el RFC 024 queda
-cerrado entero**.
-Verificado por `verificador` sobre `0a2f841`, corrida independiente del 2026-09-10:
-**56 archivos de test, 405 tests pasados / 405, 0 errores y 0 warnings de ESLint, 0 errores TS,
-build exitoso.** La rama pasa la compuerta.
-
-**Sincronización documental hecha en la ronda de planificación:** `TECHNICAL_DEBT.md` §6,
-`patterns.md` §8 y `.agents/AGENTS.md` §8.6 seguían declarando **vivo** el defecto del Patrimonio Neto
-que la tanda 1 ya había corregido. Los tres quedaron al día.
-
-**Próximo paso:** consolidar `docs/rfc-024-navegacion-por-entidad` en `master` por fast-forward
-—la batería ya está corrida y en verde—, escribir su `registro/` y podar de este doc la sección del
-RFC 024. **Lo decide el usuario.**
-
-Detrás, en orden de cercanía:
-
-1.  **Reescritura del RFC 008** (deudas y cuotas) y **contraste del RFC 010** (patrimonio físico).
-    Las dos referencian al 024, así que van después.
+1.  **Reescritura del RFC 008** (deudas y cuotas) y **contraste del RFC 010** (patrimonio físico),
+    más la enmienda al **RFC 003**. Son las tres propuestas que le faltan a la sesión de diseño; las
+    dos primeras referencian al 024, que ya está cerrado, así que están desbloqueadas.
 2.  **La página de estadísticas** — sin RFC y sin nombre de ruta elegido. Es la que lee la dimensión
-    de categoría que construyó el RFC 022, y la que recibe el Patrimonio Neto que el 024 desaloja.
-3.  **Las 5 declaraciones de `dict?:` opcional heredadas** — `ContactsTable.tsx:26`,
-    `PaymentMethodsPanel.tsx:45`, `ContactFormModal.tsx:26` y `:43`, `MonthSelector.tsx:39`.
+    de categoría que construyó el RFC 022, y la que tiene que recibir el Patrimonio Neto que el 024
+    desaloja de `/accounts` —donde **se queda hasta entonces**, por decisión del usuario. Antes de
+    tocar código hay que resolver la convención de signo de `monthly_summaries` (§9 del RFC 024).
+3.  **Internacionalizar `CategoriesSettingsContainer`** — 766 líneas de español directo en buscador,
+    modales y confirmaciones. Es el único resto de i18n de `/settings`
+    ([`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §3).
 
-**Higiene al día (2026-09-10):** `master` quedó **pusheado a `origin`** y las cuatro ramas ya
-contenidas se borraron (`feat/bandeja-recurrencias`, `fix/cabos-rfc023-y-limpieza-de-tests`,
-`fix/page-header-unico-por-pagina`, `fix/mocks-de-ui-y-dict-obligatorio`). **No queda ninguna rama
-local fuera de `master`.**
+Más atrás: las **5 declaraciones de `dict?:` opcional heredadas** (`ContactsTable.tsx:26`,
+`PaymentMethodsPanel.tsx:45`, `ContactFormModal.tsx:26` y `:43`, `MonthSelector.tsx:39`).
 
 **Lo consolidado el 2026-09-10 quedó congelado en `registro/`:**
 [`2026-09-10-cierre-rfc023-y-compuerta.md`](registro/2026-09-10-cierre-rfc023-y-compuerta.md)
 (`2ae7186..8e086d9`),
 [`2026-09-10-cierre-page-header.md`](registro/2026-09-10-cierre-page-header.md)
-(`8e086d9..2fe778b`) y
+(`8e086d9..2fe778b`),
 [`2026-09-10-cierre-mocks-ui-y-storage.md`](registro/2026-09-10-cierre-mocks-ui-y-storage.md)
-(`ba8b7ca..90bee72`). El código consolidado llega hasta `90bee72`.
+(`ba8b7ca..90bee72`) y
+[`2026-09-10-cierre-rfc024.md`](registro/2026-09-10-cierre-rfc024.md)
+(`5f8882b..6210045`).
 
 ---
 
