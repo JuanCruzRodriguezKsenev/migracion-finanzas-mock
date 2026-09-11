@@ -14,9 +14,10 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 **Rama activa:** `docs/rfc-024-navegacion-por-entidad`, encadenada sobre `master` consolidado.
 
-**Estado:** 🟡 **RFC 024 `APPROVED`; tanda 1 en ejecución.**
+**Estado:** 🟡 **RFC 024 `APPROVED`; tanda 1 de dos implementada, en verificación.**
 Paso 1 completado (signo del Patrimonio Neto corregido en `AccountsContainer.tsx`).
 Paso 2 completado (puerta de atrás de `CreateAccountForm` cerrada: esquema restringido a `asset`/`liability`, formulario simplificado y test unitario añadido).
+Pasos 3, 4 y 5 completados (directorio por entidad con carga concurrente de tarjetas en `accounts/page.tsx`, separación de familias en `AccountsContainer.tsx`, presentación con `CardVisual`, deuda positiva con `deudaDe()`, y claves de diccionario en `es.json`, `en.json`, `br.json`).
 El plan es [`docs/planes/024-tanda-1-directorio-por-entidad.md`](planes/024-tanda-1-directorio-por-entidad.md)
 y cubre el directorio por entidad, el cierre de la puerta de atrás de `CreateAccountForm` y el signo
 del Patrimonio Neto. **La tanda 2 —mudar el plan de cuentas a `/settings`— todavía no tiene plan.**
@@ -30,7 +31,7 @@ Dejó **dos defectos activos convertidos en requisitos** —el Patrimonio Neto s
 restarla (`AccountsContainer.tsx:87-89`, corregido en paso 1), y `CreateAccountForm` crea cuentas de gasto huérfanas del
 árbol de categorías (`:122-126`, corregido en paso 2)— y corrigió **tres afirmaciones inexactas** de la sesión de diseño.
 
-**Próximo paso:** **Paso 3 del plan** — El directorio por entidad muestra cada instrumento como lo que es (`accounts/page.tsx`, `AccountsContainer.tsx`).
+**Próximo paso:** **Verificación de la tanda 1 con `verificador`** y posterior redacción del plan de la tanda 2.
 
 Detrás, en orden de cercanía:
 

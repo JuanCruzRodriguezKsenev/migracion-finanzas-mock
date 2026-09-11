@@ -34,9 +34,15 @@ import styles                                                   from "./Accounts
 import { CreateAccountForm }                                    from "./CreateAccountForm" ;
 import { Account , FinancialEntity , MonthlySummary }           from "../types" ;
 
+// Feature: Cards
+import { CardWithAccountsAndEntity } from "@/features/cards/types" ;
+import { CardVisual }                from "@/features/cards/components/CardVisual" ;
+import { deudaDe }                   from "@/features/cards/utils/ciclo" ;
+
 
 interface AccountsContainerProps {
   accounts:          (Account & { entity?: { name: string ; logo: string | null ; color: string | null } | null })[] ;
+  cards:             CardWithAccountsAndEntity[] ;
   financialEntities: FinancialEntity[] ;
   summaries:         MonthlySummary[] ;
   dict:              Awaited< ReturnType< typeof getDictionary > > ;
@@ -45,6 +51,7 @@ interface AccountsContainerProps {
 
 export function AccountsContainer( {
   accounts ,
+  cards ,
   financialEntities ,
   summaries ,
   dict ,
@@ -72,6 +79,11 @@ export function AccountsContainer( {
     acc[key].push( val ) ;
     return( acc ) ;
   } , {} as Record< string , Account[] > ) ;
+
+  // Conjunto de IDs de cuentas contables vinculadas a tarjetas (evita duplicar la deuda en el listado de cuentas)
+  const cardAccountIds = new Set(
+    cards.flatMap( ( c ) => c.accounts.map( ( ca ) => ca.account.id ) )
+  ) ;
 
   // Agrupar plan contable por tipo contable
   const groupedLedger = ledgerAccounts.reduce( ( acc , val ) => {
@@ -361,27 +373,73 @@ export function AccountsContainer( {
             </Button>
           </div>
 
-          <div className={styles.detailedCardsGrid}>
-            {( groupedWallets[selectedEntity || ""] || [] ).map( ( a ) => {
-              const isLiability = ( a.type === "liability" ) ;
+          { ( () => {
+            const selectedEntityObj = financialEntities.find( ( e ) => e.name === selectedEntity ) ;
+            const entityCards = selectedEntityObj
+              ? cards.filter( ( c ) => c.entityId === selectedEntityObj.id )
+              : ( ( selectedEntity === "Otros" ) ? cards.filter( ( c ) => !c.entityId ) : [] ) ;
+            const entityAccounts = ( groupedWallets[selectedEntity || ""] || [] ).filter(
+              ( a ) => !cardAccountIds.has( a.id )
+            ) ;
+
+            if( ( entityCards.length === 0 ) && ( entityAccounts.length === 0 ) ) {
               return(
-                <Card key={a.id} className={styles.accountCardDetailed}>
-                  <div className={styles.cardHeader}>
-                    <span className={styles.accountNameDetailed}>{ a.name }</span>
-                    <span className={styles.accountCode}>{ a.code }</span>
-                  </div>
-                  <div className={styles.cardFooterDetailed}>
-                    <span className={styles.accountType}>
-                      {isLiability ? accountsPageDict.typeLiability.split( " " )[0] : accountsPageDict.typeAsset.split( " " )[0]}
-                    </span>
-                    <span className={ `${styles.accountBalanceDetailed} ${isLiability ? styles.redText : styles.greenText}` }>
-                      {isContentVisible ? formatCents( a.balance ) : ""}
-                    </span>
-                  </div>
-                </Card>
+                <EmptyState title={accountsPageDict.emptyState} />
               ) ;
-            } )}
-          </div>
+            }
+
+            return(
+              <>
+                { entityCards.length > 0 ? (
+                  <div className={styles.modalSection}>
+                    <h4 className={styles.modalSectionTitle}>
+                      {accountsPageDict.sectionCards || "Tarjetas"}
+                    </h4>
+                    <div className={styles.cardsVisualGrid}>
+                      {entityCards.map( ( card ) => (
+                        <CardVisual
+                          key={card.id}
+                          card={card}
+                          locale={lang}
+                        />
+                      ) )}
+                    </div>
+                  </div>
+                ) : null }
+
+                { entityAccounts.length > 0 ? (
+                  <div className={styles.modalSection}>
+                    <h4 className={styles.modalSectionTitle}>
+                      {accountsPageDict.sectionAccounts || "Cuentas"}
+                    </h4>
+                    <div className={styles.detailedCardsGrid}>
+                      {entityAccounts.map( ( a ) => {
+                        const isLiability    = ( a.type === "liability" ) ;
+                        const balanceDisplay = isLiability ? deudaDe( a ) : a.balance ;
+
+                        return(
+                          <Card key={a.id} className={styles.accountCardDetailed}>
+                            <div className={styles.cardHeader}>
+                              <span className={styles.accountNameDetailed}>{ a.name }</span>
+                              <span className={styles.accountCode}>{ a.code }</span>
+                            </div>
+                            <div className={styles.cardFooterDetailed}>
+                              <span className={styles.accountType}>
+                                {isLiability ? accountsPageDict.typeLiability.split( " " )[0] : accountsPageDict.typeAsset.split( " " )[0]}
+                              </span>
+                              <span className={ `${styles.accountBalanceDetailed} ${isLiability ? styles.redText : styles.greenText}` }>
+                                {isContentVisible ? formatCents( balanceDisplay ) : ""}
+                              </span>
+                            </div>
+                          </Card>
+                        ) ;
+                      } )}
+                    </div>
+                  </div>
+                ) : null }
+              </>
+            ) ;
+          } )() }
         </div>
       </Modal>
     </div>

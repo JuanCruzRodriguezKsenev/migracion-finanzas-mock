@@ -76,7 +76,9 @@
     "typeExpense": "Despesas",
     "successCreate": "Conta criada com sucesso.",
     "brandColorFetchError": "Não foi possível obter a cor corporativa. Você pode escolher uma manualmente.",
-    "entityRequiredError": "O nome da entidade é obrigatório."
+    "entityRequiredError": "O nome da entidade é obrigatório.",
+    "sectionAccounts": "Contas",
+    "sectionCards": "Cartões"
   },
   "cardsPage": {
     "title": "Cartões",

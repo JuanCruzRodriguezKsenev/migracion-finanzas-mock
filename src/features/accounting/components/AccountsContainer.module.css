@@ -152,12 +152,35 @@
   letter-spacing: -0.02em ;
 }
 
-/* Subcuentas en Modal Detalle */
+/* Subcuentas e instrumentos en Modal Detalle */
 .modalScrollBody {
-  max-height: 320px ;
+  max-height: clamp(20rem, 65vh, 38rem) ;
   overflow-y: auto ;
   padding-right: 0.25rem ;
   margin-top: 0.5rem ;
+}
+
+.modalSection {
+  display: flex ;
+  flex-direction: column ;
+  gap: 0.75rem ;
+  margin-bottom: 1.25rem ;
+}
+
+.modalSectionTitle {
+  font-size: 0.8rem ;
+  font-weight: 700 ;
+  color: var(--text-muted) ;
+  text-transform: uppercase ;
+  letter-spacing: 0.05em ;
+}
+
+.cardsVisualGrid {
+  display: flex ;
+  flex-direction: column ;
+  gap: 1rem ;
+  align-items: center ;
+  width: 100% ;
 }
 
 .detailedCardsGrid {

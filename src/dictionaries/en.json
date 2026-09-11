@@ -76,7 +76,9 @@
     "typeExpense": "Expense",
     "successCreate": "Account created successfully.",
     "brandColorFetchError": "Couldn't fetch the brand color. You can choose one manually.",
-    "entityRequiredError": "The entity name is required."
+    "entityRequiredError": "The entity name is required.",
+    "sectionAccounts": "Accounts",
+    "sectionCards": "Cards"
   },
   "cardsPage": {
     "title": "Cards",

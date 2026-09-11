@@ -76,7 +76,9 @@
     "typeExpense": "Gastos",
     "successCreate": "Cuenta creada con éxito.",
     "brandColorFetchError": "No se pudo obtener el color corporativo. Podés elegir uno manual.",
-    "entityRequiredError": "El nombre de la entidad es requerido."
+    "entityRequiredError": "El nombre de la entidad es requerido.",
+    "sectionAccounts": "Cuentas",
+    "sectionCards": "Tarjetas"
   },
   "cardsPage": {
     "title": "Tarjetas",

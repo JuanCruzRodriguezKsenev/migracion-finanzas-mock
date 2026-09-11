@@ -10,6 +10,9 @@ import styles             from "./page.module.css" ;
 import { getAccountsAction , getMonthlySummariesAction , getFinancialEntitiesAction } from "@/features/accounting/actions/accountingActions" ;
 import { AccountsContainer }                                                          from "@/features/accounting/components/AccountsContainer" ;
 
+// Feature: Cards
+import { getCardsAction } from "@/features/cards/actions/cardsActions" ;
+
 
 interface AccountsPageProps {
   params: Promise< {lang: string} > ;
@@ -19,21 +22,24 @@ export default async function AccountsPage( {params}: AccountsPageProps ) {
   const { lang } = await params ;
   const dict     = await getDictionary( lang ) ;
 
-  // Consultar cuentas, históricos y entidades concurrentemente de la DB
-  const [ accountsRes , summariesRes , entitiesRes ] = await Promise.all( [
+  // Consultar cuentas, históricos, entidades y tarjetas concurrentemente de la DB
+  const [ accountsRes , summariesRes , entitiesRes , cardsRes ] = await Promise.all( [
     getAccountsAction() ,
     getMonthlySummariesAction() ,
-    getFinancialEntitiesAction()
+    getFinancialEntitiesAction() ,
+    getCardsAction()
   ] ) ;
 
   const accounts          = ( accountsRes.success ? accountsRes.value : [] ) ;
   const summaries         = ( summariesRes.success ? summariesRes.value : [] ) ;
   const financialEntities = ( entitiesRes.success ? entitiesRes.value : [] ) ;
+  const cards             = ( cardsRes.success ? cardsRes.value : [] ) ;
 
   return(
     <div className={styles.container}>
       <AccountsContainer
         accounts={accounts}
+        cards={cards}
         financialEntities={financialEntities}
         summaries={summaries}
         dict={dict}
