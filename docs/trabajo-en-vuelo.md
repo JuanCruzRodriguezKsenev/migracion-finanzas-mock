@@ -24,12 +24,10 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 3.  **Las propuestas que faltan de la sesión de diseño de clasificación** (`docs/diseno/`), cerrada
     pero sin partir en RFCs.
 
-**Dos pendientes de higiene, conscientes y no pedidos:**
-
-*   **`master` no está pusheado:** queda **14 commits por delante de `origin/master`** (`8e086d9`).
-*   **Cuatro ramas ya contenidas en `master`, borrables:** `feat/bandeja-recurrencias`,
-    `fix/cabos-rfc023-y-limpieza-de-tests`, `fix/page-header-unico-por-pagina` y
-    `fix/mocks-de-ui-y-dict-obligatorio`.
+**Higiene al día (2026-09-10):** `master` quedó **pusheado a `origin`** y las cuatro ramas ya
+contenidas se borraron (`feat/bandeja-recurrencias`, `fix/cabos-rfc023-y-limpieza-de-tests`,
+`fix/page-header-unico-por-pagina`, `fix/mocks-de-ui-y-dict-obligatorio`). **No queda ninguna rama
+local fuera de `master`.**
 
 **Lo consolidado el 2026-09-10 quedó congelado en `registro/`:**
 [`2026-09-10-cierre-rfc023-y-compuerta.md`](registro/2026-09-10-cierre-rfc023-y-compuerta.md)

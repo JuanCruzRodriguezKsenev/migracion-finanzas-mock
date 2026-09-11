@@ -5,13 +5,13 @@
 ## Ramas
 
 ```
-origin/master   8e086d9   NO pusheado — master está 15 commits por delante
-master          7c49444   consolidado, verde, árbol limpio, SIN rama activa encima
+origin/master   al día
+master          consolidado, verde, árbol limpio, SIN rama activa encima
 ```
 
-**Cuatro ramas ya contenidas en `master` y borrables** (nadie lo pidió todavía):
-`feat/bandeja-recurrencias`, `fix/cabos-rfc023-y-limpieza-de-tests`,
-`fix/page-header-unico-por-pagina` y `fix/mocks-de-ui-y-dict-obligatorio`.
+**`master` se pusheó a `origin` el 2026-09-10** (era el primer push del repo desde `8e086d9`; venía
+16 commits atrasado) **y las cuatro ramas ya contenidas se borraron.** No queda ninguna rama local
+fuera de `master`, así que la próxima ronda **crea la suya** antes de traspasarle nada a `obra`.
 
 ## Qué se consolidó
 
