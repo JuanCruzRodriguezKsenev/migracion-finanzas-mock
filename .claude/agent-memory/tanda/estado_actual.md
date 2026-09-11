@@ -12,12 +12,12 @@ metadata:
 ## Ramas
 
 ```
-origin/master                            al día hasta 90bee72
-master                                   consolidado y verde
-  └─ docs/rfc-024-navegacion-por-entidad rama activa, verde, SIN consolidar
+origin/master   al día hasta f606a2e
+master          consolidado, verde y pusheado
 ```
 
-No queda ninguna otra rama local.
+**No queda ninguna rama local fuera de `master`.** El RFC 024 se consolidó por fast-forward
+(`5f8882b..f606a2e`, 13 commits) y la rama `docs/rfc-024-navegacion-por-entidad` se borró.
 
 ## Dónde quedó el RFC 024
 
@@ -32,9 +32,9 @@ independientes:
     los cinco tipos y la divisa real, feature nueva `src/features/settings/` con el shell dueño del
     `PageHeader` y las tabs, labels localizadas en los tres diccionarios, §7 del RFC cerrado.
 
-**Lo que falta es consolidar**: fast-forward a `master`, `docs/registro/` de la rama, y podar la
-sección del RFC 024 de `trabajo-en-vuelo.md`. **El merge lo decide el usuario** — ver
-[[ciclo-de-trabajo]].
+**Consolidado el 2026-09-10** con decisión explícita del usuario: registro congelado en
+`docs/registro/2026-09-10-cierre-rfc024.md`, `trabajo-en-vuelo.md` podado, `master` pusheado y rama
+borrada. **El merge lo decide el usuario** — ver [[ciclo-de-trabajo]].
 
 ## Revisión independiente de la tanda 2 (2026-09-10)
 
@@ -74,8 +74,11 @@ lo que el trabajo acaba de dejar falso. Van dos rondas seguidas encontrando un d
     `NotificationsContext`, retroceso de punteros en la migración `0026`, hamburguesa inerte del
     `PageHeader`, y `unarchive` que no deshace la cascada de `archive`.
 
-**Artifact de la hoja de ruta (versión 8):** refleja `ba8b7ca` y 393 tests. **Desactualizado**: no
-incluye la consolidación de mocks/storage ni el RFC 024 entero (405 tests). **Trampas al republicar:**
+**Artifact de la hoja de ruta (versión 9, 2026-09-10):** al día — refleja `f606a2e`, 405 tests, la
+Fase 2 con 5 de 6 y el RFC 024 como resuelto en el §6. **Trampas al republicar:**
 lo que devuelve `action: "read"` viene con el envoltorio `<!doctype><head><body>` que agrega la
-publicación, hay que quitarlo; el `favicon` (📒) va explícito o se rechaza; y el archivo es de ~1218
-líneas, así que hay que leerlo entero antes de republicar.
+publicación, hay que quitarlo (la línea 1 hasta `<body>` y el `</body></html>` final); el `favicon`
+(📒) **no** se reenvía en un republish, se hereda; y **el archivo hay que leerlo con la herramienta
+`Read`, las 1218 líneas, no con `sed`/`cat`**: si no, la publicación se rechaza con «you hadn't
+viewed the live version». Si aun así rechaza por contenido idéntico ya rechazado, hay que volver a
+hacer `action: "read"` del artifact y publicar inmediatamente después.
