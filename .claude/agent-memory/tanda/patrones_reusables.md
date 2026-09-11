@@ -51,5 +51,21 @@ sin defectos; recomendar un reuso sin abrir el archivo ya introdujo un bug.
 *   **`setupFiles` de vitest corre una vez por archivo** (`vitest.setup.dom.ts`); `globalSetup` una
     sola vez para toda la suite (`src/shared/db/vitest.setup.ts`, crea la base y migra). Lo que tenga
     que pasar por archivo va en `setupFiles`.
-*   **No hay infraestructura de test de componentes.** Ninguna feature tiene tests de `.tsx`. No
-    inventar una de paso en una tanda que no es sobre eso.
+*   **Sí hay tests de componentes** (corrige una nota vieja que decía lo contrario): `Button`,
+    `DataTable`, `Sparkline` y `MonthSelector` en `shared/ui`, y `CategoriesSettingsContainer` en
+    `accounting`. `vitest.config.ts` ya incluye `src/features/**/*.test.tsx`, así que **una feature
+    nueva queda cubierta sin tocar config**. Cómo se montan: ver [[testing-de-componentes-cliente]].
+
+## Antes de escribir una ruta o un reuso en un plan
+
+*   **Verificar la ruta física con `find` o `grep -rln`.** Los cuatro hallazgos que devolvió `obra` de
+    la tanda 1 del RFC 024 fueron rutas mal escritas en el plan: diccionarios en `src/dictionaries/`
+    (no `src/messages/`), componentes de cuentas en `features/accounting/components/` (no existe
+    `features/accounts/`), y tests de esquema junto al código sin subcarpeta `__tests__`. No costaron
+    defectos, pero obligan a `obra` a buscar.
+*   **`DataTable` (`shared/ui/display/DataTable/`) es la tabla del repo.** Columnas tipadas con
+    `render`, `emptyMessage`, `keyExtractor`, `loading` con `Skeleton`, `onRowClick`, `footer`. **No
+    tiene ordenamiento ni paginación** — si un plan los pide, es trabajo nuevo, no reuso. La usan
+    `ContactsTable` y `TransactionsTable`.
+*   **`formatCents( cents )` toma un solo argumento** y tiene el locale fijo en `es-AR`. No le pases
+    `lang`.
