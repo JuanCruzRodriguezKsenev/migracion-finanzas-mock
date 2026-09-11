@@ -15,9 +15,28 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 **Rama activa:** `docs/rfc-025-cuotas-de-tarjeta`, creada el 2026-09-11 sobre `07aadb3`. **No cambiar
 de rama.** `master` quedó consolidado y pusheado hasta `07aadb3`.
 
-**Estado:** 🟡 **Tanda 1 del RFC 025 ejecutada y verificada en verde (429 tests en 58 archivos, 0 ESLint, 0 TS, build exitoso).** El backend del RFC 025 quedó completo: tabla `card_installment_plans` con su migración, `limpiarBase()`, servicio de cuotas, repositorio, server actions y cálculo de cuotas futuras integrado en `cardCycleService`.
+**Estado:** 🟡 **Tanda 1 del RFC 025 ejecutada, y verificada de forma independiente el 2026-09-11
+(429 tests en 58 archivos, 0 errores y 0 warnings de ESLint, 0 errores de TS, build exitoso).** El
+backend del RFC 025 quedó completo: tabla `card_installment_plans` con su migración, `limpiarBase()`,
+servicio de cuotas, repositorio, server actions y cálculo de cuotas futuras integrado en
+`cardCycleService`. **Cero interfaz todavía.**
 
-**Próximo paso:** escribir y ejecutar la **tanda 2 del RFC 025** con `tanda`/`obra`: la ficha de cuotas en `/cards`, la bandeja de imputación interactiva y el reflejo del disponible en la interfaz (`CardVisual.tsx`).
+**Próximo paso:** ejecutar la **tanda 2 del RFC 025**, ya escrita y cerrada en
+[`planes/025-tanda-2-cuotas-en-la-interfaz.md`](planes/025-tanda-2-cuotas-en-la-interfaz.md): bandeja
+global de cuotas pendientes arriba de la grilla, modal de planes por tarjeta con el alta adentro,
+fila de cuotas futuras y disponible real en `CardVisual`, y `/cards` localizada en los tres
+diccionarios.
+
+**Las dos decisiones de interfaz las cerró el usuario el 2026-09-11** y están en el §«Las dos
+decisiones» del plan: (1) la bandeja de imputación es **global**, no una por ficha; (2) el alta de un
+plan vive **dentro del modal de detalle de la tarjeta**, sin selector de tarjeta en ningún formulario.
+
+**Un defecto vivo que la tanda 2 arregla en el paso 1**, detectado al revisar la tanda 1: desde
+`6be0341`, `calcularCicloDeTarjeta()` devuelve las tres fechas del ciclo como cadena vacía cuando la
+tarjeta de crédito no tiene `closingDay` (`cardCycleService.ts:52-59`). El tipo las declara `string`,
+así que nadie está obligado a mirar: `CardVisual.tsx:104` entra igual al bloque y llega a
+`new Date( "" )`, con lo que `Intl.DateTimeFormat.format()` lanza `RangeError` y tumba el render. Se
+arregla en el tipo (`string | null`), no con una guarda en el consumidor.
 
 **Por qué el 025 va antes que el 008**, que es más grande y crea la feature `/loans` entera: el RFC 007
 —`APPROVED` y reaprobado el 2026-09-08— calcula el disponible de la tarjeta restando una tabla
@@ -40,8 +59,9 @@ el RFC 004 —nota en el lugar exacto, sin enmienda aparte—, habilitado por la
 
 ### La secuencia que queda
 
-1.  **Ejecutar el RFC 025** — plan de la tanda 1 escrito y en cola; la tanda 2 (ficha de cuotas en
-    `/cards` y su bandeja de imputación) se escribe cuando la 1 esté verificada.
+1.  **Ejecutar el RFC 025** — tanda 1 hecha y verificada; **tanda 2 escrita y en cola**
+    (`planes/025-tanda-2-cuotas-en-la-interfaz.md`). Con la 2 el RFC 025 queda cerrado salvo sus
+    cabos del §10.
 2.  **Ejecutar el RFC 008** — `/loans` entero: feature nueva, dos tablas, cronograma con amortización
     francesa y la familia «Préstamos» que el RFC 024 §3.2 dejó declarada y vacía. Sin plan todavía.
     **Antes de escribirlo conviene tener el informe de la tanda 1 del 025**, que estrena el mismo

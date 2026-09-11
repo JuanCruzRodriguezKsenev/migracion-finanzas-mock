@@ -85,3 +85,28 @@ Cada una costó una ronda. Ver también [[entorno-postgres-caido]] y [[verificac
     motor que valida Debe = Haber por divisa. `createFinancialEntityAction` ya es alta pura
     (`2ebc37e`): la cuenta se crea aparte y ante saldo inicial > 0 emite asiento contra Patrimonio
     (`3.1.01.01`, fallback al primer `type === "equity"`).
+
+## Fechas: dos trampas que ya se pagaron (2026-09-11)
+
+*   **Cadena vacía como centinela de fecha = `RangeError` en el render.** La tanda 1 del RFC 025 dejó
+    `calcularCicloDeTarjeta()` devolviendo `cierreAnterior/cierreActual/vencimiento` como `""` cuando
+    la tarjeta de crédito no tiene `closingDay` (`cardCycleService.ts:52-59`), con el tipo declarando
+    `string`. Nadie queda obligado a mirar: `CardVisual.tsx:104` pregunta por el objeto, entra igual,
+    y `new Date( "" )` → `Intl.DateTimeFormat.format()` **lanza `RangeError: Invalid time value` y
+    tumba el componente cliente.** La regla: un campo que puede faltar se declara `string | null`, y
+    el arreglo se hace en el tipo para que `tsc --noEmit` señale a cada consumidor — no con una guarda
+    en el consumidor, que es lo que el hallazgo proponía.
+*   **`new Date( "2026-09-20" )` es medianoche UTC, o sea el día 19 en Buenos Aires.** Todo lo que
+    salga de un `<input type="date">` y vaya a una función que descompone por zona IANA
+    (`descomponerFechaEnZona`, `proponerPrimeraCuota`) tiene que construirse como
+    `new Date( Date.UTC( y , m-1 , d , 12 , 0 , 0 ) )`. Es el mediodía que ya usa
+    `formatearFechaCivil()` en `PendingOccurrencesInbox.tsx:45`, y por la misma razón. Sin eso, una
+    compra hecha **exactamente** el día de cierre propone el mes equivocado.
+
+## Cosas que son puras aunque vivan en `services/`
+
+`installmentService.ts`, `recurrenceService.ts` y `ciclo.ts` **no tienen `server-only`** y no importan
+`db`: un componente cliente los importa directo. Ya hay precedente —`PendingOccurrencesInbox.tsx`
+importa `PendienteRecurrencia` de `recurrenceService`—, así que no hace falta inventar una server
+action para llamar a una función de cálculo. **Verificarlo con `grep -n "server-only"` antes de
+suponerlo en cualquier dirección.**

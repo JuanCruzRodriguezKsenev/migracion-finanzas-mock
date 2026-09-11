@@ -5,7 +5,33 @@ metadata:
   type: project
 ---
 
-# Estado al cerrar la ronda del 2026-09-11 (RFC 008 y 025 aprobados, plan del 025 en cola)
+# Estado al cerrar la ronda del 2026-09-11 (tanda 1 del 025 verificada, tanda 2 escrita)
+
+**Rama activa: `docs/rfc-025-cuotas-de-tarjeta`.** `master` consolidado y pusheado hasta `07aadb3`.
+
+**Verificación independiente de la tanda 1 (`6be0341`): verde y coincidente con lo que reportó
+`obra`** — 429 tests en 58 archivos, 0 ESLint, 0 TS, build OK. Los 12 casos del §9 del RFC 025 tienen
+test propio, nombrados `§9.N` en `installmentPlansActions.test.ts` y `installmentService.test.ts`.
+
+**Entregado a `obra`:** `docs/planes/025-tanda-2-cuotas-en-la-interfaz.md` — toda la interfaz del 025.
+
+**Las dos decisiones de UI las cerró el usuario** (`AskUserQuestion` con mockups ASCII, una pregunta
+por vez, y eligió la recomendada en las dos):
+
+1.  **Bandeja de cuotas pendientes global**, arriba de la grilla, molde `PendingOccurrencesInbox`. La
+    ficha de cada tarjeta muestra el dato, no la acción.
+2.  **Alta de plan dentro del modal de detalle por tarjeta** («Ver planes» en el plástico). Sin
+    selector de tarjeta en ningún formulario: el `cardId` sale del contexto, y así nunca se elige un
+    débito —que la acción rechaza— ni falta el `closingDay` que `proponerPrimeraCuota()` necesita.
+
+**Los dos hallazgos de `obra` enrutados:** el de la forma de retorno de `calcularCicloDeTarjeta` es
+**un defecto vivo**, no sólo un condicionante, y lo arregla el paso 1 de la tanda 2 (ver
+[[trampas-del-repo]]). El de la cuenta multidivisa `Tarjeta X (USD)` se contrastó contra
+`cardsActions.ts:144` y es coherente: no es defecto, no se enrutó a deuda.
+
+---
+
+# Estado al cerrar la ronda anterior del 2026-09-11 (RFC 008 y 025 aprobados, plan del 025 en cola)
 
 **Rama activa: `docs/rfc-025-cuotas-de-tarjeta`**, creada sobre `07aadb3`. `master` está consolidado
 y pusheado hasta ahí.
