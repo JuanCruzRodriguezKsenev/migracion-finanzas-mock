@@ -14,24 +14,35 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 **Rama activa:** `docs/rfc-024-navegacion-por-entidad`, encadenada sobre `master` consolidado.
 
-**Estado:** 🟡 **RFC 024 `APPROVED`; tanda 1 de dos implementada, en verificación.**
-Paso 1 completado (signo del Patrimonio Neto corregido en `AccountsContainer.tsx`).
-Paso 2 completado (puerta de atrás de `CreateAccountForm` cerrada: esquema restringido a `asset`/`liability`, formulario simplificado y test unitario añadido).
-Pasos 3, 4 y 5 completados (directorio por entidad con carga concurrente de tarjetas en `accounts/page.tsx`, separación de familias en `AccountsContainer.tsx`, presentación con `CardVisual`, deuda positiva con `deudaDe()`, y claves de diccionario en `es.json`, `en.json`, `br.json`).
-El plan es [`docs/planes/024-tanda-1-directorio-por-entidad.md`](planes/024-tanda-1-directorio-por-entidad.md)
-y cubre el directorio por entidad, el cierre de la puerta de atrás de `CreateAccountForm` y el signo
-del Patrimonio Neto. **La tanda 2 —mudar el plan de cuentas a `/settings`— todavía no tiene plan.**
-[`024-instruments-and-entity-navigation.md`](proposals/024-instruments-and-entity-navigation.md)
-cubre el §4 de la sesión de diseño: `/accounts` como directorio por entidad, el instrumento
-presentado como instrumento, el plan de cuentas mudado a `/settings` en sólo lectura, y el
-Patrimonio Neto fuera de `/accounts`. **No lleva migración de base de datos**: `financial_entities`
-y las tres columnas `entityId` ya existen.
+**Estado:** 🟢 **RFC 024 `APPROVED`; tanda 1 ejecutada y verificada en verde; tanda 2 con plan escrito, en cola para `obra`.**
 
-Dejó **dos defectos activos convertidos en requisitos** —el Patrimonio Neto suma la deuda en vez de
-restarla (`AccountsContainer.tsx:87-89`, corregido en paso 1), y `CreateAccountForm` crea cuentas de gasto huérfanas del
-árbol de categorías (`:122-126`, corregido en paso 2)— y corrigió **tres afirmaciones inexactas** de la sesión de diseño.
+El RFC es [`024-instruments-and-entity-navigation.md`](proposals/024-instruments-and-entity-navigation.md)
+y cubre el §4 de la sesión de diseño: `/accounts` como directorio por entidad, el instrumento
+presentado como instrumento, el plan de cuentas mudado a `/settings` en sólo lectura, y el Patrimonio
+Neto fuera de `/accounts`. **No lleva migración de base de datos**: `financial_entities` y las tres
+columnas `entityId` ya existen.
 
-**Próximo paso:** **Verificación de la tanda 1 con `verificador`** y posterior redacción del plan de la tanda 2.
+**Tanda 1 — hecha.** Plan: [`024-tanda-1-directorio-por-entidad.md`](planes/024-tanda-1-directorio-por-entidad.md).
+Directorio por entidad con separación de familias (Cuentas / Tarjetas) y `CardVisual` en el modal de
+detalle, carga concurrente de tarjetas en `accounts/page.tsx`, deuda de pasivos expresada en positivo
+con `deudaDe()`, y los **dos defectos que el RFC convirtió en requisitos** cerrados: el signo del
+Patrimonio Neto (`51f1a50`) y la puerta de atrás de `CreateAccountForm`, cuyo esquema quedó
+restringido a `asset` y `liability` con test de rechazo (`72d06ff`).
+Verificado por `verificador`: **54 archivos, 400 tests, 0 errores ESLint, 0 errores TS, build exitoso**.
+
+**Tanda 2 — plan escrito, sin ejecutar.** Plan: [`024-tanda-2-plan-contable-en-settings.md`](planes/024-tanda-2-plan-contable-en-settings.md).
+Muda el plan de cuentas de `/accounts` a `/settings` como **tabla de auditoría de sólo lectura con el
+plan completo** (los cinco tipos, con la divisa real de cada cuenta en lugar del literal `ARS` que hay
+hoy), crea la feature `src/features/settings/` con el shell que pasa a ser dueño del `PageHeader` y de
+las tabs —que hoy son inertes—, localiza sus labels en los tres diccionarios, y cierra el §7 del RFC
+unificando la descripción del asiento de apertura de tarjetas. Con esa tanda **el RFC 024 queda
+cerrado entero**.
+
+**Sincronización documental hecha en la ronda de planificación:** `TECHNICAL_DEBT.md` §6,
+`patterns.md` §8 y `.agents/AGENTS.md` §8.6 seguían declarando **vivo** el defecto del Patrimonio Neto
+que la tanda 1 ya había corregido. Los tres quedaron al día.
+
+**Próximo paso:** ejecutar la tanda 2 con `obra`, y después verificar con `verificador`.
 
 Detrás, en orden de cercanía:
 
