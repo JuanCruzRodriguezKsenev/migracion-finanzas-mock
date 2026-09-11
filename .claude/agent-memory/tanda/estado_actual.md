@@ -38,19 +38,17 @@ Neto desalojado de `/accounts`.
 *   **Tres afirmaciones de la sesión de diseño resultaron falsas** — ver
     [[decisiones-modelo-clasificacion]], que ahora las lista.
 
-**El usuario aprobó el 024** y pidió el plan. Está escrito y **en cola para `obra`, sin ejecutar**:
-`docs/planes/024-tanda-1-directorio-por-entidad.md`.
+**El usuario aprobó el 024** y `obra` ejecutó la **Tanda 1**:
+Plan ejecutado: `docs/planes/024-tanda-1-directorio-por-entidad.md`.
+Verificación delegada a `verificador`: **54 archivos, 400 tests pasados, 0 errores ESLint, 0 errores TS, build exitoso**.
 
-**Decidió partir la ejecución en dos tandas:**
+**Qué cubrió la Tanda 1:**
+*   Signo del Patrimonio Neto corregido en `AccountsContainer.tsx` (ahora suma los pasivos negativos según `patterns.md` §8).
+*   Puerta de atrás de `CreateAccountForm` cerrada: `createAccountSchema` restringido a `asset` y `liability`, formulario simplificado (removida lógica muerta y `prevType`), y test unitario de rechazo de tipos nominales en `accounting.schema.test.ts`.
+*   Directorio por entidad en `AccountsContainer.tsx`: carga concurrente de tarjetas con `getCardsAction()` en `accounts/page.tsx`, separación de familias (Tarjetas y Cuentas) en el modal de detalle con `CardVisual`, exclusión de cuentas que son reflejo de tarjetas para evitar contar deuda duplicada, y deuda de pasivos expresada en positivo mediante `deudaDe()`.
+*   Textos localizados en los tres diccionarios (`es.json`, `en.json`, `br.json`).
 
-*   **Tanda 1 (plan escrito):** directorio por entidad —tarjetas como tarjetas dentro de la entidad,
-    con la regla de no contar dos veces la deuda—, cierre de la puerta de atrás de
-    `CreateAccountForm`, y corrección del signo del Patrimonio Neto.
-*   **Tanda 2 (sin plan todavía):** mudar el plan de cuentas a `/settings`. **Arrastra darle a
-    `/settings` su primera navegación de pestañas real**: hoy `CategoriesSettingsContainer` pasa
-    `activeTab="categories"` fijo y un `onChange` vacío, con las otras tres deshabilitadas.
-*   **El Patrimonio Neto NO se quita todavía**, por decisión suya: se corrige y se queda en
-    `/accounts` hasta que exista la página de estadísticas que lo recibe.
+**Próximo paso:** Escribir el plan de la **Tanda 2** (mudar el plan de cuentas a `/settings` en sólo lectura y activar navegación de tabs).
 
 **Radio de impacto ya verificado para la tanda 1** (sirve igual si hay que rehacer el plan):
 `createAccountSchema` tiene **un solo** consumidor (`createAccountAction`) y éste **un solo** llamador
