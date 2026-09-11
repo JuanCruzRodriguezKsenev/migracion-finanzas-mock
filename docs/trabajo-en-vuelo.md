@@ -12,68 +12,65 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `docs/rfc-025-cuotas-de-tarjeta`, creada el 2026-09-11 sobre `07aadb3`. **No cambiar
-de rama.** `master` quedó consolidado y pusheado hasta `07aadb3`.
+**Rama activa:** `feat/rfc-008-loans`, creada el 2026-09-11 sobre `master` ya consolidado.
+**No cambiar de rama.**
 
-**Estado:** 🟢 **Tandas 1 y 2 del RFC 025 ejecutadas.** El RFC 025 quedó completo en backend e interfaz:
-modelo relacional de cuotas (`card_installment_plans`), cálculo de cuotas futuras y disponible real,
-bandeja global de pendientes arriba de la grilla (`PendingInstallmentsInbox`), modal de planes por
-tarjeta (`InstallmentPlansModal`), alta contextual (`InstallmentPlanFormModal`), corrección de fechas
-nulas en el ciclo (`string | null`), y localización completa de `/cards` en los tres diccionarios.
+**Estado:** 🟢 **El RFC 025 quedó cerrado y consolidado.** Sus dos tandas están en `master`, que
+llegó a **443 tests en 61 archivos**, 0 ESLint, 0 TS y build verde, verificado por `verificador` en
+corridas independientes. El cierre está congelado en
+[`registro/2026-09-11-cierre-rfc025.md`](registro/2026-09-11-cierre-rfc025.md) (`07aadb3..94c02b4`).
 
-**Próximo paso:** verificación independiente con subagente `verificador`, consolidación de la rama
-`docs/rfc-025-cuotas-de-tarjeta` y redacción del plan para el **RFC 008** (`/loans`).
+**Próximo paso:** ejecutar la **tanda 1 del RFC 008**, que es el backend completo de `/loans`:
+[`planes/008-tanda-1-modelo-de-prestamos.md`](planes/008-tanda-1-modelo-de-prestamos.md).
+La **tanda 2** (la interfaz de `/loans`) **no está escrita todavía**: se escribe con el informe de la
+tanda 1 en la mano, igual que se hizo con el RFC 025.
 
-**Por qué el 025 va antes que el 008**, que es más grande y crea la feature `/loans` entera: el RFC 007
-—`APPROVED` y reaprobado el 2026-09-08— calcula el disponible de la tarjeta restando una tabla
-`installmentPlans` que nunca se modeló, así que hoy hay una fórmula aprobada que no se puede
-implementar. Además el 025 estrena el patrón de «instrumento con cuotas» sobre una feature ya
-construida y verde, que es más barato que estrenarlo creando una feature nueva.
+### La decisión que el plan de la tanda 1 cerró
 
-### Lo aprobado el 2026-09-11
+El RFC 008 §5D y §5E necesitan una categoría de intereses —gasto al pagar una cuota, ingreso al
+cobrarla— pero el esquema aprobado de `loans` **no tiene ninguna columna de categoría**. Resuelto por
+el usuario el 2026-09-11: **fija por código, sin cambio de esquema.** La feature resuelve
+`5.1.11.02 Intereses` para `borrowed` y el padre `4.1.04 Intereses y rendimientos` para `lent`, que
+cae a su hoja `General` por `resolveToLeaf()`. No se abre nota de corrección al RFC.
 
-*   **[RFC 008](proposals/008-loans-and-installments.md)** — préstamos bidireccionales, ruta **`/loans`**. Reescrito entero: la versión de junio se descartó.
-*   **[RFC 025](proposals/025-card-installment-plans.md)** — compras en cuotas con tarjeta, dentro de `/cards`.
-
-**Renombre aplicado:** `/debts` → `/loans` en el RFC 024 (líneas 62, 79, 85, 291, 297), en
-`ARCHITECTURE.md:81` y en el inventario de abajo. **No se tocaron** `docs/registro/`, `docs/diseno/`
-ni los planes ya ejecutados: son actas de lo que pasó.
-
-**Nota aplicada al RFC 007** (§8B, el bloque de aviso tras la fórmula del disponible): la fórmula
-sobrestimaba el disponible y `installmentPlans` no existía. Se siguió el precedente del RFC 023 sobre
-el RFC 004 —nota en el lugar exacto, sin enmienda aparte—, habilitado por la aprobación del 025.
+La otra decisión que el §9 del RFC delegaba al plan —**dónde entra `/loans` en la navegación**— quedó
+resuelta en el plan: sección «Finanzas» del `Navbar`, inmediatamente después de `/cards`, con
+`dict.loans` en los tres diccionarios.
 
 ### La secuencia que queda
 
-1.  **Ejecutar el RFC 025** — tanda 1 hecha y verificada; **tanda 2 escrita y en cola**
-    (`planes/025-tanda-2-cuotas-en-la-interfaz.md`). Con la 2 el RFC 025 queda cerrado salvo sus
-    cabos del §10.
-2.  **Ejecutar el RFC 008** — `/loans` entero: feature nueva, dos tablas, cronograma con amortización
-    francesa y la familia «Préstamos» que el RFC 024 §3.2 dejó declarada y vacía. Sin plan todavía.
-    **Antes de escribirlo conviene tener el informe de la tanda 1 del 025**, que estrena el mismo
-    patrón de cuotas a menor escala.
-3.  **Cerrar los documentos que faltan de la sesión de diseño:** el **contraste del RFC 010**
+1.  **Ejecutar el RFC 008** — tanda 1 escrita y en cola; tanda 2 sin escribir. Es feature nueva
+    (`src/features/loans/`), dos tablas, cronograma proyectado con amortización francesa, y la
+    familia «Préstamos» que el RFC 024 §3.2 dejó declarada y vacía.
+2.  **Cerrar los documentos que faltan de la sesión de diseño:** el **contraste del RFC 010**
     (patrimonio físico, siete columnas monetarias en `integer`) y la **enmienda al RFC 003**.
-4.  **La página de estadísticas** — sin RFC y sin nombre de ruta elegido. Es la que lee la dimensión
+3.  **La página de estadísticas** — sin RFC y sin nombre de ruta elegido. Es la que lee la dimensión
     de categoría que construyó el RFC 022, y la que tiene que recibir el Patrimonio Neto que el 024
     desaloja de `/accounts` —donde **se queda hasta entonces**, por decisión del usuario. Antes de
     tocar código hay que resolver la convención de signo de `monthly_summaries` (§9 del RFC 024).
-5.  **Internacionalizar `CategoriesSettingsContainer`** — 766 líneas de español directo en buscador,
+    **El RFC 008 §9 le suma un encargo:** un préstamo registra el pasivo completo el día uno y una
+    compra en cuotas no, así que financiar la misma heladera de las dos formas da patrimonios netos
+    distintos. Esa brecha la cierra esta propuesta.
+4.  **Internacionalizar `CategoriesSettingsContainer`** — 766 líneas de español directo en buscador,
     modales y confirmaciones. Es el único resto de i18n de `/settings`
     ([`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §3).
 
 Más atrás: las **5 declaraciones de `dict?:` opcional heredadas** (`ContactsTable.tsx:26`,
-`PaymentMethodsPanel.tsx:45`, `ContactFormModal.tsx:26` y `:43`, `MonthSelector.tsx:39`).
+`PaymentMethodsPanel.tsx:45`, `ContactFormModal.tsx:26` y `:43`, `MonthSelector.tsx:39`), y el
+`<span>Tarjetas</span>` en duro del `Navbar` (§8 de la deuda), que **la tanda 2 del 008 puede cerrar
+de paso**: es una línea en el mismo archivo que recibe la entrada de `/loans`.
 
-**Lo consolidado el 2026-09-10 quedó congelado en `registro/`:**
+**Lo consolidado quedó congelado en `registro/`:**
 [`2026-09-10-cierre-rfc023-y-compuerta.md`](registro/2026-09-10-cierre-rfc023-y-compuerta.md)
 (`2ae7186..8e086d9`),
 [`2026-09-10-cierre-page-header.md`](registro/2026-09-10-cierre-page-header.md)
 (`8e086d9..2fe778b`),
 [`2026-09-10-cierre-mocks-ui-y-storage.md`](registro/2026-09-10-cierre-mocks-ui-y-storage.md)
-(`ba8b7ca..90bee72`) y
+(`ba8b7ca..90bee72`),
 [`2026-09-10-cierre-rfc024.md`](registro/2026-09-10-cierre-rfc024.md)
-(`5f8882b..6210045`).
+(`5f8882b..6210045`) y
+[`2026-09-11-cierre-rfc025.md`](registro/2026-09-11-cierre-rfc025.md)
+(`07aadb3..94c02b4`).
 
 ---
 
@@ -87,7 +84,7 @@ en el catálogo del mock, que es donde está la referencia visual.
 * **Metas de ahorro (`/goals`, mock: `/metas`)** — RFC 011 (`011-goals-and-reserves.md`): barras de progreso, cálculo de fecha objetivo y asignación de fondos. **Fase 3**, no antes: su saldo libre necesita que los compromisos existan.
 * **Presupuestos (`/budgets`, mock: `/presupuestos`):** Donut ring, barras de progreso y límites de gasto asociados al árbol de `categories`. **Sin RFC**: hay que escribirlo antes de tocar código.
 * **Inversiones (`/investments`, mock: `/inversiones`)** — RFC 014 (`014-investments-management.md`): portafolio, cotizaciones y gráficos con Recharts.
-* **Préstamos (`/loans`, mock: `/deudas`)** — RFC 008 (`008-loans-and-installments.md`), `APPROVED` el 2026-09-11: préstamos bidireccionales, cronograma proyectado y amortización. La ruta se llamaba `/debts` hasta ese día.
+* **Préstamos (`/loans`, mock: `/deudas`)** — RFC 008 (`008-loans-and-installments.md`), `APPROVED` el 2026-09-11: préstamos bidireccionales, cronograma proyectado y amortización. **En ejecución:** tanda 1 en cola. La ruta se llamaba `/debts` hasta ese día.
 * **Facturación (`/billing`, mock: `/facturacion`)** — RFC 013 (`013-billing-and-invoicing.md`): emisión y preview de comprobantes.
 * **Integraciones y API Keys (`/integrations`, mock: `/integraciones`)** — RFC 012 (`012-integrations-and-api-keys.md`).
 * **Perfil (`/profile`, mock: `/perfil`)** — RFC 015, ya aprobado: es la pantalla que le falta a las preferencias canónicas para tener consumidor de producción.
@@ -101,9 +98,10 @@ catálogo con el mock levantado; el encabezado decía 17 dominios y sólo se enu
 * **Mejorar plan (mock: `/mejorar-plan`)** — pantalla comercial del SaaS; se cruza con la deuda de `planName`/`planBilling` en `profiles`.
 
 **Ya portados:** cuentas (`/accounts`), contactos (`/contacts`), transacciones (`/transactions`),
-suscripciones (`/subscriptions`), **tarjetas (`/cards`)** y **configuración (`/settings`)**, esta
-última con dos pestañas activas —Categorías y Plan contable, la segunda desde la tanda 2 del RFC
-024— y las otras tres (Perfil, Preferencias, Seguridad) deshabilitadas.
+suscripciones (`/subscriptions`), **tarjetas (`/cards`)** —con planes de cuotas desde el RFC 025— y
+**configuración (`/settings`)**, esta última con dos pestañas activas —Categorías y Plan contable, la
+segunda desde la tanda 2 del RFC 024— y las otras tres (Perfil, Preferencias, Seguridad)
+deshabilitadas.
 
 #### 2. Servicios de infraestructura pendientes de portar desde `FinanceApp-WSL`
 * **Crons y Workers de Background:** Upstash QStash (`/api/cron/net-worth`, `/api/cron/statements`, `/api/webhooks/qstash`) para el cálculo automatizado de fin de mes.

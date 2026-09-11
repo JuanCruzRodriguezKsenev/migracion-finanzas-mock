@@ -2,7 +2,7 @@
 
 *   **ID de la Propuesta:** 008
 *   **Título:** `loans` como instrumento bidireccional, su reflejo en el libro por divisa, y `/loans` como vista transversal
-*   **Estado:** `APPROVED` (2026-09-11 — aprobado por el usuario. Habilita código contra este texto) — **reescritura completa.** No habilita código hasta que el usuario lo apruebe.
+*   **Estado:** `APPROVED` (2026-09-11 — aprobado por el usuario. Habilita código contra este texto) — **reescritura completa.**
 *   **Fecha de Creación:** 2026-06-22 (versión original) · **Reescrito:** 2026-09-11
 *   **Autor:** `tanda` (reescritura) · Antigravity (versión original de junio de 2026)
 *   **Origen:** §7 de [`docs/diseno/rediseno-clasificacion-y-propuestas.md`](../diseno/rediseno-clasificacion-y-propuestas.md), que dejó pedida esta reescritura, y §9 del [RFC 024](024-instruments-and-entity-navigation.md), que la nombra como bloqueante de `/loans`.
@@ -348,7 +348,7 @@ podman exec postgres-dev psql -U postgres -d finanzas_db -c "\d loan_accounts"
 ## 9. Lo que este RFC deja abierto
 
 *   **El neto por contacto en `/contacts`.** Es el destino de las deudas con personas y lo que la versión de junio prometía sin poder cumplir. Hoy `/contacts` no muestra un solo importe. Necesita su propia propuesta, y depende de esta.
-*   **Las compras en cuotas con tarjeta.** Ya escrito: [RFC 025](025-card-installment-plans.md), también en `DRAFT`. Comparte con éste el motor de recurrencias del RFC 023, la separación entre la fecha del hecho y el ancla del cronograma, y la decisión de no materializar las cuotas. **Difiere en una cosa, y está declarada en su §2:** un préstamo registra el pasivo completo el día uno y una compra en cuotas no. Financiar la misma heladera de las dos formas da patrimonios netos distintos, y la propuesta de estadísticas es la que tiene que cerrar esa brecha.
+*   **Las compras en cuotas con tarjeta.** Ya escrito y **`APPROVED`** el 2026-09-11: [RFC 025](025-card-installment-plans.md), implementado en sus dos tandas (`6be0341` y `94c02b4`). Comparte con éste el motor de recurrencias del RFC 023, la separación entre la fecha del hecho y el ancla del cronograma, y la decisión de no materializar las cuotas. **Difiere en una cosa, y está declarada en su §2:** un préstamo registra el pasivo completo el día uno y una compra en cuotas no. Financiar la misma heladera de las dos formas da patrimonios netos distintos, y la propuesta de estadísticas es la que tiene que cerrar esa brecha.
 *   **Sistemas de amortización distintos del francés** (alemán de cuota decreciente, americano de interés puro con capital al final). El esquema los soporta sin cambios —`totalInstallments` y la tasa alcanzan— pero el cálculo no está especificado acá.
 *   **Ajuste por inflación o por UVA.** Un préstamo UVA no tiene capital fijo en pesos. Fuera de alcance; el esquema **no** lo contempla y agregarlo pedirá una columna de unidad de ajuste.
 *   **Dónde entra `/loans` en la navegación lateral.** El RFC 024 §9 dejó esa decisión pendiente para cuando la ruta existiera. Ahora existe: se decide en el plan de ejecución, contra [`Navbar.tsx`](../../src/shared/ui/layout/Navbar/Navbar.tsx), donde `/cards` figura en `:121` y `/settings` en `:91`.
