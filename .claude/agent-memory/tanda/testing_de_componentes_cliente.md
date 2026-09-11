@@ -88,3 +88,20 @@ export { routerMock } ;
     las dos columnas de datos de transferencia propios (`schema.db.ts:58`). Omitirlas compila en
     vitest pero rompe `tsc --noEmit`, que es lo que corre la compuerta. Mismo cuidado con cualquier
     fixture derivado de `InferSelectModel`: la lista de campos la manda el esquema, no el test.
+    **Se repitió con `cards`** en la tanda 2 del 025: el tipo inferido pide `interestRatePenalty`
+    aunque la columna admita `null`. Una columna anulable **sí** es clave obligatoria del objeto.
+
+## El contrato real de los tres componentes base compartidos
+
+Verificado el 2026-09-11 en los archivos, porque el plan los nombró mal y hubo que corregir:
+
+*   **`FormInput`** expone **`helperText`**, no `helper`. Y `error?: string`, `label?`,
+    `containerStyle?`; extiende `InputHTMLAttributes`, con `forwardRef`.
+*   **`FormError`** exige **`error: string`** — obligatorio, no `message`. Devuelve `null` si está
+    vacío, y monta `role="alert"`: en un test se busca con `getByRole( "alert" )`.
+*   **`Button`** **no tiene `size`.** Sus props son `variant` (`primary | secondary | outline |
+    danger`), `isLoading`, `icon` y `loadingLabel`. Con `isLoading` queda `disabled` y `aria-busy`, y
+    el spinner lleva `aria-label={loadingLabel}` (por defecto `"Cargando"`), **no el `children`**.
+
+**How to apply:** antes de que un plan escriba una prop de estos tres, abrir el archivo. Inventar
+`helper`, `message` o `size` compila en la cabeza y no en `tsc`.

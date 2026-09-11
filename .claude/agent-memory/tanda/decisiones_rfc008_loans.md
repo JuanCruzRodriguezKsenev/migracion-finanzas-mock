@@ -7,8 +7,31 @@ metadata:
 
 # RFC 008 reescrito — préstamos bidireccionales y `/loans`
 
-Escrito el **2026-09-11**, queda en **`DRAFT`**: `docs/proposals/008-loans-and-installments.md`.
-**No habilita código hasta que el usuario lo apruebe.**
+Escrito el **2026-09-11** y **`APPROVED` el mismo día**: `docs/proposals/008-loans-and-installments.md`.
+**Habilita código contra ese texto.**
+
+## Las dos decisiones que el RFC delegaba al plan, ya cerradas (2026-09-11)
+
+*   **La categoría de intereses sale fija por código, sin tocar el esquema.** El §5D necesita cuenta
+    de gasto y el §5E de ingreso, pero `loans` **no tiene columna de categoría** y no se le agrega.
+    `borrowed` → `5.1.11.02 Intereses` (hoja que **ya existe** en `initialCatalog.ts`); `lent` →
+    padre `4.1.04 Intereses y rendimientos`, que cae a su hoja `General` vía `resolveToLeaf()`
+    porque sus dos hojas reales son *Plazo fijo* y *Cuenta remunerada* y **ninguna sirve**.
+    Respaldo obligatorio: `findOrCreateTypeGeneralLeaf( type )`, porque el catálogo inicial **sólo lo
+    aplica `src/shared/db/seed.ts`** y una organización creada por fuera puede no tenerlo.
+    Elegida por el usuario sobre las otras dos (columna `interestCategoryId`, o elegir en cada cuota)
+    por no requerir nota de corrección a un RFC `APPROVED`.
+*   **`/loans` va en la sección «Finanzas» del `Navbar`, justo después de `/cards`** — deja juntos
+    accounts/cards/loans antes de suscripciones y contactos. Con `dict.loans` en los tres
+    diccionarios, no en duro como el `<span>Tarjetas</span>` de al lado.
+
+## Trampa del propio RFC: su §4.2 tiene los pasos de `limpiarBase()` corridos
+
+Numera `card_accounts`=7, `contacts`=10, `accounts`=13, `financial_entities`=14. **La tanda 1 del RFC
+025 insertó `cardInstallmentPlans` y corrió todo uno**: hoy son 8, 11, 14 y 15, y el archivo numera
+sus pasos en comentarios (`1.` a `19.`), así que insertar dos tablas **obliga a renumerar los
+siguientes**. El orden topológico que el RFC describe es correcto; sólo los números están corridos.
+El plan de la tanda 1 lo advierte y usa anclas textuales. **No editar el RFC: es texto aprobado.**
 
 ## Las decisiones y su porqué
 

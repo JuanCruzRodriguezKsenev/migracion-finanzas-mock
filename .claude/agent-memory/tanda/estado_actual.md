@@ -5,131 +5,102 @@ metadata:
   type: project
 ---
 
-# Estado al cerrar la ronda del 2026-09-11 (tanda 1 del 025 verificada, tanda 2 escrita)
+# Estado al cerrar la ronda del 2026-09-11 (RFC 025 consolidado, tanda 1 del 008 entregada)
 
-**Rama activa: `docs/rfc-025-cuotas-de-tarjeta`.** `master` consolidado y pusheado hasta `07aadb3`.
-
-**Verificación independiente de la tanda 1 (`6be0341`): verde y coincidente con lo que reportó
-`obra`** — 429 tests en 58 archivos, 0 ESLint, 0 TS, build OK. Los 12 casos del §9 del RFC 025 tienen
-test propio, nombrados `§9.N` en `installmentPlansActions.test.ts` y `installmentService.test.ts`.
-
-**Entregado a `obra`:** `docs/planes/025-tanda-2-cuotas-en-la-interfaz.md` — toda la interfaz del 025.
-
-**Las dos decisiones de UI las cerró el usuario** (`AskUserQuestion` con mockups ASCII, una pregunta
-por vez, y eligió la recomendada en las dos):
-
-1.  **Bandeja de cuotas pendientes global**, arriba de la grilla, molde `PendingOccurrencesInbox`. La
-    ficha de cada tarjeta muestra el dato, no la acción.
-2.  **Alta de plan dentro del modal de detalle por tarjeta** («Ver planes» en el plástico). Sin
-    selector de tarjeta en ningún formulario: el `cardId` sale del contexto, y así nunca se elige un
-    débito —que la acción rechaza— ni falta el `closingDay` que `proponerPrimeraCuota()` necesita.
-
-**Los dos hallazgos de `obra` enrutados:** el de la forma de retorno de `calcularCicloDeTarjeta` es
-**un defecto vivo**, no sólo un condicionante, y lo arregla el paso 1 de la tanda 2 (ver
-[[trampas-del-repo]]). El de la cuenta multidivisa `Tarjeta X (USD)` se contrastó contra
-`cardsActions.ts:144` y es coherente: no es defecto, no se enrutó a deuda.
-
----
-
-# Estado al cerrar la ronda anterior del 2026-09-11 (RFC 008 y 025 aprobados, plan del 025 en cola)
-
-**Rama activa: `docs/rfc-025-cuotas-de-tarjeta`**, creada sobre `07aadb3`. `master` está consolidado
-y pusheado hasta ahí.
-
-**Lo que pasó:** se reescribió el **RFC 008** (préstamos, `/loans`) y se escribió el **RFC 025**
-(compras en cuotas con tarjeta). **El usuario aprobó los dos el 2026-09-11**, así que habilitan
-código. Ver [[decisiones-rfc008-loans]] y [[decisiones-rfc025-cuotas-tarjeta]].
-
-**Entregado a `obra`:** `docs/planes/025-tanda-1-planes-de-cuotas.md` — backend completo del 025, sin
-interfaz. La tanda 2 (UI en `/cards`) **no está escrita**: se escribe con el informe de la 1 en la
-mano. El plan del **RFC 008 tampoco existe todavía**, y conviene escribirlo después de verificar la
-tanda 1 del 025, que estrena el mismo patrón a menor escala.
-
-**Aplicado en la misma ronda:** el rename `/debts` → `/loans` (RFC 024 líneas 62/79/85/291/297,
-`ARCHITECTURE.md:81`, inventario de `trabajo-en-vuelo.md`), y la nota de corrección al **RFC 007**
-tras la fórmula del disponible de su §8B. **No se tocaron** `docs/registro/`, `docs/diseno/` ni los
-planes ya ejecutados.
-
-**Tres hallazgos enrutados a `TECHNICAL_DEBT.md`** (§3, §8 y el §9 nuevo): `/cards` sin
-internacionalizar en `CardVisual`, el `<span>Tarjetas</span>` en duro del `Navbar`, y **la suma de
-divisas distintas en `deudaTotal`**.
-
----
-
-# Estado al cerrar la ronda del 2026-09-10 (octava del día)
-
-**Verificar con `git log` antes de actuar: esto se desactualiza rápido.**
+**Contrastar con `git log` antes de actuar: esto se desactualiza rápido.**
 
 ## Ramas
 
 ```
-origin/master   al día hasta f606a2e
-master          consolidado, verde y pusheado
+master               129a2f9   RFC 025 cerrado. NO PUSHEADO: origin/master sigue en 07aadb3
+feat/rfc-008-loans   129a2f9   rama activa, árbol limpio, lista para `obra`
 ```
 
-**No queda ninguna rama local fuera de `master`.** El RFC 024 se consolidó por fast-forward
-(`5f8882b..f606a2e`, 13 commits) y la rama `docs/rfc-024-navegacion-por-entidad` se borró.
+**El push de `master` quedó pendiente y es del usuario.** Se consolidó por fast-forward
+(`07aadb3..129a2f9`, 5 commits) y `git log --merges` sigue vacío. La rama
+`docs/rfc-025-cuotas-de-tarjeta` se borró.
 
-## Dónde quedó el RFC 024
+## El RFC 025 quedó cerrado entero
 
-**Cerrado entero.** Las dos tandas ejecutadas por `obra` y verificadas por `verificador` en corridas
-independientes:
+Verificación independiente de la tanda 2 (`94c02b4`): **443 tests en 61 archivos, 0 ESLint, 0 TS,
+build verde en 13.9s**, con `postgres-dev` vivo. La tanda 1 había dado 429/58: la 2 sumó 3 archivos
+(`CardVisual.test.tsx`, `InstallmentPlanFormModal.test.tsx`, `PendingInstallmentsInbox.test.tsx`) y
+14 tests. Congelado en `docs/registro/2026-09-11-cierre-rfc025.md`.
 
-*   **Tanda 1** (`6c2c197`, más `51f1a50` y `72d06ff`): 54 archivos, 400 tests, 0 ESLint, 0 TS,
-    build OK. Directorio por entidad, familias separadas, `CardVisual`, `deudaDe()`, signo del
-    Patrimonio Neto y puerta de atrás de `CreateAccountForm`.
-*   **Tanda 2** (`0a2f841`): **56 archivos, 405 tests, 0 errores y 0 warnings ESLint, 0 errores TS,
-    build exitoso.** Plan contable mudado a `/settings` como `LedgerAuditPanel` de sólo lectura con
-    los cinco tipos y la divisa real, feature nueva `src/features/settings/` con el shell dueño del
-    `PageHeader` y las tabs, labels localizadas en los tres diccionarios, §7 del RFC cerrado.
+**Deuda que el cierre movió:** cerradas la del disponible de tarjetas (§2) y la de i18n de `/cards`
+(§3). Sigue abierta y **el 025 no la agravó**: la suma de divisas distintas de `CardVisual` (§9).
 
-**Consolidado el 2026-09-10** con decisión explícita del usuario: registro congelado en
-`docs/registro/2026-09-10-cierre-rfc024.md`, `trabajo-en-vuelo.md` podado, `master` pusheado y rama
-borrada. **El merge lo decide el usuario** — ver [[ciclo-de-trabajo]].
+## Entregado a `obra`, sin ejecutar
 
-## Revisión independiente de la tanda 2 (2026-09-10)
+**`docs/planes/008-tanda-1-modelo-de-prestamos.md`** — el backend completo de `/loans`: esquema
+literal del §4, migración, `limpiarBase()`, amortización francesa (no existe ninguna en el repo),
+cronograma proyectado, repositorio y las dos acciones. **Sin una sola pantalla**: la tanda 2 se
+escribe con el informe de la 1 en la mano, como se hizo con el 025.
 
-Contrastado archivo por archivo, **sin desvíos respecto del plan**: las cinco clases CSS huérfanas
-borradas (el `tabsRow` que sobrevive es de `cards`, otro módulo), las 20 claves de `settingsPage`
-alineadas en `es`/`en`/`br`, `dict`/`lang` fuera de `CategoriesSettingsContainer`, y el test del
-shell montando `NotificationsProvider` y el diccionario reales, mockeando sólo las server actions.
-**Ninguna verificación silenciada.**
+Las dos decisiones que el RFC delegaba al plan están cerradas en
+[[decisiones-rfc008-loans]]: la **categoría de intereses fija por código** (elegida por el usuario
+sobre agregar columna o elegir en cada cuota) y **`/loans` en el `Navbar` después de `/cards`**.
 
-## Los hallazgos que trajo `obra` de la tanda 2, ya enrutados
+## Los tres hallazgos de `obra` de la tanda 2, contrastados y enrutados
 
-Los tres contrastados contra el repo antes de enrutarlos:
+**Ninguno era defecto, y ninguno fue a deuda.** Los tres aciertan la conclusión; **uno erra la
+referencia**, que es exactamente por qué se contrastan:
 
-1.  **Textos en español en `CategoriesSettingsContainer`** — es deuda ya abierta, no defecto. Pero el
-    texto de `TECHNICAL_DEBT.md` §3 había quedado **mintiendo**: decía que `/settings` «es la única
-    ruta que no llama a `getDictionary`», y la tanda 2 hizo que sí lo llame. Reescrito para que la
-    deuda apunte al panel (766 líneas), no a la ruta.
-2.  **`Tabs` expone `role="tab"`, no botones** → a [[testing-de-componentes-cliente]].
-3.  **Un fixture de `Account` exige `cbuCvu` y `alias`** (el tipo es `InferSelectModel`) → idem.
+1.  Props de los componentes base: `FormInput` usa `helperText`, `FormError` exige `error`, `Button`
+    **no** tiene `size`. Verificado en los tres archivos → a [[testing-de-componentes-cliente]].
+2.  El informe dijo «`schema.ts:484`» y **ese archivo no existe**: la tabla `cards` vive en
+    `src/features/cards/schema.db.ts:25`, el esquema es por feature. La conclusión sí era correcta
+    (`entityId`, no `financialEntityId` — ese nombre existe pero en `contacts/schema.db.ts:39`).
+3.  La colisión de `accounts_org_code_unique` era **de fixture, no de producción**: el alta real
+    deriva el código con `getNextCode()` (`cardsActions.ts:138`).
 
-**Lección que confirma la de la ronda anterior:** al cerrar una tanda, buscar en `docs/` y `.agents/`
-lo que el trabajo acaba de dejar falso. Van dos rondas seguidas encontrando un doc desactualizado.
+## Tres documentos corregidos porque el trabajo los dejó falsos
+
+Van **tres rondas seguidas** encontrando docs desactualizados — ver [[ciclo-de-trabajo]]:
+
+1.  **RFC 008, línea de estado autocontradictoria:** decía `APPROVED (habilita código)` y, en la
+    misma línea, «No habilita código hasta que el usuario lo apruebe».
+2.  **RFC 008 §9** citaba al RFC 025 como `DRAFT`.
+3.  **`TECHNICAL_DEBT.md` §2** decía que el disponible de tarjetas no descuenta cuotas, **y
+    atribuía el modelo al RFC 008** cuando lo cerró el 025.
 
 ## Sobre la mesa, sin plan
 
-*   Las tres propuestas que faltan de la sesión de diseño: reescritura del **RFC 008**, enmienda al
-    **RFC 010** y enmienda al **RFC 003**. Las dos primeras referencian al 024, ya cerrado.
+*   **Tanda 2 del RFC 008** — la interfaz de `/loans`. Se escribe con el informe de la 1.
+*   Las dos propuestas que faltan de la sesión de diseño: **contraste del RFC 010** (patrimonio
+    físico, siete columnas monetarias en `integer`) y **enmienda al RFC 003**.
 *   **La página de estadísticas**: sin RFC y sin nombre de ruta. Recibe el Patrimonio Neto que el 024
-    desaloja de `/accounts` —que por decisión del usuario **se queda ahí hasta entonces**— y tiene que
-    resolver la convención de signo de `monthly_summaries` (§9 del RFC 024).
-*   **Internacionalizar `CategoriesSettingsContainer`**: 766 líneas de español directo en toolbar,
-    modales y confirmaciones. Es una tanda propia y ahora es el único resto de i18n de `/settings`.
-*   `dict?:` opcional heredado, **5 declaraciones en 4 archivos**: `ContactsTable`,
-    `PaymentMethodsPanel`, `ContactFormModal` (×2), `MonthSelector`.
+    desaloja de `/accounts` —que **se queda ahí hasta entonces**, por decisión del usuario—, tiene
+    que resolver el signo de `monthly_summaries` (§9 del RFC 024) y ahora **también** la brecha que
+    el §9 del RFC 008 le encarga: un préstamo registra el pasivo completo el día uno y una compra en
+    cuotas no, así que financiar la misma heladera de las dos formas da patrimonios netos distintos.
+*   **Internacionalizar `CategoriesSettingsContainer`**: 766 líneas, único resto de i18n de
+    `/settings`. Es una tanda propia.
+*   `dict?:` opcional heredado, **5 declaraciones en 4 archivos**; y el `<span>Tarjetas</span>` en
+    duro del `Navbar` (§8), que **la tanda 2 del 008 puede cerrar de paso**: es una línea en el mismo
+    archivo que recibe la entrada de `/loans`.
 *   Las cuatro rutas del mock sin RFC: `/reportes`, `/patrimonio`, `/configuracion`, `/mejorar-plan`.
-*   Deuda preventiva en `TECHNICAL_DEBT.md`: cobertura del mock de `next/cache`, suite real de
-    `NotificationsContext`, retroceso de punteros en la migración `0026`, hamburguesa inerte del
-    `PageHeader`, y `unarchive` que no deshace la cascada de `archive`.
 
-**Artifact de la hoja de ruta (versión 9, 2026-09-10):** al día — refleja `f606a2e`, 405 tests, la
-Fase 2 con 5 de 6 y el RFC 024 como resuelto en el §6. **Trampas al republicar:**
-lo que devuelve `action: "read"` viene con el envoltorio `<!doctype><head><body>` que agrega la
-publicación, hay que quitarlo (la línea 1 hasta `<body>` y el `</body></html>` final); el `favicon`
-(📒) **no** se reenvía en un republish, se hereda; y **el archivo hay que leerlo con la herramienta
-`Read`, las 1218 líneas, no con `sed`/`cat`**: si no, la publicación se rechaza con «you hadn't
-viewed the live version». Si aun así rechaza por contenido idéntico ya rechazado, hay que volver a
-hacer `action: "read"` del artifact y publicar inmediatamente después.
+**Artifact de la hoja de ruta (versión 9, 2026-09-10): quedó atrasado** — refleja `f606a2e` y 405
+tests; hoy son `129a2f9` y 443, con el RFC 025 cerrado. **Trampas al republicar:** lo que devuelve
+`action: "read"` viene con el envoltorio `<!doctype><head><body>` que agrega la publicación y hay que
+quitarlo (la línea 1 hasta `<body>` y el `</body></html>` final); el `favicon` (📒) **no** se reenvía
+en un republish, se hereda; y **el archivo hay que leerlo con la herramienta `Read`, las 1218 líneas,
+no con `sed`/`cat`**: si no, la publicación se rechaza con «you hadn't viewed the live version». Si
+aun así rechaza por contenido idéntico ya rechazado, hay que volver a hacer `action: "read"` del
+artifact y publicar inmediatamente después.
+
+---
+
+# Contexto de las rondas anteriores del 2026-09-11 (ya congelado en `registro/`)
+
+Se reescribió el **RFC 008** y se escribió el **RFC 025**; el usuario aprobó los dos ese día. Se
+aplicó el rename `/debts` → `/loans` (RFC 024 líneas 62/79/85/291/297, `ARCHITECTURE.md:81`,
+inventario del doc de estado) y la nota de corrección al **RFC 007** §8B, cuya fórmula del disponible
+restaba una tabla que no existía. **No se tocaron** `docs/registro/`, `docs/diseno/` ni los planes ya
+ejecutados: son actas.
+
+Las dos decisiones de UI del 025 las cerró el usuario con `AskUserQuestion` y mockups ASCII, una
+pregunta por vez, eligiendo la recomendada en las dos: **bandeja global** de cuotas pendientes arriba
+de la grilla, y **alta de plan dentro del modal de detalle** por tarjeta, sin selector de tarjeta en
+ningún formulario.

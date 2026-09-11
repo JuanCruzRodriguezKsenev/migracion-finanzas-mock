@@ -78,3 +78,29 @@ entera. Si el plan nombra una rama, esa rama existe **antes** de que el bloque d
     decidió que «el puntero *es* la guarda» y `obra` lo implementó tal cual — pero quedó fuera de la
     transacción. No fue desvío de la ejecución: lo dejó el plan. Atribuirlo bien mantiene honesto el
     ciclo.
+
+## Al cerrar una tanda, barrer los docs que el trabajo acaba de dejar falsos
+
+**Van tres rondas seguidas encontrando al menos uno.** Ya no es casualidad: es un paso fijo del
+cierre. Los cuatro lugares donde aparece, en orden de rendimiento:
+
+1.  **La entrada de `TECHNICAL_DEBT.md` que el trabajo acaba de resolver** — y ojo, **puede errar
+    también la atribución**: la del disponible de tarjetas decía «hasta que se implemente el modelo
+    de cuotas (RFC 008)» y lo implementó el **025**, porque las cuotas se escindieron a su propio
+    RFC. Cerrarla sin corregir a quién apunta deja la deuda mintiendo dos veces.
+2.  **La línea de estado de un RFC que pasó de `DRAFT` a `APPROVED`.** El sello se actualiza y **la
+    frase vieja sobrevive en la misma línea**: el RFC 008 decía `APPROVED (habilita código)` y «No
+    habilita código hasta que el usuario lo apruebe» juntas. Es la trampa que el §0 de ese mismo RFC
+    denuncia, al revés. **Buscar `grep -n 'DRAFT' docs/proposals/*.md` incluye las citas cruzadas:**
+    un RFC citando a otro como `DRAFT` cuando ya se aprobó.
+3.  **Los números de paso dentro de un RFC `APPROVED`.** El §4.2 del 008 numeraba los pasos de
+    `limpiarBase()` y la tanda 1 del 025 insertó una tabla y los corrió todos. **No se edita el RFC
+    —es texto aprobado—: el plan usa anclas textuales y advierte la discrepancia.**
+4.  **El inventario y la secuencia del doc de estado**, que es lo que se poda al consolidar.
+
+**Why:** un doc desactualizado autoriza formalmente lo equivocado, y es peor que no tener doc. El
+repo ya se cobró el RFC 006 y el RFC 015 por eso.
+
+**How to apply:** después de que `verificador` dé verde y **antes** de escribir el registro de cierre,
+contrastar contra el **código**, no contra el informe de `obra`. Cada corrección se menciona en el
+registro, con el motivo.
