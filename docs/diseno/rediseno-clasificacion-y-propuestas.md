@@ -1,10 +1,11 @@
 # Rediseño de la clasificación y de las transacciones propuestas
 
-*   **Estado:** 🟢 **Los tres temas cerrados.** Quedan bordes abiertos anotados dentro de cada uno.
-*   **Iniciado:** 2026-09-09 · **Cerrado:** 2026-09-09
-*   **Qué es esto:** el registro de una sesión de diseño que todavía no es código ni RFC. Con los
-    tres temas cerrados, el paso siguiente es partirlo en las propuestas formales del §7 bajo
-    `docs/proposals/`; recién ahí habilita implementación, según la regla del repositorio.
+*   **Estado:** 🟢 **Los tres temas cerrados, y las siete propuestas del §7 ya escritas** (última el 2026-09-12). Quedan bordes abiertos anotados dentro de cada uno. **Este documento ya no tiene trabajo pendiente: es registro histórico.**
+*   **Iniciado:** 2026-09-09 · **Cerrado:** 2026-09-09 · **Propuestas completadas:** 2026-09-12
+*   **Qué es esto:** el registro de la sesión de diseño que originó las siete propuestas del §7.
+    **Ese reparto ya está hecho**: las siete viven bajo `docs/proposals/` y son ellas, no este
+    documento, las que habilitan implementación — y sólo cuando están `APPROVED`. Lo que se lee acá
+    es **por qué** se decidió cada cosa, que es lo que un RFC no cuenta.
 *   **Para retomar sin contexto:** leé §1 (por qué existe esto) y después §2, §3 y §4, que son lo
     decidido. El §5 son los defectos vivos que la discusión destapó.
 
@@ -298,11 +299,12 @@ lo que produjo la mezcla:
     reales, *"¿qué tengo con Galicia?"* contra *"¿cómo vienen mis tarjetas?"*.
 
 3.  **La página de patrimonio cubre los activos no financieros:** propiedades, autos y demás. **Ya
-    tiene RFC**: el **010 (`010-wealth-assets-management.md`), `APPROVED` desde el 2026-06-23**,
+    tiene RFC**: el **010 (`010-wealth-assets-management.md`), hoy `DRAFT` tras la reescritura del
+    2026-09-12**; era `APPROVED` desde el 2026-06-23 y ese sello fue justamente el problema,
     cubre inmuebles y vehículos, historial de valuaciones en cualquier divisa, fotos, inquilinos
     vinculados a `contacts` y bitácora de incidencias con su costo. Está en la Fase 4 de la hoja de
     ruta. **No hay que escribirle propuesta nueva, hay que contrastarlo**: es de junio de 2026, con
-    la misma trampa que el 008 y que el 015 — sus siete columnas monetarias son `integer` y el
+    la misma trampa que el 008 y que el 015 — sus columnas monetarias son `integer` y el
     repositorio migró todo a `bigint` en el RFC 019.
 
 4.  **El instrumento se presenta como instrumento, no como fila del plan.** Dentro de Galicia, la
@@ -445,6 +447,6 @@ aprobarse — el procedimiento que evitó implementar los RFC 007 y 015 contra t
 | **Clasificación unificada** | §3 completo: categoría = cuenta. Nueva |
 | **Instrumentos y navegación por entidad** | §4: `/accounts` por entidad, `/cards`, `/debts`. Nueva o enmienda al RFC 007 — a decidir |
 | **Reescritura del RFC 008** | Es de junio de 2026: usa `integer` para dinero y guarda un `remainingBalance` propio que duplicaría el saldo ya materializado en `accounts.balance` |
-| **Enmienda al RFC 010** | Patrimonio físico **ya está aprobado**; hay que contrastarlo contra el esquema real: sus siete columnas monetarias son `integer` y el repositorio migró a `bigint` en el RFC 019 |
-| **Enmienda al RFC 003** | Categorizar al confirmar; cada parte en su propio libro |
+| **Enmienda al RFC 010** | ✅ **Hecha el 2026-09-12, y salió reescritura, no enmienda.** El contraste encontró dos agujeros estructurales bajo el tipo de las columnas: el activo nunca entraba al libro, y la transacción se pretendía vincular al instrumento por una columna que `ledger_transactions` no tiene. Inquilinos e incidencias quedaron escindidos. **De paso corrigió este documento: las columnas monetarias en `integer` eran cuatro, no siete** |
+| **Enmienda al RFC 003** | ✅ **Hecha el 2026-09-12, y también salió reescritura.** Categorizar al confirmar y cada parte en su propio libro quedó como §6. El contraste sumó lo que esta sesión no había mirado: ninguna de sus cuatro tablas tenía `organizationId`, los participantes se modelaban contra `users` en vez de `contacts`, y su §4 mandaba **borrar** la deuda del libro |
 | **Enmienda al RFC 004** | El §4 pide `needs_review` en el libro; queda reemplazado por §2 |
