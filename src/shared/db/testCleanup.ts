@@ -21,6 +21,8 @@ import {
   cardInstallmentPlans ,
   cardAccounts ,
   cards ,
+  loanAccounts ,
+  loans ,
   contactPaymentMethods ,
   contacts ,
   subscriptions ,
@@ -74,35 +76,41 @@ export async function limpiarBase(): Promise< void > {
     // 9. cards → restrict a financial_entities y accounts
     await tx.delete( cards ) ;
 
-    // 10. contact_payment_methods → restrict a financial_entities y contacts
+    // 10. loan_accounts → restrict a accounts; antes que accounts y que loans
+    await tx.delete( loanAccounts ) ;
+
+    // 11. loans → restrict a financial_entities y contacts
+    await tx.delete( loans ) ;
+
+    // 12. contact_payment_methods → restrict a financial_entities y contacts
     await tx.delete( contactPaymentMethods ) ;
 
-    // 11. contacts
+    // 13. contacts
     await tx.delete( contacts ) ;
 
-    // 12. subscriptions → antes que accounts y categories
+    // 14. subscriptions → antes que accounts y categories
     await tx.delete( subscriptions ) ;
 
-    // 13. category_accounts → restrict a categories y accounts
+    // 15. category_accounts → restrict a categories y accounts
     await tx.delete( categoryAccounts ) ;
 
-    // 14. accounts → restrict a financial_entities
+    // 16. accounts → restrict a financial_entities
     await tx.delete( accounts ) ;
 
-    // 15. financial_entities
+    // 17. financial_entities
     await tx.delete( financialEntities ) ;
 
-    // 16. categories → primero hojas con parentId no nulo, luego padres
+    // 18. categories → primero hojas con parentId no nulo, luego padres
     await tx.delete( categories ).where( isNotNull( categories.parentId ) ) ;
     await tx.delete( categories ) ;
 
-    // 17. profiles → antes que users
+    // 19. profiles → antes que users
     await tx.delete( profiles ) ;
 
-    // 18. users
+    // 20. users
     await tx.delete( users ) ;
 
-    // 19. organizations
+    // 21. organizations
     await tx.delete( organizations ) ;
   } ) ;
 }

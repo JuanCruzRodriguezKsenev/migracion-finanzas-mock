@@ -15,15 +15,14 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 **Rama activa:** `feat/rfc-008-loans`, creada el 2026-09-11 sobre `master` ya consolidado.
 **No cambiar de rama.**
 
-**Estado:** 🟢 **El RFC 025 quedó cerrado y consolidado.** Sus dos tandas están en `master`, que
-llegó a **443 tests en 61 archivos**, 0 ESLint, 0 TS y build verde, verificado por `verificador` en
-corridas independientes. El cierre está congelado en
-[`registro/2026-09-11-cierre-rfc025.md`](registro/2026-09-11-cierre-rfc025.md) (`07aadb3..94c02b4`).
+**Estado:** 🟢 **La tanda 1 del RFC 008 quedó ejecutada y verificada.** Backend completo de
+préstamos (`src/features/loans/`), esquema relacional con migración `0028`, amortización francesa,
+proyección de cronograma, DAL, esquemas Zod y server actions contables con bloqueo pesimista.
+La suite subió a **467 tests en 65 archivos** (24 tests nuevos, 4 archivos nuevos), 0 ESLint, 0 TS y
+build verde, verificado por `verificador` en corrida independiente.
 
-**Próximo paso:** ejecutar la **tanda 1 del RFC 008**, que es el backend completo de `/loans`:
-[`planes/008-tanda-1-modelo-de-prestamos.md`](planes/008-tanda-1-modelo-de-prestamos.md).
-La **tanda 2** (la interfaz de `/loans`) **no está escrita todavía**: se escribe con el informe de la
-tanda 1 en la mano, igual que se hizo con el RFC 025.
+**Próximo paso:** escribir y aprobar el **plan de la tanda 2 del RFC 008**, que es la interfaz
+completa de `/loans` (pantalla, modales de alta y liquidación, tarjetas de resumen y navegación en Navbar).
 
 ### La decisión que el plan de la tanda 1 cerró
 

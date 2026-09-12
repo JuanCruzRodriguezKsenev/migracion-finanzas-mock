@@ -9,4 +9,5 @@ export * from "@/features/accounting/schema.db" ;
 export * from "@/features/contacts/schema.db" ;
 export * from "@/features/profile/schema.db" ;
 export * from "@/features/cards/schema.db" ;
+export * from "@/features/loans/schema.db" ;
 export * from "@/features/auth/schema.db" ;
