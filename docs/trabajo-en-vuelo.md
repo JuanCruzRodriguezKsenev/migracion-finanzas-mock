@@ -15,18 +15,18 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 **Rama activa:** `feat/rfc-008-loans`, creada el 2026-09-11 sobre `master` ya consolidado.
 **No cambiar de rama.**
 
-**Estado:** 🟢 **La tanda 1 del RFC 008 quedó ejecutada y verificada.** Backend completo de
-préstamos (`src/features/loans/`), esquema relacional con migración `0028`, amortización francesa,
-proyección de cronograma, DAL, esquemas Zod y server actions contables con bloqueo pesimista.
-La suite subió a **467 tests en 65 archivos** (24 tests nuevos, 4 archivos nuevos), 0 ESLint, 0 TS y
+**Estado:** 🟢 **La tanda 2 del RFC 008 quedó ejecutada y verificada.** Interfaz completa de `/loans`
+—métricas (`MetricsSection`), tabla con tabs por dirección (`LoanTable`), bandeja de liquidación de
+cuotas vencidas (`PendingLoanSettlementsInbox`), modal de alta (`LoanFormModal`) con amortización
+proyectada en vivo—, navegación con icono de préstamo en `Navbar` y `BottomNav`, i18n completa en los
+tres diccionarios (`es`, `en`, `br`), backend extendido (`findAllWithRelations`, `loanSummaryService`,
+`getLoansAction` y `archiveLoanAction`), y la familia **Préstamos** en el detalle de entidad de
+`/accounts` con exclusión de las cuentas espejo de la lista cruda de cuentas.
+La suite subió a **485 tests en 68 archivos** (18 tests nuevos, 3 archivos de test nuevos), 0 ESLint, 0 TS y
 build verde, verificado por `verificador` en corrida independiente.
 
-**Próximo paso:** **ejecutar** [`docs/planes/008-tanda-2-interfaz-de-loans.md`](planes/008-tanda-2-interfaz-de-loans.md),
-escrito y cerrado el 2026-09-11. Es la interfaz completa de `/loans` —métricas, tabla con tabs,
-bandeja de liquidación, modal de alta—, su navegación, su i18n en los tres diccionarios, las tres
-piezas de backend que la pantalla necesita (`findAllWithRelations`, `loanSummaryService`,
-`getLoansAction` + `archiveLoanAction`) y la familia **Préstamos** en el detalle de entidad de
-`/accounts`.
+**Próximo paso:** **Cerrar los documentos que faltan de la sesión de diseño:** el **contraste del RFC 010**
+(patrimonio físico, siete columnas monetarias en `integer`) y la **enmienda al RFC 003**.
 
 ### Las tres decisiones de la tanda 2, cerradas por el usuario el 2026-09-11
 
@@ -39,8 +39,8 @@ piezas de backend que la pantalla necesita (`findAllWithRelations`, `loanSummary
 3.  **La familia «Préstamos» de `/accounts` entra en esta misma tanda**, junto con el filtro que saca
     las cuentas espejo de la lista de cuentas de la entidad.
 
-De paso, la tanda 2 cierra la deuda §8 del `<span>Tarjetas</span>` en duro: agrega `sidebar.cards` a
-los tres diccionarios, que además apaga el respaldo que hoy usa `BottomNav.tsx:77`.
+De paso, la tanda 2 cerró la deuda §8 del `<span>Tarjetas</span>` en duro: agregó `sidebar.cards` a
+los tres diccionarios, que además apaga el respaldo que usaba `BottomNav.tsx:77`.
 
 ### La decisión que el plan de la tanda 1 cerró
 
@@ -56,9 +56,8 @@ resuelta en el plan: sección «Finanzas» del `Navbar`, inmediatamente después
 
 ### La secuencia que queda
 
-1.  **Ejecutar la tanda 2 del RFC 008** — la tanda 1 está commiteada en `58ce3c0` y verificada; el
-    plan de la tanda 2 está escrito y cerrado. Es la pantalla `/loans` entera más la familia
-    «Préstamos» que el RFC 024 §3.2 dejó declarada y vacía.
+1.  ~~**Ejecutar la tanda 2 del RFC 008**~~ — **Completada y verificada.** Pantalla `/loans` entera más la
+    familia «Préstamos» que el RFC 024 §3.2 dejó declarada y vacía.
 2.  **Cerrar los documentos que faltan de la sesión de diseño:** el **contraste del RFC 010**
     (patrimonio físico, siete columnas monetarias en `integer`) y la **enmienda al RFC 003**.
 3.  **La página de estadísticas** — sin RFC y sin nombre de ruta elegido. Es la que lee la dimensión
@@ -74,8 +73,7 @@ resuelta en el plan: sección «Finanzas» del `Navbar`, inmediatamente después
 
 Más atrás: las **5 declaraciones de `dict?:` opcional heredadas** (`ContactsTable.tsx:26`,
 `PaymentMethodsPanel.tsx:45`, `ContactFormModal.tsx:26` y `:43`, `MonthSelector.tsx:39`). El
-`<span>Tarjetas</span>` en duro del `Navbar` (§8 de la deuda) **lo cierra la tanda 2 del 008**: está
-en el paso 5 de su plan.
+`<span>Tarjetas</span>` en duro del `Navbar` (§8 de la deuda) **quedó cerrado en la tanda 2 del 008**.
 
 **Lo consolidado quedó congelado en `registro/`:**
 [`2026-09-10-cierre-rfc023-y-compuerta.md`](registro/2026-09-10-cierre-rfc023-y-compuerta.md)
@@ -101,7 +99,6 @@ en el catálogo del mock, que es donde está la referencia visual.
 * **Metas de ahorro (`/goals`, mock: `/metas`)** — RFC 011 (`011-goals-and-reserves.md`): barras de progreso, cálculo de fecha objetivo y asignación de fondos. **Fase 3**, no antes: su saldo libre necesita que los compromisos existan.
 * **Presupuestos (`/budgets`, mock: `/presupuestos`):** Donut ring, barras de progreso y límites de gasto asociados al árbol de `categories`. **Sin RFC**: hay que escribirlo antes de tocar código.
 * **Inversiones (`/investments`, mock: `/inversiones`)** — RFC 014 (`014-investments-management.md`): portafolio, cotizaciones y gráficos con Recharts.
-* **Préstamos (`/loans`, mock: `/deudas`)** — RFC 008 (`008-loans-and-installments.md`), `APPROVED` el 2026-09-11: préstamos bidireccionales, cronograma proyectado y amortización. **En ejecución:** tanda 1 ejecutada y verificada (`58ce3c0`), tanda 2 en cola. La ruta se llamaba `/debts` hasta ese día.
 * **Facturación (`/billing`, mock: `/facturacion`)** — RFC 013 (`013-billing-and-invoicing.md`): emisión y preview de comprobantes.
 * **Integraciones y API Keys (`/integrations`, mock: `/integraciones`)** — RFC 012 (`012-integrations-and-api-keys.md`).
 * **Perfil (`/profile`, mock: `/perfil`)** — RFC 015, ya aprobado: es la pantalla que le falta a las preferencias canónicas para tener consumidor de producción.
@@ -115,7 +112,8 @@ catálogo con el mock levantado; el encabezado decía 17 dominios y sólo se enu
 * **Mejorar plan (mock: `/mejorar-plan`)** — pantalla comercial del SaaS; se cruza con la deuda de `planName`/`planBilling` en `profiles`.
 
 **Ya portados:** cuentas (`/accounts`), contactos (`/contacts`), transacciones (`/transactions`),
-suscripciones (`/subscriptions`), **tarjetas (`/cards`)** —con planes de cuotas desde el RFC 025— y
+suscripciones (`/subscriptions`), **tarjetas (`/cards`)** —con planes de cuotas desde el RFC 025—,
+**préstamos (`/loans`)** —RFC 008 tandas 1 y 2— y
 **configuración (`/settings`)**, esta última con dos pestañas activas —Categorías y Plan contable, la
 segunda desde la tanda 2 del RFC 024— y las otras tres (Perfil, Preferencias, Seguridad)
 deshabilitadas.

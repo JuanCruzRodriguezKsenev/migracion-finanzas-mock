@@ -13,10 +13,13 @@ import { limpiarBase } from "@/shared/db/testCleanup" ;
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
 
+// Feature: Accounting
+import { financialEntities } from "@/features/accounting/schema.db" ;
+
 // Feature: Loans
-import { loansRepository } from "./loansRepository" ;
-import { insertTestLoan }  from "../testing/loanFactory" ;
 import { loans , loanAccounts } from "../schema.db" ;
+import { loansRepository }      from "./loansRepository" ;
+import { insertTestLoan }       from "../testing/loanFactory" ;
 
 
 describe( "loansRepository — DAL de Préstamos y Multi-Tenancy" , () => {
@@ -125,6 +128,47 @@ describe( "loansRepository — DAL de Préstamos y Multi-Tenancy" , () => {
       // findAll ya no lo lista
       const list = await loansRepository.findAll( org1Id ) ;
       expect( list ).toHaveLength( 0 ) ;
+    } ) ;
+  } ) ;
+
+  describe( "findAllWithRelations" , () => {
+    it( "devuelve entity cargado y contact en null cuando el préstamo tiene entityId" , async () => {
+      const [ entity ] = await db
+        .insert( financialEntities )
+        .values( {
+          organizationId: org1Id ,
+          name:           "Banco Santander" ,
+          logo:           "bank" ,
+          color:          "#EC0000"
+        } )
+        .returning() ;
+
+      await insertTestLoan(
+        org1Id ,
+        {
+          name:     "Préstamo Santander" ,
+          entityId: entity.id
+        } ,
+        "2.1.01.10"
+      ) ;
+
+      const results = await loansRepository.findAllWithRelations( org1Id ) ;
+      expect( results ).toHaveLength( 1 ) ;
+      expect( results[ 0 ].entity ).not.toBeNull() ;
+      expect( results[ 0 ].entity?.id ).toBe( entity.id ) ;
+      expect( results[ 0 ].entity?.name ).toBe( "Banco Santander" ) ;
+      expect( results[ 0 ].contact ).toBeNull() ;
+      expect( results[ 0 ].accounts ).toHaveLength( 1 ) ;
+    } ) ;
+
+    it( "un préstamo de otra organización no aparece (aislamiento)" , async () => {
+      await insertTestLoan( org1Id , { name: "Préstamo Org 1" } , "2.1.01.20" ) ;
+
+      const listOrg2 = await loansRepository.findAllWithRelations( org2Id ) ;
+      expect( listOrg2 ).toHaveLength( 0 ) ;
+
+      const listOrg1 = await loansRepository.findAllWithRelations( org1Id ) ;
+      expect( listOrg1 ).toHaveLength( 1 ) ;
     } ) ;
   } ) ;
 } ) ;

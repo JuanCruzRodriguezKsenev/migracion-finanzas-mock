@@ -31,8 +31,13 @@ import { deudaDe } from "@/features/cards/utils/ciclo" ;
 import { contacts } from "@/features/contacts/schema.db" ;
 
 // Feature: Loans
-import { createLoanAction , payLoanInstallmentAction } from "./loansActions" ;
-import { loansRepository }                             from "../repositories/loansRepository" ;
+import {
+  createLoanAction ,
+  payLoanInstallmentAction ,
+  getLoansAction ,
+  archiveLoanAction
+} from "./loansActions" ;
+import { loansRepository } from "../repositories/loansRepository" ;
 
 
 vi.mock( "next-auth" , () => ( {
@@ -666,6 +671,86 @@ describe( "loansActions.ts — Server Actions de Préstamos (RFC 008)" , () => {
       const sumCredit = entriesPago.reduce( ( acc , e ) => acc + e.credit , 0 ) ;
       expect( sumDebit ).toBe( 100000 ) ;
       expect( sumCredit ).toBe( 100000 ) ;
+    } ) ;
+  } ) ;
+
+  describe( "getLoansAction y archiveLoanAction" , () => {
+    it( "getLoansAction devuelve el préstamo con saldoPendiente positivo tras el alta con desembolso" , async () => {
+      const [ ctaBanco ] = await db
+        .insert( accounts )
+        .values( {
+          organizationId: orgId ,
+          code:           "1.1.01.99" ,
+          name:           "Banco Galicia CC" ,
+          type:           "asset" ,
+          balance:        0 ,
+          currency:       "ARS"
+        } )
+        .returning() ;
+
+      const resAlta = await createLoanAction( {
+        name:                   "Préstamo Personal Galicia" ,
+        direction:              "borrowed" ,
+        entityId:               bankEntId ,
+        principalAmount:        500000 ,
+        currency:               "ARS" ,
+        interestRateAnnual:     0 ,
+        totalInstallments:      5 ,
+        frequency:              "monthly" ,
+        intervalCount:          1 ,
+        startDate:              new Date( "2026-09-01T12:00:00Z" ) ,
+        firstInstallmentDate:   "2026-10-10" ,
+        disbursementAccountId: ctaBanco.id
+      } ) ;
+      expect( resAlta.success ).toBe( true ) ;
+
+      const resList = await getLoansAction() ;
+      expect( resList.success ).toBe( true ) ;
+      if( !resList.success ) { return ; }
+
+      expect( resList.value ).toHaveLength( 1 ) ;
+      expect( resList.value[ 0 ].saldoPendiente ).toBe( 500000 ) ;
+      expect( resList.value[ 0 ].entity?.name ).toBe( "Banco Galicia" ) ;
+    } ) ;
+
+    it( "archiveLoanAction marca el préstamo como archivado y lo saca de getLoansAction" , async () => {
+      const [ ctaBanco ] = await db
+        .insert( accounts )
+        .values( {
+          organizationId: orgId ,
+          code:           "1.1.01.98" ,
+          name:           "Banco Galicia Caja" ,
+          type:           "asset" ,
+          balance:        0 ,
+          currency:       "ARS"
+        } )
+        .returning() ;
+
+      const resAlta = await createLoanAction( {
+        name:                   "Préstamo a Archivar" ,
+        direction:              "borrowed" ,
+        entityId:               bankEntId ,
+        principalAmount:        200000 ,
+        currency:               "ARS" ,
+        interestRateAnnual:     0 ,
+        totalInstallments:      6 ,
+        frequency:              "monthly" ,
+        intervalCount:          1 ,
+        startDate:              new Date( "2026-09-01T12:00:00Z" ) ,
+        firstInstallmentDate:   "2026-10-10" ,
+        disbursementAccountId: ctaBanco.id
+      } ) ;
+      expect( resAlta.success ).toBe( true ) ;
+      if( !resAlta.success ) { return ; }
+
+      const resArchive = await archiveLoanAction( resAlta.value.id ) ;
+      expect( resArchive.success ).toBe( true ) ;
+
+      const resList = await getLoansAction() ;
+      expect( resList.success ).toBe( true ) ;
+      if( !resList.success ) { return ; }
+
+      expect( resList.value ).toHaveLength( 0 ) ;
     } ) ;
   } ) ;
 } ) ;

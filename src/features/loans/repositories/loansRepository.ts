@@ -4,13 +4,16 @@
  * Todas las operaciones imponen aislamiento multi-tenant por organizationId.
  */
 // Librerías externas
-import { eq , and , isNull , desc } from "drizzle-orm" ;
+import { eq , and , isNull , desc , inArray } from "drizzle-orm" ;
 
 // Shared
 import { db , DBOrTx } from "@/shared/db/client" ;
 
 // Feature: Accounting
-import { accounts } from "@/features/accounting/schema.db" ;
+import { accounts , financialEntities } from "@/features/accounting/schema.db" ;
+
+// Feature: Contacts
+import { contacts } from "@/features/contacts/schema.db" ;
 
 // Feature: Loans
 import { loans , loanAccounts } from "../schema.db" ;
@@ -19,6 +22,7 @@ import type {
   InsertLoan ,
   LoanAccount ,
   InsertLoanAccount ,
+  LoanWithAccounts ,
   LoanAccountWithAccount
 } from "../types" ;
 
@@ -43,6 +47,68 @@ export const loansRepository = {
       )
       .orderBy( desc( loans.createdAt ) )
     ) ;
+  } ,
+
+  /**
+   * Retorna todos los préstamos activos con sus relaciones (entidad, contacto y cuentas espejo).
+   *
+   * @param organizationId - ID de la organización dueña.
+   * @param tx - Instancia transaccional o cliente de BD.
+   * @returns Lista de préstamos con entidades y cuentas asociadas.
+   */
+  async findAllWithRelations( organizationId: string , tx: DBOrTx = db ): Promise< LoanWithAccounts[] > {
+    const loanRows = await tx
+      .select( {
+        loan:    loans ,
+        entity:  financialEntities ,
+        contact: contacts
+      } )
+      .from( loans )
+      .leftJoin( financialEntities , eq( loans.entityId  , financialEntities.id ) )
+      .leftJoin( contacts          , eq( loans.contactId , contacts.id          ) )
+      .where(
+        and(
+          eq( loans.organizationId , organizationId ) ,
+          isNull( loans.archivedAt )
+        )
+      )
+      .orderBy( desc( loans.createdAt ) ) ;
+
+    if( loanRows.length === 0 ) {
+      return( [] ) ;
+    }
+
+    const loanIds = loanRows.map( ( r ) => r.loan.id ) ;
+
+    const accountRows = await tx
+      .select( {
+        loanAccount: loanAccounts ,
+        account:     accounts
+      } )
+      .from( loanAccounts )
+      .innerJoin( accounts , eq( loanAccounts.accountId , accounts.id ) )
+      .where(
+        and(
+          inArray( loanAccounts.loanId , loanIds ) ,
+          eq( accounts.organizationId  , organizationId )
+        )
+      ) ;
+
+    return( loanRows.map( ( r ) => {
+      const relatedAccounts = accountRows
+        .filter( ( ar ) => ar.loanAccount.loanId === r.loan.id )
+        .map( ( ar ) => ( {
+          ...ar.loanAccount ,
+          account: ar.account
+        } ) ) ;
+
+      return( {
+        ...r.loan ,
+        entity:   ( r.entity?.id ? r.entity : null ) ,
+        contact:  ( r.contact?.id ? r.contact : null ) ,
+        accounts: relatedAccounts
+      } ) ;
+    } ) ) ;
   } ,
 
   /**

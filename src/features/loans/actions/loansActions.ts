@@ -43,9 +43,10 @@ import {
   type CreateLoanInput ,
   type PayLoanInstallmentInput
 } from "../schemas/loans.schema" ;
-import { loansRepository }    from "../repositories/loansRepository" ;
-import { pendientesDeLoan }   from "../services/loanScheduleService" ;
-import type { Loan }          from "../types" ;
+import { loansRepository }                 from "../repositories/loansRepository" ;
+import { pendientesDeLoan }                from "../services/loanScheduleService" ;
+import { resumirLoans }                    from "../services/loanSummaryService" ;
+import type { Loan , LoanConResumen }      from "../types" ;
 
 
 /**
@@ -400,3 +401,61 @@ export async function payLoanInstallmentAction(
     return( fail( errorMsg ) ) ;
   }
 }
+
+/**
+ * Obtiene la lista de préstamos activos de la organización con sus relaciones,
+ * métricas de resumen derivadas y cuotas pendientes calculadas según la fecha civil del usuario.
+ *
+ * @returns Result con la lista de préstamos resumidos o mensaje de error.
+ */
+export async function getLoansAction(): Promise< Result< LoanConResumen[] , string > > {
+  const session = await getServerSession( authOptions ) ;
+
+  if( !session?.user?.organizationId ) {
+    return( fail( "No autorizado." ) ) ;
+  }
+
+  try {
+    const list = await loansRepository.findAllWithRelations( session.user.organizationId ) ;
+
+    const perfil     = ( session.user.id ? await profileRepository.findByUserId( session.user.id ) : null ) ;
+    const timeZone   = ( perfil?.timezone || "America/Argentina/Buenos_Aires" ) ;
+    const hoyCivil   = obtenerHoyCivil( timeZone ) ;
+
+    const conResumen = resumirLoans( list , hoyCivil ) ;
+
+    return( ok( conResumen ) ) ;
+  } catch( error ) {
+    logger.error( `[getLoansAction] Error: ${error}` ) ;
+    return( fail( "Error al obtener los préstamos." ) ) ;
+  }
+}
+
+/**
+ * Archiva un préstamo (baja lógica).
+ *
+ * @param id - ID del préstamo a archivar.
+ * @returns Result con el préstamo archivado o mensaje de error.
+ */
+export async function archiveLoanAction( id: string ): Promise< Result< Loan , string > > {
+  const session = await getServerSession( authOptions ) ;
+
+  if( !session?.user?.organizationId ) {
+    return( fail( "No autorizado." ) ) ;
+  }
+
+  try {
+    const loan = await loansRepository.archive( id , session.user.organizationId ) ;
+    if( !loan ) {
+      return( fail( "Préstamo no encontrado." ) ) ;
+    }
+
+    revalidatePath( "/[lang]/(main)/loans" , "page" ) ;
+
+    return( ok( loan ) ) ;
+  } catch( error ) {
+    logger.error( `[archiveLoanAction] Error: ${error}` ) ;
+    return( fail( "Error al archivar el préstamo." ) ) ;
+  }
+}
+

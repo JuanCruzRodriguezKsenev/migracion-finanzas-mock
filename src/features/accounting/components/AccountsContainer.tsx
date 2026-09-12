@@ -13,6 +13,7 @@ import { useMetricsVisibility } from "@/shared/ui/layout/MetricsSection/MetricsV
 import { InstitutionLogo }      from "@/shared/ui/display/InstitutionLogo/InstitutionLogo" ;
 import { MetricsSection }       from "@/shared/ui/layout/MetricsSection/MetricsSection" ;
 import { Sparkline }            from "@/shared/ui/display/RechartsSparkline/Sparkline" ;
+import { formatCurrency }       from "@/shared/lib/currencyFormatter" ;
 import { PageHeader }           from "@/shared/ui/layout/PageHeader/PageHeader" ;
 import { EmptyState }           from "@/shared/ui/feedback/EmptyState/EmptyState" ;
 import { MetricCard }           from "@/shared/ui/MetricCard/MetricCard" ;
@@ -38,10 +39,14 @@ import { CardWithAccountsAndEntity } from "@/features/cards/types" ;
 import { CardVisual }                from "@/features/cards/components/CardVisual" ;
 import { deudaDe }                   from "@/features/cards/utils/ciclo" ;
 
+// Feature: Loans
+import type { LoanConResumen } from "@/features/loans/types" ;
+
 
 interface AccountsContainerProps {
   accounts:          (Account & { entity?: { name: string ; logo: string | null ; color: string | null } | null })[] ;
   cards:             CardWithAccountsAndEntity[] ;
+  loans:             LoanConResumen[] ;
   financialEntities: FinancialEntity[] ;
   summaries:         MonthlySummary[] ;
   dict:              Awaited< ReturnType< typeof getDictionary > > ;
@@ -51,6 +56,7 @@ interface AccountsContainerProps {
 export function AccountsContainer( {
   accounts ,
   cards ,
+  loans ,
   financialEntities ,
   summaries ,
   dict ,
@@ -80,6 +86,11 @@ export function AccountsContainer( {
   // Conjunto de IDs de cuentas contables vinculadas a tarjetas (evita duplicar la deuda en el listado de cuentas)
   const cardAccountIds = new Set(
     cards.flatMap( ( c ) => c.accounts.map( ( ca ) => ca.account.id ) )
+  ) ;
+
+  // Conjunto de IDs de cuentas contables vinculadas a préstamos (evita duplicar la deuda en el listado de cuentas)
+  const loanAccountIds = new Set(
+    loans.flatMap( ( l ) => l.accounts.map( ( la ) => la.account.id ) )
   ) ;
 
   // Calcular métricas (patterns.md §8: pasivos almacenados negativos, el neto es suma)
@@ -321,11 +332,14 @@ export function AccountsContainer( {
             const entityCards = selectedEntityObj
               ? cards.filter( ( c ) => c.entityId === selectedEntityObj.id )
               : ( ( selectedEntity === "Otros" ) ? cards.filter( ( c ) => !c.entityId ) : [] ) ;
+            const entityLoans = selectedEntityObj
+              ? loans.filter( ( l ) => l.entityId === selectedEntityObj.id )
+              : ( ( selectedEntity === "Otros" ) ? loans.filter( ( l ) => !l.entityId ) : [] ) ;
             const entityAccounts = ( groupedWallets[selectedEntity || ""] || [] ).filter(
-              ( a ) => !cardAccountIds.has( a.id )
+              ( a ) => !cardAccountIds.has( a.id ) && !loanAccountIds.has( a.id )
             ) ;
 
-            if( ( entityCards.length === 0 ) && ( entityAccounts.length === 0 ) ) {
+            if( ( entityCards.length === 0 ) && ( entityAccounts.length === 0 ) && ( entityLoans.length === 0 ) ) {
               return(
                 <EmptyState title={accountsPageDict.emptyState} />
               ) ;
@@ -346,6 +360,45 @@ export function AccountsContainer( {
                           locale={lang}
                         />
                       ) )}
+                    </div>
+                  </div>
+                ) : null }
+
+                { entityLoans.length > 0 ? (
+                  <div className={styles.modalSection}>
+                    <h4 className={styles.modalSectionTitle}>
+                      {accountsPageDict.sectionLoans || "Préstamos"}
+                    </h4>
+                    <div className={styles.detailedCardsGrid}>
+                      {entityLoans.map( ( loan ) => {
+                        const isBorrowed     = ( loan.direction === "borrowed" ) ;
+                        const balanceDisplay = (
+                          loan.saldoPendiente === null
+                            ? "—"
+                            : formatCurrency( loan.saldoPendiente , loan.currency , lang )
+                        ) ;
+
+                        return(
+                          <Card key={loan.id} className={styles.accountCardDetailed}>
+                            <div className={styles.cardHeader}>
+                              <span className={styles.accountNameDetailed}>{ loan.name }</span>
+                              <span className={ isBorrowed ? styles.badgeBorrowed : styles.badgeLent }>
+                                { isBorrowed
+                                  ? ( dict.loansPage?.badgeBorrowed || "Pedido" )
+                                  : ( dict.loansPage?.badgeLent || "Dado" ) }
+                              </span>
+                            </div>
+                            <div className={styles.cardFooterDetailed}>
+                              <span className={styles.accountType}>
+                                { `${loan.cuotasPagadas} / ${loan.totalInstallments}` }
+                              </span>
+                              <span className={ `${styles.accountBalanceDetailed} ${isBorrowed ? styles.redText : styles.greenText}` }>
+                                { isContentVisible ? balanceDisplay : "" }
+                              </span>
+                            </div>
+                          </Card>
+                        ) ;
+                      } )}
                     </div>
                   </div>
                 ) : null }
