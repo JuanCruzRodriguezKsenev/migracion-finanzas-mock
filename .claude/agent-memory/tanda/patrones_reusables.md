@@ -27,6 +27,15 @@ sin defectos; recomendar un reuso sin abrir el archivo ya introdujo un bug.
     marca + dominio. `financial_entities` es la única tabla que no lo seguía (ya tiene `brand_domain`
     desde la migración `0020`; `logo` quedó como ícono de respaldo).
 
+## Esquemas Zod
+
+*   **`z.input` y `z.infer` no son lo mismo cuando hay `.default()`.** `z.infer` tipa esos campos como
+    **obligatorios**; `z.input` los deja **opcionales**, que es lo que quiere quien llama a la acción.
+    El repo ya lo usa así: `CreateLoanInput` y `PayLoanInstallmentInput`
+    (`loans/schemas/loans.schema.ts:52` y `:64`) son `z.input`. Replicarlo en todo esquema de entrada
+    con defaults. Y ojo: esos dos son **`.strict()`**, así que una clave de más en el payload lo
+    rechaza.
+
 ## Componentes
 
 *   **`shared/ui/` ya tiene** `DataTable`, `SearchInput`, `Modal`, `Form`, `Autocomplete`,
@@ -68,4 +77,14 @@ sin defectos; recomendar un reuso sin abrir el archivo ya introdujo un bug.
     tiene ordenamiento ni paginación** — si un plan los pide, es trabajo nuevo, no reuso. La usan
     `ContactsTable` y `TransactionsTable`.
 *   **`formatCents( cents )` toma un solo argumento** y tiene el locale fijo en `es-AR`. No le pases
-    `lang`.
+    `lang`. **`formatCurrency( amount , currencyCode , locale )` toma tres** y vive en
+    `shared/lib/currencyFormatter.ts:46`: es la que hay que usar cuando la divisa no es fija.
+*   **Los diccionarios son tres: `es`, `en` y `br`** (`src/dictionaries/`, cargados por
+    `shared/lib/dictionary.ts`). **No existe `pt.json`.** Y como `dict` es la *unión* de los tres
+    tipos, una clave agregada a uno solo **no compila**: `tsc --noEmit` la rechaza. Las tres, siempre.
+*   **No hay `ProgressBar` compartido.** La barra del repo es `div.progressTrack > div.progressBar`
+    con `style={ { width: `${pct}%` } }`, en `InstallmentPlansModal.tsx:187-191` y su `.module.css`.
+    Copiar ese patrón; no crear un componente nuevo.
+*   **`MetricsSection` + `MetricCard` ya cubren el hero con barra de progreso y las tarjetas de
+    métrica** (`shared/ui/layout/MetricsSection/` y `shared/ui/MetricCard/`). `hero` acepta
+    `progressBar` y `progressLabel`; `MetricCard` acepta `isSensitive` para ofuscar importes.

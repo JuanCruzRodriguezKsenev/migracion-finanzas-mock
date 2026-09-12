@@ -25,6 +25,27 @@ Escrito el **2026-09-11** y **`APPROVED` el mismo día**: `docs/proposals/008-lo
     accounts/cards/loans antes de suscripciones y contactos. Con `dict.loans` en los tres
     diccionarios, no en duro como el `<span>Tarjetas</span>` de al lado.
 
+## Las tres decisiones de la tanda 2 (UI), cerradas el 2026-09-11
+
+Elegidas por el usuario con `AskUserQuestion` + mockups ASCII, **una pregunta por vez**; eligió la
+recomendada en las tres. Están en `docs/planes/008-tanda-2-interfaz-de-loans.md` §1.
+
+*   **`/loans` es una tabla con tabs por dirección** (Todos/Pedidos/Dados), con `MetricsSection`
+    arriba. **No** es una grilla de tarjetas al estilo `/cards`: el argumento que decidió fue que un
+    préstamo tiene seis columnas numéricas —saldo, progreso, cuotas, próximo vencimiento— que en una
+    tarjeta no entran, y que `/cards` es una grilla porque una tarjeta tiene identidad visual propia
+    (marca, plástico, últimos cuatro dígitos) que un préstamo no tiene.
+*   **La liquidación vive en una bandeja global arriba de la tabla**, como en `/cards` y
+    `/subscriptions`, con modal de selección de cuenta (la acción exige `paymentAccountId`). **La
+    bandeja muestra una sola fila por préstamo, su cuota más antigua**, porque
+    `payLoanInstallmentAction` rechaza cualquier otra dentro de la transacción
+    (`loansActions.ts:98-100`): listar tres vencidas y dejar tocar la tercera es un error garantizado.
+*   **La familia «Préstamos» del detalle de entidad de `/accounts` entra en la misma tanda**, junto
+    con el filtro que excluye las cuentas espejo de la lista de cuentas — el mismo `cardAccountIds`
+    que ya existe para tarjetas (`AccountsContainer.tsx:81-83` y el filtro de `:324-326`). Sin eso, la
+    cuenta `2.1.01.NN` del préstamo se sigue viendo como cuenta contable cruda al lado de su propio
+    instrumento, que es lo que el RFC 024 §4 prohíbe.
+
 ## Trampa del propio RFC: su §4.2 tiene los pasos de `limpiarBase()` corridos
 
 Numera `card_accounts`=7, `contacts`=10, `accounts`=13, `financial_entities`=14. **La tanda 1 del RFC

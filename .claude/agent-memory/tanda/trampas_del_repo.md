@@ -11,10 +11,9 @@ Cada una costó una ronda. Ver también [[entorno-postgres-caido]] y [[verificac
 
 ## Verificación
 
-*   **`pnpm lint` NO era lo que corre la compuerta** (`eslint` a secas, verde con warnings), contra
-    `pnpm exec eslint . --max-warnings 0` de `compuerta.yml:66`. El 2026-09-10 se reportó «lint 0» con
-    75 warnings que tumbaban CI. **En vuelo el plan que alinea el script**; hasta que se ejecute y se
-    confirme, corré el comando de la compuerta.
+*   **`pnpm lint` ya está alineado** a `eslint . --max-warnings 0`, idéntico a `compuerta.yml:66`
+    (era `eslint` a secas y salía verde con 75 warnings que tumbaban CI, 2026-09-10). **Si algún día
+    vuelven a divergir, la compuerta manda**: corré su comando, no el script.
 *   **`pnpm build` no tipa los tests.** Build verde + tests verdes convivieron con 7 errores de
     `tsc --noEmit` (fixtures de `Account` sin las columnas nuevas). Es lo que rompe la compuerta.
 *   **Sacar código de muchos archivos deja imports huérfanos invisibles.** Pasar a `limpiarBase()`
@@ -30,9 +29,11 @@ Cada una costó una ronda. Ver también [[entorno-postgres-caido]] y [[verificac
     en transacción única, consumida por las 18 suites. **Toda tabla nueva con FK va agregada ahí**, en
     su lugar del orden. El grafo que importa son las siete FK `restrict`; **no lo recalcules, está en
     el archivo**. Ojo con `categories.parentId`, `restrict` contra sí misma: hojas primero.
-*   **Los pasivos se guardan en negativo y `/accounts` no lo respeta:** `AccountsContainer.tsx:87-88`
-    hace `totalAssets - totalLiabs` sobre un total ya negativo — **suma la deuda al patrimonio**. Y
-    `monthly_summaries.liabilitiesSnapshot` usa el signo opuesto. `TECHNICAL_DEBT.md` §6.
+*   **Los pasivos se guardan en negativo.** La deuda exigible es `-balance`, con `deudaDe()`; nunca
+    el signo a mano. El defecto de `AccountsContainer` **ya está corregido** (`51f1a50`, tanda 1 del
+    RFC 024): hoy `netWorth = totalAssets + totalLiabs` con el comentario que remite a `patterns.md`
+    §8 para que no lo "arreglen" al revés. Verificado 2026-09-11. **Lo que sigue abierto es que
+    `monthly_summaries.liabilitiesSnapshot` usa el signo opuesto** (`TECHNICAL_DEBT.md` §6).
 *   **La sparkline de balance del dashboard grafica dos magnitudes distintas en la misma línea.**
     `calcularSparklineBalance()` (`dashboardMetrics.ts:94-120`) arma el histórico con
     `monthly_summaries.balanceSnapshot` —que el seed calcula con pasivos en **positivo**— y le pega
