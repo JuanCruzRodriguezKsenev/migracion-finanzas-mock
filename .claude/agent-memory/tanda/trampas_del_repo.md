@@ -44,11 +44,16 @@ Cada una costó una ronda. Ver también [[entorno-postgres-caido]] y [[verificac
 
 ## Documentos y RFCs
 
-*   **Los RFC 008 y 010 están `APPROVED`, no en borrador** (ambos `2026-06-23`). Como la regla dura
-    es «código sólo contra `APPROVED`», hoy autorizan formalmente a implementar el esquema
-    equivocado. Reescribirlos/enmendarlos es lo que desarma la trampa. La enmienda al RFC 004 que
-    pedía el §7 del diseño **ya está hecha** (`004-subscriptions-management.md:123`, revocada por el
-    RFC 023): quedan tres propuestas, no cuatro. Verificado 2026-09-11.
+*   **Los cuatro RFC de junio ya están desarmados.** El **008** se reescribió y aprobó el
+    2026-09-11; el **010** y el **003**, el 2026-09-12, y esos dos **quedaron en `DRAFT` a
+    propósito**: no estaban implementados, así que bajarles el sello quita la autorización a escribir
+    el esquema equivocado sin costo alguno. La enmienda al **004** ya estaba hecha
+    (`004-subscriptions-management.md:123`, revocada por el RFC 023). **La sesión de diseño del
+    2026-09-09 quedó cerrada: sus siete propuestas están escritas.**
+*   **Al reescribir un RFC viejo, el tipo de las columnas es la capa superficial.** Los dos de
+    2026-09-12 tenían debajo un agujero estructural que la sesión de diseño no había visto: el 010
+    no metía el activo al libro, el 003 repartía plata sin emitir asientos. **Si el contraste
+    termina en «cambiar `integer` por `bigint`», no terminó.**
 *   **Un RFC `APPROVED` también puede prometer algo que no existe.** El **RFC 007** (reaprobado el
     2026-09-08) calcula el disponible de la tarjeta restando `installmentPlans`
     (`007-cards-management.md:319`), una tabla que no está en el esquema ni en ningún otro RFC. Y su
@@ -56,11 +61,18 @@ Cada una costó una ronda. Ver también [[entorno-postgres-caido]] y [[verificac
     disponible**; el código de `CardVisual.tsx:40` ya se había apartado de ella, para mejor. Verificado
     2026-09-11. **Antes de implementar una fórmula de un RFC aprobado, mirá qué hace el código.**
 *   **Los RFCs viejos (junio 2026) traen esquemas anteriores al core contable.** Ya pasó con el 006,
-    el 015, el **008** (`integer` para dinero + `remainingBalance` que duplica `accounts.balance`) y
-    el **010** (siete columnas monetarias en `integer`). Contrastar contra `src/features/*/schema.db.ts`.
+    el 015, el **008** (`integer` para dinero + `remainingBalance` que duplica `accounts.balance`),
+    el **010** y el **003**. Contrastar contra `src/features/*/schema.db.ts`.
+*   **Un número repetido entre documentos no es un número verificado.** Tres documentos —el RFC 024
+    §9, la sesión de diseño y el doc de estado— **y esta memoria** decían que el RFC 010 tenía
+    *siete* columnas monetarias en `integer`. **Eran cuatro**: `purchase_price`, `value`,
+    `rent_amount` y `cost`. `square_meters` y `year` también son `integer` y **está bien que lo
+    sean**, porque no son dinero — el mismo criterio que `interval_count` y `attempts`. Nadie lo
+    había contado contra el archivo; yo lo repetí y casi lo escribo mal por segunda vez. **Contar,
+    aunque el número venga de un doc del propio repo.** Detectado 2026-09-12.
 *   **Antes de decir "esto no tiene RFC", mirar `docs/proposals/`.** Afirmé que patrimonio no tenía
-    propuesta: el **RFC 010 existe y está `APPROVED` desde junio**. Son 21 RFCs con nombres en inglés
-    — "patrimonio" se busca como `wealth`.
+    propuesta: el **RFC 010 existe** (hoy `DRAFT`). Son 25 archivos en `docs/proposals/` con nombres
+    en inglés — "patrimonio" se busca como `wealth`, "eventos" como `event`.
 *   **`revalidatePath` va contra la estructura de archivos, no contra la URL.** La doc de Next 16 lo
     ejemplifica con el grupo adentro. El patrón literal con `[lang]` es el correcto: no resolver el
     locale ni mandar `/es/cards`.
