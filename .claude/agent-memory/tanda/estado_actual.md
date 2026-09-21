@@ -19,9 +19,10 @@ master  ee3949d  las tres ramas encadenadas, consolidadas por fast-forward el 20
 fusionaron con `--ff-only` y **se borraron**. `git log --merges` sigue vacío: la historia es
 estrictamente lineal, y la convención es que cada rama sale de la punta anterior, no de `master`.
 
-**El push sigue pendiente y es del usuario:** `origin/master` sigue en `07aadb3`. **No anotar el
-número de commits de diferencia en ningún lado**, ni acá ni en el doc de estado: el commit que lo
-escribe ya lo deja viejo, y así estuvo mal tres veces seguidas. Se cuenta en el momento, con
+**Ya está pusheado:** el usuario publicó el 2026-09-21 y `origin/master` quedó en `c8633e0`. Era el
+primer push desde `07aadb3`, o sea que el remoto venía 24 commits atrás. **No anotar el número de
+commits de diferencia en ningún lado**, ni acá ni en el doc de estado: el commit que lo escribe ya lo
+deja viejo, y así estuvo mal tres veces seguidas. Se cuenta en el momento, con
 `git rev-list --count origin/master..HEAD`.
 
 ## Lo cerrado, congelado

@@ -35,9 +35,10 @@ y es tuya: ningún agente aprueba un RFC.
 > [`010-wealth-assets-management.md`](proposals/010-wealth-assets-management.md) y
 > [`003-event-splitting.md`](proposals/003-event-splitting.md).
 
-**El push sigue pendiente y es tuyo:** `origin/master` sigue en `07aadb3`. **Acá no va el número de
-commits de diferencia**, porque el commit que lo escribe ya lo deja viejo: se cuenta en el momento,
-con `git rev-list --count origin/master..HEAD`.
+**Publicado:** el usuario pusheó el 2026-09-21 y `origin/master` quedó en `c8633e0`, con la
+consolidación entera adentro. **Acá no va el número de commits de diferencia**, porque el commit que
+lo escribe ya lo deja viejo: se cuenta en el momento, con
+`git rev-list --count origin/master..HEAD`.
 
 ---
 
