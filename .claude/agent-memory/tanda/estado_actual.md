@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-# Estado al cerrar la ronda del 2026-09-21 (i18n verificada + plan de cabos entregado)
+# Estado al cerrar la ronda del 2026-09-21 (los `Result` del panel, ejecutados y verificados)
 
 **Contrastar con `git log` antes de actuar: esto se desactualiza rápido.**
 
@@ -15,10 +15,10 @@ metadata:
 master                          1dbc993   RFC 008 consolidado. NO PUSHEADO: origin/master sigue en 07aadb3
 docs/rfc-010-patrimonio-fisico  c15bfd0   los dos RFC reescritos. SIN CONSOLIDAR a master
 feat/i18n-categorias            d5985a6   i18n de categorías, ejecutada y verificada
-fix/result-panel-categorias     916dd7a   rama activa: el plan de los Result descartados, sin ejecutar
+fix/result-panel-categorias     26e0937   rama activa: los Result del panel, EJECUTADA Y VERIFICADA
 ```
 
-**El push sigue pendiente y es del usuario** — la punta de `fix/result-panel-categorias` va **19 commits**
+**El push sigue pendiente y es del usuario** — la punta de `fix/result-panel-categorias` va **22 commits**
 adelante de `origin/master` (07aadb3), y `master` local va 10. Contarlo con `git rev-list --count
 origin/master..HEAD`, no de memoria: ya estuvo mal anotado dos veces.
 `git log --merges` sigue vacío: la historia es estrictamente lineal.
@@ -27,6 +27,30 @@ origin/master..HEAD`, no de memoria: ya estuvo mal anotado dos veces.
 `docs/rfc-010-patrimonio-fisico` sin mergear nada: el merge lo decide el usuario, y los RFC 010 y 003
 siguen esperando su firma. **Ninguna de las tres ramas está consolidada**, y la de i18n ya está verde y
 lista para que el usuario decida el fast-forward.
+
+## La tanda de los `Result` del panel quedó cerrada y verificada de forma independiente
+
+`0039f9d` ejecutó `docs/planes/fix-result-panel-categorias.md` al pie: los cinco sitios de
+`CategoriesSettingsContainer.tsx` miran el `Result` —tres escrituras y dos lecturas—, con **dos
+canales de error separados** (`actionError` pinta el banner del panel, `formError` pinta dentro del
+modal), la casilla «Ver archivadas» revierte cuando la lectura falla, y lo tipeado en ícono/color
+sobrevive a un guardado rechazado. Cinco tests nuevos, los tres viejos intactos.
+
+`verificador` (2026-09-21): **490 tests en 68 archivos, 0 ESLint, 0 errores TS, build verde.** Son
+los 485 anteriores más los cinco casos nuevos, sin archivos nuevos: el número predicho y el real
+coincidieron. `obra` cerró **sin hallazgos** — cuarta ronda seguida sin desvíos.
+
+**Los dos únicos defectos fueron del plan, no de la ejecución**, y los dos son salidas de `grep`
+predichas sin correrlas; la lección está en [[ciclo-de-trabajo]]. Lo que quedó verificado a mano y
+**no hay que volver a investigar**: los dos `await …Action(` de `installmentPlansActions.test.ts:429,492`
+son siembra de test y está bien que descarten el `Result`, y el `style={{…}}` de
+`CategoriesSettingsContainer.tsx:451` es `backgroundColor` calculado de `activeParent.color`, o sea
+dinámico y dentro de la excepción del §4.
+
+**El único cabo que dejó, y es cosmético:** `handleCreateParent`, `handleCreateChild` y
+`handleUpdateCategory` no limpian `actionError` al arrancar (el plan les prohibió tocarlos, con
+razón), así que un banner del panel puede sobrevivir a un alta exitosa hecha después. Una línea por
+handler si alguna vez molesta; no vale una ronda.
 
 ## La tanda de i18n quedó cerrada y verificada de forma independiente
 
@@ -67,13 +91,11 @@ decisiones del usuario y los datos que el contraste dejó verificados.
 *   **Aprobar o corregir los RFC 010 y 003.** Es del usuario; ningún agente aprueba un RFC. Hasta que
     alguno pase a `APPROVED` no hay código que escribir contra ellos. Es lo que `trabajo-en-vuelo.md`
     declara hoy como próximo paso.
-*   ~~**Los `Result` descartados de `CategoriesSettingsContainer`**~~ — **ya no está sobre la mesa:
-    tiene plan entregado**, `docs/planes/fix-result-panel-categorias.md`, en la rama
-    `fix/result-panel-categorias`. El barrido cerró el radio en **un solo archivo de producción**: son
-    **cinco** sitios, no dos —tres escrituras (`handleConfirmArchive`, `handleUnarchive`,
-    `handleApplyVisualChanges`) y dos lecturas (`refreshTree`, `handleToggleArchived`)—. **El resto del
-    repo maneja bien el `Result`**, verificado con cuatro barridos distintos; los `.then()` de
-    `useSubscriptions` y los `Promise.all` de las ocho `page.tsx` chequean todos.
+*   ~~**Los `Result` descartados de `CategoriesSettingsContainer`**~~ — **resuelto y verificado el
+    2026-09-21**, commit `0039f9d`. Lo que sigue valiendo del barrido: **el resto del repo maneja bien
+    el `Result`**, comprobado con cuatro barridos distintos —los `.then()` de `useSubscriptions`, los
+    `Promise.all` de las ocho `page.tsx` y las 28 llamadas a acciones chequean todas—, así que no hace
+    falta volver a barrerlo.
 *   **La página de estadísticas**: sin RFC y sin nombre de ruta. Le llegan **tres** encargos, no uno:
     el Patrimonio Neto que el 024 desaloja de `/accounts` —que **se queda ahí hasta entonces**—, la
     convención de signo de `monthly_summaries` (§9 del 024), la brecha del §9 del 008 (un préstamo
@@ -88,7 +110,8 @@ decisiones del usuario y los datos que el contraste dejó verificados.
 *   **CSS inline estático contra el §4**, destapado por el barrido del 2026-09-21: verificados a mano
     `PendingInstallmentsInbox.tsx:156,221,237`, `CardFormModal.tsx:198`, `InstallmentPlansModal.tsx:112`
     y `CardVisual.tsx:79`. Una heurística marca ~22 en 13 archivos **con falsos positivos**
-    (`style={cardStyle}` es dinámico). Queda anotado como deuda en el paso 7 de ese plan.
+    (`style={cardStyle}` es dinámico). **Ya está anotada** en `TECHNICAL_DEBT.md` §1 (2026-09-21);
+    el conteo exacto es parte de cerrarla.
 *   `dict?:` opcional heredado, **5 declaraciones en 4 archivos**.
 *   Las rutas del mock sin RFC: `/reportes`, `/configuracion`, `/mejorar-plan`. **`/patrimonio` ya no
     está en esa lista**: tiene el 010, aunque su ruta en inglés no se eligió todavía.

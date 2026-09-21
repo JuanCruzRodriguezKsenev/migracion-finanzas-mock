@@ -80,6 +80,19 @@ entera. Si el plan nombra una rama, esa rama existe **antes** de que el bloque d
     enumera ocurrencias, la tabla se arma con el `grep` que las lista **todas**, o lleva arriba la
     regla general («todas las aserciones que busquen chrome traducible») para que la enumeración sea
     ejemplo y no límite.
+*   **Una salida esperada de `grep` se escribe corriendo el `grep`, no deduciéndola.** El plan del
+    panel de categorías predijo dos salidas vacías y las dos salieron con líneas: el barrido de
+    `await …Action(` decía «3, todas en este archivo» y eran **5** —las otras dos son siembra legítima
+    en `installmentPlansActions.test.ts`—, y el de `style={` daba `CategoriesSettingsContainer.tsx:451`,
+    que es dinámico y cae en la excepción del §4. Ninguna costó un defecto porque `obra` no las
+    ejecutó como órdenes, pero **una salida esperada falsa convierte un cierre sano en una
+    discrepancia que hay que investigar**, igual que un total de tests mal predicho. Si el plan dice
+    «salida esperada: vacía», esa salida se corrió al escribirlo.
+*   **Los snippets del plan también siguen el §4, incluida la regla de delimitadores anidados.** El
+    plan escribió `( checkbox as HTMLInputElement ).checked` y `obra` lo corrigió a
+    `(checkbox as HTMLInputElement).checked`, que es lo correcto: el paréntesis está **dentro** de
+    `expect( … )` en la misma línea física, así que no lleva espacios internos. Un snippet mal
+    espaciado invita a copiar el error.
 *   **Preferir anclas textuales a números de línea** en los pasos: el número envejece dentro de la
     misma ronda apenas un paso anterior inserta líneas.
 *   **Un hueco del plan vuelve como defecto del código, y hay que decirlo así.** El plan del RFC 023
