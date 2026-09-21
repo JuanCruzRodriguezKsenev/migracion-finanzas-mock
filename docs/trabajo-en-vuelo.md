@@ -16,11 +16,10 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 `docs/rfc-010-patrimonio-fisico` — que sigue **sin consolidar a `master`** porque el merge lo decide
 el usuario. Las ramas se encadenan; la historia es lineal, cero merge commits. **No cambiar de rama.**
 
-**Próximo paso:** ejecutar [`planes/feat-i18n-categorias.md`](planes/feat-i18n-categorias.md) —
-internacionalizar `CategoriesSettingsContainer`, el último resto de i18n de `/settings`. Es la tanda
-de código que estaba lista para plan, y **no depende de ningún RFC**: no agrega comportamiento,
-traduce el que ya existe. Alcance acotado a seis archivos; los 23 `fail()` de `categoryActions.ts`
-quedan **fuera por decisión del usuario del 2026-09-20** y se declaran como deuda nueva.
+**Próximo paso:** decidir la aprobación o corrección de los **RFC 010** (patrimonio físico) y **RFC 003**
+(división de gastos por eventos), ambos en `DRAFT` esperando la firma del usuario. Con la tanda de
+i18n de categorías ejecutada ([`planes/feat-i18n-categorias.md`](planes/feat-i18n-categorias.md)),
+`/settings` queda completamente internacionalizado (deuda §3 de `TECHNICAL_DEBT.md` cerrada).
 
 ---
 
@@ -104,11 +103,10 @@ Con `AskUserQuestion`, una pregunta por vez, y eligió la recomendada en las cin
     **Le llegan dos encargos más:** la brecha del §9 del RFC 008 —un préstamo registra el pasivo
     completo el día uno y una compra en cuotas no— y ahora el patrimonio físico del 010, que es la
     razón por la que el 010 fue antes que ella.
-3.  **Internacionalizar `CategoriesSettingsContainer`** — **en curso**, plan escrito en
-    [`planes/feat-i18n-categorias.md`](planes/feat-i18n-categorias.md) y rama `feat/i18n-categorias`.
-    766 líneas de español directo en buscador, modales y confirmaciones: 58 textos distintos que
-    pasan a `settingsPage.categories` en los tres diccionarios. Es el único resto de i18n de
-    `/settings` ([`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §3).
+3.  ~~**Internacionalizar `CategoriesSettingsContainer`**~~ — **resuelto el 2026-09-20**, ejecutado
+    [`planes/feat-i18n-categorias.md`](planes/feat-i18n-categorias.md) en la rama `feat/i18n-categorias`.
+    Sus 58 textos viven en `settingsPage.categories` en los tres diccionarios y el componente recibe `dict`
+    obligatoria. Cierra el resto de i18n de `/settings` ([`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §3).
 4.  **El neto por contacto en `/contacts`** — hoy no muestra un solo importe. Lo dejan abierto el §9
     del RFC 008 y ahora también el §9 del RFC 003: **cuando se escriba tiene que sumar las dos
     fuentes**, préstamos y eventos, o mostrará la mitad del cuadro.

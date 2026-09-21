@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
 
 // Librerías externas
-import { describe , it , expect , vi , beforeEach } from "vitest" ;
-import { render , screen , fireEvent , waitFor }   from "@testing-library/react" ;
+import { describe , it , expect , vi , beforeEach , beforeAll } from "vitest" ;
+import { render , screen , fireEvent , waitFor }                from "@testing-library/react" ;
+
+// Shared
+import { getDictionary } from "@/shared/lib/dictionary" ;
 
 // Feature: Notifications
 import { NotificationsProvider } from "@/features/notifications/context/NotificationsContext" ;
@@ -28,6 +31,12 @@ import {
 } from "../../actions/categoryActions" ;
 
 describe( "CategoriesSettingsContainer - Dos columnas y gestión de categorías" , () => {
+  let dict: Awaited< ReturnType< typeof getDictionary > > ;
+
+  beforeAll( async () => {
+    dict = await getDictionary( "es" ) ;
+  } ) ;
+
   const sampleTree: CategoryTreeNode[] = [
     {
       id:             "cat-exp-1" ,
@@ -108,7 +117,7 @@ describe( "CategoriesSettingsContainer - Dos columnas y gestión de categorías"
   const renderContainer = ( tree: CategoryTreeNode[] ) => (
     render(
       <NotificationsProvider>
-        <CategoriesSettingsContainer initialTree={tree} />
+        <CategoriesSettingsContainer initialTree={tree} dict={dict} />
       </NotificationsProvider>
     )
   ) ;
@@ -119,7 +128,7 @@ describe( "CategoriesSettingsContainer - Dos columnas y gestión de categorías"
     // Por defecto el primer padre seleccionado es Vivienda
     expect( screen.getByRole( "heading" , { name: "Vivienda" , level: 2 } ) ).toBeTruthy() ;
     expect( screen.getByText( "Alquiler" ) ).toBeTruthy() ;
-    expect( screen.getByText( "Sin detallar" ) ).toBeTruthy() ;
+    expect( screen.getByText( dict.settingsPage.categories.systemLeafName ) ).toBeTruthy() ;
 
     // Comprobar que NO muestra códigos contables como "5.1.01" o "5.1.01.01"
     expect( screen.queryByText( "5.1.01" ) ).toBeNull() ;
@@ -141,7 +150,7 @@ describe( "CategoriesSettingsContainer - Dos columnas y gestión de categorías"
 
     renderContainer( sampleTree ) ;
 
-    const checkbox = screen.getByLabelText( /Ver archivadas/i ) ;
+    const checkbox = screen.getByLabelText( dict.settingsPage.categories.showArchived ) ;
     fireEvent.click( checkbox ) ;
 
     await waitFor( () => {
@@ -168,17 +177,17 @@ describe( "CategoriesSettingsContainer - Dos columnas y gestión de categorías"
     renderContainer( sampleTree ) ;
 
     // Botón archivar de la cabecera del padre Vivienda
-    const archiveBtns = screen.getAllByRole( "button" , { name: /^Archivar$/i } ) ;
+    const archiveBtns = screen.getAllByRole( "button" , { name: dict.settingsPage.categories.archive } ) ;
     fireEvent.click( archiveBtns[0] ) ;
 
     // Debe abrir el modal y mostrar el conteo consultado
     await waitFor( () => {
       expect( getCategoryMovementsCountAction ).toHaveBeenCalledWith( "cat-exp-1" ) ;
-      expect( screen.getByText( /Movimientos registrados: 14/i ) ).toBeTruthy() ;
+      expect( screen.getByText( dict.settingsPage.categories.archiveMovements.replace( "{count}" , "14" ) ) ).toBeTruthy() ;
     } ) ;
 
     // Advertencia de archivo en cascada para padres
-    expect( screen.getByText( /archiva en cascada todas sus subcategorías/i ) ).toBeTruthy() ;
+    expect( screen.getByText( dict.settingsPage.categories.archiveWarningParentStrong ) ).toBeTruthy() ;
 
     // Confirmar archivado
     const confirmBtn = screen.getByRole( "button" , { name: /Confirmar archivado/i } ) ;

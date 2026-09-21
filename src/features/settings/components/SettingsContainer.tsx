@@ -63,7 +63,7 @@ export function SettingsContainer( {
       />
 
       {activeTab === "categories" ? (
-        <CategoriesSettingsContainer initialTree={initialTree} />
+        <CategoriesSettingsContainer initialTree={initialTree} dict={dict} />
       ) : (
         <LedgerAuditPanel accounts={accounts} dict={dict} />
       )}

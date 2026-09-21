@@ -9,14 +9,15 @@
 import React , { useState } from "react" ;
 
 // Shared
-import { SearchInput } from "@/shared/ui/forms/SearchInput/SearchInput" ;
-import { EmptyState }  from "@/shared/ui/feedback/EmptyState/EmptyState" ;
-import { FormActions } from "@/shared/ui/forms/Form/FormActions" ;
-import { FormSelect }  from "@/shared/ui/forms/Form/FormSelect" ;
-import { FormInput }   from "@/shared/ui/forms/Form/FormInput" ;
-import { FormError }   from "@/shared/ui/forms/Form/FormError" ;
-import { Button }      from "@/shared/ui/display/Button/Button" ;
-import { Modal }       from "@/shared/ui/feedback/Modal/Modal" ;
+import { EmptyState }         from "@/shared/ui/feedback/EmptyState/EmptyState" ;
+import { SearchInput }        from "@/shared/ui/forms/SearchInput/SearchInput" ;
+import { FormActions }        from "@/shared/ui/forms/Form/FormActions" ;
+import { FormSelect }         from "@/shared/ui/forms/Form/FormSelect" ;
+import { FormInput }          from "@/shared/ui/forms/Form/FormInput" ;
+import { FormError }          from "@/shared/ui/forms/Form/FormError" ;
+import { Button }             from "@/shared/ui/display/Button/Button" ;
+import { Modal }              from "@/shared/ui/feedback/Modal/Modal" ;
+import type { getDictionary } from "@/shared/lib/dictionary" ;
 
 // Feature: Accounting
 import { getCategoryTreeAction , createCategoryAction , updateCategoryAction , archiveCategoryAction , unarchiveCategoryAction , getCategoryMovementsCountAction } from "../../actions/categoryActions" ;
@@ -27,6 +28,7 @@ import styles                                                                   
 
 export interface CategoriesSettingsContainerProps {
   initialTree: CategoryTreeNode[] ;
+  dict:        Awaited< ReturnType< typeof getDictionary > > ;
 }
 
 /**
@@ -34,7 +36,9 @@ export interface CategoriesSettingsContainerProps {
  */
 export function CategoriesSettingsContainer( {
   initialTree ,
+  dict ,
 }: CategoriesSettingsContainerProps ) {
+  const t = dict.settingsPage.categories ;
   const [ tree , setTree ]                                 = useState< CategoryTreeNode[] >( initialTree ) ;
   const [ isActionLoading , setIsActionLoading ]           = useState( false ) ;
   const [ searchTerm , setSearchTerm ]                     = useState( "" ) ;
@@ -156,12 +160,12 @@ export function CategoriesSettingsContainer( {
   const handleCreateParent = async () => {
     setFormError( "" ) ;
     if( !formName.trim() ) {
-      setFormError( "Ingresá un nombre para la categoría." ) ;
+      setFormError( t.errorNameRequired ) ;
       return ;
     }
 
     if( formColor.trim() && !/^#[0-9A-Fa-f]{6}$/.test( formColor.trim() ) ) {
-      setFormError( "El color debe ser un hexadecimal de 6 caracteres (ej: #3498db)." ) ;
+      setFormError( t.errorColorInvalid ) ;
       return ;
     }
 
@@ -198,12 +202,12 @@ export function CategoriesSettingsContainer( {
 
     setFormError( "" ) ;
     if( !formName.trim() ) {
-      setFormError( "Ingresá un nombre para la subcategoría." ) ;
+      setFormError( t.errorChildNameRequired ) ;
       return ;
     }
 
     if( formColor.trim() && !/^#[0-9A-Fa-f]{6}$/.test( formColor.trim() ) ) {
-      setFormError( "El color debe ser un hexadecimal de 6 caracteres (ej: #3498db)." ) ;
+      setFormError( t.errorColorInvalid ) ;
       return ;
     }
 
@@ -240,7 +244,7 @@ export function CategoriesSettingsContainer( {
 
     setFormError( "" ) ;
     if( !formName.trim() ) {
-      setFormError( "Ingresá un nombre válido." ) ;
+      setFormError( t.errorNameInvalid ) ;
       return ;
     }
 
@@ -293,7 +297,7 @@ export function CategoriesSettingsContainer( {
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="Buscar categoría o subcategoría..."
+              placeholder={t.searchPlaceholder}
             />
           </div>
 
@@ -304,7 +308,7 @@ export function CategoriesSettingsContainer( {
               onChange={ ( e ) => handleToggleArchived( e.target.checked ) }
               className={styles.archivedCheckbox}
             />
-            <span>Ver archivadas</span>
+            <span>{t.showArchived}</span>
           </label>
         </div>
 
@@ -320,7 +324,7 @@ export function CategoriesSettingsContainer( {
               setIsCreateParentOpen( true ) ;
             } }
           >
-            + Nueva categoría principal
+            {t.newParent}
           </Button>
         </div>
       </div>
@@ -331,7 +335,7 @@ export function CategoriesSettingsContainer( {
         <aside className={styles.leftColumn}>
           {expenseParents.length > 0 && (
             <div className={styles.groupBlock}>
-              <h3 className={styles.groupHeading}>Gastos</h3>
+              <h3 className={styles.groupHeading}>{t.groupExpense}</h3>
               <ul className={styles.parentList}>
                 {expenseParents.map( ( parent ) => {
                   const isSelected = ( activeParent?.id === parent.id ) ;
@@ -349,7 +353,7 @@ export function CategoriesSettingsContainer( {
                           </span>
                           <span className={styles.parentItemName}>{parent.name}</span>
                           {parent.archivedAt && (
-                            <span className={styles.archivedBadge}>Archivada</span>
+                            <span className={styles.archivedBadge}>{t.archivedBadge}</span>
                           )}
                         </div>
                         <span className={styles.parentItemCount}>
@@ -365,7 +369,7 @@ export function CategoriesSettingsContainer( {
 
           {revenueParents.length > 0 && (
             <div className={styles.groupBlock}>
-              <h3 className={styles.groupHeading}>Ingresos</h3>
+              <h3 className={styles.groupHeading}>{t.groupRevenue}</h3>
               <ul className={styles.parentList}>
                 {revenueParents.map( ( parent ) => {
                   const isSelected = ( activeParent?.id === parent.id ) ;
@@ -383,7 +387,7 @@ export function CategoriesSettingsContainer( {
                           </span>
                           <span className={styles.parentItemName}>{parent.name}</span>
                           {parent.archivedAt && (
-                            <span className={styles.archivedBadge}>Archivada</span>
+                            <span className={styles.archivedBadge}>{t.archivedBadge}</span>
                           )}
                         </div>
                         <span className={styles.parentItemCount}>
@@ -399,8 +403,8 @@ export function CategoriesSettingsContainer( {
 
           {(expenseParents.length === 0) && (revenueParents.length === 0) && (
             <EmptyState
-              title="Sin resultados"
-              description="No encontramos categorías que coincidan con tu búsqueda."
+              title={t.emptySearchTitle}
+              description={t.emptySearchDescription}
             />
           )}
         </aside>
@@ -421,8 +425,8 @@ export function CategoriesSettingsContainer( {
                   <div className={styles.heroDetails}>
                     <h2 className={styles.heroName}>{activeParent.name}</h2>
                     <span className={styles.heroTypeBadge}>
-                      {(activeParent.type === "expense") ? "Categoría de Gastos" : "Categoría de Ingresos"}
-                      {activeParent.archivedAt && " · ARCHIVADA"}
+                      {(activeParent.type === "expense") ? t.typeBadgeExpense : t.typeBadgeRevenue}
+                      {activeParent.archivedAt && ` ${t.archivedSuffix}`}
                     </span>
                   </div>
                 </div>
@@ -436,7 +440,7 @@ export function CategoriesSettingsContainer( {
                       setFormError( "" ) ;
                     } }
                   >
-                    Renombrar
+                    {t.rename}
                   </Button>
 
                   {activeParent.archivedAt ? (
@@ -445,14 +449,14 @@ export function CategoriesSettingsContainer( {
                       onClick={ () => handleUnarchive( activeParent.id ) }
                       isLoading={isActionLoading}
                     >
-                      Desarchivar
+                      {t.unarchive}
                     </Button>
                   ) : (
                     <Button
                       variant="secondary"
                       onClick={ () => handleOpenArchiveModal( activeParent.id , activeParent.name , true ) }
                     >
-                      Archivar
+                      {t.archive}
                     </Button>
                   )}
                 </div>
@@ -461,7 +465,7 @@ export function CategoriesSettingsContainer( {
               {/* Controles de Ícono y Color a la vista */}
               <div className={styles.customizationRow}>
                 <div className={styles.controlField}>
-                  <label className={styles.controlLabel}>Ícono visual</label>
+                  <label className={styles.controlLabel}>{t.iconLabel}</label>
                   <div className={styles.iconInputRow}>
                     <FormInput
                       value={quickIcon}
@@ -470,13 +474,13 @@ export function CategoriesSettingsContainer( {
                           setCustomVisuals( { parentId: activeParent.id , icon: e.target.value , color: quickColor } ) ;
                         }
                       } }
-                      placeholder="Emoji o nombre"
+                      placeholder={t.iconPlaceholder}
                     />
                   </div>
                 </div>
 
                 <div className={styles.controlField}>
-                  <label className={styles.controlLabel}>Color distintivo</label>
+                  <label className={styles.controlLabel}>{t.colorLabel}</label>
                   <div className={styles.colorInputRow}>
                     <input
                       type="color"
@@ -502,7 +506,7 @@ export function CategoriesSettingsContainer( {
                       onClick={handleApplyVisualChanges}
                       isLoading={isActionLoading}
                     >
-                      Guardar
+                      {t.save}
                     </Button>
                   </div>
                 </div>
@@ -511,7 +515,7 @@ export function CategoriesSettingsContainer( {
               {/* Sección de Subcategorías */}
               <div className={styles.subcategoriesSection}>
                 <div className={styles.subcategoriesHeader}>
-                  <h3 className={styles.subcategoriesTitle}>Subcategorías</h3>
+                  <h3 className={styles.subcategoriesTitle}>{t.subcategoriesTitle}</h3>
                   <Button
                     variant="secondary"
                     onClick={ () => {
@@ -522,7 +526,7 @@ export function CategoriesSettingsContainer( {
                       setIsCreateChildOpen( true ) ;
                     } }
                   >
-                    + Agregar subcategoría
+                    {t.addChild}
                   </Button>
                 </div>
 
@@ -537,7 +541,7 @@ export function CategoriesSettingsContainer( {
                           </span>
                           <span className={styles.subcatName}>{child.name}</span>
                           {child.archivedAt && (
-                            <span className={styles.archivedBadge}>Archivada</span>
+                            <span className={styles.archivedBadge}>{t.archivedBadge}</span>
                           )}
                         </div>
 
@@ -551,7 +555,7 @@ export function CategoriesSettingsContainer( {
                               setFormError( "" ) ;
                             } }
                           >
-                            Renombrar
+                            {t.rename}
                           </button>
 
                           {child.archivedAt ? (
@@ -560,7 +564,7 @@ export function CategoriesSettingsContainer( {
                               className={styles.actionBtnText}
                               onClick={ () => handleUnarchive( child.id ) }
                             >
-                              Desarchivar
+                              {t.unarchive}
                             </button>
                           ) : (
                             <button
@@ -568,7 +572,7 @@ export function CategoriesSettingsContainer( {
                               className={ `${styles.actionBtnText} ${styles.actionBtnDanger}` }
                               onClick={ () => handleOpenArchiveModal( child.id , child.name , false ) }
                             >
-                              Archivar
+                              {t.archive}
                             </button>
                           )}
                         </div>
@@ -584,8 +588,8 @@ export function CategoriesSettingsContainer( {
                           <span className={styles.subcatIcon}>
                             {iconoDeCategoria( leaf.icon )}
                           </span>
-                          <span className={styles.subcatName}>Sin detallar</span>
-                          <span className={styles.systemLeafTag}>Sistema</span>
+                          <span className={styles.subcatName}>{t.systemLeafName}</span>
+                          <span className={styles.systemLeafTag}>{t.systemLeafTag}</span>
                         </div>
                       </li>
                     ) )}
@@ -594,8 +598,8 @@ export function CategoriesSettingsContainer( {
             </>
           ) : (
             <EmptyState
-              title="Ninguna categoría seleccionada"
-              description="Seleccioná una categoría de la columna izquierda para ver y editar sus detalles."
+              title={t.emptyDetailTitle}
+              description={t.emptyDetailDescription}
             />
           )}
         </section>
@@ -605,38 +609,38 @@ export function CategoriesSettingsContainer( {
       <Modal
         isOpen={isCreateParentOpen}
         onClose={ () => setIsCreateParentOpen( false ) }
-        title="Nueva Categoría Principal"
-        subtitle="Creá una categoría raíz de primer nivel en el árbol contable"
+        title={t.createParentTitle}
+        subtitle={t.createParentSubtitle}
       >
         <form onSubmit={ ( e ) => { e.preventDefault() ; handleCreateParent() ; } }>
           {formError && <FormError error={formError} />}
 
           <FormInput
-            label="Nombre de la categoría"
+            label={t.nameLabel}
             value={formName}
             onChange={ ( e ) => setFormName( e.target.value ) }
-            placeholder="Ej: Impuestos, Movilidad, Salidas..."
+            placeholder={t.namePlaceholder}
             required
           />
 
           <FormSelect
-            label="Tipo contable"
+            label={t.typeLabel}
             value={formType}
             onChange={ ( e ) => setFormType( e.target.value as "expense" | "revenue" ) }
           >
-            <option value="expense">Gasto</option>
-            <option value="revenue">Ingreso</option>
+            <option value="expense">{t.optionExpense}</option>
+            <option value="revenue">{t.optionRevenue}</option>
           </FormSelect>
 
           <FormInput
-            label="Ícono (opcional)"
+            label={t.iconOptionalLabel}
             value={formIcon}
             onChange={ ( e ) => setFormIcon( e.target.value ) }
-            placeholder="Ej: 🚗 o truck"
+            placeholder={t.iconParentPlaceholder}
           />
 
           <FormInput
-            label="Color (hexadecimal opcional)"
+            label={t.colorOptionalLabel}
             value={formColor}
             onChange={ ( e ) => setFormColor( e.target.value ) }
             placeholder="#e67e22"
@@ -644,8 +648,8 @@ export function CategoriesSettingsContainer( {
 
           <FormActions
             onCancel={ () => setIsCreateParentOpen( false ) }
-            cancelLabel="Cancelar"
-            submitLabel="Crear Categoría"
+            cancelLabel={t.cancel}
+            submitLabel={t.submitCreateParent}
             submitting={isActionLoading}
           />
         </form>
@@ -655,29 +659,29 @@ export function CategoriesSettingsContainer( {
       <Modal
         isOpen={isCreateChildOpen}
         onClose={ () => setIsCreateChildOpen( false ) }
-        title={ `Nueva subcategoría en ${activeParent?.name || ""}` }
-        subtitle="Creá una subcategoría de segundo nivel vinculada a este padre"
+        title={ t.createChildTitle.replace( "{parent}" , (activeParent?.name || "") ) }
+        subtitle={t.createChildSubtitle}
       >
         <form onSubmit={ ( e ) => { e.preventDefault() ; handleCreateChild() ; } }>
           {formError && <FormError error={formError} />}
 
           <FormInput
-            label="Nombre de la subcategoría"
+            label={t.childNameLabel}
             value={formName}
             onChange={ ( e ) => setFormName( e.target.value ) }
-            placeholder="Ej: Combustible, Colectivo, Subte..."
+            placeholder={t.childNamePlaceholder}
             required
           />
 
           <FormInput
-            label="Ícono (opcional)"
+            label={t.iconOptionalLabel}
             value={formIcon}
             onChange={ ( e ) => setFormIcon( e.target.value ) }
-            placeholder="Ej: ⛽ o fuel"
+            placeholder={t.iconChildPlaceholder}
           />
 
           <FormInput
-            label="Color (hexadecimal opcional)"
+            label={t.colorOptionalLabel}
             value={formColor}
             onChange={ ( e ) => setFormColor( e.target.value ) }
             placeholder="#f39c12"
@@ -685,8 +689,8 @@ export function CategoriesSettingsContainer( {
 
           <FormActions
             onCancel={ () => setIsCreateChildOpen( false ) }
-            cancelLabel="Cancelar"
-            submitLabel="Agregar Subcategoría"
+            cancelLabel={t.cancel}
+            submitLabel={t.submitCreateChild}
             submitting={isActionLoading}
           />
         </form>
@@ -696,14 +700,14 @@ export function CategoriesSettingsContainer( {
       <Modal
         isOpen={Boolean( editCategoryModal )}
         onClose={ () => setEditCategoryModal( null ) }
-        title="Renombrar Categoría"
-        subtitle="Actualizá el nombre visible de la categoría y sus cuentas contables"
+        title={t.renameTitle}
+        subtitle={t.renameSubtitle}
       >
         <form onSubmit={ ( e ) => { e.preventDefault() ; handleUpdateCategory() ; } }>
           {formError && <FormError error={formError} />}
 
           <FormInput
-            label="Nombre"
+            label={t.renameNameLabel}
             value={formName}
             onChange={ ( e ) => setFormName( e.target.value ) }
             required
@@ -711,8 +715,8 @@ export function CategoriesSettingsContainer( {
 
           <FormActions
             onCancel={ () => setEditCategoryModal( null ) }
-            cancelLabel="Cancelar"
-            submitLabel="Guardar Cambios"
+            cancelLabel={t.cancel}
+            submitLabel={t.submitRename}
             submitting={isActionLoading}
           />
         </form>
@@ -722,25 +726,25 @@ export function CategoriesSettingsContainer( {
       <Modal
         isOpen={Boolean( archiveTargetCat )}
         onClose={ () => setArchiveTargetCat( null ) }
-        title={ `Archivar "${archiveTargetCat?.name || ""}"` }
-        subtitle="Confirmación de baja lógica con impacto contable"
+        title={ t.archiveTitle.replace( "{name}" , (archiveTargetCat?.name || "") ) }
+        subtitle={t.archiveSubtitle}
       >
         <div className={styles.archiveModalContent}>
           <p className={styles.archiveWarning}>
             {archiveTargetCat?.isParent ? (
               <>
-                Esta categoría principal dejará de ofrecerse en nuevos registros.
-                <strong> Archivar un padre archiva en cascada todas sus subcategorías.</strong>
+                {t.archiveWarningParent}
+                <strong> {t.archiveWarningParentStrong}</strong>
               </>
             ) : (
-              "Esta subcategoría dejará de ofrecerse en los selectores de transacciones."
+              t.archiveWarningChild
             )}
           </p>
 
           <p className={styles.archiveMovementsInfo}>
             {isCheckingCount
-              ? "Consultando movimientos contables en el libro mayor..."
-              : `Movimientos registrados: ${archiveMovementsCount ?? 0}`}
+              ? t.archiveCounting
+              : t.archiveMovements.replace( "{count}" , String( archiveMovementsCount ?? 0 ) )}
           </p>
 
           <div className={styles.headerActions}>
@@ -749,14 +753,14 @@ export function CategoriesSettingsContainer( {
               onClick={ () => setArchiveTargetCat( null ) }
               disabled={isActionLoading || isCheckingCount}
             >
-              Cancelar
+              {t.cancel}
             </Button>
             <Button
               variant="danger"
               onClick={handleConfirmArchive}
               isLoading={isActionLoading || isCheckingCount}
             >
-              Confirmar archivado
+              {t.submitArchive}
             </Button>
           </div>
         </div>
