@@ -27,6 +27,8 @@ vi.mock( "../../actions/categoryActions" , () => ( {
 import {
   getCategoryTreeAction ,
   archiveCategoryAction ,
+  unarchiveCategoryAction ,
+  updateCategoryAction ,
   getCategoryMovementsCountAction
 } from "../../actions/categoryActions" ;
 
@@ -109,6 +111,12 @@ describe( "CategoriesSettingsContainer - Dos columnas y gestión de categorías"
       ] ,
     } ,
   ] ;
+
+  const archivedTree: CategoryTreeNode[] = [
+    { ...sampleTree[0] , archivedAt: new Date() } ,
+  ] ;
+
+  const ERROR_SERVIDOR = "La categoría tiene movimientos asociados." ;
 
   beforeEach( () => {
     vi.clearAllMocks() ;
@@ -196,5 +204,128 @@ describe( "CategoriesSettingsContainer - Dos columnas y gestión de categorías"
     await waitFor( () => {
       expect( archiveCategoryAction ).toHaveBeenCalledWith( { id: "cat-exp-1" } ) ;
     } ) ;
+  } ) ;
+
+  it( "el archivado rechazado muestra el error y no cierra el modal" , async () => {
+    vi.mocked( getCategoryMovementsCountAction ).mockResolvedValue( {
+      success: true ,
+      value:   14 ,
+    } ) ;
+
+    vi.mocked( archiveCategoryAction ).mockResolvedValue( {
+      success: false ,
+      error:   ERROR_SERVIDOR ,
+    } ) ;
+
+    renderContainer( sampleTree ) ;
+
+    const archiveBtns = screen.getAllByRole( "button" , { name: dict.settingsPage.categories.archive } ) ;
+    fireEvent.click( archiveBtns[0] ) ;
+
+    await waitFor( () => {
+      expect( screen.getByRole( "button" , { name: dict.settingsPage.categories.submitArchive } ) ).toBeTruthy() ;
+    } ) ;
+
+    const confirmBtn = screen.getByRole( "button" , { name: dict.settingsPage.categories.submitArchive } ) ;
+    fireEvent.click( confirmBtn ) ;
+
+    await waitFor( () => {
+      expect( screen.getByText( ERROR_SERVIDOR ) ).toBeTruthy() ;
+    } ) ;
+
+    expect( screen.getByText( dict.settingsPage.categories.archiveTitle.replace( "{name}" , "Vivienda" ) ) ).toBeTruthy() ;
+    expect( getCategoryTreeAction ).not.toHaveBeenCalled() ;
+  } ) ;
+
+  it( "el desarchivado rechazado muestra el error en el panel" , async () => {
+    vi.mocked( unarchiveCategoryAction ).mockResolvedValue( {
+      success: false ,
+      error:   ERROR_SERVIDOR ,
+    } ) ;
+
+    renderContainer( archivedTree ) ;
+
+    const unarchiveBtn = screen.getByRole( "button" , { name: dict.settingsPage.categories.unarchive } ) ;
+    fireEvent.click( unarchiveBtn ) ;
+
+    await waitFor( () => {
+      expect( screen.getByText( ERROR_SERVIDOR ) ).toBeTruthy() ;
+    } ) ;
+
+    expect( getCategoryTreeAction ).not.toHaveBeenCalled() ;
+  } ) ;
+
+  it( "el guardado de ícono y color rechazado conserva lo tipeado" , async () => {
+    vi.mocked( updateCategoryAction ).mockResolvedValue( {
+      success: false ,
+      error:   ERROR_SERVIDOR ,
+    } ) ;
+
+    renderContainer( sampleTree ) ;
+
+    const iconInput = screen.getByPlaceholderText( dict.settingsPage.categories.iconPlaceholder ) ;
+    fireEvent.change( iconInput , { target: { value: "briefcase" } } ) ;
+
+    const saveBtn = screen.getByRole( "button" , { name: dict.settingsPage.categories.save } ) ;
+    fireEvent.click( saveBtn ) ;
+
+    await waitFor( () => {
+      expect( screen.getByText( ERROR_SERVIDOR ) ).toBeTruthy() ;
+    } ) ;
+
+    expect( (iconInput as HTMLInputElement).value ).toBe( "briefcase" ) ;
+  } ) ;
+
+  it( "la casilla Ver archivadas vuelve atrás si la consulta falla" , async () => {
+    vi.mocked( getCategoryTreeAction ).mockResolvedValue( {
+      success: false ,
+      error:   ERROR_SERVIDOR ,
+    } ) ;
+
+    renderContainer( sampleTree ) ;
+
+    const checkbox = screen.getByLabelText( dict.settingsPage.categories.showArchived ) ;
+    fireEvent.click( checkbox ) ;
+
+    await waitFor( () => {
+      expect( screen.getByText( ERROR_SERVIDOR ) ).toBeTruthy() ;
+    } ) ;
+
+    expect( (checkbox as HTMLInputElement).checked ).toBe( false ) ;
+  } ) ;
+
+  it( "un refresco fallido tras archivar avisa en vez de callarse" , async () => {
+    vi.mocked( getCategoryMovementsCountAction ).mockResolvedValue( {
+      success: true ,
+      value:   14 ,
+    } ) ;
+
+    vi.mocked( archiveCategoryAction ).mockResolvedValue( {
+      success: true ,
+      value:   sampleTree[0] ,
+    } ) ;
+
+    vi.mocked( getCategoryTreeAction ).mockResolvedValue( {
+      success: false ,
+      error:   ERROR_SERVIDOR ,
+    } ) ;
+
+    renderContainer( sampleTree ) ;
+
+    const archiveBtns = screen.getAllByRole( "button" , { name: dict.settingsPage.categories.archive } ) ;
+    fireEvent.click( archiveBtns[0] ) ;
+
+    await waitFor( () => {
+      expect( screen.getByRole( "button" , { name: dict.settingsPage.categories.submitArchive } ) ).toBeTruthy() ;
+    } ) ;
+
+    const confirmBtn = screen.getByRole( "button" , { name: dict.settingsPage.categories.submitArchive } ) ;
+    fireEvent.click( confirmBtn ) ;
+
+    await waitFor( () => {
+      expect( archiveCategoryAction ).toHaveBeenCalledWith( { id: "cat-exp-1" } ) ;
+    } ) ;
+
+    expect( screen.getByText( ERROR_SERVIDOR ) ).toBeTruthy() ;
   } ) ;
 } ) ;

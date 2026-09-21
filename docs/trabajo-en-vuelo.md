@@ -17,19 +17,15 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 está consolidada a `master`**: el merge lo decide el usuario. Las ramas se encadenan; la historia es
 lineal, cero merge commits. **No cambiar de rama.**
 
-**Próximo paso:** ejecutar [`planes/fix-result-panel-categorias.md`](planes/fix-result-panel-categorias.md)
-— `CategoriesSettingsContainer` descarta el `Result` de tres acciones de escritura y se come el error
-de dos lecturas, así que cuando el servidor rechaza un archivado la UI cierra el modal y refresca como
-si hubiera funcionado. Es un defecto de UX preexistente, **no depende de ningún RFC**, y el barrido ya
-verificó que el resto del repo maneja bien el `Result`: el radio es un solo archivo de producción.
+**Próximo paso:** decidir la consolidación de ramas a `master` o la firma de los RFC 010 y 003 en `DRAFT`.
+El plan [`planes/fix-result-panel-categorias.md`](planes/fix-result-panel-categorias.md) quedó **ejecutado y verificado** el 2026-09-21: `CategoriesSettingsContainer` maneja el `Result` en sus tres escrituras y dos lecturas con estados diferenciados (`actionError` en panel y `formError` en modal), revierte la casilla «Ver archivadas» ante fallos de lectura, y suma 5 tests nuevos (8 en total) en `CategoriesSettingsContainer.test.tsx`. Se abrió viñeta de deuda por CSS inline estático en `TECHNICAL_DEBT.md`.
 
 **Lo que sigue esperando tu firma** son los **RFC 010** (patrimonio físico) y **RFC 003** (división de
-gastos por eventos), los dos en `DRAFT`. Esta tanda avanza en paralelo porque no los toca.
+gastos por eventos), los dos en `DRAFT`. Esta tanda avanzó en paralelo porque no los toca.
 
 La tanda de i18n de categorías quedó **ejecutada y verificada** el 2026-09-21
 ([`planes/feat-i18n-categorias.md`](planes/feat-i18n-categorias.md)): `/settings` queda completamente
-internacionalizado y la deuda del §3 de `TECHNICAL_DEBT.md` cerrada. 485 tests en 68 archivos, 0
-ESLint, 0 TS, build verde.
+internacionalizado y la deuda del §3 de `TECHNICAL_DEBT.md` cerrada.
 
 ---
 

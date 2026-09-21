@@ -41,6 +41,7 @@ export function CategoriesSettingsContainer( {
   const t = dict.settingsPage.categories ;
   const [ tree , setTree ]                                 = useState< CategoryTreeNode[] >( initialTree ) ;
   const [ isActionLoading , setIsActionLoading ]           = useState( false ) ;
+  const [ actionError , setActionError ]                   = useState< string | null >( null ) ;
   const [ searchTerm , setSearchTerm ]                     = useState( "" ) ;
   const [ showArchived , setShowArchived ]                 = useState( false ) ;
   const [ selectedParentId , setSelectedParentId ]         = useState< string | null >( () => {
@@ -67,12 +68,16 @@ export function CategoriesSettingsContainer( {
 
   // Recarga del árbol según la casilla "Ver archivadas"
   const handleToggleArchived = async ( checked: boolean ) => {
+    setActionError( null ) ;
     setShowArchived( checked ) ;
     setIsActionLoading( true ) ;
     try {
       const res = await getCategoryTreeAction( { includeArchived: checked } ) ;
       if( res.success ) {
         setTree( res.value ) ;
+      } else {
+        setShowArchived( !checked ) ;
+        setActionError( res.error ) ;
       }
     } finally {
       setIsActionLoading( false ) ;
@@ -84,6 +89,8 @@ export function CategoriesSettingsContainer( {
     const res = await getCategoryTreeAction( { includeArchived: showArchived } ) ;
     if( res.success ) {
       setTree( res.value ) ;
+    } else {
+      setActionError( res.error ) ;
     }
   } ;
 
@@ -116,6 +123,7 @@ export function CategoriesSettingsContainer( {
   const handleOpenArchiveModal = async ( id: string , name: string , isParent: boolean ) => {
     setArchiveTargetCat( { id , name , isParent } ) ;
     setArchiveMovementsCount( null ) ;
+    setFormError( "" ) ;
     setIsCheckingCount( true ) ;
 
     try {
@@ -136,9 +144,16 @@ export function CategoriesSettingsContainer( {
     }
 
     const catId = archiveTargetCat.id ;
+    setFormError( "" ) ;
+    setActionError( null ) ;
     setIsActionLoading( true ) ;
     try {
-      await archiveCategoryAction( { id: catId } ) ;
+      const res = await archiveCategoryAction( { id: catId } ) ;
+      if( !res.success ) {
+        setFormError( res.error ) ;
+        return ;
+      }
+
       await refreshTree() ;
       setArchiveTargetCat( null ) ;
     } finally {
@@ -147,9 +162,15 @@ export function CategoriesSettingsContainer( {
   } ;
 
   const handleUnarchive = async ( id: string ) => {
+    setActionError( null ) ;
     setIsActionLoading( true ) ;
     try {
-      await unarchiveCategoryAction( { id } ) ;
+      const res = await unarchiveCategoryAction( { id } ) ;
+      if( !res.success ) {
+        setActionError( res.error ) ;
+        return ;
+      }
+
       await refreshTree() ;
     } finally {
       setIsActionLoading( false ) ;
@@ -274,13 +295,20 @@ export function CategoriesSettingsContainer( {
       return ;
     }
 
+    setActionError( null ) ;
     setIsActionLoading( true ) ;
     try {
-      await updateCategoryAction( {
+      const res = await updateCategoryAction( {
         id:    activeParent.id ,
         icon:  ( quickIcon.trim() || null ) ,
         color: ( quickColor.trim() || null ) ,
       } ) ;
+
+      if( !res.success ) {
+        setActionError( res.error ) ;
+        return ;
+      }
+
       setCustomVisuals( null ) ;
       await refreshTree() ;
     } finally {
@@ -328,6 +356,8 @@ export function CategoriesSettingsContainer( {
           </Button>
         </div>
       </div>
+
+      {actionError && <FormError error={actionError} />}
 
       {/* Disposición en dos columnas */}
       <div className={styles.twoColumnsLayout}>
@@ -730,6 +760,8 @@ export function CategoriesSettingsContainer( {
         subtitle={t.archiveSubtitle}
       >
         <div className={styles.archiveModalContent}>
+          {formError && <FormError error={formError} />}
+
           <p className={styles.archiveWarning}>
             {archiveTargetCat?.isParent ? (
               <>
