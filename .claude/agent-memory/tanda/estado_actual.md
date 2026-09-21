@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-# Estado al cerrar la ronda del 2026-09-21 (i18n de categorías ejecutada y verificada)
+# Estado al cerrar la ronda del 2026-09-21 (i18n verificada + plan de cabos entregado)
 
 **Contrastar con `git log` antes de actuar: esto se desactualiza rápido.**
 
@@ -14,7 +14,8 @@ metadata:
 ```
 master                          1dbc993   RFC 008 consolidado. NO PUSHEADO: origin/master sigue en 07aadb3
 docs/rfc-010-patrimonio-fisico  c15bfd0   los dos RFC reescritos. SIN CONSOLIDAR a master
-feat/i18n-categorias            (punta)   rama activa: i18n de categorías, ejecutada y verificada
+feat/i18n-categorias            d5985a6   i18n de categorías, ejecutada y verificada
+fix/result-panel-categorias     916dd7a   rama activa: el plan de los Result descartados, sin ejecutar
 ```
 
 **El push sigue pendiente y es del usuario** — van trece commits de ventaja sobre `origin/master`.
@@ -64,12 +65,13 @@ decisiones del usuario y los datos que el contraste dejó verificados.
 *   **Aprobar o corregir los RFC 010 y 003.** Es del usuario; ningún agente aprueba un RFC. Hasta que
     alguno pase a `APPROVED` no hay código que escribir contra ellos. Es lo que `trabajo-en-vuelo.md`
     declara hoy como próximo paso.
-*   **Los `Result` descartados de `CategoriesSettingsContainer`** (`handleConfirmArchive` y
-    `handleUnarchive`): llaman a la acción sin mirar `res.success`, así que si el servidor rechaza la
-    UI cierra el modal y refresca como si hubiera funcionado. Defecto **preexistente**, detectado al
-    investigar la i18n y dejado fuera de esa tanda a propósito. Es el candidato más concreto a una
-    **ronda de cabos**, y conviene barrer el resto de los contenedores buscando el mismo patrón antes
-    de planificarla.
+*   ~~**Los `Result` descartados de `CategoriesSettingsContainer`**~~ — **ya no está sobre la mesa:
+    tiene plan entregado**, `docs/planes/fix-result-panel-categorias.md`, en la rama
+    `fix/result-panel-categorias`. El barrido cerró el radio en **un solo archivo de producción**: son
+    **cinco** sitios, no dos —tres escrituras (`handleConfirmArchive`, `handleUnarchive`,
+    `handleApplyVisualChanges`) y dos lecturas (`refreshTree`, `handleToggleArchived`)—. **El resto del
+    repo maneja bien el `Result`**, verificado con cuatro barridos distintos; los `.then()` de
+    `useSubscriptions` y los `Promise.all` de las ocho `page.tsx` chequean todos.
 *   **La página de estadísticas**: sin RFC y sin nombre de ruta. Le llegan **tres** encargos, no uno:
     el Patrimonio Neto que el 024 desaloja de `/accounts` —que **se queda ahí hasta entonces**—, la
     convención de signo de `monthly_summaries` (§9 del 024), la brecha del §9 del 008 (un préstamo
@@ -81,6 +83,10 @@ decisiones del usuario y los datos que el contraste dejó verificados.
     la UI pinta cruda. **Exige RFC propio** que fije el contrato (código + parámetros) y su mapeo en
     los tres diccionarios. Anotada en `TECHNICAL_DEBT.md` §3 el 2026-09-20. Ver
     [[i18n-panel-de-categorias]].
+*   **CSS inline estático contra el §4**, destapado por el barrido del 2026-09-21: verificados a mano
+    `PendingInstallmentsInbox.tsx:156,221,237`, `CardFormModal.tsx:198`, `InstallmentPlansModal.tsx:112`
+    y `CardVisual.tsx:79`. Una heurística marca ~22 en 13 archivos **con falsos positivos**
+    (`style={cardStyle}` es dinámico). Queda anotado como deuda en el paso 7 de ese plan.
 *   `dict?:` opcional heredado, **5 declaraciones en 4 archivos**.
 *   Las rutas del mock sin RFC: `/reportes`, `/configuracion`, `/mejorar-plan`. **`/patrimonio` ya no
     está en esa lista**: tiene el 010, aunque su ruta en inglés no se eligió todavía.
