@@ -12,26 +12,33 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `master`. **No hay nada en vuelo:** las tres ramas encadenadas
-—`docs/rfc-010-patrimonio-fisico` → `feat/i18n-categorias` → `fix/result-panel-categorias`— se
-consolidaron el 2026-09-21 por fast-forward puro y se borraron. La historia sigue estrictamente
-lineal, cero merge commits.
+**Rama activa:** `fix/resumenes-mensuales`, creada el 2026-09-21 sobre `master` ya consolidado. La
+historia sigue lineal, cero merge commits. **No cambiar de rama.**
 
-Lo cerrado quedó congelado en
-[`registro/2026-09-21-cierre-categorias-y-rfc-010-003.md`](registro/2026-09-21-cierre-categorias-y-rfc-010-003.md)
-(`1dbc993..0428b22`): la reescritura de los RFC 010 y 003, la i18n del panel de categorías y el
-manejo del `Result` en ese mismo panel. **490 tests en 68 archivos, 0 ESLint, 0 TS, build verde**,
-verificado por `verificador` al cerrar cada tanda.
+**Próximo paso:** ejecutar [`planes/fix-resumenes-mensuales.md`](planes/fix-resumenes-mensuales.md).
+**Nadie escribió nunca la derivación de un resumen mensual a partir del libro**: en producción
+`monthly_summaries` no se llena jamás —navegar a un mes pasado muestra todo en cero— y en la demo el
+seed **inventa los números con `Math.random()`**, así que el gráfico de tendencia no tiene relación
+con las transacciones que el propio seed cargó. Encima el sparkline mezcla dos magnitudes: patrimonio
+neto en los puntos históricos y suma de activos en el del mes actual.
 
-**Próximo paso: aprobar o corregir los RFC 010 y 012.** Son las dos decisiones que bloquean código, y
-son tuyas: ningún agente aprueba un RFC. **El RFC 003 ya no está en esa cola** — ver abajo.
+> **Decisión del usuario (2026-09-21):** `balanceSnapshot` significa **liquidez**, la suma de las
+> cuentas de tipo `asset`. Eso cierra **parcialmente** el §9 del RFC 024 —queda abierta la convención
+> de presentación de los pasivos, que pertenece a la propuesta de estadísticas—. **El RFC 024 no se
+> edita: es texto `APPROVED`.**
 
-> **El RFC 010 está en `master` y en `DRAFT` al mismo tiempo, y eso es deliberado.** Entró con la
-> consolidación porque la cadena de ramas es lineal, **no porque esté aprobado**: no habilita una
-> línea de código. Bajó de `APPROVED` a `DRAFT` el 2026-09-12 porque llevaba quince meses aprobado
-> sin implementar, autorizando formalmente el esquema equivocado — la trampa que ya se cobró el
-> RFC 006 y el RFC 015. El porqué y las cinco decisiones del usuario están en el registro de cierre y
-> en el §0 de [`010-wealth-assets-management.md`](proposals/010-wealth-assets-management.md).
+**Por qué esta tanda y no otra:** de los 40 commits anteriores, sólo 8 tocaron `src/`. Ésta es
+chica, se verifica sola y arregla algo que ya se usa todos los días.
+
+---
+
+### Lo que espera tu firma
+
+**RFC 010** (patrimonio físico) y **RFC 012** (API de ingreso de asientos), los dos en `DRAFT`. Ninguno
+bloquea la tanda en curso. El **RFC 026** (integraciones salientes) **no es aprobable todavía**: su §3
+declara que el repositorio no puede cifrar credenciales.
+
+---
 
 ### Dos decisiones del usuario del 2026-09-21
 

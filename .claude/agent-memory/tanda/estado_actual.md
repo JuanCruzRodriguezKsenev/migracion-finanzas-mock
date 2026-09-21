@@ -9,10 +9,11 @@ metadata:
 
 **Contrastar con `git log` antes de actuar: esto se desactualiza rápido.**
 
-## Ramas: no hay ninguna. Todo está en `master`
+## Ramas
 
 ```
-master  ee3949d  las tres ramas encadenadas, consolidadas por fast-forward el 2026-09-21
+master                     c8633e0   consolidado y PUSHEADO el 2026-09-21
+fix/resumenes-mensuales    (activa)  el plan de los resúmenes derivados, sin ejecutar
 ```
 
 `docs/rfc-010-patrimonio-fisico`, `feat/i18n-categorias` y `fix/result-panel-categorias` se
@@ -41,7 +42,30 @@ falta para arrancar la próxima ronda.
     que un banner del panel puede sobrevivir a un alta exitosa posterior. El plan les prohibió
     tocarlos, con razón.
 
-## El próximo paso es del usuario: firmar o corregir el RFC 010
+## La ronda en curso: los resúmenes mensuales
+
+`docs/planes/fix-resumenes-mensuales.md`, entregado el 2026-09-21 y **sin ejecutar**.
+
+**El usuario dijo que siente que no progresa, y tenía razón: de 40 commits, 8 tocaron `src/`.** Esa
+medición es la que reordenó las prioridades — los dos RFC en `DRAFT` no cambian nada de lo que se ve,
+y bajaron del podio.
+
+**El hallazgo:** *nadie escribió nunca la derivación de un resumen mensual a partir del libro.*
+`monthlySummaryRepository.create()` existe y **ninguna acción lo llama**; el único `insert` vive en
+`seed.ts:447` y **los valores los inventa con `Math.random()`** (`:437-443`). En producción la tabla
+no se llena jamás y navegar a un mes pasado muestra todo en cero (`page.tsx:149`).
+
+**Decisión del usuario:** `balanceSnapshot` = **liquidez**, suma de cuentas `asset`. Con eso el
+sparkline queda coherente **sin tocar `calcularSparklineBalance`**, porque el punto vivo ya mide eso
+(`dashboardMetrics.ts:40`) — el defecto era la definición, no el código. Cierra parcialmente el §9 del
+RFC 024; la convención de presentación de los pasivos sigue abierta y **ese RFC no se edita**.
+
+**Lo que dejó verificado y sirve para la página de estadísticas:** el dashboard usa `balanceSnapshot`,
+`totalRevenue` y `totalExpense`; **`assetsSnapshot` y `liabilitiesSnapshot` no los lee nadie**. Y
+`calcularBalanceTotal` **suma divisas distintas** sin mirar `currency`: deuda declarada en el paso 7
+del plan.
+
+## Después de esa tanda: firmar o corregir el RFC 010
 
 Está **en `master` y en `DRAFT` al mismo tiempo**, y es deliberado: entró con la consolidación porque
 la cadena es lineal, **no porque esté aprobado**. No habilita una línea de código. Ver
