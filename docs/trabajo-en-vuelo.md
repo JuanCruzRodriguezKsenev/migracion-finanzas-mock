@@ -12,8 +12,23 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `docs/rfc-010-patrimonio-fisico`, creada el 2026-09-11 sobre `master` ya
-consolidado. **No cambiar de rama.**
+**Rama activa:** `feat/i18n-categorias`, creada el 2026-09-20 sobre
+`docs/rfc-010-patrimonio-fisico` — que sigue **sin consolidar a `master`** porque el merge lo decide
+el usuario. Las ramas se encadenan; la historia es lineal, cero merge commits. **No cambiar de rama.**
+
+**Próximo paso:** ejecutar [`planes/feat-i18n-categorias.md`](planes/feat-i18n-categorias.md) —
+internacionalizar `CategoriesSettingsContainer`, el último resto de i18n de `/settings`. Es la tanda
+de código que estaba lista para plan, y **no depende de ningún RFC**: no agrega comportamiento,
+traduce el que ya existe. Alcance acotado a seis archivos; los 23 `fail()` de `categoryActions.ts`
+quedan **fuera por decisión del usuario del 2026-09-20** y se declaran como deuda nueva.
+
+---
+
+### Lo que sigue esperando tu firma
+
+**Los RFC 010 y 003 siguen en `DRAFT`.** Nada de lo de abajo cambió: hasta que alguno pase a
+`APPROVED` no hay código que escribir contra ellos. La tanda de i18n avanza en paralelo justamente
+porque no los toca.
 
 **Estado:** 🟢 **La sesión de diseño del 2026-09-09 quedó cerrada del todo.** Sus siete propuestas
 están escritas: las dos que faltaban —**RFC 010** (patrimonio físico) y **RFC 003** (división de
@@ -26,8 +41,8 @@ reescritura completa**, y las dos quedan en **`DRAFT`**, que es una bajada delib
 > del RFC 008 documentó por tercera vez. Un texto en `DRAFT` no autoriza nada, que es estrictamente
 > mejor que un texto aprobado que autoriza lo incorrecto.
 
-**Próximo paso:** **el usuario aprueba o corrige los dos RFC.** Hasta que alguno pase a `APPROVED`,
-no hay código que escribir contra ellos y no hay plan que pasarle a `obra`.
+**Los dos RFC esperan que el usuario los apruebe o corrija.** Hasta que alguno pase a `APPROVED`,
+no hay código que escribir contra ellos.
 
 ### Lo que el contraste encontró, y que la sesión de diseño no había visto
 
@@ -89,9 +104,11 @@ Con `AskUserQuestion`, una pregunta por vez, y eligió la recomendada en las cin
     **Le llegan dos encargos más:** la brecha del §9 del RFC 008 —un préstamo registra el pasivo
     completo el día uno y una compra en cuotas no— y ahora el patrimonio físico del 010, que es la
     razón por la que el 010 fue antes que ella.
-3.  **Internacionalizar `CategoriesSettingsContainer`** — 766 líneas de español directo en buscador,
-    modales y confirmaciones. Es el único resto de i18n de `/settings`
-    ([`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §3). **Es la única tanda de código lista para plan.**
+3.  **Internacionalizar `CategoriesSettingsContainer`** — **en curso**, plan escrito en
+    [`planes/feat-i18n-categorias.md`](planes/feat-i18n-categorias.md) y rama `feat/i18n-categorias`.
+    766 líneas de español directo en buscador, modales y confirmaciones: 58 textos distintos que
+    pasan a `settingsPage.categories` en los tres diccionarios. Es el único resto de i18n de
+    `/settings` ([`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §3).
 4.  **El neto por contacto en `/contacts`** — hoy no muestra un solo importe. Lo dejan abierto el §9
     del RFC 008 y ahora también el §9 del RFC 003: **cuando se escriba tiene que sumar las dos
     fuentes**, préstamos y eventos, o mostrará la mitad del cuadro.
