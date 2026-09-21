@@ -18,12 +18,14 @@ feat/i18n-categorias            d5985a6   i18n de categorías, ejecutada y verif
 fix/result-panel-categorias     916dd7a   rama activa: el plan de los Result descartados, sin ejecutar
 ```
 
-**El push sigue pendiente y es del usuario** — van trece commits de ventaja sobre `origin/master`.
+**El push sigue pendiente y es del usuario** — la punta de `fix/result-panel-categorias` va **19 commits**
+adelante de `origin/master` (07aadb3), y `master` local va 10. Contarlo con `git rev-list --count
+origin/master..HEAD`, no de memoria: ya estuvo mal anotado dos veces.
 `git log --merges` sigue vacío: la historia es estrictamente lineal.
 
 **Las ramas se encadenan, no salen todas de `master`.** `feat/i18n-categorias` se creó sobre
 `docs/rfc-010-patrimonio-fisico` sin mergear nada: el merge lo decide el usuario, y los RFC 010 y 003
-siguen esperando su firma. **Ninguna de las dos ramas está consolidada**, y la de i18n ya está verde y
+siguen esperando su firma. **Ninguna de las tres ramas está consolidada**, y la de i18n ya está verde y
 lista para que el usuario decida el fast-forward.
 
 ## La tanda de i18n quedó cerrada y verificada de forma independiente
