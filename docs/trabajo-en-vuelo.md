@@ -12,99 +12,33 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 
 ## Rama y próximo paso
 
-**Rama activa:** `fix/result-panel-categorias`, creada el 2026-09-21 sobre
-`feat/i18n-categorias`, que a su vez sale de `docs/rfc-010-patrimonio-fisico`. **Ninguna de las tres
-está consolidada a `master`**: el merge lo decide el usuario. Las ramas se encadenan; la historia es
-lineal, cero merge commits. **No cambiar de rama.**
+**Rama activa:** `master`. **No hay nada en vuelo:** las tres ramas encadenadas
+—`docs/rfc-010-patrimonio-fisico` → `feat/i18n-categorias` → `fix/result-panel-categorias`— se
+consolidaron el 2026-09-21 por fast-forward puro y se borraron. La historia sigue estrictamente
+lineal, cero merge commits.
 
-**Próximo paso:** decidir la consolidación de las tres ramas a `master`, o la firma de los RFC 010 y
-003 en `DRAFT`. **Las dos son tuyas: no hay trabajo de agente pendiente.**
+Lo cerrado quedó congelado en
+[`registro/2026-09-21-cierre-categorias-y-rfc-010-003.md`](registro/2026-09-21-cierre-categorias-y-rfc-010-003.md)
+(`1dbc993..0428b22`): la reescritura de los RFC 010 y 003, la i18n del panel de categorías y el
+manejo del `Result` en ese mismo panel. **490 tests en 68 archivos, 0 ESLint, 0 TS, build verde**,
+verificado por `verificador` al cerrar cada tanda.
 
-El plan [`planes/fix-result-panel-categorias.md`](planes/fix-result-panel-categorias.md) quedó
-**ejecutado y verificado de forma independiente** el 2026-09-21: `CategoriesSettingsContainer` maneja
-el `Result` en sus tres escrituras y sus dos lecturas con estados diferenciados —`actionError` en el
-panel, `formError` en el modal—, revierte la casilla «Ver archivadas» cuando la lectura falla, y suma
-5 tests nuevos (8 en el archivo). **490 tests en 68 archivos, 0 ESLint, 0 TS, build verde.** De paso se
-abrió la deuda del CSS inline estático en [`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §1.
+**Próximo paso: aprobar o corregir los RFC 010 y 003.** Es la decisión que bloquea todo lo que sigue,
+y es tuya: ningún agente aprueba un RFC.
 
-**Lo que sigue esperando tu firma** son los **RFC 010** (patrimonio físico) y **RFC 003** (división de
-gastos por eventos), los dos en `DRAFT`. Esta tanda avanzó en paralelo porque no los toca.
+> **Los dos RFC están en `master` y en `DRAFT` al mismo tiempo, y eso es deliberado.** Entraron con la
+> consolidación porque la cadena de ramas es lineal, **no porque estén aprobados**: no habilitan una
+> línea de código. Bajaron de `APPROVED` a `DRAFT` el 2026-09-12 porque llevaban quince meses
+> aprobados sin implementar, autorizando formalmente el esquema equivocado — la trampa que ya se
+> cobró el RFC 006 y el RFC 015. El porqué completo y las cinco decisiones del usuario están en el
+> registro de cierre y en el §0 de cada RFC:
+> [`010-wealth-assets-management.md`](proposals/010-wealth-assets-management.md) y
+> [`003-event-splitting.md`](proposals/003-event-splitting.md).
 
-La tanda de i18n de categorías quedó **ejecutada y verificada** el 2026-09-21
-([`planes/feat-i18n-categorias.md`](planes/feat-i18n-categorias.md)): `/settings` queda completamente
-internacionalizado y la deuda del §3 de `TECHNICAL_DEBT.md` cerrada.
+**El push sigue pendiente y es tuyo:** `master` va **24 commits** adelante de `origin/master`
+(`07aadb3`). Contarlo con `git rev-list --count origin/master..HEAD`, no de memoria.
 
 ---
-
-### Lo que sigue esperando tu firma
-
-**Los RFC 010 y 003 siguen en `DRAFT`.** Nada de lo de abajo cambió: hasta que alguno pase a
-`APPROVED` no hay código que escribir contra ellos. La tanda de i18n avanza en paralelo justamente
-porque no los toca.
-
-**Estado:** 🟢 **La sesión de diseño del 2026-09-09 quedó cerrada del todo.** Sus siete propuestas
-están escritas: las dos que faltaban —**RFC 010** (patrimonio físico) y **RFC 003** (división de
-gastos por eventos)— se cerraron el 2026-09-12. **Ninguna de las dos salió enmienda: las dos salieron
-reescritura completa**, y las dos quedan en **`DRAFT`**, que es una bajada deliberada de sello.
-
-> **Por qué bajarles el sello importa más que subirlo.** Las dos estaban `APPROVED` desde el
-> 2026-06-23 y ninguna estaba implementada, así que durante quince meses **autorizaron formalmente a
-> escribir el esquema equivocado**. Es la trampa que ya se cobró el RFC 006 y el RFC 015, y que el §0
-> del RFC 008 documentó por tercera vez. Un texto en `DRAFT` no autoriza nada, que es estrictamente
-> mejor que un texto aprobado que autoriza lo incorrecto.
-
-**Los dos RFC esperan que el usuario los apruebe o corrija.** Hasta que alguno pase a `APPROVED`,
-no hay código que escribir contra ellos.
-
-### Lo que el contraste encontró, y que la sesión de diseño no había visto
-
-La sesión de diseño pedía «contrastar los tipos de las columnas». Debajo de eso había dos agujeros
-estructurales, uno por RFC, y son los que obligaron a reescribir en vez de enmendar:
-
-*   **RFC 010 — el activo nunca entraba al libro.** Un departamento de USD 100.000 no aparecía en el
-    patrimonio neto, porque `AccountsContainer.tsx:97-98` lo calcula sumando `accounts.balance` y ese
-    departamento no tenía cuenta. Además el RFC decía vincular cada movimiento «al ID del activo», y
-    **`ledgerTransactions` no tiene ninguna columna de instrumento** (`:82-102`): el vínculo con un
-    instrumento *es la cuenta contable*. Es la misma clase de error que el `remainingBalance` del 008
-    de junio — dinero modelado fuera del libro.
-*   **RFC 003 — el evento era un segundo libro.** Repartía plata entre participantes y la resolvía
-    cambiando un `status`, sin emitir un solo asiento; y su §4 mandaba que al confirmar «la deuda
-    contable **se elimina**», cuando el libro es inmutable y `ledgerTransactions:90-93` lo dice en el
-    propio esquema. Aparte, **ninguna de sus cuatro tablas llevaba `organizationId`** y los
-    participantes se modelaban contra `users` en vez de `contacts`.
-
-**Y un error de conteo que circulaba por tres documentos:** el RFC 024 §9, la sesión de diseño y este
-mismo doc decían que el RFC 010 tenía **siete** columnas monetarias en `integer`. **Son cuatro**
-(`purchase_price`, `value`, `rent_amount`, `cost`); `square_meters` y `year` también son `integer` y
-está bien que lo sean, porque no son dinero. El número se propagó de documento en documento sin que
-nadie lo contara contra el archivo. Corregido en la sesión de diseño y acá; **en el RFC 024 no, que
-es texto `APPROVED` y no se edita** — la discrepancia queda advertida en el §0 del 010.
-
-### Las cinco decisiones que el usuario cerró el 2026-09-12
-
-Con `AskUserQuestion`, una pregunta por vez, y eligió la recomendada en las cinco.
-
-1.  **El revalúo va contra patrimonio, no contra resultados.** Debe Activo / Haber `Reserva por
-    revalúo` (equity). Si fuera contra una cuenta `4.x`, los USD 25.000 de una revalorización
-    aparecerían como **ingreso del mes** en la página de estadísticas, distorsionando sus cinco
-    métricas con plata que no entró a ninguna cuenta.
-2.  **El RFC 010 se acota al núcleo patrimonial.** Activos, valuaciones e imágenes. **Inquilinos e
-    incidencias escindidos** a propuestas propias, con el precedente del 008, que escindió las cuotas
-    al 025. Un contrato de alquiler no es una tabla: es el motor de recurrencias del RFC 023 entero.
-3.  **La cuenta del activo nace con `getNextCode( "asset" )`**, o sea `1.1.01.NN`, igual que tarjetas
-    y préstamos. Contablemente un inmueble es activo **no** corriente, pero el repositorio no
-    distingue corriente de no corriente **para nadie**: usar `1.1.01` mantiene la regla en vez de
-    abrir una excepción. **Deuda declarada**, no resuelta.
-4.  **El vínculo activo↔cuenta es una columna `accountId`, no una tabla puente.** Único apartamiento
-    deliberado del RFC 024 §4, y el motivo es que dos cuentas espejo sobre el mismo inmueble lo
-    meterían **dos veces** en el patrimonio neto. Con columna 1:1 eso es imposible por construcción;
-    con tabla puente sería apenas una prohibición escrita, porque el `unique (assetId, currency)` de
-    los otros instrumentos no impide la segunda fila.
-5.  **El evento toca el libro sólo al cobrar**, contra `4.1.05 Reintegros y devoluciones`, que **ya
-    existe** (`initialCatalog.ts:220`). El gasto entró por su camino normal cuando se pagó; el evento
-    sólo reparte. Se descartó apoyarse en `loans` con `direction: 'lent'` —que modela lo mismo— por
-    un detalle de implementación: `loansActions.ts:141` crea **una cuenta contable por préstamo**, y
-    diez asados con cuatro amigos serían cuarenta cuentas en el plan.
 
 ### La secuencia que queda
 
@@ -116,14 +50,13 @@ Con `AskUserQuestion`, una pregunta por vez, y eligió la recomendada en las cin
     **Le llegan dos encargos más:** la brecha del §9 del RFC 008 —un préstamo registra el pasivo
     completo el día uno y una compra en cuotas no— y ahora el patrimonio físico del 010, que es la
     razón por la que el 010 fue antes que ella.
-3.  ~~**Internacionalizar `CategoriesSettingsContainer`**~~ — **resuelto el 2026-09-20**, ejecutado
-    [`planes/feat-i18n-categorias.md`](planes/feat-i18n-categorias.md) en la rama `feat/i18n-categorias`.
-    Sus 58 textos viven en `settingsPage.categories` en los tres diccionarios y el componente recibe `dict`
-    obligatoria. Cierra el resto de i18n de `/settings` ([`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §3).
-4.  **El neto por contacto en `/contacts`** — hoy no muestra un solo importe. Lo dejan abierto el §9
+3.  **El neto por contacto en `/contacts`** — hoy no muestra un solo importe. Lo dejan abierto el §9
     del RFC 008 y ahora también el §9 del RFC 003: **cuando se escriba tiene que sumar las dos
     fuentes**, préstamos y eventos, o mostrará la mitad del cuadro.
-5.  **Inquilinos, incidencias y cap rate**, escindidos del 010 (§8 de ese RFC).
+4.  **Inquilinos, incidencias y cap rate**, escindidos del 010 (§8 de ese RFC).
+5.  **Los `Result.error` como códigos y no como frases en español** — 201 `fail()` en 13 archivos.
+    **Exige RFC propio**: hasta que exista, toda pantalla internacionalizada queda a medias en cuanto
+    el servidor rechaza algo ([`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) §3).
 
 Más atrás: las **5 declaraciones de `dict?:` opcional heredadas** (`ContactsTable.tsx:26`,
 `PaymentMethodsPanel.tsx:45`, `ContactFormModal.tsx:26` y `:43`, `MonthSelector.tsx:39`).
@@ -140,7 +73,9 @@ Más atrás: las **5 declaraciones de `dict?:` opcional heredadas** (`ContactsTa
 [`2026-09-11-cierre-rfc025.md`](registro/2026-09-11-cierre-rfc025.md)
 (`07aadb3..94c02b4`) y
 [`2026-09-11-cierre-rfc008.md`](registro/2026-09-11-cierre-rfc008.md)
-(`129a2f9..99deff1`).
+(`129a2f9..99deff1`) y
+[`2026-09-21-cierre-categorias-y-rfc-010-003.md`](registro/2026-09-21-cierre-categorias-y-rfc-010-003.md)
+(`1dbc993..0428b22`).
 
 ---
 
