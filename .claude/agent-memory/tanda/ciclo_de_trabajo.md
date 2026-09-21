@@ -37,6 +37,15 @@ entera. Si el plan nombra una rama, esa rama existe **antes** de que el bloque d
     commit; y las secciones cerradas se podan de `trabajo-en-vuelo.md`, que sólo lleva lo vivo.
     Modelo a copiar: `docs/registro/2026-09-06-cierre-tandas-0-a-g.md`.
 *   **El merge lo decide el usuario.** No consolidar por cuenta propia aunque la rama esté verde.
+*   **Al contar los commits que quedan sin pushear, sumar el del registro de cierre.** El doc de
+    estado se escribe *antes* de ese commit, así que el número que uno ve con
+    `git rev-list --count origin/master..HEAD` todavía no lo incluye. Pasó el 2026-09-21: quedó 23
+    donde eran 24. Es el mismo error que el total de tests mal predicho, en otra columna.
+*   **Consolidar varias ramas encadenadas es un solo fast-forward, no tres.** El 2026-09-21 las tres
+    ramas se cerraron con `git merge --ff-only` sobre la última de la cadena; las otras dos ya eran
+    ancestros. Comprobarlo antes con `git merge-base --is-ancestor master HEAD`. **Y decir en el
+    registro qué arrastra la cadena:** ese cierre metió a `master` dos RFC en `DRAFT`, que no
+    habilitan código, y callarlo habría hecho parecer que estaban aprobados.
 
 ## Qué forma de plan ya salió sin defectos
 
