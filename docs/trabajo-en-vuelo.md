@@ -23,8 +23,8 @@ Lo cerrado quedó congelado en
 manejo del `Result` en ese mismo panel. **490 tests en 68 archivos, 0 ESLint, 0 TS, build verde**,
 verificado por `verificador` al cerrar cada tanda.
 
-**Próximo paso: aprobar o corregir el RFC 010.** Es la decisión que bloquea todo lo que sigue, y es
-tuya: ningún agente aprueba un RFC. **El RFC 003 ya no está en esa cola** — ver abajo.
+**Próximo paso: aprobar o corregir los RFC 010 y 012.** Son las dos decisiones que bloquean código, y
+son tuyas: ningún agente aprueba un RFC. **El RFC 003 ya no está en esa cola** — ver abajo.
 
 > **El RFC 010 está en `master` y en `DRAFT` al mismo tiempo, y eso es deliberado.** Entró con la
 > consolidación porque la cadena de ramas es lineal, **no porque esté aprobado**: no habilita una
@@ -52,6 +52,17 @@ algoritmo de reparto— es la herencia de la que arranca esa aplicación.
 > 010 y el 003 antes de que nadie escriba ese endpoint**, y hoy su sello autoriza a escribirlo con el
 > modelo viejo.
 
+**3. El RFC 012 se contrastó y se reescribió**, y quedó en `DRAFT` esperando tu firma. Cuatro
+decisiones: se partió en dos —lo saliente al **RFC 026**—; el endpoint habla en **vocabulario de
+dominio direccionado por código de categoría**, no en partida doble cruda, así que la aplicación
+satelital no necesita conocer el plan de cuentas; la idempotencia va en **dos capas**; y
+`idempotency_keys` gana `organizationId` ahora que no la usa nadie, porque su clave primaria global
+deja que dos organizaciones colisionen.
+
+> **Hallazgo de esa ronda:** `idempotency_keys` y `executeIdempotent()` **ya están implementados** y
+> **no los usa nadie** —cero consumidores—. Son maquinaria construida para este endpoint, que nunca
+> existió. No hay que escribirlos: hay que cablearlos y arreglarles el alcance.
+
 **2. `/contacts` no muestra importes.** Es la libreta de contactos y nada más: sin saldos, sin deudas,
 sin netos. Eso vive en las pantallas que son sobre plata. **No hay nada que deshacer** —`/contacts`
 hoy no muestra un solo importe, verificado en sus cinco componentes—: cancela trabajo futuro. El §9
@@ -75,8 +86,11 @@ lo escribe ya lo deja viejo: se cuenta en el momento, con
     **Le llegan dos encargos más:** la brecha del §9 del RFC 008 —un préstamo registra el pasivo
     completo el día uno y una compra en cuotas no— y ahora el patrimonio físico del 010, que es la
     razón por la que el 010 fue antes que ella.
-3.  **Contrastar y reescribir el RFC 012** si se quiere la aplicación de eventos, o cualquier otra
-    satelital: es la puerta de entrada de asientos externos y hoy está aprobada sin construir.
+3.  **Aprobar o corregir el RFC 012**, reescrito el 2026-09-21 y hoy en `DRAFT`. Es la puerta de
+    entrada de asientos externos: lo que habilita la aplicación de eventos y cualquier otra satelital.
+    Su mitad saliente —bancos y cotizaciones— se escindió al **RFC 026**, que queda `DRAFT` y **no es
+    aprobable todavía**: su §3 declara un bloqueante real, que el repositorio no puede cifrar
+    credenciales hoy.
 4.  **Inquilinos, incidencias y cap rate**, escindidos del 010 (§8 de ese RFC).
 5.  **Los `Result.error` como códigos y no como frases en español** — 201 `fail()` en 13 archivos.
     **Exige RFC propio**: hasta que exista, toda pantalla internacionalizada queda a medias en cuanto

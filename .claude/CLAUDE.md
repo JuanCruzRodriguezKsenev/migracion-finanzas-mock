@@ -84,7 +84,7 @@ Columnas monetarias en `bigint` (centavos). `year`, `month`, `attempts`, `failed
 | `docs/diseno/` | **Sesiones de diseño en curso**, antes de que haya RFC. Registran decisiones tomadas y su porqué; cuando el tema cierra, se parte en propuestas | Mientras se discute una decisión de arquitectura |
 | `docs/TECHNICAL_DEBT.md` | § Resuelto y § Abierto | Al cerrar o abrir deuda |
 | `docs/patterns.md` | Patrones vigentes. **Contrastar acá toda decisión nueva** | Al establecer un patrón |
-| `docs/proposals/` | 25 RFCs con estado `DRAFT`/`APPROVED` | Código sólo contra `APPROVED` |
+| `docs/proposals/` | 26 RFCs con estado `DRAFT`/`APPROVED`/`SUPERSEDED` (`ARCHITECTURE.md` §6 define los cuatro) | Código sólo contra `APPROVED` |
 | `docs/adr/`, `docs/registro/` | Decisiones arquitectónicas; ramas cerradas | Al cerrar una rama |
 | `docs/ROADMAP.md` | **Desactualizado**: cubre 9 de 23 ítems | La hoja de ruta real es el artifact |
 | `ARCHITECTURE.md` | Arquitectura feature-driven | Lectura |

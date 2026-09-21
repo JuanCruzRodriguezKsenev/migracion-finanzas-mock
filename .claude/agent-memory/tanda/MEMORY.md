@@ -19,6 +19,7 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 - [Rediseño de clasificación y propuestas](decisiones_modelo_clasificacion.md) — sesión **cerrada y con sus siete propuestas escritas** (2026-09-12): categoría = cuenta contable, propuestas fuera del libro, navegación por instrumento.
 - [RFC 008 — préstamos y `/loans`, `APPROVED`](decisiones_rfc008_loans.md) — bidireccional, sin `remainingBalance`; categoría de intereses fija por código; y los pasos corridos de su §4.2.
 - [RFC 025 — compras en cuotas con tarjeta](decisiones_rfc025_cuotas_tarjeta.md) — una cuota por mes y no el total al comprar; la asimetría declarada con el 008 y quién la cierra.
+- [RFC 012 — la API de ingreso de asientos, reescrita](rfc012_api_de_ingreso.md) — y la maquinaria de idempotencia que ya existe y no usa nadie.
 - [Los eventos se van a una app aparte](decision_eventos_app_aparte.md) — RFC 003 `SUPERSEDED`, la puerta es el RFC 012 (aprobado sin construir), y `/contacts` no muestra importes.
 - [RFC 010 y RFC 003, reescritos y en `DRAFT`](decisiones_rfc010_y_rfc003.md) — patrimonio físico y eventos: por qué se les bajó el sello, el revalúo contra patrimonio, y el único apartamiento del 024 §4.
 - [RFC 022 — clasificación unificada, ya implementado](rfc022_clasificacion_unificada.md) — hoja `General` (.99), resolución padre→hoja, cascada de archivado, y los cabos que dejó.

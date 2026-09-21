@@ -103,6 +103,11 @@ entera. Si el plan nombra una rama, esa rama existe **antes** de que el bloque d
     `(checkbox as HTMLInputElement).checked`, que es lo correcto: el paréntesis está **dentro** de
     `expect( … )` en la misma línea física, así que no lleva espacios internos. Un snippet mal
     espaciado invita a copiar el error.
+*   **Antes de ofrecer «creamos X» en una pregunta, grepear si X ya existe.** El 2026-09-21 le ofrecí
+    al usuario «crear una tabla de claves de idempotencia» como si no existiera, y `idempotency_keys`
+    más `executeIdempotent()` estaban implementados desde hacía meses, sin un solo consumidor. Eligió
+    con información falsa y hubo que volver atrás y repreguntar. **Una opción de `AskUserQuestion` es
+    una afirmación sobre el repo, y se verifica igual que una línea de plan.**
 *   **Preferir anclas textuales a números de línea** en los pasos: el número envejece dentro de la
     misma ronda apenas un paso anterior inserta líneas.
 *   **Un hueco del plan vuelve como defecto del código, y hay que decirlo así.** El plan del RFC 023
