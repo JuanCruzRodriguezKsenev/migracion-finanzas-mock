@@ -41,11 +41,15 @@ falta para arrancar la próxima ronda.
     que un banner del panel puede sobrevivir a un alta exitosa posterior. El plan les prohibió
     tocarlos, con razón.
 
-## El próximo paso es del usuario: firmar o corregir los RFC 010 y 003
+## El próximo paso es del usuario: firmar o corregir el RFC 010
 
-Los dos están **en `master` y en `DRAFT` al mismo tiempo**, y es deliberado: entraron con la
-consolidación porque la cadena es lineal, **no porque estén aprobados**. No habilitan una línea de
-código. Ver [[decisiones-rfc010-y-rfc003]] para las cinco decisiones y el apartamiento del RFC 024 §4.
+Está **en `master` y en `DRAFT` al mismo tiempo**, y es deliberado: entró con la consolidación porque
+la cadena es lineal, **no porque esté aprobado**. No habilita una línea de código. Ver
+[[decisiones-rfc010-y-rfc003]] para las cinco decisiones y el apartamiento del RFC 024 §4.
+
+**El RFC 003 ya no está en esa cola:** quedó `SUPERSEDED` el 2026-09-21 y los eventos se van a una app
+aparte. Ver [[decision-eventos-app-aparte]], que también lleva la decisión de que `/contacts` no
+muestra importes y el estado real del RFC 012.
 
 **Ningún agente aprueba un RFC.** Hasta que alguno pase a `APPROVED` no hay código que escribir
 contra ellos, y la secuencia de `trabajo-en-vuelo.md` los pone primeros por eso.
@@ -56,8 +60,8 @@ contra ellos, y la secuencia de `trabajo-en-vuelo.md` los pone primeros por eso.
     Patrimonio Neto que el 024 desaloja de `/accounts` —que **se queda ahí hasta entonces**—, la
     convención de signo de `monthly_summaries` (§9 del 024), la brecha del §9 del 008 (un préstamo
     registra el pasivo el día uno y una compra en cuotas no) y el patrimonio físico del 010.
-*   **El neto por contacto en `/contacts`**: hoy no muestra un solo importe, y tiene **dos** fuentes
-    que sumar (préstamos y eventos).
+*   **Contrastar y reescribir el RFC 012**, si se quiere la app de eventos o cualquier otra satelital.
+    Ver [[decision-eventos-app-aparte]].
 *   **Inquilinos, incidencias y cap rate**, escindidos del RFC 010.
 *   **Los `Result.error` como códigos y no como prosa española:** 201 `fail()` en 13 archivos. **Exige
     RFC propio** que fije el contrato (código + parámetros) y su mapeo en los tres diccionarios.

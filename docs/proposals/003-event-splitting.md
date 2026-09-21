@@ -2,11 +2,74 @@
 
 *   **ID de la Propuesta:** 003
 *   **Título:** El evento como calculadora de reparto, el recupero como único asiento, y la categorización en el libro de cada parte
-*   **Estado:** `DRAFT` — **no habilita código hasta que el usuario lo apruebe.** Reescritura completa.
+*   **Estado:** `SUPERSEDED` (2026-09-21) — **no habilita código y no se va a implementar en esta aplicación.** Ver §0 bis.
 *   **Fecha de Creación:** 2026-06-22 (versión original) · **Reescrito:** 2026-09-12
 *   **Autor:** `tanda` (reescritura) · Antigravity (versión original de junio de 2026)
 *   **Origen:** §9 de [`docs/diseno/rediseno-clasificacion-y-propuestas.md`](../diseno/rediseno-clasificacion-y-propuestas.md), que pedía enmendarlo porque «confirma sin categorizar». El contraste encontró que el desalineamiento no se agotaba ahí.
 *   **Reemplaza:** la versión `APPROVED` del 2026-06-23 **en su totalidad**. Esa versión es anterior al core contable (RFC 018), a la migración a `bigint` (RFC 019), a la clasificación unificada (RFC 022) y al RFC 008, que modela las deudas con personas.
+
+---
+
+## 0 bis. Por qué este RFC no se implementa acá (decisión del usuario, 2026-09-21)
+
+**Los eventos no son un dominio contable, y se van a una aplicación aparte.** Esta propuesta queda
+`SUPERSEDED`: nada de lo que describe se construye dentro de la aplicación de finanzas.
+
+### El razonamiento
+
+1.  **Un evento tiene dominio propio** —participantes, exclusiones por tipo de gasto, simplificación
+    de deudas— que no es contabilidad. Meterlo acá obligaba a cinco tablas en el libro mayor para
+    sostener una calculadora de reparto.
+2.  **Lo que el libro necesita de un evento es un solo asiento:** el recupero, cuando entra la plata
+    (§5). Eso ya tiene camino: [RFC 012](012-integrations-and-api-keys.md), cuyo §1 establece la
+    doctrina textual de que «mantener separada la lógica específica de otros negocios en sus propias
+    aplicaciones mantiene nuestro núcleo financiero limpio, mientras que la integración vía API
+    unifica la contabilidad». Su ejemplo es una app de pastelería; un repartidor de gastos es el
+    mismo patrón.
+3.  **Lo que el usuario quería y acá era imposible, afuera deja de serlo.** El §9 declaraba fuera de
+    alcance la participación de otras personas con cuenta en la aplicación, porque **el aislamiento
+    multi-tenant prohíbe que dos organizaciones se vean entre sí**. En una aplicación propia, el
+    evento es un objeto compartido entre usuarios por diseño, y cada participante manda el asiento a
+    *su* libro por la API. El problema no se resuelve solo: **deja de chocar contra una invariante
+    del núcleo**, que es lo que lo hacía irresoluble.
+
+### Lo que esta aplicación construye en consecuencia: nada
+
+**Cero tablas nuevas.** El recupero de un evento externo entra por
+`POST /api/v1/transactions` (RFC 012 §3) como cualquier otro asiento de partida doble: Debe la cuenta
+de destino, Haber la hoja de `4.1.05 Reintegros y devoluciones`. La cuenta de destino la elige el
+usuario, como en la bandeja de liquidación de `/loans`.
+
+> **Dependencia, y está sin construir.** El RFC 012 figura `APPROVED` desde el 2026-06-23 y **no
+> tiene una sola línea de código**: no existen `src/app/api/v1/`, ni la tabla `api_keys`, ni
+> `integrations` —verificado contra el esquema y contra la base real el 2026-09-21—. Además es
+> anterior al core contable (RFC 018), a `bigint` (RFC 019) y a la clasificación unificada (RFC 022),
+> que cambió cómo se resuelve una cuenta a su hoja: su §3 asienta contra `4.1.01.01` como si fuera
+> hoja. **Necesita el mismo contraste que recibieron el 008, el 010 y este mismo RFC antes de que
+> nadie escriba ese endpoint.**
+
+### Lo que se conserva, y es el motivo de no borrar este archivo
+
+**El §4, el algoritmo de reparto, es herencia para la aplicación nueva.** Balance neto por
+participante, exclusiones por `splitTag`, simplificación iterativa de deudas y el reparto del resto
+de a un centavo están especificados y son correctos: se mantuvieron casi literales de la versión de
+junio porque el problema nunca fue cómo repartía. **Quien escriba la app de eventos arranca de acá y
+no lo vuelve a derivar.** Lo mismo vale para el §3 como modelo de datos y para el §6, la regla de que
+cada parte categoriza en su propio libro, que sigue siendo verdad y ahora se cumple sola: el evento
+nunca escribe en el libro de otra organización porque ya no escribe en ningún libro.
+
+**Lo que queda obsoleto de este texto** es su §3.2 (radio de impacto sobre `schema.ts` y
+`testCleanup.ts` de esta aplicación), su §7 (verificación acá) y la fila de `/contacts` de ese mismo
+§3.2 — ver la decisión de abajo.
+
+### Decisión relacionada del mismo día: `/contacts` no muestra importes
+
+**`/contacts` es la libreta de contactos y nada más.** No lleva saldos, deudas ni netos: eso vive en
+las pantallas que son sobre plata. Esto cancela el ítem «el neto por contacto» que este RFC anotaba
+en su §9 y en su §3.2, y que el **§9 del [RFC 008](008-loans-and-installments.md) también deja
+abierto**. Aquel RFC está `APPROVED` y **no se edita**: la discrepancia queda advertida acá y en
+[`trabajo-en-vuelo.md`](../trabajo-en-vuelo.md). Nada que deshacer en código —`/contacts` hoy no
+muestra un solo importe, verificado en sus cinco componentes—: lo que cancela es trabajo futuro.
 
 ---
 

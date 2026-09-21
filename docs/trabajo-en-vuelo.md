@@ -23,17 +23,40 @@ Lo cerrado quedó congelado en
 manejo del `Result` en ese mismo panel. **490 tests en 68 archivos, 0 ESLint, 0 TS, build verde**,
 verificado por `verificador` al cerrar cada tanda.
 
-**Próximo paso: aprobar o corregir los RFC 010 y 003.** Es la decisión que bloquea todo lo que sigue,
-y es tuya: ningún agente aprueba un RFC.
+**Próximo paso: aprobar o corregir el RFC 010.** Es la decisión que bloquea todo lo que sigue, y es
+tuya: ningún agente aprueba un RFC. **El RFC 003 ya no está en esa cola** — ver abajo.
 
-> **Los dos RFC están en `master` y en `DRAFT` al mismo tiempo, y eso es deliberado.** Entraron con la
-> consolidación porque la cadena de ramas es lineal, **no porque estén aprobados**: no habilitan una
-> línea de código. Bajaron de `APPROVED` a `DRAFT` el 2026-09-12 porque llevaban quince meses
-> aprobados sin implementar, autorizando formalmente el esquema equivocado — la trampa que ya se
-> cobró el RFC 006 y el RFC 015. El porqué completo y las cinco decisiones del usuario están en el
-> registro de cierre y en el §0 de cada RFC:
-> [`010-wealth-assets-management.md`](proposals/010-wealth-assets-management.md) y
-> [`003-event-splitting.md`](proposals/003-event-splitting.md).
+> **El RFC 010 está en `master` y en `DRAFT` al mismo tiempo, y eso es deliberado.** Entró con la
+> consolidación porque la cadena de ramas es lineal, **no porque esté aprobado**: no habilita una
+> línea de código. Bajó de `APPROVED` a `DRAFT` el 2026-09-12 porque llevaba quince meses aprobado
+> sin implementar, autorizando formalmente el esquema equivocado — la trampa que ya se cobró el
+> RFC 006 y el RFC 015. El porqué y las cinco decisiones del usuario están en el registro de cierre y
+> en el §0 de [`010-wealth-assets-management.md`](proposals/010-wealth-assets-management.md).
+
+### Dos decisiones del usuario del 2026-09-21
+
+**1. Los eventos se van a una aplicación aparte.** El RFC 003 quedó `SUPERSEDED` y **no se implementa
+acá**: cero tablas nuevas. Un evento tiene dominio propio —participantes, exclusiones, simplificación
+de deudas— que no es contabilidad, y lo único que el libro necesita de él es el asiento de recupero
+cuando entra la plata. Eso ya tiene camino escrito: el **RFC 012**, cuyo §1 establece que la lógica
+de otros negocios vive en sus propias aplicaciones y se integra por API. **Y desbloquea lo que acá era
+imposible:** que participen otras personas con cuenta, que el aislamiento multi-tenant prohíbe entre
+organizaciones. El fundamento completo está en el §0 bis de
+[`003-event-splitting.md`](proposals/003-event-splitting.md), que se conserva porque su §4 —el
+algoritmo de reparto— es la herencia de la que arranca esa aplicación.
+
+> **La puerta está escrita y sin construir.** El **RFC 012** figura `APPROVED` desde el 2026-06-23 y
+> **no tiene una sola línea de código**: no existen `src/app/api/v1/`, ni `api_keys`, ni
+> `integrations` —verificado contra el esquema y contra la base real—. Es anterior al core contable,
+> a `bigint` y a la clasificación unificada. **Necesita el mismo contraste que recibieron el 008, el
+> 010 y el 003 antes de que nadie escriba ese endpoint**, y hoy su sello autoriza a escribirlo con el
+> modelo viejo.
+
+**2. `/contacts` no muestra importes.** Es la libreta de contactos y nada más: sin saldos, sin deudas,
+sin netos. Eso vive en las pantallas que son sobre plata. **No hay nada que deshacer** —`/contacts`
+hoy no muestra un solo importe, verificado en sus cinco componentes—: cancela trabajo futuro. El §9
+del **RFC 008** deja abierto «el neto por contacto en `/contacts`»; ese RFC está `APPROVED` y **no se
+edita**, así que la discrepancia queda advertida acá y en el §0 bis del 003.
 
 **Publicado:** el usuario pusheó el 2026-09-21 y `origin/master` quedó en `c8633e0`, con la
 consolidación entera adentro. **Acá no va el número de commits de diferencia**, porque el commit que
@@ -44,7 +67,7 @@ lo escribe ya lo deja viejo: se cuenta en el momento, con
 
 ### La secuencia que queda
 
-1.  **Aprobar o corregir los RFC 010 y 003.** Decisión del usuario; ningún agente aprueba un RFC.
+1.  **Aprobar o corregir el RFC 010.** Decisión del usuario; ningún agente aprueba un RFC.
 2.  **La página de estadísticas** — sin RFC y sin nombre de ruta elegido. Es la que lee la dimensión
     de categoría que construyó el RFC 022, y la que tiene que recibir el Patrimonio Neto que el 024
     desaloja de `/accounts` —donde **se queda hasta entonces**, por decisión del usuario. Antes de
@@ -52,9 +75,8 @@ lo escribe ya lo deja viejo: se cuenta en el momento, con
     **Le llegan dos encargos más:** la brecha del §9 del RFC 008 —un préstamo registra el pasivo
     completo el día uno y una compra en cuotas no— y ahora el patrimonio físico del 010, que es la
     razón por la que el 010 fue antes que ella.
-3.  **El neto por contacto en `/contacts`** — hoy no muestra un solo importe. Lo dejan abierto el §9
-    del RFC 008 y ahora también el §9 del RFC 003: **cuando se escriba tiene que sumar las dos
-    fuentes**, préstamos y eventos, o mostrará la mitad del cuadro.
+3.  **Contrastar y reescribir el RFC 012** si se quiere la aplicación de eventos, o cualquier otra
+    satelital: es la puerta de entrada de asientos externos y hoy está aprobada sin construir.
 4.  **Inquilinos, incidencias y cap rate**, escindidos del 010 (§8 de ese RFC).
 5.  **Los `Result.error` como códigos y no como frases en español** — 201 `fail()` en 13 archivos.
     **Exige RFC propio**: hasta que exista, toda pantalla internacionalizada queda a medias en cuanto
