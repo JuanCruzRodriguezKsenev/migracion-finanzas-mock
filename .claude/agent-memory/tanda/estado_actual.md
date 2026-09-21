@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-# Estado al cerrar la ronda del 2026-09-12 (RFC 008 consolidado; 010 y 003 reescritos)
+# Estado al cerrar la ronda del 2026-09-20 (plan de i18n entregado a `obra`)
 
 **Contrastar con `git log` antes de actuar: esto se desactualiza rápido.**
 
@@ -13,11 +13,16 @@ metadata:
 
 ```
 master                          1dbc993   RFC 008 consolidado. NO PUSHEADO: origin/master sigue en 07aadb3
-docs/rfc-010-patrimonio-fisico  5b1d566   rama activa: los dos RFC reescritos
+docs/rfc-010-patrimonio-fisico  c15bfd0   los dos RFC reescritos. SIN CONSOLIDAR a master
+feat/i18n-categorias            ed67be6   rama activa: el plan de i18n, encadenado sobre la anterior
 ```
 
-**El push sigue pendiente y es del usuario** — van seis commits de ventaja sobre `origin/master`.
+**El push sigue pendiente y es del usuario** — van once commits de ventaja sobre `origin/master`.
 `git log --merges` sigue vacío: la historia es estrictamente lineal.
+
+**Las ramas se encadenan, no salen todas de `master`.** `feat/i18n-categorias` se creó sobre
+`docs/rfc-010-patrimonio-fisico` sin mergear nada: el merge lo decide el usuario, y los RFC 010 y 003
+siguen esperando su firma. Es la forma de avanzar en paralelo sin consolidar por cuenta propia.
 
 ## El RFC 008 quedó cerrado y consolidado
 
@@ -47,8 +52,9 @@ decisiones del usuario y los datos que el contraste dejó verificados.
     el Patrimonio Neto que el 024 desaloja de `/accounts` —que **se queda ahí hasta entonces**—, la
     convención de signo de `monthly_summaries` (§9 del 024), la brecha del §9 del 008 (un préstamo
     registra el pasivo el día uno y una compra en cuotas no) y ahora el patrimonio físico del 010.
-*   **Internacionalizar `CategoriesSettingsContainer`**: 766 líneas, único resto de i18n de
-    `/settings`. **Es la única tanda de código lista para plan ahora mismo.**
+*   ~~Internacionalizar `CategoriesSettingsContainer`~~ — **ya no está sobre la mesa: tiene plan
+    entregado**, `docs/planes/feat-i18n-categorias.md`, en la rama `feat/i18n-categorias`. Lo que hay
+    que saber de esa tanda vive en [[i18n-panel-de-categorias]].
 *   **El neto por contacto en `/contacts`**: hoy no muestra un solo importe, y ahora tiene **dos**
     fuentes que sumar (préstamos y eventos).
 *   **Inquilinos, incidencias y cap rate**, escindidos del RFC 010.

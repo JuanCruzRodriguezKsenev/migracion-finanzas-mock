@@ -21,6 +21,7 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 - [RFC 025 — compras en cuotas con tarjeta](decisiones_rfc025_cuotas_tarjeta.md) — una cuota por mes y no el total al comprar; la asimetría declarada con el 008 y quién la cierra.
 - [RFC 010 y RFC 003, reescritos y en `DRAFT`](decisiones_rfc010_y_rfc003.md) — patrimonio físico y eventos: por qué se les bajó el sello, el revalúo contra patrimonio, y el único apartamiento del 024 §4.
 - [RFC 022 — clasificación unificada, ya implementado](rfc022_clasificacion_unificada.md) — hoja `General` (.99), resolución padre→hoja, cascada de archivado, y los cabos que dejó.
+- [i18n del panel de categorías](i18n_panel_de_categorias.md) — cómo se traduce de verdad en este repo, por qué los errores del servidor quedan fuera, y el `patterns.md` que miente.
 - [Feature `profile`](feature_profile.md) — los códigos canónicos ya se migraron; por qué las preferencias todavía no afectan a nada y qué quedó abierto.
 - [Cómo levantar los repos hermanos](repos_hermanos_como_levantarlos.md) — FinanzasMock está atado a Neon: sin base, con bypass de login. Y qué hay adentro de cada uno.
 
