@@ -72,6 +72,14 @@ entera. Si el plan nombra una rama, esa rama existe **antes** de que el bloque d
     sitio que la incumple para siempre y con razón (el script anti-flash del `<head>`, fuera del
     grafo de módulos). Una prohibición absoluta que el propio repo viola sin explicar por qué es la
     que la próxima ronda «arregla» al revés.
+*   **Una lista enumerada en el plan se ejecuta al pie, y lo que la lista omite queda sin hacer.** El
+    plan de i18n de categorías enumeró **cinco** aserciones del test a pasar al diccionario y `obra`
+    convirtió esas cinco, exactas. La sexta —`getByRole( "button" , { name: /Confirmar archivado/i } )`—
+    no estaba en la tabla y quedó con el literal español; el test seguía verde, porque el valor de `es`
+    coincide con la cadena vieja. **No fue desvío de la ejecución: lo dejó el plan.** Cuando un paso
+    enumera ocurrencias, la tabla se arma con el `grep` que las lista **todas**, o lleva arriba la
+    regla general («todas las aserciones que busquen chrome traducible») para que la enumeración sea
+    ejemplo y no límite.
 *   **Preferir anclas textuales a números de línea** en los pasos: el número envejece dentro de la
     misma ronda apenas un paso anterior inserta líneas.
 *   **Un hueco del plan vuelve como defecto del código, y hay que decirlo así.** El plan del RFC 023

@@ -190,7 +190,7 @@ describe( "CategoriesSettingsContainer - Dos columnas y gestión de categorías"
     expect( screen.getByText( dict.settingsPage.categories.archiveWarningParentStrong ) ).toBeTruthy() ;
 
     // Confirmar archivado
-    const confirmBtn = screen.getByRole( "button" , { name: /Confirmar archivado/i } ) ;
+    const confirmBtn = screen.getByRole( "button" , { name: dict.settingsPage.categories.submitArchive } ) ;
     fireEvent.click( confirmBtn ) ;
 
     await waitFor( () => {
