@@ -19,10 +19,10 @@ master  ee3949d  las tres ramas encadenadas, consolidadas por fast-forward el 20
 fusionaron con `--ff-only` y **se borraron**. `git log --merges` sigue vacío: la historia es
 estrictamente lineal, y la convención es que cada rama sale de la punta anterior, no de `master`.
 
-**El push sigue pendiente y es del usuario:** `master` va **24 commits** adelante de `origin/master`
-(`07aadb3`). Contarlo con `git rev-list --count origin/master..HEAD`, no de memoria — ya estuvo mal
-anotado tres veces, la última en el propio doc de estado de esta consolidación: **al contar, sumar el
-commit del registro de cierre, que todavía no existe cuando se escribe el número**.
+**El push sigue pendiente y es del usuario:** `origin/master` sigue en `07aadb3`. **No anotar el
+número de commits de diferencia en ningún lado**, ni acá ni en el doc de estado: el commit que lo
+escribe ya lo deja viejo, y así estuvo mal tres veces seguidas. Se cuenta en el momento, con
+`git rev-list --count origin/master..HEAD`.
 
 ## Lo cerrado, congelado
 

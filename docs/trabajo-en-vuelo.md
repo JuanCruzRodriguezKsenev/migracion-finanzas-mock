@@ -35,8 +35,9 @@ y es tuya: ningún agente aprueba un RFC.
 > [`010-wealth-assets-management.md`](proposals/010-wealth-assets-management.md) y
 > [`003-event-splitting.md`](proposals/003-event-splitting.md).
 
-**El push sigue pendiente y es tuyo:** `master` va **24 commits** adelante de `origin/master`
-(`07aadb3`). Contarlo con `git rev-list --count origin/master..HEAD`, no de memoria.
+**El push sigue pendiente y es tuyo:** `origin/master` sigue en `07aadb3`. **Acá no va el número de
+commits de diferencia**, porque el commit que lo escribe ya lo deja viejo: se cuenta en el momento,
+con `git rev-list --count origin/master..HEAD`.
 
 ---
 
