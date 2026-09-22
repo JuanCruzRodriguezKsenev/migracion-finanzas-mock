@@ -15,12 +15,9 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 **Rama activa:** `fix/resumenes-mensuales`, creada el 2026-09-21 sobre `master` ya consolidado. La
 historia sigue lineal, cero merge commits. **No cambiar de rama.**
 
-**Próximo paso:** ejecutar [`planes/fix-resumenes-mensuales.md`](planes/fix-resumenes-mensuales.md).
-**Nadie escribió nunca la derivación de un resumen mensual a partir del libro**: en producción
-`monthly_summaries` no se llena jamás —navegar a un mes pasado muestra todo en cero— y en la demo el
-seed **inventa los números con `Math.random()`**, así que el gráfico de tendencia no tiene relación
-con las transacciones que el propio seed cargó. Encima el sparkline mezcla dos magnitudes: patrimonio
-neto en los puntos históricos y suma de activos en el del mes actual.
+**Próximo paso:** que `tanda` revise y decida sobre el Paso 4 de [`planes/fix-resumenes-mensuales.md`](planes/fix-resumenes-mensuales.md).
+Los Pasos 1, 2 y 3 quedaron implementados (`monthlySummaryService.ts`, `monthlySummaryRepository.upsert`, `accountingActions.ts` y `page.tsx`).
+La ejecución frenó al llegar al Paso 4 (`seed.ts`): borrar `saldoAcumulado` (:428-459) rompe `:462` (`const diferenciaAjuste = saldoAcumulado - 19000000`) si se conserva el ajuste de saldos de `:466`, y además `registrarTransaccion` solo actualiza `createdAt: fecha`, dejando `occurredAt` en `now()` para todas las transacciones históricas.
 
 > **Decisión del usuario (2026-09-21):** `balanceSnapshot` significa **liquidez**, la suma de las
 > cuentas de tipo `asset`. Eso cierra **parcialmente** el §9 del RFC 024 —queda abierta la convención

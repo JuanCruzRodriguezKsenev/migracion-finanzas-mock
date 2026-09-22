@@ -22,7 +22,8 @@ import {
   getTransactionsAction ,
   getAccountsAction ,
   getMonthlySummariesAction ,
-  getEarliestMonthKeyAction
+  getEarliestMonthKeyAction ,
+  rellenarResumenesMensualesAction
 } from "@/features/accounting/actions/accountingActions" ;
 
 // Utils
@@ -68,6 +69,8 @@ export default async function HomePage( {params , searchParams}: HomePageProps )
   }
 
   // ── Obtener datos reales de la DB (Optimizado) ─────────────────────────────
+  await rellenarResumenesMensualesAction() ;
+
   const [ session , accountsResult , monthlySummariesResult , transactionsResult , earliestMonthResult ] = await Promise.all( [
     getServerSession( authOptions ) ,
     getAccountsAction() ,

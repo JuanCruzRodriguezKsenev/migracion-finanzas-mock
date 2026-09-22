@@ -34,6 +34,7 @@ import {
 import { LedgerTransaction , Account , MonthlySummary , FinancialEntity }             from "../types" ;
 import { monthlySummaryRepository }                                                  from "../repositories/monthlySummaryRepository" ;
 import { financialEntityRepository }                                                 from "../repositories/financialEntityRepository" ;
+import { rellenarResumenesFaltantes }                                                 from "../services/monthlySummaryService" ;
 import { accountRepository }                                                         from "../repositories/accountRepository" ;
 import { getNextCode }                                                               from "../utils/accountCodes" ;
 
@@ -609,5 +610,25 @@ export async function getEarliestMonthKeyAction(): Promise< Result< string | und
   } catch( error ) {
     logger.error( "Error al consultar mes más antiguo en getEarliestMonthKeyAction." , { error: String( error ) } ) ;
     return( fail( "Error al consultar el mes más antiguo en el servidor." ) ) ;
+  }
+}
+
+/**
+ * Rellena los resúmenes mensuales históricos que falten para la organización del usuario autenticado.
+ *
+ * @returns Un objeto Result con la cantidad de resúmenes escritos.
+ */
+export async function rellenarResumenesMensualesAction(): Promise< Result< number , string > > {
+  const session = await getServerSession( authOptions ) ;
+
+  if( !session?.user?.organizationId ) {
+    return( fail( "No autorizado para rellenar los resúmenes mensuales." ) ) ;
+  }
+
+  try {
+    return( await rellenarResumenesFaltantes( session.user.organizationId ) ) ;
+  } catch( error ) {
+    logger.error( "Error al rellenar resúmenes mensuales en rellenarResumenesMensualesAction." , { error: String( error ) } ) ;
+    return( fail( "Error al rellenar los resúmenes mensuales en el servidor." ) ) ;
   }
 }

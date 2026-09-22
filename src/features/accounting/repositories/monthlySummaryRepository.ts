@@ -36,6 +36,31 @@ export const monthlySummaryRepository = {
   } ,
 
   /**
+   * Registra o actualiza un resumen mensual histórico sobre el índice único (organizationId, year, month).
+   */
+  async upsert( data: InsertMonthlySummary , tx: DBOrTx = db ): Promise< MonthlySummary > {
+    const [ upserted ] = await tx
+      .insert( monthlySummaries )
+      .values( data )
+      .onConflictDoUpdate( {
+        target: [ monthlySummaries.organizationId , monthlySummaries.year , monthlySummaries.month ] ,
+        set:    {
+          totalRevenue:        data.totalRevenue ?? 0 ,
+          totalExpense:        data.totalExpense ?? 0 ,
+          balanceSnapshot:     data.balanceSnapshot ?? 0 ,
+          assetsSnapshot:      data.assetsSnapshot ?? 0 ,
+          liabilitiesSnapshot: data.liabilitiesSnapshot ?? 0 ,
+        } ,
+      } )
+      .returning() ;
+
+    // Sincronizar e invalidar caché
+    summaryCache.set( `${upserted.organizationId}-${upserted.year}-${upserted.month}` , upserted ) ;
+
+    return( upserted ) ;
+  } ,
+
+  /**
    * Consulta los resúmenes mensuales ordenados cronológicamente de forma descendente.
    * Optimizado con caché granular: solo consulta a la base de datos los meses individuales faltantes en memoria.
    */
