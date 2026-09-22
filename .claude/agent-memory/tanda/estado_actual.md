@@ -55,6 +55,12 @@ y bajaron del podio.
 `seed.ts:447` y **los valores los inventa con `Math.random()`** (`:437-443`). En producción la tabla
 no se llena jamás y navegar a un mes pasado muestra todo en cero (`page.tsx:149`).
 
+**Segunda parada, 2026-09-21:** `obra` ejecutó los pasos 1-3 (`b09eb96`) y frenó en el del seed. Al
+investigar esa parada aparecieron tres defectos que el plan no sabía, y el §6 se reescribió entero
+(`9ea9619`): **`pnpm db:seed` estaba roto**, **el seed nunca escribió `occurredAt`** y **no había
+historia que derivar**. Los tres están en [[trampas-del-seed]]. **La base de desarrollo quedó a medio
+limpiar** por ese seed fallido: se repone cuando `obra` corra el seed arreglado.
+
 **Decisión del usuario:** `balanceSnapshot` = **liquidez**, suma de cuentas `asset`. Con eso el
 sparkline queda coherente **sin tocar `calcularSparklineBalance`**, porque el punto vivo ya mide eso
 (`dashboardMetrics.ts:40`) — el defecto era la definición, no el código. Cierra parcialmente el §9 del
