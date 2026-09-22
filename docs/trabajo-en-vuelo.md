@@ -15,9 +15,29 @@ Si venís de otra sesión y no tenés contexto: **leé esto primero, después [`
 **Rama activa:** `fix/resumenes-mensuales`, creada el 2026-09-21 sobre `master` ya consolidado. La
 historia sigue lineal, cero merge commits. **No cambiar de rama.**
 
-**Próximo paso:** que `tanda` revise y decida sobre el Paso 4 de [`planes/fix-resumenes-mensuales.md`](planes/fix-resumenes-mensuales.md).
-Los Pasos 1, 2 y 3 quedaron implementados (`monthlySummaryService.ts`, `monthlySummaryRepository.upsert`, `accountingActions.ts` y `page.tsx`).
-La ejecución frenó al llegar al Paso 4 (`seed.ts`): borrar `saldoAcumulado` (:428-459) rompe `:462` (`const diferenciaAjuste = saldoAcumulado - 19000000`) si se conserva el ajuste de saldos de `:466`, y además `registrarTransaccion` solo actualiza `createdAt: fecha`, dejando `occurredAt` en `now()` para todas las transacciones históricas.
+**Próximo paso:** ejecutar **del §6 en adelante** de [`planes/fix-resumenes-mensuales.md`](planes/fix-resumenes-mensuales.md).
+Los Pasos 1, 2 y 3 están hechos en `b09eb96` (`monthlySummaryService.ts`, `monthlySummaryRepository.upsert`,
+`accountingActions.ts` y `page.tsx`). El **§6 se reescribió entero el 2026-09-21**, después de que la
+ejecución se detuviera ahí, y ahora son cuatro correcciones al seed en vez de una.
+
+**Las tres cosas que aparecieron al investigar esa parada, y que el plan viejo no sabía:**
+
+1.  **`pnpm db:seed` está roto hoy** y falla antes de tocar nada de este plan: `23503 … still referenced
+    from table "loan_accounts"`. La limpieza de `seed.ts:43-53` quedó atrás de las features que se
+    agregaron después; faltan seis tablas (`cardInstallmentPlans`, `contactPaymentMethods`,
+    `loanAccounts`, `loans`, `contacts` y `outboxEvents`, que nunca se borró y lleva 195 filas).
+2.  **El seed nunca escribió `occurredAt`.** `createLedgerTransaction` ya lo acepta (`accountingService.ts:34,55`);
+    el helper del seed sólo retocaba `createdAt` por `UPDATE`. Y **todo el repo filtra y ordena por
+    `occurredAt`** (`ledgerRepository.ts:240,250,306,320,384`), así que `/transactions` viene mostrando
+    el historial sembrado con la fecha del día en que se corrió el seed.
+3.  **El seed no tiene historia: el bucle de `:479` cubre sólo el mes en curso.** Los once meses previos
+    eran exclusivamente los `Math.random()`. Por eso el ajuste de saldos de `:461-473` no era una
+    decisión abierta —su monto es la suma de esos `Math.random()`— y **se borra entero**.
+
+> **Decisión del usuario (2026-09-21):** el seed pasa a generar **doce meses de historia real**, envolviendo
+> el generador diario que ya existe en un bucle de meses. ~580 transacciones, 15-30 s de seed. La alternativa
+> —dejar el pasado plano y honesto— se descartó porque reproduce el síntoma que abrió la ronda: los meses
+> cerrados en cero.
 
 > **Decisión del usuario (2026-09-21):** `balanceSnapshot` significa **liquidez**, la suma de las
 > cuentas de tipo `asset`. Eso cierra **parcialmente** el §9 del RFC 024 —queda abierta la convención

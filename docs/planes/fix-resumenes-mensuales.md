@@ -1,6 +1,11 @@
 # Plan — Que los resúmenes mensuales salgan del libro y no de `Math.random()`
 
-**Rama:** `fix/resumenes-mensuales` · **Escrito:** 2026-09-21 · **Abre deuda nueva:** sí (paso 7)
+**Rama:** `fix/resumenes-mensuales` · **Escrito:** 2026-09-21 · **§6 reescrito:** 2026-09-21 · **Abre deuda nueva:** sí (paso 6)
+
+> **Los pasos 1, 2 y 3 ya están hechos** (`b09eb96`): el servicio, el `upsert` y el disparo desde el
+> dashboard. **Lo que queda es del §6 en adelante.** El §6 se reescribió entero porque la versión
+> anterior descansaba sobre una premisa falsa —que el seed tenía historia— y ahí fue donde la
+> ejecución se detuvo. El estado vive en [`trabajo-en-vuelo.md`](../trabajo-en-vuelo.md), no acá.
 
 No hay RFC y no hace falta: no agrega un dominio ni cambia el modelo. Corrige un **defecto de datos**
 sobre tablas que ya existen. El contrato que gobierna es el **§4 de [`.agents/AGENTS.md`](../../.agents/AGENTS.md)**
@@ -43,9 +48,9 @@ Y un cuarto, que es el que el usuario ve primero: **navegar a un mes pasado mues
 | `src/features/accounting/repositories/monthlySummaryRepository.ts` | Un `upsert` nuevo. Hoy tiene `create`, `findRecent`, `findEarliestMonthKey` y `clear` (`:26`, `:42`, `:117`, `:139`) |
 | `src/features/accounting/actions/accountingActions.ts` | Una acción nueva que dispara el relleno. **No se tocan** `getMonthlySummariesAction` (`:558`) ni `getEarliestMonthKeyAction` (`:598`) |
 | `src/app/[lang]/(main)/page.tsx` | Una llamada al relleno antes de leer. **Ninguna otra línea** |
-| `src/shared/db/seed.ts` | Reemplazar el bloque `:428-459` por una llamada a la derivación real |
-| `src/features/accounting/services/monthlySummaryService.test.ts` | **Nuevo.** Los casos del paso 6 |
-| `docs/TECHNICAL_DEBT.md` | Una viñeta nueva (paso 7), que **no** es esta corrección |
+| `src/shared/db/seed.ts` | **Cuatro correcciones, §6:** arreglar la limpieza (hoy el seed **no corre**), fechar por `occurredAt`, generar doce meses de historia real y derivar los resúmenes |
+| `src/features/accounting/services/monthlySummaryService.test.ts` | **Nuevo.** Los casos del paso 5 (§7) |
+| `docs/TECHNICAL_DEBT.md` | Una viñeta nueva (paso 6, §8), que **no** es esta corrección |
 | `docs/trabajo-en-vuelo.md` | Rama y próximo paso, **en el mismo commit** |
 
 **Quién lee estas columnas, barrido y no supuesto** (`grep -rn "balanceSnapshot\|totalRevenue\|totalExpense\|assetsSnapshot\|liabilitiesSnapshot" src/`):
@@ -110,7 +115,7 @@ decidir la presentación cuando exista la pantalla** no adelanta ninguna decisi�
 suma a una en ARS como si fueran la misma unidad. **La derivación repite ese criterio a propósito**,
 porque el objetivo del plan es que el histórico y el punto vivo midan lo mismo. Arreglarlo es una
 decisión de producto —¿se convierte, se muestra una serie por divisa, se elige una principal?— y va
-como deuda en el paso 7.
+como deuda en el paso 6 (§8).
 
 ### Lo que NO hay que construir
 
@@ -123,6 +128,9 @@ como deuda en el paso 7.
 | Invertir el signo de los pasivos, o tocar el §9 del RFC 024 | Ver §2.4. El RFC está `APPROVED` y no se edita |
 | Borrar `monthlySummaryRepository.create()` | Lo usa el seed. El `upsert` se agrega al lado |
 | Arreglar la suma multi-divisa | Ver §2.5. Es deuda declarada, no parte de esto |
+| Tocar el `const { db } = await import( "./client" )` de `seed.ts:37` | Herencia. `client.ts` carga su propio `dotenv` en su `:15` y `accountingService` ya lo arrastra estáticamente desde `seed.ts:17`. Cambiarlo no es de esta tanda |
+| Sembrar préstamos, contactos o planes de cuotas | La limpieza del §6.1 los borra y **no los repone**. Un seed restablece el estado de demo; inventar datos de préstamos no está pedido |
+| Fijar `diferenciaAjuste` en una constante | Ver §6.4. Era la suma de los `Math.random()`: sin la ficción no tiene referente, y una constante es inventar de nuevo con otra cara |
 
 ---
 
@@ -224,19 +232,210 @@ dashboard en blanco por un resumen que no se pudo escribir es peor que un dashbo
 
 ---
 
-## 6. Paso 4 — El seed deja de inventar
+## 6. Paso 4 — El seed: cuatro correcciones, en este orden
 
-Reemplazar el bloque `seed.ts:428-459` —el `for` con los dos `Math.random()` y el `insert`
-directo— por una llamada a `rellenarResumenesFaltantes( org.id )`, **después** de sembrar todas las
-transacciones históricas y las del mes en curso.
+> **Esta sección se reescribió el 2026-09-21, después de que la ejecución se detuviera acá.** La
+> versión anterior decía «llamar a la derivación después de sembrar todas las transacciones
+> históricas». **Era una premisa falsa: no hay transacciones históricas.** El seed siembra el aporte
+> inicial (`:411-427`) y después el bucle de `:479` cubre **sólo el mes en curso**; los once meses previos
+> eran exclusivamente los `Math.random()` de `:437-443`. Derivar del libro sobre eso deja once meses
+> en cero, que es justo el síntoma que abrió esta ronda.
+>
+> **Decisión del usuario (2026-09-21):** el seed genera **doce meses de historia real**, con el
+> generador diario que ya existe. Es el mejor demo y a la vez el menor código: el cuerpo del bucle no
+> se toca, se cambia su envoltorio.
 
-**Lo que se borra con él:** `saldoAcumulado`, `pasivosMes`, `activosMes` y el comentario «Invariante
-contable: Activos = Patrimonio Neto + Pasivos», que describía la convención vieja.
+Las cuatro correcciones son independientes entre sí pero el orden importa: sin la 6.1 el seed no
+corre, y sin la 6.2 la derivación no ve nada.
 
-**Cuidado con el orden:** hoy el bloque de resúmenes corre **antes** del ajuste de saldos de `:466` y
-de las transacciones diarias de `:477`. Derivar del libro exige que el libro esté completo, así que la
-llamada va **al final**, después de ambas. Si se deja donde está, los resúmenes salen incompletos y
-los tests del paso 6 no lo detectan, porque no usan el seed.
+### 6.1 — La limpieza, primero, porque hoy el seed está roto
+
+`pnpm db:seed` **falla hoy**, antes de llegar a cualquier cosa de este plan. Salida real del
+2026-09-21:
+
+```
+code: '23503',
+detail: 'Key (id)=(e0634e1b-30ed-4f95-925a-b818c49a04b5) is still referenced from table "loan_accounts".'
+constraint_name: 'loan_accounts_account_id_accounts_id_fk'
+```
+
+La limpieza de `:43-53` quedó atrás de las features que se agregaron después. **Las seis tablas que
+faltan, verificadas contra las claves foráneas de la base real** (`information_schema`), no supuestas:
+
+| Tabla | Referencia a | Tiene que borrarse antes de |
+| :--- | :--- | :--- |
+| `cardInstallmentPlans` | `cards`, `categories`, `organizations` | `cards` y `categories` |
+| `contactPaymentMethods` | `contacts`, `financial_entities` | `contacts` y `financialEntities` |
+| `loanAccounts` | `accounts`, `loans` | `accounts` y `loans` |
+| `loans` | `contacts`, `financial_entities`, `organizations` | `contacts` y `financialEntities` |
+| `contacts` | `organizations` | — |
+| `outboxEvents` | `organizations` | — (no bloquea, pero **nunca se borró**: 195 filas acumuladas, y una por transacción de acá en más) |
+
+La lista completa queda así, y este orden es el que satisface todas las dependencias de arriba:
+
+```ts
+    await db.delete( cardInstallmentPlans  ) ;
+    await db.delete( categoryAccounts      ) ;
+    await db.delete( cardAccounts          ) ;
+    await db.delete( cards                 ) ;
+    await db.delete( subscriptions         ) ;
+    await db.delete( contactPaymentMethods ) ;
+    await db.delete( loanAccounts          ) ;
+    await db.delete( loans                 ) ;
+    await db.delete( contacts              ) ;
+    await db.delete( ledgerEntries         ) ;
+    await db.delete( ledgerTransactions    ) ;
+    await db.delete( outboxEvents          ) ;
+    await db.delete( monthlySummaries      ) ;
+    await db.delete( accounts              ) ;
+    await db.delete( financialEntities     ) ;
+    await db.delete( categories            ) ;
+    await db.delete( profiles              ) ;
+```
+
+**Los imports que hay que agregar**, respetando la alineación por columnas del §4:
+
+*   `cardInstallmentPlans` — a la línea que ya trae `cards , cardAccounts` (`:21`).
+*   `outboxEvents` — a la línea que ya trae `categories , accounts , …` (`:15`).
+*   `contacts , contactPaymentMethods` de `@/features/contacts/schema.db` — **bloque nuevo**.
+*   `loans , loanAccounts` de `@/features/loans/schema.db` — **bloque nuevo**.
+
+> **`idempotencyKeys` y `loginAttempts` no se tocan.** Ninguna tiene clave foránea contra lo que el
+> seed borra, y no son datos de demo.
+
+> **El seed pasa a borrar préstamos y contactos.** Es lo correcto —un seed restablece el estado de
+> demo— y no los vuelve a sembrar. No inventar datos de préstamos para compensar: no está pedido.
+
+### 6.2 — `registrarTransaccion` fecha por `occurredAt`, no por `createdAt`
+
+**Esto es un defecto propio, más viejo que este plan, y explica algo que no se había mirado:**
+`createLedgerTransaction` **ya acepta `occurredAt`** (`accountingService.ts:34` lo desestructura,
+`:55` lo escribe; el tipo lo declara en `types.ts:51`). El helper del seed nunca se lo pasó: sólo
+retoca `createdAt` con dos `UPDATE` posteriores (`:397-406`).
+
+Y **todo el repo filtra y ordena por `occurredAt`**, no por `createdAt`: `ledgerRepository.ts:240`,
+`:250`, `:306`, `:320`, `:384`. `ledgerTransactions.createdAt` **no lo lee nadie** — el único
+consumidor es el *fallback* `tx.occurredAt || tx.createdAt` de `dashboardMetrics.ts:60,82`, que con
+`occurredAt` siempre presente nunca se usa. Verificado contra la base viva:
+
+```
+ txs |       min_occ        |        max_occ         |     min_created      |      max_created
+  26 | 2026-09-10 04:38:35  | 2026-09-12 12:00:00    | 2025-10-01 11:00:00  | 2026-09-12 04:25:39
+```
+
+Doce meses de fechas en `created_at` y **todos los `occurred_at` apilados en el instante del seed**.
+`/transactions` viene mostrando el historial sembrado con fecha de hoy.
+
+El helper queda así, y **los dos `UPDATE` se borran enteros**:
+
+```ts
+    // Helper para registrar una transacción contable con su fecha de ocurrencia
+    async function registrarTransaccion( params: Parameters< typeof createLedgerTransaction >[0] , fecha: Date ) {
+      const result = await createLedgerTransaction( { ...params , occurredAt: fecha } ) ;
+      if( !result.success ) {
+        throw( new Error( `Error al registrar transacción contable: ${result.error}` ) ) ;
+      }
+
+      return( result.value ) ;
+    }
+```
+
+> **Al borrar los dos `UPDATE`, el import de `eq` queda huérfano** — era su único uso en el archivo
+> (`:401` y `:406`, comprobado con `grep -n "eq(" src/shared/db/seed.ts`). Hay que **quitar
+> `import { eq } from "drizzle-orm"`** o `pnpm exec eslint . --max-warnings 0` sale en rojo. Los
+> imports de `ledgerTransactions` y `ledgerEntries` **se quedan**: los sigue usando la limpieza.
+
+### 6.3 — Doce meses de historia, con el generador que ya existe
+
+El bucle de `:479` se envuelve en un bucle de meses. **El cuerpo no se toca**: las cuatro secciones de
+movimientos fijos, los gastos cotidianos y los del fin de semana quedan igual, salvo los guardas que
+se indican abajo.
+
+```ts
+    // Sembrando transacciones diarias de los últimos doce meses: los cerrados completos,
+    // el mes en curso sólo hasta hoy.
+    console.log( "Sembrando transacciones diarias de los últimos doce meses..." ) ;
+
+    for( let m = 11 ; m >= 0 ; m-- ) {
+      const primerDiaMes  = new Date( ahora.getFullYear() , ahora.getMonth() - m , 1 ) ;
+      const anio          = primerDiaMes.getFullYear() ;
+      const mes           = primerDiaMes.getMonth() ;
+      const ultimoDiaMes  = new Date( anio , mes + 1 , 0 ).getDate() ;
+      const diasASembrar  = ( m === 0 ) ? ahora.getDate() : ultimoDiaMes ;
+
+      for( let diaDelMes = 1 ; diaDelMes <= diasASembrar ; diaDelMes++ ) {
+        const fechaDia      = new Date( anio , mes , diaDelMes ) ;
+        const diaDeLaSemana = fechaDia.getDay() ;
+
+        // ... el cuerpo actual, sin cambios ...
+      }
+    }
+```
+
+**Tres detalles que no se pueden pasar por alto:**
+
+1.  **Los guardas `&& ( diaDelMes <= diasMesActual )` de `:503`, `:517` y `:533` se borran.** Con el
+    bucle nuevo, `diaDelMes` nunca excede `diasASembrar`, así que el guarda es redundante — y si se
+    deja con la variable vieja `diasMesActual`, deja de compilar. La condición que queda es la del día
+    a secas: `if( diaDelMes === 10 )`.
+2.  **`const diasMesActual = ahora.getDate()` de `:477` se borra**, y con él el off-by-one que había:
+    el bucle viejo arrancaba en `d = diasMesActual`, o sea `new Date( y , m , 0 )`, que es **el último
+    día del mes anterior**. Le filtraba una o dos compras al mes que no correspondía.
+3.  **`const diaDelMes = fechaDia.getDate()` de `:482` desaparece**: ahora `diaDelMes` es la variable
+    del bucle. No dejar las dos.
+
+> **El aporte inicial (`:411-427`) no se mueve:** queda en el día 1 a las 08:00 del mes `-11`, que es
+> el mismo mes en que arranca la historia diaria. El orden intramensual no importa —`accounts.balance`
+> acumula sin mirar la hora y la derivación filtra por `occurredAt <= fin de mes`—, y el saldo inicial
+> del banco ($200.000) cubre de sobra los gastos de los primeros cuatro días, antes del primer sueldo.
+
+**Lo que esto cuesta, para que nadie se asuste con el reloj:** el generador produce ~48 transacciones
+por mes, así que el seed pasa de ~50 a **~580 transacciones**, cada una con su bloqueo `FOR UPDATE` y
+su fila en `outbox_events`. Estimado: entre 15 y 30 segundos. **Medirlo con `time pnpm db:seed` y
+pegar el número** (§9); si se va por encima del minuto, decirlo en el informe en vez de seguir.
+
+**No hay riesgo de saldos negativos**, y está comprobado, no supuesto: el sueldo es de $320.000 a
+$380.000 mensuales contra ~$291.000 de gastos (alquiler $85.000, servicios $22.000-28.000, cotidianos
+~$99.000, fines de semana ~$82.000). El neto mensual es positivo. Y de todos modos
+`createLedgerTransaction` **no valida saldo suficiente** — sólo Debe = Haber por divisa y pertenencia
+al inquilino.
+
+### 6.4 — La derivación reemplaza a los `Math.random()`
+
+Se borra el bloque `:428-459` entero: el `for( let m = 11 ; m >= 1 ; m-- )`, los dos `Math.random()`,
+el `insert` directo en `monthlySummaries`, las variables `saldoAcumulado`, `pasivosMes` y `activosMes`,
+y el comentario «Invariante contable: Activos = Patrimonio Neto + Pasivos», que describía la
+convención vieja.
+
+**Y se borra también el ajuste de saldos de `:461-473` entero, con su `fechaFinMayo`.** No es una
+decisión abierta: `diferenciaAjuste = ( saldoAcumulado - 19000000 )` es **literalmente la suma de los
+`Math.random()`**, un contra-peso para que `accounts.balance` cuadrara con once meses inventados. Sin
+la ficción no tiene referente, y fijarlo en una constante sería inventar de nuevo con otra cara. Con
+6.3 los saldos salen de transacciones reales y no hay nada que ajustar.
+
+En su lugar, **al final de todo el sembrado de transacciones** —después del `console.log` de `:592`,
+que es lo que cierra el bucle diario—:
+
+```ts
+    console.log( "Derivando resúmenes mensuales cerrados a partir del libro..." ) ;
+    const resumenes = await rellenarResumenesFaltantes( org.id ) ;
+    if( !resumenes.success ) {
+      throw( new Error( `Error al derivar los resúmenes mensuales: ${resumenes.error}` ) ) ;
+    }
+    console.log( `Resúmenes mensuales derivados: ${resumenes.value}` ) ;
+```
+
+**El import es estático, como el de `createLedgerTransaction`**, y no hace falta `await import()`:
+`@/shared/db/client` carga su propio `dotenv.config()` en su línea 15, y además `accountingService` ya
+lo arrastra estáticamente desde `:17`. El `const { db } = await import( "./client" )` de `:37` es
+herencia y **no se toca en esta tanda**.
+
+```ts
+import { rellenarResumenesFaltantes } from "@/features/accounting/services/monthlySummaryService" ;
+```
+
+**El orden es obligatorio:** derivar antes de que el libro esté completo da resúmenes incompletos, y
+los tests del paso 5 **no lo detectan** porque no usan el seed.
 
 ---
 
@@ -275,8 +474,13 @@ Archivo nuevo, `monthlySummaryService.test.ts`, con Postgres vivo, siguiendo el 
     > el 2026-09-21.*
 
 2.  **`docs/trabajo-en-vuelo.md`:** rama y próximo paso, **en el mismo commit** que el código. Anotar
-    que el §9 del RFC 024 **queda parcialmente cerrado**: `balanceSnapshot` ya tiene definición
-    (liquidez), y sigue abierta la convención de presentación de los pasivos.
+    dos cosas y nada más:
+
+    *   El §9 del RFC 024 **queda parcialmente cerrado**: `balanceSnapshot` ya tiene definición
+        (liquidez), y sigue abierta la convención de presentación de los pasivos.
+    *   **El seed nunca escribió `occurredAt`** (§6.2), así que hasta esta tanda `/transactions`
+        mostró todo el historial sembrado con fecha del día en que se corrió el seed. Se arregló acá;
+        queda anotado porque explica cualquier captura o recuerdo anterior que no cierre.
 
 > **El RFC 024 no se toca.** Es texto `APPROVED`: la discrepancia se advierte en el doc de estado.
 
@@ -312,20 +516,55 @@ pnpm exec vitest run src/features/accounting/services/monthlySummaryService.test
 Hoy la suite son **490 tests en 68 archivos**. Con los diez casos nuevos deberían quedar **500 en 69**
 —el archivo nuevo cuenta también—. **Pegar el número que imprime vitest, no el que dice este plan.**
 
-### Que el seed dejó de inventar
+### Que el seed corre, y cuánto tarda
+
+Hoy **falla** con `23503 … still referenced from table "loan_accounts"`. Después del §6.1 tiene que
+terminar en verde, y hay que **pegar el tiempo**:
+
+```bash
+time pnpm db:seed
+```
+
+Estimado: 15-30 s con las ~580 transacciones del §6.3. **Si se pasa del minuto, decirlo en el
+informe** en vez de seguir como si nada.
+
+### Que el seed dejó de inventar resúmenes
 
 ```bash
 grep -n "Math.random" src/shared/db/seed.ts
 ```
 
-Las dos líneas del bloque de resúmenes (`:437`, `:438`) tienen que desaparecer. **El `grep` puede
-devolver otras coincidencias legítimas de `Math.random` en el seed**: lo que se comprueba es que no
-quede ninguna dentro del bloque de resúmenes mensuales, no que la salida sea vacía.
+Las dos líneas del bloque de resúmenes (`:437`, `:438`) tienen que desaparecer. **El `grep` va a
+seguir devolviendo coincidencias legítimas**: los montos variables de sueldo, servicios, pago de
+tarjeta y gastos cotidianos del generador diario. Lo que se comprueba es que no quede ninguna dentro
+del bloque de resúmenes mensuales, no que la salida sea vacía.
+
+```bash
+grep -n "saldoAcumulado\|diferenciaAjuste\|diasMesActual\|pasivosMes\|activosMes" src/shared/db/seed.ts
+```
+
+**Salida vacía.** Las cinco variables se van con el §6.3 y el §6.4.
+
+### Que las transacciones quedaron fechadas de verdad
+
+El defecto del §6.2, que es el que hacía invisible toda la historia:
+
+```bash
+podman exec postgres-dev psql -U postgres -d finanzas_db -c "
+  SELECT count(*) AS txs ,
+         min(occurred_at)::date AS desde ,
+         max(occurred_at)::date AS hasta ,
+         count(DISTINCT date_trunc('month', occurred_at)) AS meses
+  FROM ledger_transactions ;"
+```
+
+`meses` tiene que dar **12** y `desde` caer doce meses atrás. Antes de esta tanda daba **1**, con todo
+apilado en el instante del seed. El conteo de `txs` es el que hay que pegar en el informe.
 
 ### Que los resúmenes ahora cuadran con el libro
 
 Con la base sembrada (`pnpm db:seed`), los ingresos del último mes cerrado según el resumen y según
-los asientos tienen que dar **el mismo número**:
+los asientos tienen que dar **el mismo número**, y **ninguno de los dos puede ser cero**:
 
 ```bash
 podman exec postgres-dev psql -U postgres -d finanzas_db -c "
@@ -351,7 +590,9 @@ generador aleatorio, y es la única verificación de este plan que no se puede h
 
 *   Los cuatro comandos de la batería en verde, con sus números exactos pegados.
 *   Los diez casos nuevos verdes; ningún test existente tocado.
-*   `Math.random()` fuera del bloque de resúmenes del seed.
-*   Las dos consultas SQL devuelven el mismo importe.
+*   `pnpm db:seed` termina en verde —hoy falla— y su tiempo está pegado en el informe.
+*   `saldoAcumulado`, `diferenciaAjuste`, `diasMesActual`, `pasivosMes` y `activosMes` no existen más.
+*   `ledger_transactions` reparte su `occurred_at` en **12 meses distintos**, no en uno.
+*   Las dos consultas SQL devuelven el mismo importe, y no es cero.
 *   `TECHNICAL_DEBT.md` con la viñeta de la suma multi-divisa.
 *   `trabajo-en-vuelo.md` actualizado **en el mismo commit**.
