@@ -5,7 +5,42 @@ metadata:
   type: project
 ---
 
-# Estado al cerrar la ronda del 2026-09-21 (consolidación de las tres ramas)
+# Estado al cerrar la ronda del 2026-09-21
+
+## ⚠ LO PRIMERO QUE HAY QUE DECIRLE AL USUARIO AL ABRIR LA SESIÓN
+
+**Hay un plan cerrado esperando a `obra` desde el 2026-09-21, y el usuario pidió que se lo recuerde.**
+No arranques una ronda nueva sin avisarle esto primero.
+
+Contrastá que siga pendiente antes de decirlo —`git log --oneline -3` y mirar si `src/shared/db/seed.ts`
+ya cambió—, y si sigue así, decile textualmente:
+
+> Quedó pendiente pasarle a `obra` el plan de los resúmenes mensuales. Rama `fix/resumenes-mensuales`,
+> árbol limpio, nada que preparar.
+>
+> `claude --agent obra`
+>
+> Y el mensaje para pegarle:
+>
+> «Ejecutá `docs/planes/fix-resumenes-mensuales.md` **desde el §6 en adelante**. Los pasos 1, 2 y 3 ya
+> están hechos en `b09eb96`; no los rehagas.
+>
+> El §6 se reescribió entero después de tu parada: son cuatro correcciones al seed, no una, y el orden
+> entre ellas importa. Las dos discrepancias que reportaste están resueltas dentro de esa sección
+> (§6.4 y §6.2) — no vuelvas a consultarlas.
+>
+> Ojo con dos cosas que el §6 nombra y son fáciles de saltear: `pnpm db:seed` **falla hoy** antes de
+> tocar nada tuyo, así que el §6.1 va primero; y al borrar los dos `UPDATE` de `createdAt` el
+> `import { eq }` de `seed.ts` queda huérfano y tumba `eslint --max-warnings 0`.
+>
+> La base de desarrollo quedó a medio limpiar por ese seed fallido: se repone sola cuando corras el
+> seed arreglado.»
+
+**Si ya se ejecutó**, borrá este bloque y seguí con el informe de `obra` como entrada de la ronda.
+
+---
+
+## Lo consolidado (tres ramas, 2026-09-21)
 
 **Contrastar con `git log` antes de actuar: esto se desactualiza rápido.**
 

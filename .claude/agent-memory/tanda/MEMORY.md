@@ -5,7 +5,8 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 
 ## Dónde quedó todo
 
-- [Estado al cerrar la última ronda](estado_actual.md) — ramas sin consolidar, qué está verificado, qué está en vuelo y qué hay sobre la mesa. **Contrastar con `git log` antes de actuar.**
+- ⚠ **[PENDIENTE: pasarle el plan de los resúmenes a `obra`](estado_actual.md)** — el usuario pidió que se lo recuerde al abrir la sesión. El bloque con el traspaso literal está al principio del archivo.
+- [Estado al cerrar la última ronda](estado_actual.md) — ramas, qué está verificado, qué está en vuelo y qué hay sobre la mesa. **Contrastar con `git log` antes de actuar.**
 
 ## Antes de planificar
 
