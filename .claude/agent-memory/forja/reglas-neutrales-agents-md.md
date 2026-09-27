@@ -10,8 +10,9 @@ El usuario mantiene reglas **neutrales de vendor** (para cualquier agente de IA,
 
 *   **El estándar implementado es `AGENTS.md` en la RAÍZ** — [agents.md](https://agents.md/),
     custodiado por la Linux Foundation, leído nativamente por Codex, Cursor, Copilot, Gemini CLI,
-    Aider, Windsurf, Zed y +20 herramientas, en +60.000 repos. Claude Code lo tiene hardcodeado junto
-    a `CLAUDE.md` (string verificado en el binario v2.1.263).
+    Aider, Windsurf, Zed y +20 herramientas, en +60.000 repos. Claude Code lo lee **sólo si no hay
+    `CLAUDE.md`** (probado en 2.1.283 el 2026-09-26; antes decía "hardcodeado junto a `CLAUDE.md`", y era incorrecto).
+    Un `CLAUDE.md` puntero necesita `@AGENTS.md`.
 *   Los `AGENTS.md` **anidados** existen sólo para paquetes de un monorepo, con la regla "el más
     cercano al archivo editado gana". Un `.agents/AGENTS.md` bajo esa regla no gobierna `src/`.
 *   **`.agents/` es una propuesta real pero no implementada**:
