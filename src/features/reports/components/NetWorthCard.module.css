@@ -1,0 +1,74 @@
+.cardContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: 1.25rem;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.asOfTodayBadge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background-color: var(--bg-surface-elevated, rgba(255, 255, 255, 0.05));
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--border-radius-sm, 0.25rem);
+}
+
+.netValueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.netValue {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.breakdownGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+}
+
+.breakdownRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.breakdownLabel {
+  color: var(--text-secondary);
+}
+
+.breakdownValue {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.breakdownNegative {
+  color: var(--color-danger, #EF4444);
+}

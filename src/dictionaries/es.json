@@ -29,6 +29,7 @@
     "planPremium": "Premium",
     "cards": "Tarjetas",
     "loans": "Préstamos",
+    "stats": "Estadísticas",
     "upgradePlan": "Gestionar Plan"
   },
   "dashboard": {
@@ -57,7 +58,6 @@
     "title": "Cuentas Financieras",
     "subtitle": "Administra tus cuentas bancarias, billeteras virtuales y tarjetas.",
     "btnCreate": "Nueva Cuenta",
-    "netWorth": "Patrimonio Neto",
     "totalAssets": "Total Activos",
     "totalLiabilities": "Total Pasivos",
     "emptyState": "No tienes cuentas registradas.",
@@ -461,5 +461,35 @@
     "btnSetDefault": "Marcar predeterminada",
     "btnDelete": "Eliminar",
     "btnNewEntity": "+ Nueva Entidad Financiera"
+  },
+  "reportsPage": {
+    "title": "Estadísticas",
+    "subtitle": "Análisis de ingresos, gastos y evolución patrimonial según el libro contable.",
+    "currencySelectorLabel": "Divisa:",
+    "emptyPeriodMessage": "Sin movimientos en {month}",
+    "netWorthTitle": "Patrimonio Neto",
+    "asOfToday": "a hoy",
+    "assetsLabel": "Activos",
+    "liabilitiesLabel": "Pasivos",
+    "futureInstallmentsLabel": "Cuotas por pagar",
+    "savingsLabel": "Ahorro neto",
+    "incomeLabel": "Ingresos",
+    "expenseLabel": "Gastos",
+    "savingsRateLabel": "Tasa de ahorro",
+    "transactionsCountLabel": "transacciones",
+    "vsLastMonth": "vs. mes anterior",
+    "trendTitle": "Tendencia · 12 meses",
+    "trendAriaLabel": "Gráfico de tendencia de ingresos y gastos de los últimos 12 meses",
+    "singleMonthHistoryNotice": "Se necesita más de un mes de historia para graficar la tendencia.",
+    "categoryBreakdownTitle": "Por categoría",
+    "emptyCategories": "Sin movimientos por categoría en este mes",
+    "breakdownOf": "Desglose de",
+    "topExpensesTitle": "Top gastos",
+    "emptyTopExpenses": "Sin gastos en este período",
+    "generalLeaf": "General",
+    "uncategorized": "Sin categoría",
+    "others": "Otras",
+    "bookNetWorth": "Patrimonio según libro"
   }
 }
+

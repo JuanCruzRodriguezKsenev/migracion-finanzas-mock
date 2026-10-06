@@ -93,17 +93,11 @@ export function AccountsContainer( {
     loans.flatMap( ( l ) => l.accounts.map( ( la ) => la.account.id ) )
   ) ;
 
-  // Calcular métricas (patterns.md §8: pasivos almacenados negativos, el neto es suma)
+  // Calcular métricas
   const totalAssets = walletAccounts.filter( ( a ) => a.type === "asset" ).reduce( ( sum , a ) => (sum + a.balance) , 0 ) ;
   const totalLiabs  = walletAccounts.filter( ( a ) => a.type === "liability" ).reduce( ( sum , a ) => (sum + a.balance) , 0 ) ;
-  const netWorth    = ( totalAssets + totalLiabs ) ; // patterns.md §8: suma porque los pasivos ya guardan saldo negativo
 
-  // Procesar series temporales reales para Patrimonio Neto, Activos y Pasivos
-  const sparklinePointsNetWorth: SparklinePoint[] = summaries.map( ( s ) => ( {
-    value:    s.balanceSnapshot / 100 ,
-    monthKey: formatMonthKey( s.year , s.month )
-  } ) ).reverse() ;
-
+  // Procesar series temporales reales para Activos y Pasivos
   const sparklinePointsAssets: SparklinePoint[] = summaries.map( ( s ) => ( {
     value:    s.assetsSnapshot / 100 ,
     monthKey: formatMonthKey( s.year , s.month )
@@ -115,7 +109,6 @@ export function AccountsContainer( {
   } ) ).reverse() ;
 
   // Calcular tendencias dinámicas
-  const tendenciaNetWorth = calcularTendenciaDesdeSparkline( sparklinePointsNetWorth ) ;
   const tendenciaAssets   = calcularTendenciaDesdeSparkline( sparklinePointsAssets ) ;
   const tendenciaLiabs    = calcularTendenciaDesdeSparkline( sparklinePointsLiabs , true ) ; // Invertida para pasivos
 
@@ -152,21 +145,9 @@ export function AccountsContainer( {
         lang={lang}
       />
 
-      {/* Indicadores de Balance Superior utilizando MetricsSection en modo Hero Layout */}
+      {/* Indicadores de Balance Superior utilizando MetricsSection en modo simpleGrid */}
       <MetricsSection
         allowVisibilityToggle={true}
-        hero={ {
-          label:           accountsPageDict.netWorth ,
-          value:           formatCents( netWorth ) ,
-          sparklinePoints: sparklinePointsNetWorth ,
-          lang:            lang ,
-          trend:           tendenciaNetWorth ? {
-            value:      tendenciaNetWorth.value ,
-            isPositive: tendenciaNetWorth.isPositive ,
-            isRising:   tendenciaNetWorth.isRising ,
-            label:      labelTrend
-          } : undefined
-        } }
       >
         <MetricCard
           title={accountsPageDict.totalAssets}

@@ -29,6 +29,7 @@
     "planPremium": "Premium",
     "cards": "Cards",
     "loans": "Loans",
+    "stats": "Statistics",
     "upgradePlan": "Manage Plan"
   },
   "dashboard": {
@@ -57,7 +58,6 @@
     "title": "Financial Accounts",
     "subtitle": "Manage your bank accounts, virtual wallets, and credit cards.",
     "btnCreate": "New Account",
-    "netWorth": "Net Worth",
     "totalAssets": "Total Assets",
     "totalLiabilities": "Total Liabilities",
     "emptyState": "No accounts registered.",
@@ -461,5 +461,35 @@
     "btnSetDefault": "Set as default",
     "btnDelete": "Delete",
     "btnNewEntity": "+ New Financial Entity"
+  },
+  "reportsPage": {
+    "title": "Statistics",
+    "subtitle": "Income, expense analysis and net worth evolution from the general ledger.",
+    "currencySelectorLabel": "Currency:",
+    "emptyPeriodMessage": "No movements in {month}",
+    "netWorthTitle": "Net Worth",
+    "asOfToday": "as of today",
+    "assetsLabel": "Assets",
+    "liabilitiesLabel": "Liabilities",
+    "futureInstallmentsLabel": "Installments to pay",
+    "savingsLabel": "Net savings",
+    "incomeLabel": "Income",
+    "expenseLabel": "Expenses",
+    "savingsRateLabel": "Savings rate",
+    "transactionsCountLabel": "transactions",
+    "vsLastMonth": "vs. previous month",
+    "trendTitle": "Trend · 12 months",
+    "trendAriaLabel": "12-month income and expense trend chart",
+    "singleMonthHistoryNotice": "More than one month of history is needed to chart trends.",
+    "categoryBreakdownTitle": "By category",
+    "emptyCategories": "No category movements in this month",
+    "breakdownOf": "Breakdown of",
+    "topExpensesTitle": "Top expenses",
+    "emptyTopExpenses": "No expenses in this period",
+    "generalLeaf": "General",
+    "uncategorized": "Uncategorized",
+    "others": "Others",
+    "bookNetWorth": "Book net worth"
   }
 }
+

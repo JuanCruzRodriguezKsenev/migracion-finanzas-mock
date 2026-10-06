@@ -1,0 +1,102 @@
+.breakdownContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: 1.25rem;
+  gap: 1.25rem;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.toggleSwitch {
+  display: inline-flex;
+  background-color: var(--bg-surface-elevated, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: 0.1875rem;
+}
+
+.toggleButton {
+  padding: 0.3125rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: var(--border-radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.toggleButtonActive {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+.leafDetailsBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background-color: var(--bg-surface-elevated, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: 1rem;
+}
+
+.leafDetailsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.leafDetailsTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.leafItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+}
+
+.leafName {
+  color: var(--text-secondary);
+}
+
+.leafAmount {
+  font-weight: 500;
+  color: var(--text-primary);
+}

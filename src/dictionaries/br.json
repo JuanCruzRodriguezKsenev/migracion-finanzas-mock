@@ -29,6 +29,7 @@
     "planPremium": "Premium",
     "cards": "Cartões",
     "loans": "Empréstimos",
+    "stats": "Estatísticas",
     "upgradePlan": "Gerenciar Plano"
   },
   "dashboard": {
@@ -57,7 +58,6 @@
     "title": "Contas Financeiras",
     "subtitle": "Gerencie suas contas bancárias, carteiras virtuais e cartões de crédito.",
     "btnCreate": "Nova Conta",
-    "netWorth": "Patrimônio Líquido",
     "totalAssets": "Total Ativos",
     "totalLiabilities": "Total Passivos",
     "emptyState": "Nenhuma conta cadastrada.",
@@ -461,5 +461,35 @@
     "btnSetDefault": "Definir como padrão",
     "btnDelete": "Excluir",
     "btnNewEntity": "+ Nova Instituição Financeira"
+  },
+  "reportsPage": {
+    "title": "Estatísticas",
+    "subtitle": "Análise de receitas, despesas e evolução patrimonial de acordo com o livro contábil.",
+    "currencySelectorLabel": "Moeda:",
+    "emptyPeriodMessage": "Sem movimentações em {month}",
+    "netWorthTitle": "Patrimônio Líquido",
+    "asOfToday": "até hoje",
+    "assetsLabel": "Ativos",
+    "liabilitiesLabel": "Passivos",
+    "futureInstallmentsLabel": "Parcelas a pagar",
+    "savingsLabel": "Poupança líquida",
+    "incomeLabel": "Receitas",
+    "expenseLabel": "Despesas",
+    "savingsRateLabel": "Taxa de poupança",
+    "transactionsCountLabel": "transações",
+    "vsLastMonth": "vs. mês anterior",
+    "trendTitle": "Tendência · 12 meses",
+    "trendAriaLabel": "Gráfico de tendência de receitas e despesas dos últimos 12 meses",
+    "singleMonthHistoryNotice": "É necessário mais de um mês de histórico para traçar a tendência.",
+    "categoryBreakdownTitle": "Por categoria",
+    "emptyCategories": "Sem movimentações por categoria neste mês",
+    "breakdownOf": "Detalhamento de",
+    "topExpensesTitle": "Maiores despesas",
+    "emptyTopExpenses": "Sem despesas neste período",
+    "generalLeaf": "Geral",
+    "uncategorized": "Sem categoria",
+    "others": "Outras",
+    "bookNetWorth": "Patrimônio contábil"
   }
 }
+

@@ -21,6 +21,7 @@ import {
   IconContacts ,
   IconSandbox ,
   IconSettings ,
+  IconStats ,
   IconClose
 } from "@/shared/ui/display/Icons/Icons" ;
 import { ProfileMenu } from "@/shared/ui/feedback/ProfileMenu/ProfileMenu" ;
@@ -35,6 +36,7 @@ interface NavbarProps {
     transactions?:  string ;
     cards?:         string ;
     loans?:         string ;
+    stats?:         string ;
     subscriptions:  string ;
     contacts?:      string ;
     settings:       string ;
@@ -65,6 +67,7 @@ export function Navbar( {dict , isOpen , onClose}: NavbarProps ) {
   const isLoansActive         = ( pathname === `/${lang}/loans` ) ;
   const isSubscriptionsActive = ( pathname === `/${lang}/subscriptions` ) ;
   const isContactsActive      = ( pathname === `/${lang}/contacts` ) ;
+  const isReportsActive       = ( pathname === `/${lang}/reports` ) ;
 
   return(
     <aside className={ `${styles.navbar} ${isOpen ? styles.open : ""}` }>
@@ -109,6 +112,12 @@ export function Navbar( {dict , isOpen , onClose}: NavbarProps ) {
         <div className={styles.section}>
           <span className={styles.sectionTitle}>Finanzas</span>
           <ul className={styles.menu}>
+            <li>
+              <Link href={ `/${lang}/reports` } className={ `${styles.link} ${isReportsActive ? styles.active : ""}` }>
+                <IconStats size={15} />
+                <span>{dict.stats || "Estadísticas"}</span>
+              </Link>
+            </li>
             <li>
               <Link href={ `/${lang}/transactions` } className={ `${styles.link} ${isTransactionsActive ? styles.active : ""}` }>
                 <IconTransactions size={15} />

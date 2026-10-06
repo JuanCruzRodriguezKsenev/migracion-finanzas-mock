@@ -17,6 +17,7 @@ import {
   IconRepeat ,
   IconContacts ,
   IconSettings ,
+  IconStats ,
   IconMenu
 } from "@/shared/ui/display/Icons/Icons" ;
 import styles from "./BottomNav.module.css" ;
@@ -30,6 +31,7 @@ interface BottomNavProps {
     contacts?:     string ;
     cards?:        string ;
     settings?:     string ;
+    stats?:        string ;
   } ;
 }
 
@@ -46,6 +48,7 @@ export function BottomNav( {dict , onMenuClick}: BottomNavProps ) {
   // Determinar ruta activa
   const isDashboardActive     = ( pathname === `/${lang}` ) ;
   const isAccountsActive      = ( pathname.includes("/accounts") ) ;
+  const isReportsActive       = ( pathname.includes("/reports") ) ;
   const isCardsActive         = ( pathname.includes("/cards") ) ;
   const isSubscriptionsActive = ( pathname.includes("/subscriptions") ) ;
   const isContactsActive      = ( pathname.includes("/contacts") ) ;
@@ -59,6 +62,14 @@ export function BottomNav( {dict , onMenuClick}: BottomNavProps ) {
       >
         <IconDashboard size={20} />
         <span>{dict.dashboard}</span>
+      </Link>
+
+      <Link
+        href={ `/${lang}/reports` }
+        className={ `${styles.bottomNavLink} ${isReportsActive ? styles.active : ""}` }
+      >
+        <IconStats size={20} />
+        <span>{dict.stats || "Estadísticas"}</span>
       </Link>
 
       <Link
