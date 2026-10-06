@@ -55,7 +55,9 @@ organizaciones, invitaciones. Cinco planes, **cada uno sale de la punta del ante
 4b. [`acceso-4b-rol-de-solo-lectura.md`](planes/acceso-4b-rol-de-solo-lectura.md) — el rol `viewer` (contador) se cumple en las 31 acciones de escritura y en la interfaz.
 5.  [`acceso-5-despliegue-vercel-neon.md`](planes/acceso-5-despliegue-vercel-neon.md) — Vercel + Neon; mezcla pasos de `obra` y del usuario.
 
-**Specs aprobadas sin plan todavía (2026-10-06):** [`specs/estadisticas/spec.md`](specs/estadisticas/spec.md). Exige un RFC `APPROVED` antes del código. Presupuestos y metas: sin spec.
+**Estadísticas (2026-10-06):** spec aprobada ([`specs/estadisticas/spec.md`](specs/estadisticas/spec.md)), [RFC 027](proposals/027-statistics-page.md) **en `DRAFT`, espera la firma del usuario**, y dos planes:
+[`estadisticas-1-lo-reversado-no-cuenta.md`](planes/estadisticas-1-lo-reversado-no-cuenta.md) (se puede ejecutar ya; corrige el dashboard) y
+[`estadisticas-2-pagina.md`](planes/estadisticas-2-pagina.md) (exige el RFC `APPROVED`). Presupuestos y metas: sin spec.
 
 **Por qué esta tanda y no otra:** de los 40 commits anteriores, sólo 8 tocaron `src/`. Ésta es
 chica, se verifica sola y arregla algo que ya se usa todos los días.

@@ -45,3 +45,12 @@ Aparecieron al contrastar con el código; la spec los lleva como reglas y los ma
 | D-4 | `monthly_summaries` no tiene divisa: la tendencia de una divisa no principal sale del libro en vivo | PA-2 |
 | D-5 | Un asiento reversado en otro mes deja de reconciliar flujos contra saldo | PA-3, tabla de decisión fila 5 |
 | D-6 | La cascada y el «Resumen por cuenta» del mock quedan fuera | PA-1 |
+
+## Revisión al escribir el RFC (2026-10-06) — **corrige dos supuestos ya aprobados**
+
+| # | Antes | Ahora | Por qué |
+| :-: | :--- | :--- | :--- |
+| 15 | La evolución histórica sale de `monthly_summaries` | **Todo sale del libro en vivo** | La tabla no tiene divisa: suma ARS y USD. Ni la divisa principal quedaba bien en una organización con dos monedas |
+| 16 | No se agregan tablas ni columnas | Sigue valiendo | Las consultas agregadas alcanzan |
+| D-2 | Reversar un mes cerrado obliga a re-derivar el resumen | **Desaparece** (RN-21 se reescribe) | Sin resúmenes no hay nada que quede viejo |
+| nuevo | — | Los meses se delimitan en la **zona horaria del usuario** (RN-26, AC-17) | En UTC un gasto de las 22:00 del 31 cae en el mes siguiente |

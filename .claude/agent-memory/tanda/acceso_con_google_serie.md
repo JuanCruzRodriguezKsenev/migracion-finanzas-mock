@@ -27,3 +27,8 @@ en una Neon vacía (se apartó de R2-2: no hay organización existente que reusa
 (guarda `obtenerSesionDeEscritura` que lee el rol de la base; registro `actionPolicy` fail-closed; 31 acciones de escritura, 15 de lectura, 2 exentas).
 Spec de estadísticas aprobada en `docs/specs/estadisticas/` (falta su RFC en DRAFT). Hallazgos de código: `obtenerCuentaPorMoneda` exportada desde `"use server"`;
 el dashboard y `derivarResumenDeMes` suman un solo lado del asiento, así que lo reversado hoy sí cuenta. Pendientes sin spec: presupuestos y metas.
+
+**Estadísticas (2026-10-06):** RFC 027 en DRAFT (espera firma), planes `estadisticas-1-lo-reversado-no-cuenta` y `estadisticas-2-pagina`.
+Cambios sobre lo aprobado en la spec: las cifras salen del libro en vivo (no de `monthly_summaries`: sin divisa) y los meses se delimitan en `profiles.timezone`.
+Hechos: `/accounts` calcula su Patrimonio Neto sólo sobre billeteras (excluye tarjetas y préstamos) y suma divisas; `findEarliestMonthKey` lee `monthly_summaries`;
+`rellenarResumenesFaltantes` recalcula todos los meses en cada apertura del dashboard (el JSDoc dice «los que falten»); el dashboard delimita meses con la zona del servidor.

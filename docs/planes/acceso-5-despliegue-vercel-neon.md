@@ -136,13 +136,14 @@ organización tiene el catálogo de categorías y la cuenta de Patrimonio Neto, 
 
 ### Paso 7 — Verificación y mediciones en producción [USUARIO + `obra`]
 
-El checklist del §4. Además, **tres mediciones** (hechos que sólo se ven desplegado; no se suponen):
+El checklist del §4. Además, **cuatro mediciones** (hechos que sólo se ven desplegado; no se suponen):
 
 | # | Medir | Cómo | Qué decide |
 | :-: | :--- | :--- | :--- |
 | M-1 | Que `AccessDenied` aterriza en `/es/auth/signin?error=AccessDenied` y no en una página de error de next-auth | Entrar con una cuenta de Google **sin invitación** | Si no: el `pages.error` del plan 3 no alcanza en producción; reportarlo |
 | M-2 | Latencia de una carga de `/accounts` y de un alta de movimiento | Pestaña Red del navegador, tres mediciones | Si > 2 s sostenidos: revisar que Vercel y Neon estén en la misma región antes de tocar código |
 | M-3 | Que un intento por contraseña con un email inexistente **no** devuelve error 500/timeout | Usar el formulario de email en producción con un email cualquiera | Si falla por memoria (el `scrypt` señuelo reserva ~128 MB): subir la memoria de la función o bajar `PARAMS_ACTUALES.N`, **decisión del usuario** (el comentario de `authService.ts` documenta que es un cambio de una línea) |
+| M-4 | Que el **mes** de un movimiento nocturno es el correcto | Cargar un gasto a las 22:00 del último día de un mes; mirar en qué mes lo cuenta el dashboard. **Servidor en UTC (Vercel) y usuario en Argentina (UTC-3):** el dashboard delimita con la zona del servidor (`monthlySummaryService.ts:37-38`, `new Date( año , mes , 1 )`) | Si lo cuenta en el mes siguiente: **decisión del usuario** antes de usar la app en serio (fijar la zona del servidor, o delimitar el dashboard con `profiles.timezone` como ya hace Estadísticas, RFC 027 §3). No se resuelve en este plan |
 
 ---
 
@@ -167,7 +168,7 @@ pnpm build
    misma organización.
 6. Cargar un movimiento desde cada celular y verlo del otro lado, **recargando**.
 7. Cerrar sesión y volver a entrar → vuelve a «Casa» (RN-14).
-8. M-1, M-2 y M-3 del §Paso 7.
+8. M-1 a M-4 del §Paso 7.
 
 **Respaldo** (no se salta): comprobar en la consola de Neon **cuánto historial de restauración** da el plan
 contratado. Además, una copia manual antes de empezar a cargar datos reales:
@@ -197,4 +198,4 @@ Guardar el archivo **fuera del repositorio**. Probar una vez que `pg_restore --l
 
 ## 7. Reportá
 
-Los **hallazgos** en lista aparte, y los resultados de **M-1, M-2 y M-3** con lo que se vio.
+Los **hallazgos** en lista aparte, y los resultados de **M-1 a M-4** con lo que se vio.

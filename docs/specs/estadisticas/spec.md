@@ -1,7 +1,7 @@
 # Spec — Página de estadísticas
 
 **Estado:** `aprobada` (2026-10-06) — supuestos y texto aprobados «sin leer». PA-1 (cascada y «Resumen por cuenta») queda **fuera**: no se respondió y no estaba en lo aprobado.
-**Fecha:** 2026-10-06
+**Fecha:** 2026-10-06 · **Revisión 2026-10-06 (al escribir el RFC):** las cifras salen del libro en vivo y no de `monthly_summaries`; se agrega la zona horaria. Ver «Supuestos resueltos» y la traza.
 **Traza:** [`assumptions.md`](assumptions.md) · **Después de esta spec:** un RFC en `DRAFT` (el repo exige un RFC `APPROVED` antes del código) y recién entonces el plan.
 **Referencia visual:** `/reportes` de `~/Dev/finanzas/FinanzasMock`.
 
@@ -98,9 +98,10 @@ Nadie modifica nada desde esta pantalla. Sin sesión, redirige al signin como el
 - **RN-18.** El Patrimonio Neto **se retira de `/accounts`** en la misma entrega. Activos y Pasivos se quedan.
 
 **Fuentes y consistencia**
-- **RN-19.** Los meses cerrados salen de `monthly_summaries`; el mes en curso, las categorías y el top se calculan del libro en vivo, **con consultas agregadas en la base**, no trayendo todas las transacciones.
-- **RN-20.** Los flujos de `monthly_summaries` y del dashboard aplican la **misma exclusión de RN-6**. El ahorro neto del mes en curso en Estadísticas **coincide** con el del dashboard.
-- **RN-21.** Reversar un asiento de un **mes cerrado** vuelve a derivar el resumen de **ese** mes.
+- **RN-19.** **Todas** las cifras de Estadísticas se calculan del libro en vivo, con **consultas agregadas en la base**, no trayendo todas las transacciones. **`monthly_summaries` no se usa:** no tiene columna de divisa y suma pesos con dólares, así que ni siquiera la serie de la divisa principal sería correcta para una organización con cuentas en dos monedas.
+- **RN-20.** Los flujos que hoy calcula el dashboard —`calcularIngresosMes`, `calcularGastosMes` y la derivación de `monthly_summaries` que alimenta sus sparklines— aplican la **misma exclusión de RN-6**. El ahorro neto del mes en curso en Estadísticas **coincide** con el del dashboard, siempre que el servidor corra en la zona horaria del usuario (PA-5).
+- **RN-21.** Como todo sale del libro, un asiento reversado o cargado con fecha pasada se refleja **de inmediato** en cualquier mes: no hay ningún resumen que volver a derivar.
+- **RN-26.** Los meses se delimitan en la **zona horaria del usuario** (`profiles.timezone`), no en la del servidor. Un gasto cargado a las 22:00 del 31 de mayo en Buenos Aires es de mayo, aunque en UTC ya sea junio.
 
 **Presentación**
 - **RN-22.** Sin movimientos en el período: estado vacío con mensaje, **no** gráficos en cero (precedente S3).
@@ -200,12 +201,12 @@ No se agregan tablas ni columnas. Fuentes:
 
 | Cifra | Fuente |
 | :--- | :--- |
-| Flujos de meses cerrados y tendencia | `monthly_summaries` (con la exclusión de RN-6 aplicada al derivarlos) |
-| Flujos del mes en curso, categorías y top | `ledger_entries` ⋈ `ledger_transactions` ⋈ `accounts`, y `category_accounts` ⋈ `categories` para la jerarquía |
+| Flujos de cualquier mes y tendencia | `ledger_entries` ⋈ `ledger_transactions` ⋈ `accounts`, agregados por mes y divisa |
+| Categorías y top | lo mismo, más `category_accounts` ⋈ `categories` para la jerarquía |
+| Patrimonio según libro, mes a mes | saldos acumulados por mes y divisa, del mismo libro |
 | Patrimonio Neto de hoy | `accounts.balance` + `card_installment_plans` |
 
-`monthly_summaries` sigue sin columna de divisa. **Consecuencia (PA-2):** la tendencia de 12 meses de una divisa que no sea la
-principal no puede salir de esa tabla; se calcula del libro en vivo.
+`monthly_summaries` **no se lee** (RN-19). El dashboard sigue usándola para sus sparklines.
 
 ## Criterios de aceptación
 
@@ -227,7 +228,7 @@ AC-3 — Reversa en otro mes
   Dado un gasto de $100.000 de marzo, reversado en abril
   Cuando miro marzo y abril
   Entonces ninguno de los dos meses lo cuenta en sus gastos
-    y el resumen de marzo, que ya estaba escrito, se volvió a derivar al reversar
+    y la tendencia ya lo refleja sin que nadie haya recalculado nada
 ```
 ```gherkin
 AC-4 — Coinciden con el dashboard
@@ -305,6 +306,13 @@ AC-15 — Sólo lectura
   Entonces la ve completa y no hay ninguna acción que modifique datos
 ```
 ```gherkin
+AC-17 — La zona horaria es la del usuario
+  Dado un usuario con zona horaria America/Argentina/Buenos_Aires
+    y un gasto cargado a las 22:00 del 31 de mayo de 2026 hora de Buenos Aires
+  Cuando abro mayo y junio en Estadísticas
+  Entonces el gasto está en mayo, aunque en UTC ya sea junio
+```
+```gherkin
 AC-16 — Idiomas
   Dado el idioma en inglés
   Cuando abro Estadísticas
@@ -322,14 +330,13 @@ AC-16 — Idiomas
 
 ## Dependencias
 
-1. **El plan `fix-resumenes-mensuales`** (los resúmenes derivados del libro): hoy en ejecución. Esta spec lo da por hecho.
-2. **Corregir la exclusión de lo reversado en tres lugares, antes de mostrar nada**: `derivarResumenDeMes`
-   (`monthlySummaryService.ts:43-44`), `calcularIngresosMes` y `calcularGastosMes` (`dashboardMetrics.ts:50,72`). Es la RN-20, y
-   **cambia números que hoy ve el usuario en el dashboard**.
-3. **Un disparador en la reversión** que vuelva a derivar el resumen del mes del original (RN-21): hoy `reverseLedgerTransaction`
-   no toca `monthly_summaries`.
-4. **El RFC de estadísticas** en `APPROVED`, que firma el usuario.
-5. **Nombre del rótulo en el menú:** claves nuevas en los tres diccionarios (`sidebar.stats` y la sección de la página).
+1. **Corregir la exclusión de lo reversado en tres lugares** (RN-20): `derivarResumenDeMes` (`monthlySummaryService.ts:43-44`),
+   `calcularIngresosMes` y `calcularGastosMes` (`dashboardMetrics.ts:50,72`). **No bloquea la página** —que no usa esas fuentes—,
+   pero sin esto el dashboard y Estadísticas muestran números distintos, y **cambia lo que hoy ve el usuario en el dashboard**.
+   Es un plan propio y se puede ejecutar antes.
+2. **El RFC de estadísticas** en `APPROVED`, que firma el usuario.
+3. **Para los números de cuotas futuras:** `installmentPlansRepository.findActiveByOrganization` y `cuotasFuturasPorDivisa` (RFC 025), que ya existen.
+4. **Nombre del rótulo en el menú:** claves nuevas en los tres diccionarios (`sidebar.stats` y la sección de la página).
 
 ## Supuestos resueltos
 
@@ -342,12 +349,15 @@ AC-16 — Idiomas
 | Serie histórica | «Patrimonio según libro» | Evita mostrar como un solo número dos magnitudes distintas |
 | Signo de los pasivos | El del motor (negativo) | Es el que usan `accounts.balance` y `CardVisual`; la otra convención era la del seed |
 | Alcance | Sin reportes guardados ni exportación | Quita superficie sin tocar lo que el usuario pidió |
+| Fuente de las cifras | **El libro en vivo, no `monthly_summaries`** (corrige el supuesto 15 aprobado) | La tabla suma divisas y no tiene columna de moneda; usarla daba números mal en cualquier organización con cuentas en pesos y en dólares. Costo: tres consultas agregadas por visita |
+| Zona horaria | La del usuario | En el servidor (UTC) un gasto de las 22:00 del 31 caería en el mes siguiente; el dashboard hoy tiene ese defecto (PA-5) |
 
 ## Preguntas abiertas
 
 - **PA-1.** El mock trae una **cascada** y un **«Resumen por cuenta»** que esta spec no incluye porque no entraron en los supuestos aprobados. ¿Se agregan después o se descartan?
-- **PA-2.** Para una divisa que no sea la principal, la tendencia de 12 meses se calcula en vivo del libro, no de `monthly_summaries`. Se asumió que alcanza para dos usuarios; no se midió.
+- **PA-2.** ~~Tendencia en vivo para divisas no principales~~ **Resuelta:** todo sale en vivo (RN-19). Queda sólo la pregunta de rendimiento: tres consultas agregadas por visita se asumieron suficientes para dos usuarios y **no se midieron**.
 - **PA-3.** Marzo deja de reconciliar flujos contra saldo cuando algo se reversa en abril (tabla de decisión, fila 5). Se aceptó sin consultar al usuario.
+- **PA-5.** El dashboard calcula sus meses con la zona del servidor (`new Date( año , mes , 1 )`), no la del usuario. Con el servidor en UTC, su mes y el de Estadísticas pueden diferir para movimientos cercanos a medianoche. No se arregla acá; **sí hay que decidirlo antes del despliegue**.
 - **PA-4.** Qué se muestra en «Top gastos» cuando un asiento reparte el gasto en varias categorías: se asumió **uno por asiento**, con la categoría del mayor importe.
 
 ## Secciones condicionales descartadas
