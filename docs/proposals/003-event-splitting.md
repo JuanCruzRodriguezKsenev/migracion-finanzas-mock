@@ -5,7 +5,7 @@
 *   **Estado:** `SUPERSEDED` (2026-09-21) — **no habilita código y no se va a implementar en esta aplicación.** Ver §0 bis.
 *   **Fecha de Creación:** 2026-06-22 (versión original) · **Reescrito:** 2026-09-12
 *   **Autor:** `tanda` (reescritura) · Antigravity (versión original de junio de 2026)
-*   **Origen:** §9 de [`docs/diseno/rediseno-clasificacion-y-propuestas.md`](../diseno/rediseno-clasificacion-y-propuestas.md), que pedía enmendarlo porque «confirma sin categorizar». El contraste encontró que el desalineamiento no se agotaba ahí.
+*   **Origen:** §9 de `~/Boveda/Archivo/migracion-finanzas-mock/Diseños/Rediseño de clasificación y propuestas.md`, que pedía enmendarlo porque «confirma sin categorizar». El contraste encontró que el desalineamiento no se agotaba ahí.
 *   **Reemplaza:** la versión `APPROVED` del 2026-06-23 **en su totalidad**. Esa versión es anterior al core contable (RFC 018), a la migración a `bigint` (RFC 019), a la clasificación unificada (RFC 022) y al RFC 008, que modela las deudas con personas.
 
 ---
@@ -68,7 +68,7 @@ nunca escribe en el libro de otra organización porque ya no escribe en ningún 
 las pantallas que son sobre plata. Esto cancela el ítem «el neto por contacto» que este RFC anotaba
 en su §9 y en su §3.2, y que el **§9 del [RFC 008](008-loans-and-installments.md) también deja
 abierto**. Aquel RFC está `APPROVED` y **no se edita**: la discrepancia queda advertida acá y en
-[`trabajo-en-vuelo.md`](../trabajo-en-vuelo.md). Nada que deshacer en código —`/contacts` hoy no
+`trabajo-en-vuelo.md` (`~/Boveda/Proyectos/migracion-finanzas-mock/Estado.md`). Nada que deshacer en código —`/contacts` hoy no
 muestra un solo importe, verificado en sus cinco componentes—: lo que cancela es trabajo futuro.
 
 ---

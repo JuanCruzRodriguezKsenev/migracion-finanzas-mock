@@ -1,5 +1,7 @@
 # AGENTS.md — FinanzIA
 
+Buscá primero en la bóveda: `~/Boveda/Proyectos/migracion-finanzas-mock/migracion-finanzas-mock.md`.
+
 Router de reglas para cualquier agente de IA que trabaje en este repo, sin importar la herramienta.
 **Las reglas duras están acá completas; el detalle vive en las rutas que este archivo indica.**
 
@@ -64,8 +66,8 @@ pnpm build                 # producción
 | Ruta | Qué tiene |
 | :--- | :--- |
 | [`.agents/AGENTS.md`](.agents/AGENTS.md) | **Reglas completas.** §1 restricciones · §4 estilo · §7 flujo · §8 lo que el proyecto cobra caro |
-| [`docs/trabajo-en-vuelo.md`](docs/trabajo-en-vuelo.md) | Único doc de estado: rama y próximo paso |
+| `~/Boveda/Proyectos/migracion-finanzas-mock/Estado.md` | Único doc de estado: dónde estamos, próximo paso, bloqueos |
 | [`docs/patterns.md`](docs/patterns.md) | Patrones vigentes. Contrastar acá toda decisión nueva |
 | [`docs/proposals/`](docs/proposals/) | RFCs. Código sólo contra `APPROVED` |
-| [`docs/planes/`](docs/planes/) | Planes aprobados listos para ejecutar |
+| `~/Boveda/Proyectos/migracion-finanzas-mock/Planes/` | Planes listos para ejecutar |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Arquitectura feature-driven |

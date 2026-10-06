@@ -221,7 +221,7 @@ equity | revenue              →   balance - debit + credit
 
 1.  **La deuda de un pasivo es `-balance`.** Nunca `balance`. La conversión está centralizada en `deudaDe( cuenta )` (`cards/utils/ciclo.ts`); **usarla en vez de escribir el signo a mano.**
 2.  **Un pasivo se da de alta en negativo.** `accountingActions.ts` invierte el signo cuando el alta manual recibe un saldo positivo para un `type === "liability"`. Un pasivo con `balance` positivo es un pasivo pagado de más, no una deuda.
-3.  **Sumar saldos de tipos mezclados es una suma, nunca una resta.** Con los pasivos ya negados, `activos + pasivos` da el neto correcto. **`activos - pasivos` suma la deuda al patrimonio**: fue literalmente el defecto de `AccountsContainer.tsx`, corregido el 2026-09-10 en la tanda 1 del RFC 024 (`TECHNICAL_DEBT.md` §6).
+3.  **Sumar saldos de tipos mezclados es una suma, nunca una resta.** Con los pasivos ya negados, `activos + pasivos` da el neto correcto. **`activos - pasivos` suma la deuda al patrimonio**: fue literalmente el defecto de `AccountsContainer.tsx`, corregido el 2026-09-10 en la tanda 1 del RFC 024 (`~/Boveda/Proyectos/migracion-finanzas-mock/Deuda.md` §6).
 4.  **`monthly_summaries` usa la convención opuesta.** Sus columnas `liabilities_snapshot` y `assets_snapshot` guardan los pasivos en **positivo**, con la identidad clásica $A = PN + P$ (ver `seed.ts`). **Una pantalla que mezcle `accounts.balance` con `monthly_summaries` está mezclando dos convenciones**, y hoy hay una que lo hace: el número de Patrimonio Neto de `/accounts` sale de `accounts` y su sparkline de `monthly_summaries`. Deuda abierta: unificar.
 
 ### Por qué está anotado como deuda y no corregido acá

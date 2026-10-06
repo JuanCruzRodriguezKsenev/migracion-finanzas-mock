@@ -229,7 +229,7 @@ export const apiKeyScopes = pgTable( "api_key_scopes" , {
 
 **Respuestas:** `201` con la transacción creada · `200` con la transacción existente si el `external_id` ya fue visto · `401` sin llave o llave inválida · `403` sin el scope `transactions:write` · `422` si el código de categoría no resuelve, la cuenta no es de la organización, o la divisa no coincide.
 
-> **Los mensajes de error de este endpoint son prosa española**, porque salen de los `fail()` del servicio. Es la deuda declarada en [`TECHNICAL_DEBT.md`](../TECHNICAL_DEBT.md) §3, y **este RFC no la abre ni la parchea**: una API que devuelve prosa en un idioma es un argumento más para el RFC que fije códigos de error, no una excepción a resolver acá.
+> **Los mensajes de error de este endpoint son prosa española**, porque salen de los `fail()` del servicio. Es la deuda declarada en `~/Boveda/Proyectos/migracion-finanzas-mock/Deuda.md` §3, y **este RFC no la abre ni la parchea**: una API que devuelve prosa en un idioma es un argumento más para el RFC que fije códigos de error, no una excepción a resolver acá.
 
 ---
 

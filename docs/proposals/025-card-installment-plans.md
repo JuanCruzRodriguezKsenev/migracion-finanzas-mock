@@ -222,7 +222,7 @@ export const cardInstallmentPlans = pgTable( "card_installment_plans" , {
 > `CardVisual.tsx` rotula en español directo `"Saldo facturado"` (`:108`), `"Deuda Total"` (`:133`),
 > `"Disponible"` y `"Límite"` (`:148-149`). **El plan de ejecución de este RFC agrega sus rótulos a
 > los tres diccionarios desde el principio**; internacionalizar los que ya están es deuda aparte y
-> va a [`TECHNICAL_DEBT.md`](../TECHNICAL_DEBT.md).
+> va a `~/Boveda/Proyectos/migracion-finanzas-mock/Deuda.md`.
 
 ---
 

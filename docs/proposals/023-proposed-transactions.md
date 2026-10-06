@@ -6,7 +6,7 @@
 *   **Fecha de Creación:** 2026-09-10
 *   **Fecha de Aprobación:** 2026-09-10
 *   **Autor:** `tanda`
-*   **Origen:** §2 de [`docs/diseno/rediseno-clasificacion-y-propuestas.md`](../diseno/rediseno-clasificacion-y-propuestas.md), donde se tomaron las ocho decisiones con su fundamento.
+*   **Origen:** §2 de `~/Boveda/Archivo/migracion-finanzas-mock/Diseños/Rediseño de clasificación y propuestas.md`, donde se tomaron las ocho decisiones con su fundamento.
 *   **Enmienda:** revoca las secciones 3 y 4 del [RFC 004](004-subscriptions-management.md). Ver §7.
 
 > [!IMPORTANT]
@@ -231,7 +231,7 @@ y cablearlas de verdad es otra ronda.
 
 ## 6. Requisitos previos — dos defectos que dejan de ser deuda
 
-Los dos están anotados en [`TECHNICAL_DEBT.md`](../TECHNICAL_DEBT.md) y este RFC **no se puede
+Los dos están anotados en `~/Boveda/Proyectos/migracion-finanzas-mock/Deuda.md` y este RFC **no se puede
 implementar correctamente sin ellos**.
 
 ### 6.1 `addInterval` deriva en fin de mes

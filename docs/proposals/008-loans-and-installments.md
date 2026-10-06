@@ -5,9 +5,9 @@
 *   **Estado:** `APPROVED` (2026-09-11 — aprobado por el usuario. Habilita código contra este texto) — **reescritura completa.**
 *   **Fecha de Creación:** 2026-06-22 (versión original) · **Reescrito:** 2026-09-11
 *   **Autor:** `tanda` (reescritura) · Antigravity (versión original de junio de 2026)
-*   **Origen:** §7 de [`docs/diseno/rediseno-clasificacion-y-propuestas.md`](../diseno/rediseno-clasificacion-y-propuestas.md), que dejó pedida esta reescritura, y §9 del [RFC 024](024-instruments-and-entity-navigation.md), que la nombra como bloqueante de `/loans`.
+*   **Origen:** §7 de `~/Boveda/Archivo/migracion-finanzas-mock/Diseños/Rediseño de clasificación y propuestas.md`, que dejó pedida esta reescritura, y §9 del [RFC 024](024-instruments-and-entity-navigation.md), que la nombra como bloqueante de `/loans`.
 *   **Reemplaza:** la versión `APPROVED` del 2026-06-23 **en su totalidad**. Esa versión es anterior al core contable (RFC 018), a la migración a `bigint` (RFC 019) y al circuito de recurrencias (RFC 023).
-*   **Escisión:** las **compras en cuotas con tarjeta** salen de este RFC y pasan al [**RFC 025**](025-card-installment-plans.md), escrito el mismo día. Pertenecen a `/cards`, no a `/loans`: una compra en 12 cuotas se paga con la tarjeta, entra en su ciclo de cierre y su deuda ya vive en la cuenta de pasivo de esa tarjeta. El nombre del archivo conserva `-and-installments` para no romper los dos enlaces existentes ([`ROADMAP.md:17`](../ROADMAP.md) y [`trabajo-en-vuelo.md:61`](../trabajo-en-vuelo.md)); el título del RFC es el que manda.
+*   **Escisión:** las **compras en cuotas con tarjeta** salen de este RFC y pasan al [**RFC 025**](025-card-installment-plans.md), escrito el mismo día. Pertenecen a `/cards`, no a `/loans`: una compra en 12 cuotas se paga con la tarjeta, entra en su ciclo de cierre y su deuda ya vive en la cuenta de pasivo de esa tarjeta. El nombre del archivo conserva `-and-installments` para no romper los dos enlaces existentes (`ROADMAP.md:17` (`~/Boveda/Archivo/migracion-finanzas-mock/ROADMAP desactualizado.md`) y `trabajo-en-vuelo.md:61` (`~/Boveda/Proyectos/migracion-finanzas-mock/Estado.md`)); el título del RFC es el que manda.
 
 ---
 
@@ -66,9 +66,9 @@ El precedente está en el propio repositorio y es exacto. **`/cards` cubre `cred
 
 Se aplica el mismo procedimiento con que el RFC 023 caducó una parte del RFC 004 ([`004-subscriptions-management.md:123`](004-subscriptions-management.md), «§4 — `needs_review: true` en el libro mayor. **Revocada.**»): **no se abre una enmienda aparte**; el documento viejo recibe su nota en el lugar exacto.
 
-Las cinco menciones a corregir en [`024-instruments-and-entity-navigation.md`](024-instruments-and-entity-navigation.md) son las líneas **62, 79, 85, 291 y 297**. Fuera del RFC 024, el rename toca [`ARCHITECTURE.md:81`](../../ARCHITECTURE.md) y [`trabajo-en-vuelo.md:61`](../trabajo-en-vuelo.md).
+Las cinco menciones a corregir en [`024-instruments-and-entity-navigation.md`](024-instruments-and-entity-navigation.md) son las líneas **62, 79, 85, 291 y 297**. Fuera del RFC 024, el rename toca [`ARCHITECTURE.md:81`](../../ARCHITECTURE.md) y `trabajo-en-vuelo.md:61` (`~/Boveda/Proyectos/migracion-finanzas-mock/Estado.md`).
 
-**No se tocan** [`docs/planes/024-tanda-1-directorio-por-entidad.md:25`](../planes/024-tanda-1-directorio-por-entidad.md) ni nada bajo [`docs/registro/`](../registro/): son registro histórico de trabajo ya ejecutado y deben seguir diciendo lo que decían cuando se ejecutaron. Las tres menciones en [`docs/diseno/rediseno-clasificacion-y-propuestas.md`](../diseno/rediseno-clasificacion-y-propuestas.md) (líneas 296, 322 y 446) son de la misma naturaleza: acta de una sesión de diseño. **Tampoco se editan.**
+**No se tocan** `~/Boveda/Archivo/migracion-finanzas-mock/Planes/024-tanda-1-directorio-por-entidad.md` (línea 25) ni nada bajo `~/Boveda/Archivo/migracion-finanzas-mock/Registro/`: son registro histórico de trabajo ya ejecutado y deben seguir diciendo lo que decían cuando se ejecutaron. Las tres menciones en `~/Boveda/Archivo/migracion-finanzas-mock/Diseños/Rediseño de clasificación y propuestas.md` (líneas 296, 322 y 446) son de la misma naturaleza: acta de una sesión de diseño. **Tampoco se editan.**
 
 **Verificado: `/debts` no existe en el código.** El rename es puramente documental. Las coincidencias de «deudas» en `src/` son texto de comentarios en la feature `notifications` y en `seed.ts`, ajenas a esta ruta.
 

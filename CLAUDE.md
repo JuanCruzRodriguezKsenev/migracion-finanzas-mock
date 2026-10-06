@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-> **Estado de trabajo en curso y próximo paso:** [`docs/trabajo-en-vuelo.md`](docs/trabajo-en-vuelo.md).
+> **Estado de trabajo en curso y próximo paso:** `~/Boveda/Proyectos/migracion-finanzas-mock/Estado.md`.
 
 ## Las reglas de este repo no son específicas de Claude
 
@@ -15,7 +15,7 @@ Abrilo antes de escribir el primer archivo.
 ## Lo específico de Claude Code
 
 [`.claude/CLAUDE.md`](.claude/CLAUDE.md) — ficha de proyecto y flota de agentes. El ciclo es `tanda`
-piensa (deja el plan en `docs/planes/`) → `obra` ejecuta → `verificador` comprueba.
+piensa (deja el plan en la bóveda, `Planes/`) → `obra` ejecuta → `verificador` comprueba.
 
 ## Mapa rápido
 
@@ -25,4 +25,4 @@ piensa (deja el plan en `docs/planes/`) → `obra` ejecuta → `verificador` com
 | [`.agents/AGENTS.md`](.agents/AGENTS.md) | §1 restricciones · §4 estilo · §7 flujo · §8 lo que cobra caro. **No autocargado** |
 | [`.claude/CLAUDE.md`](.claude/CLAUDE.md) | Ficha de proyecto y flota de agentes |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Arquitectura feature-driven, nomenclatura, tests, proceso RFC |
-| [`docs/trabajo-en-vuelo.md`](docs/trabajo-en-vuelo.md) | Único doc de estado |
+| `~/Boveda/Proyectos/migracion-finanzas-mock/Estado.md` | Único doc de estado |

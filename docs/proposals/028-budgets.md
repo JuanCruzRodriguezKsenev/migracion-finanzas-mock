@@ -5,7 +5,7 @@
 *   **Estado:** `DRAFT` (2026-10-06 — espera la aprobación del usuario. **No se programa código contra este texto hasta que figure `APPROVED`**)
 *   **Fecha de Creación:** 2026-10-06
 *   **Autor:** `tanda`
-*   **Spec que implementa:** [`../specs/presupuestos/spec.md`](../specs/presupuestos/spec.md) (aprobada) — este RFC es el *cómo*
+*   **Spec que implementa:** `~/Boveda/Proyectos/migracion-finanzas-mock/Specs/Presupuestos/Spec - Presupuestos.md` (aprobada) — este RFC es el *cómo*
 *   **Depende de:** RFC 022 (clasificación, `APPROVED`) y [RFC 027](027-statistics-page.md) (estadísticas, `DRAFT`: de ahí salen la regla de gasto y la utilidad de mes)
 
 ---

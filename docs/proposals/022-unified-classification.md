@@ -6,7 +6,7 @@
 *   **Fecha de Creación:** 2026-09-09
 *   **Fecha de Aprobación:** 2026-09-09
 *   **Autor:** `tanda` (sesión de diseño del 2026-09-09)
-*   **Origen:** §3 de [`docs/diseno/rediseno-clasificacion-y-propuestas.md`](../diseno/rediseno-clasificacion-y-propuestas.md), donde se tomaron las decisiones con su fundamento.
+*   **Origen:** §3 de `~/Boveda/Archivo/migracion-finanzas-mock/Diseños/Rediseño de clasificación y propuestas.md`, donde se tomaron las decisiones con su fundamento.
 
 > [!IMPORTANT]
 > **Este RFC se escribió contrastando el esquema real archivo por archivo**, no de memoria. La

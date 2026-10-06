@@ -5,7 +5,7 @@
 *   **Estado:** `DRAFT` (2026-10-06 — espera la aprobación del usuario. **No se programa código contra este texto hasta que figure `APPROVED`**)
 *   **Fecha de Creación:** 2026-10-06
 *   **Autor:** `tanda`
-*   **Spec que implementa:** [`../specs/estadisticas/spec.md`](../specs/estadisticas/spec.md) (aprobada) — este RFC es el *cómo*; la spec es el *qué*
+*   **Spec que implementa:** `~/Boveda/Proyectos/migracion-finanzas-mock/Specs/Estadísticas/Spec - Estadísticas.md` (aprobada) — este RFC es el *cómo*; la spec es el *qué*
 *   **Depende de:** RFC 022 (clasificación, `APPROVED`), RFC 024 (instrumentos, `APPROVED`), RFC 025 (cuotas de tarjeta, `APPROVED`)
 *   **Cierra, del RFC 024 §9:** la convención de signo de `monthly_summaries` y el nombre de la ruta
 
@@ -24,7 +24,7 @@ Verificado antes de escribir una consulta.
 | Hay un servicio de cuotas futuras | **Sí:** `cuotasFuturasPorDivisa( planes )` (`installmentService.ts:130`) es puro, y `installmentPlansRepository.findActiveByOrganization( orgId )` (`:111`) trae los planes. Es lo que ya usa `cardCycleService.ts:58` | El Patrimonio Neto resta **exactamente** lo que la tarjeta ya resta: un solo cálculo |
 | El Patrimonio Neto de `/accounts` es el patrimonio de la organización | `AccountsContainer.tsx:97-99`: `netWorth = totalAssets + totalLiabs`, con el signo del motor (`patterns.md` §8) — **pero** sobre `walletAccounts`, que **excluye las cuentas de tarjetas y de préstamos** (`:86-93`), y **suma todas las divisas** en un número | El **signo** es correcto; el **alcance** no. Estadísticas calcula el neto sobre **todas** las cuentas `asset` y `liability` de la divisa elegida, tarjetas y préstamos incluidos (son cuentas de pasivo). **El número va a ser distinto del que `/accounts` mostraba**, y es lo correcto |
 | Hay gráficos reutilizables | Sólo `RechartsSparkline/Sparkline.tsx`. **No hay donut ni gráfico de barras o líneas de varias series** | Hay que construirlos en `shared/ui/` |
-| `profiles.timezone` se usa | Existe (`profile/schema.db.ts`) y `profileRepository.findByUserId` lo devuelve, pero **ningún código de producción lo consume** (`TECHNICAL_DEBT.md` §3) | Estadísticas es el **primer consumidor** de la zona horaria y de `currency` |
+| `profiles.timezone` se usa | Existe (`profile/schema.db.ts`) y `profileRepository.findByUserId` lo devuelve, pero **ningún código de producción lo consume** (`~/Boveda/Proyectos/migracion-finanzas-mock/Deuda.md` §3) | Estadísticas es el **primer consumidor** de la zona horaria y de `currency` |
 | El dashboard delimita los meses como el usuario | Usa `new Date( año , mes , 1 )` en la zona del **servidor** (`monthlySummaryService.ts:37-38`) | En un servidor en UTC, un gasto de las 22:00 del 31 en Buenos Aires cae en el mes siguiente. Defecto **vivo**, no lo arregla este RFC (§10) |
 
 ---

@@ -6,8 +6,8 @@ los agentes (`tanda`, `obra`, `verificador`, `forja`) para orientarse sin barrer
 Para el modo de trabajo por rondas: `claude --agent tanda`. Los agentes son genéricos y viven en
 `~/.claude/agents/`; lo específico de este proyecto es esta ficha.
 
-**El ciclo son tres piezas y vos en el medio:** `tanda` piensa y deja el plan escrito en
-`docs/planes/`; `obra` lo ejecuta (`claude --agent obra`, pasándole la ruta del plan); `verificador`
+**El ciclo son tres piezas y vos en el medio:** `tanda` piensa y deja el plan escrito en la
+bóveda, `Planes/`; `obra` lo ejecuta (`claude --agent obra`, pasándole la ruta del plan); `verificador`
 comprueba. Los agentes no se invocan entre sí — salvo la batería, que `tanda` y `obra` sí delegan en
 `verificador`.
 
@@ -77,21 +77,23 @@ Columnas monetarias en `bigint` (centavos). `year`, `month`, `attempts`, `failed
 
 ## Mapa de docs
 
-| Archivo | Qué tiene | Cuándo se toca |
+**bóveda:** `~/Boveda/Proyectos/migracion-finanzas-mock/` (tarjeta: `migracion-finanzas-mock.md`) · **archivo:** `~/Boveda/Archivo/migracion-finanzas-mock/`.
+Lo vivo y lo de trabajo están en la bóveda; la referencia del código y los RFC, en este repo.
+
+| Dónde | Qué tiene | Cuándo se toca |
 | :--- | :--- | :--- |
-| `docs/trabajo-en-vuelo.md` | **Único doc de estado**: rama y próximo paso | Se actualiza **en el mismo commit** que avanza el trabajo |
-| `docs/planes/` | **Planes aprobados listos para ejecutar**, uno por ronda. Los escribe `tanda`, los ejecuta `obra`. Un plan **no** lleva progreso adentro: el estado vive en `trabajo-en-vuelo.md` | Al cerrar un plan, antes de ejecutarlo |
-| `docs/specs/` | **Especificaciones aprobadas** (el *qué*): `spec.md` con `RN-n` y `AC-n`, y `assumptions.md` con la traza. Las escribe `tanda` con la skill `spec`; los planes las citan por ruta | Antes de planificar una funcionalidad con decisiones de producto abiertas |
-| `docs/diseno/` | **Sesiones de diseño en curso**, antes de que haya RFC. Registran decisiones tomadas y su porqué; cuando el tema cierra, se parte en propuestas | Mientras se discute una decisión de arquitectura |
-| `docs/TECHNICAL_DEBT.md` | § Resuelto y § Abierto | Al cerrar o abrir deuda |
-| `docs/patterns.md` | Patrones vigentes. **Contrastar acá toda decisión nueva** | Al establecer un patrón |
-| `docs/proposals/` | 26 RFCs con estado `DRAFT`/`APPROVED`/`SUPERSEDED` (`ARCHITECTURE.md` §6 define los cuatro) | Código sólo contra `APPROVED` |
-| `docs/adr/`, `docs/registro/` | Decisiones arquitectónicas; ramas cerradas | Al cerrar una rama |
-| `docs/ROADMAP.md` | **Desactualizado**: cubre 9 de 23 ítems | La hoja de ruta real es el artifact |
-| `ARCHITECTURE.md` | Arquitectura feature-driven | Lectura |
-| `AGENTS.md` (raíz) | **Router neutral**, para cualquier agente de IA. Reglas duras completas + rutas. Se autocarga | Al cambiar una regla dura |
+| `~/Boveda/Proyectos/migracion-finanzas-mock/Estado.md` | **Único doc de estado**: dónde estamos, próximo paso, bloqueos | Lo actualiza `obra` **después de cada commit de código**, con un commit en la bóveda acotado a esa ruta |
+| `~/Boveda/Proyectos/migracion-finanzas-mock/Planes/` | **Planes listos para ejecutar**, numerados por orden de ejecución. Los escribe `tanda`, los ejecuta `obra`. Un plan **no** lleva progreso adentro | Al cerrar un plan, antes de ejecutarlo |
+| `~/Boveda/Proyectos/migracion-finanzas-mock/Specs/<tema>/` | Especificaciones aprobadas (el *qué*): `Spec - <Tema>.md` y `Supuestos - <Tema>.md` | Antes de planificar una funcionalidad con decisiones abiertas |
+| `~/Boveda/Proyectos/migracion-finanzas-mock/Diseños/` | Sesiones de diseño en curso y el inventario de módulos por migrar | Mientras se discute una decisión de arquitectura |
+| `~/Boveda/Proyectos/migracion-finanzas-mock/Deuda.md` | § Resuelto y § Abierto | La edita `tanda`; `obra` reporta la deuda nueva en su informe |
+| `~/Boveda/Archivo/migracion-finanzas-mock/` | Planes ejecutados, registros de cierre, diseños cerrados | Al cerrar una rama |
+| `docs/proposals/` | 28 RFC con estado `DRAFT`/`APPROVED`/`SUPERSEDED` (`ARCHITECTURE.md` §6 define los cuatro). **Se quedan en el repo**: son el contrato contra el que se escribe el código | Código sólo contra `APPROVED` |
+| `docs/patterns.md` · `docs/TESTING.md` · `docs/adr/` | Patrones vigentes (**contrastar acá toda decisión nueva**), testing, decisiones arquitectónicas | Al establecer un patrón |
+| `ARCHITECTURE.md` · `REVIEW_CHECKLIST.md` | Arquitectura feature-driven; checklist de revisión | Lectura |
+| `AGENTS.md` (raíz) | **Router neutral**, para cualquier agente de IA. Se autocarga | Al cambiar una regla dura |
 | `.agents/AGENTS.md` | §1 restricciones · §4 estilo · §7 flujo · §8 lo que el proyecto cobra caro. **NO se autocarga**: abrilo antes de escribir código | Lectura obligatoria |
-| `CLAUDE.md` (raíz) | Comandos, stack, estilo de código, convenciones | Lectura |
+| `CLAUDE.md` (raíz) | Puntero a `AGENTS.md` | — |
 
 ## Restricciones
 

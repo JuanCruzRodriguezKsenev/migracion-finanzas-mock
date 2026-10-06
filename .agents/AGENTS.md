@@ -6,9 +6,9 @@ Este archivo contiene instrucciones, restricciones y directrices operativas espe
 > ## Por dónde empezar
 >
 > **Este archivo no lleva estado.** Punteros:
-> - **Qué hay a medias y cuál es el próximo paso** → [`docs/trabajo-en-vuelo.md`](../docs/trabajo-en-vuelo.md).
+> - **Qué hay a medias y cuál es el próximo paso** → `~/Boveda/Proyectos/migracion-finanzas-mock/Estado.md`.
 >   **Si retomás sin contexto, empezá por ahí**: dice en qué rama está el trabajo, qué tanda sigue y qué decisiones se tomaron en conversación.
-> - **Backlog de deuda** → [`docs/TECHNICAL_DEBT.md`](../docs/TECHNICAL_DEBT.md) (creado en Tanda H).
+> - **Backlog de deuda** → `~/Boveda/Proyectos/migracion-finanzas-mock/Deuda.md` (creado en Tanda H).
 > - **Propuestas técnicas y decisiones** → [`docs/proposals/`](../docs/proposals/).
 > - **Arquitectura del sistema** → [`ARCHITECTURE.md`](../ARCHITECTURE.md).
 

@@ -5,7 +5,7 @@
 *   **Estado:** `DRAFT` — **no habilita código hasta que el usuario lo apruebe.** Reescritura completa.
 *   **Fecha de Creación:** 2026-06-22 (versión original) · **Reescrito:** 2026-09-12
 *   **Autor:** `tanda` (reescritura) · Antigravity (versión original de junio de 2026)
-*   **Origen:** decisión 3 del §4 de [`docs/diseno/rediseno-clasificacion-y-propuestas.md`](../diseno/rediseno-clasificacion-y-propuestas.md), que dejó pedido este contraste y anotó que «no hay que escribirle propuesta nueva, hay que contrastarlo».
+*   **Origen:** decisión 3 del §4 de `~/Boveda/Archivo/migracion-finanzas-mock/Diseños/Rediseño de clasificación y propuestas.md`, que dejó pedido este contraste y anotó que «no hay que escribirle propuesta nueva, hay que contrastarlo».
 *   **Reemplaza:** la versión `APPROVED` del 2026-06-23 **en su totalidad**. Esa versión es anterior al core contable (RFC 018), a la migración a `bigint` (RFC 019), al circuito de recurrencias (RFC 023) y a la doctrina de instrumentos del RFC 024.
 *   **Escisión:** **inquilinos e incidencias salen de este RFC.** Ver §8.
 

@@ -5,7 +5,7 @@
 *   **Estado:** `DRAFT` (2026-10-06 — **reescrito; se le baja el sello**. El `APPROVED` del 2026-06-23 correspondía al texto anterior, que era anterior al core contable y no se podía implementar. **No se programa código contra este texto hasta que figure `APPROVED` de nuevo**)
 *   **Fecha de Creación:** 2026-06-22 · **Reescrito:** 2026-10-06
 *   **Autor:** Antigravity (texto original) · `tanda` (reescritura)
-*   **Spec que implementa:** [`../specs/metas/spec.md`](../specs/metas/spec.md) (aprobada) — este RFC es el *cómo*
+*   **Spec que implementa:** `~/Boveda/Proyectos/migracion-finanzas-mock/Specs/Metas/Spec - Metas.md` (aprobada) — este RFC es el *cómo*
 *   **Depende de:** RFC 019 (`bigint`), RFC 022 (clasificación), RFC 024 (instrumentos), [RFC 027](027-statistics-page.md) (Patrimonio Neto: las reservas **no** lo cambian)
 
 > [!IMPORTANT]
