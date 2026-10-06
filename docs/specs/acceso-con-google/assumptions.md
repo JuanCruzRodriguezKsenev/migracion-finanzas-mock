@@ -71,3 +71,26 @@ Todos aprobados el 2026-10-06 (resuelto).
 | R2-9 | Cualquier usuario ya autorizado puede **crear organizaciones nuevas** y queda como `owner`; sin invitación previa nadie crea la primera |
 | R2-10 | Una organización nueva nace con el plan de cuentas estándar y la hoja `General`; ese aprovisionamiento se extrae del seed |
 | R2-11 | Quedan fuera: eliminar, transferir o renombrar organizaciones desde la interfaz |
+
+## Ronda 3 — rol de sólo lectura para un contador (2026-10-06, sin responder)
+
+Historia agregada por el usuario: «si tengo un contador que revisa mis finanzas debería poder invitarlo a ver, pero no modificar».
+Hechos del repo: hay 49 acciones exportadas en 10 archivos `actions/`, y cada una llama a `getServerSession` por su cuenta;
+ninguna distingue roles hoy. `rellenarResumenesFaltantes` se dispara al abrir el dashboard y **escribe** `monthly_summaries`.
+
+| # | Supuesto | Estado |
+| :-: | :--- | :--- |
+| R3-1 | Rol nuevo `viewer`, rotulado «Sólo lectura» en la interfaz | asumido |
+| R3-2 | Se invita igual que a cualquiera (Google, por un `owner`, vence a los 7 días) eligiendo ese rol | asumido |
+| R3-3 | Puede estar en varias organizaciones (de distintos clientes) y usa el mismo selector | asumido |
+| R3-4 | Ve todo lo contable y todas las pantallas, también las nuevas (presupuestos, estadísticas, metas) | asumido |
+| R3-5 | No ve la pestaña Miembros ni la lista de miembros e invitaciones | asumido |
+| R3-6 | No modifica nada: los botones de acción **no se muestran** (no sólo deshabilitados), incluida la bandeja de recurrencias | asumido |
+| R3-7 | El servidor rechaza toda escritura de un `viewer` aunque la interfaz se fuerce | asumido |
+| R3-8 | El rol se lee de la **base** en cada escritura, no del token: bajar a alguien a sólo lectura corta sus escrituras al instante | asumido |
+| R3-9 | El relleno automático de resúmenes mensuales al abrir el dashboard sigue permitido para un `viewer` (dato derivado, no una acción suya) | asumido |
+| R3-10 | Puede crear organizaciones propias y editar su perfil, porque no tocan la organización ajena | asumido |
+| R3-11 | Para pasar a alguien de `viewer` a `member` o al revés se lo quita y se lo reinvita (cambiar rol sigue fuera de alcance) | asumido |
+| R3-12 | La organización activa muestra «Sólo lectura» junto al nombre en el selector | asumido |
+| R3-13 | Un `viewer` no cuenta como `owner` para RN-12 | asumido |
+| R3-14 | No se registra qué miró el contador | asumido |
