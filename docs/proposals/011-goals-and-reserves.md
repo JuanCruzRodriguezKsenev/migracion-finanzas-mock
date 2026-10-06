@@ -2,7 +2,7 @@
 
 *   **ID de la Propuesta:** 011
 *   **Título:** Metas con monto y divisa, y reservas virtuales que apartan saldo de una cuenta sin tocar el libro
-*   **Estado:** `DRAFT` (2026-10-06 — **reescrito; se le baja el sello**. El `APPROVED` del 2026-06-23 correspondía al texto anterior, que era anterior al core contable y no se podía implementar. **No se programa código contra este texto hasta que figure `APPROVED` de nuevo**)
+*   **Estado:** `APPROVED` (2026-10-06 — aprobado por el usuario, firmado por Claude a su pedido expreso. Habilita código contra este texto)
 *   **Fecha de Creación:** 2026-06-22 · **Reescrito:** 2026-10-06
 *   **Autor:** Antigravity (texto original) · `tanda` (reescritura)
 *   **Spec que implementa:** `~/Boveda/Proyectos/migracion-finanzas-mock/Specs/Metas/Spec - Metas.md` (aprobada) — este RFC es el *cómo*

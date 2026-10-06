@@ -2,11 +2,11 @@
 
 *   **ID de la Propuesta:** 028
 *   **Título:** Límites mensuales de gasto por categoría, con vigencia, y su evaluación contra el libro
-*   **Estado:** `DRAFT` (2026-10-06 — espera la aprobación del usuario. **No se programa código contra este texto hasta que figure `APPROVED`**)
+*   **Estado:** `APPROVED` (2026-10-06 — aprobado por el usuario, firmado por Claude a su pedido expreso. Habilita código contra este texto)
 *   **Fecha de Creación:** 2026-10-06
 *   **Autor:** `tanda`
 *   **Spec que implementa:** `~/Boveda/Proyectos/migracion-finanzas-mock/Specs/Presupuestos/Spec - Presupuestos.md` (aprobada) — este RFC es el *cómo*
-*   **Depende de:** RFC 022 (clasificación, `APPROVED`) y [RFC 027](027-statistics-page.md) (estadísticas, `DRAFT`: de ahí salen la regla de gasto y la utilidad de mes)
+*   **Depende de:** RFC 022 (clasificación, `APPROVED`) y [RFC 027](027-statistics-page.md) (estadísticas, `APPROVED`: de ahí salen la regla de gasto y la utilidad de mes)
 
 ---
 

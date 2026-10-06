@@ -2,7 +2,7 @@
 
 *   **ID de la Propuesta:** 027
 *   **Título:** Estadísticas del libro: flujos, categorías, tendencia y Patrimonio Neto, por divisa
-*   **Estado:** `DRAFT` (2026-10-06 — espera la aprobación del usuario. **No se programa código contra este texto hasta que figure `APPROVED`**)
+*   **Estado:** `APPROVED` (2026-10-06 — aprobado por el usuario, firmado por Claude a su pedido expreso. Habilita código contra este texto)
 *   **Fecha de Creación:** 2026-10-06
 *   **Autor:** `tanda`
 *   **Spec que implementa:** `~/Boveda/Proyectos/migracion-finanzas-mock/Specs/Estadísticas/Spec - Estadísticas.md` (aprobada) — este RFC es el *cómo*; la spec es el *qué*
