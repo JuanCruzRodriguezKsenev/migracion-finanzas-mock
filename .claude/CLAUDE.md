@@ -84,6 +84,7 @@ Lo vivo y lo de trabajo están en la bóveda; la referencia del código y los RF
 | :--- | :--- | :--- |
 | `~/Boveda/Proyectos/migracion-finanzas-mock/Estado.md` | **Único doc de estado**: dónde estamos, próximo paso, bloqueos | Lo actualiza `obra` **después de cada commit de código**, con un commit en la bóveda acotado a esa ruta |
 | `~/Boveda/Proyectos/migracion-finanzas-mock/Planes/` | **Planes listos para ejecutar**, numerados por orden de ejecución. Los escribe `tanda`, los ejecuta `obra`. Un plan **no** lleva progreso adentro | Al cerrar un plan, antes de ejecutarlo |
+| `~/Boveda/Proyectos/migracion-finanzas-mock/Informes/` | **Informe de cada plan ejecutado**, con el mismo nombre que el plan. Lo escribe `obra` al terminar (hallazgos, batería, dónde paró) y `tanda` lo lee al abrir la ronda | Al cerrar un plan |
 | `~/Boveda/Proyectos/migracion-finanzas-mock/Specs/<tema>/` | Especificaciones aprobadas (el *qué*): `Spec - <Tema>.md` y `Supuestos - <Tema>.md` | Antes de planificar una funcionalidad con decisiones abiertas |
 | `~/Boveda/Proyectos/migracion-finanzas-mock/Diseños/` | Sesiones de diseño en curso y el inventario de módulos por migrar | Mientras se discute una decisión de arquitectura |
 | `~/Boveda/Proyectos/migracion-finanzas-mock/Deuda.md` | § Resuelto y § Abierto | La edita `tanda`; `obra` reporta la deuda nueva en su informe |
