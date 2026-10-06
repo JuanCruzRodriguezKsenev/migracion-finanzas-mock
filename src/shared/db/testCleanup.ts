@@ -27,6 +27,8 @@ import {
   contacts ,
   subscriptions ,
   categoryAccounts ,
+  budgetLimits ,
+  budgets ,
   accounts ,
   financialEntities ,
   categories ,
@@ -100,6 +102,10 @@ export async function limpiarBase(): Promise< void > {
 
     // 17. financial_entities
     await tx.delete( financialEntities ) ;
+
+    // 17b. budget_limits y budgets → budgets restringe a categories; antes que categories
+    await tx.delete( budgetLimits ) ;
+    await tx.delete( budgets ) ;
 
     // 18. categories → primero hojas con parentId no nulo, luego padres
     await tx.delete( categories ).where( isNotNull( categories.parentId ) ) ;

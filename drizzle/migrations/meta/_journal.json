@@ -225,6 +225,13 @@
       "when": 1791323287020,
       "tag": "0031_married_alex_wilder",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791330683550,
+      "tag": "0032_melted_paladin",
+      "breakpoints": true
     }
   ]
 }
