@@ -7,9 +7,10 @@ import path           from "path" ;
 // Cargar variables de entorno desde .env.local para los tests
 dotenv.config( {path: ".env.local"} ) ;
 
-// Redirigir la base de datos a la de tests para evitar borrar la de desarrollo
+// Redirigir la base de datos a la de tests para evitar borrar la de desarrollo: `<nombre>_test`,
+// así cada checkout (git worktree) con su propia DATABASE_URL tiene su propia base de tests
 const databaseUrl     = ( process.env.DATABASE_URL || "postgresql://postgres:postgres_dev_pwd@localhost:5432/finanzas_db" ) ;
-const testDatabaseUrl = databaseUrl.replace( /\/([^/?]+)(\?|$)/ , "/finanzas_db_test$2" ) ;
+const testDatabaseUrl = databaseUrl.replace( /\/([^/?]+?)(_test)?(\?|$)/ , "/$1_test$3" ) ;
 process.env.DATABASE_URL = testDatabaseUrl ;
 
 export default defineConfig( {
@@ -24,7 +25,7 @@ export default defineConfig( {
       "./src/shared/lib/vitest.setup.dom.ts" ,
       "./src/shared/lib/vitest.setup.mocks.ts"
     ] ,
-    // Las suites comparten finanzas_db_test: fileParallelism: false evita la colisión
+    // Las suites de un mismo checkout comparten <nombre>_test: fileParallelism: false evita la colisión
     // simultánea entre archivos (el residuo entre archivos lo resuelve limpiarBase).
     fileParallelism: false ,
     include: [

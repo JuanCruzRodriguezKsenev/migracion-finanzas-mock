@@ -9,7 +9,8 @@ export default async function setup() {
   dotenv.config( {path: ".env.local"} ) ;
 
   const databaseUrl = ( process.env.DATABASE_URL || "postgresql://postgres:postgres_dev_pwd@localhost:5432/finanzas_db" ) ;
-  const testDatabaseUrl = databaseUrl.replace( /\/([^/?]+)(\?|$)/ , "/finanzas_db_test$2" ) ;
+  const testDatabaseUrl = databaseUrl.replace( /\/([^/?]+?)(_test)?(\?|$)/ , "/$1_test$3" ) ;
+  const testDbName      = new URL( testDatabaseUrl ).pathname.slice( 1 ) ;
   const adminDbUrl = databaseUrl.replace( /\/([^/?]+)(\?|$)/ , "/postgres$2" ) ;
 
   console.log( "\n⚙️ Preparando base de datos de prueba..." ) ;
@@ -18,12 +19,12 @@ export default async function setup() {
   const sqlAdmin = postgres( adminDbUrl , {max: 1} ) ;
   try {
     const dbs = await sqlAdmin`
-      SELECT datname FROM pg_database WHERE datname = 'finanzas_db_test'
+      SELECT datname FROM pg_database WHERE datname = ${testDbName}
     ` ;
 
     if( dbs.length === 0 ) {
-      console.log( "🔨 Creando base de datos 'finanzas_db_test'..." ) ;
-      await sqlAdmin`CREATE DATABASE finanzas_db_test` ;
+      console.log( `🔨 Creando base de datos '${testDbName}'...` ) ;
+      await sqlAdmin.unsafe( `CREATE DATABASE "${testDbName}"` ) ;
     }
   } catch( e ) {
     console.error( "Error al verificar/crear base de datos de test:" , e ) ;
@@ -33,7 +34,7 @@ export default async function setup() {
   }
 
   // 2. Correr migraciones sobre la base de datos de test
-  console.log( "🚀 Ejecutando migraciones sobre 'finanzas_db_test'..." ) ;
+  console.log( `🚀 Ejecutando migraciones sobre '${testDbName}'...` ) ;
   const sqlTest = postgres( testDatabaseUrl , {max: 1} ) ;
   const dbTest = drizzle( sqlTest ) ;
 
