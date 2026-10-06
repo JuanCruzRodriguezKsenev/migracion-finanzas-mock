@@ -44,6 +44,16 @@ ejecución se detuviera ahí, y ahora son cuatro correcciones al seed en vez de 
 > de presentación de los pasivos, que pertenece a la propuesta de estadísticas—. **El RFC 024 no se
 > edita: es texto `APPROVED`.**
 
+**Después de este plan, la serie de acceso (2026-10-06).** Spec aprobada:
+[`specs/acceso-con-google/spec.md`](specs/acceso-con-google/spec.md) — entrar con Google, una persona en varias
+organizaciones, invitaciones. Cinco planes, **cada uno sale de la punta del anterior** y exige el anterior verificado:
+
+1.  [`acceso-1-aprovisionamiento-de-organizacion.md`](planes/acceso-1-aprovisionamiento-de-organizacion.md) — el catálogo y la cuenta de Patrimonio Neto salen del seed a un servicio.
+2.  [`acceso-2-membresias-y-organizacion-activa.md`](planes/acceso-2-membresias-y-organizacion-activa.md) — `memberships`; la sesión conserva su forma.
+3.  [`acceso-3-google-e-invitaciones.md`](planes/acceso-3-google-e-invitaciones.md) — proveedor Google, `invitations`, script de arranque.
+4.  [`acceso-4-miembros-y-selector.md`](planes/acceso-4-miembros-y-selector.md) — pestaña Miembros, selector, alta de organizaciones.
+5.  [`acceso-5-despliegue-vercel-neon.md`](planes/acceso-5-despliegue-vercel-neon.md) — Vercel + Neon; mezcla pasos de `obra` y del usuario.
+
 **Por qué esta tanda y no otra:** de los 40 commits anteriores, sólo 8 tocaron `src/`. Ésta es
 chica, se verifica sola y arregla algo que ya se usa todos los días.
 
