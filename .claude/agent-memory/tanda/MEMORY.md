@@ -8,6 +8,8 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 - ⚠ **[PENDIENTE: pasarle el plan de los resúmenes a `obra`](estado_actual.md)** — el usuario pidió que se lo recuerde al abrir la sesión. El bloque con el traspaso literal está al principio del archivo.
 - [Estado al cerrar la última ronda](estado_actual.md) — ramas, qué está verificado, qué está en vuelo y qué hay sobre la mesa. **Contrastar con `git log` antes de actuar.**
 
+- [Serie «acceso con Google»](acceso_con_google_serie.md) — spec aprobada + 5 planes escritos (2026-10-06, commit 451d0b0); el plan 0 sigue sin ejecutar y precede.
+
 ## Antes de planificar
 
 - [Trampas del repo](trampas_del_repo.md) — verificación, migraciones que rompen fixtures, RFCs viejos con esquemas previos al core contable, signo de pasivos, y código que los docs dicen que existe y no.
