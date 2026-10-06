@@ -57,7 +57,12 @@ organizaciones, invitaciones. Cinco planes, **cada uno sale de la punta del ante
 
 **Estadísticas (2026-10-06):** spec aprobada ([`specs/estadisticas/spec.md`](specs/estadisticas/spec.md)), [RFC 027](proposals/027-statistics-page.md) **en `DRAFT`, espera la firma del usuario**, y dos planes:
 [`estadisticas-1-lo-reversado-no-cuenta.md`](planes/estadisticas-1-lo-reversado-no-cuenta.md) (se puede ejecutar ya; corrige el dashboard) y
-[`estadisticas-2-pagina.md`](planes/estadisticas-2-pagina.md) (exige el RFC `APPROVED`). Presupuestos y metas: sin spec.
+[`estadisticas-2-pagina.md`](planes/estadisticas-2-pagina.md) (exige el RFC `APPROVED`).
+
+**Presupuestos y metas (2026-10-06):** specs aprobadas ([`specs/presupuestos/`](specs/presupuestos/spec.md), [`specs/metas/`](specs/metas/spec.md)).
+[RFC 028](proposals/028-budgets.md) (nuevo) y [RFC 011](proposals/011-goals-and-reserves.md) (**reescrito, sello bajado a `DRAFT`**) **esperan la firma del usuario**. Planes:
+[`presupuestos-1-modelo-y-calculo.md`](planes/presupuestos-1-modelo-y-calculo.md) → [`presupuestos-2-pagina.md`](planes/presupuestos-2-pagina.md) y
+[`metas-1-modelo-y-operaciones.md`](planes/metas-1-modelo-y-operaciones.md) → [`metas-2-pagina.md`](planes/metas-2-pagina.md). Los de presupuestos exigen `estadisticas-2` ejecutado.
 
 **Por qué esta tanda y no otra:** de los 40 commits anteriores, sólo 8 tocaron `src/`. Ésta es
 chica, se verifica sola y arregla algo que ya se usa todos los días.
@@ -163,8 +168,8 @@ Más atrás: las **5 declaraciones de `dict?:` opcional heredadas** (`ContactsTa
 Las rutas van **en inglés** (`ARCHITECTURE.md` §4); entre paréntesis, el nombre que el módulo tiene
 en el catálogo del mock, que es donde está la referencia visual.
 
-* **Metas de ahorro (`/goals`, mock: `/metas`)** — RFC 011 (`011-goals-and-reserves.md`): barras de progreso, cálculo de fecha objetivo y asignación de fondos. **Fase 3**, no antes: su saldo libre necesita que los compromisos existan.
-* **Presupuestos (`/budgets`, mock: `/presupuestos`):** Donut ring, barras de progreso y límites de gasto asociados al árbol de `categories`. **Sin RFC**: hay que escribirlo antes de tocar código.
+* **Metas de ahorro (`/goals`, mock: `/metas`)** — RFC 011 **reescrito el 2026-10-06 y en `DRAFT`** (`011-goals-and-reserves.md`): reservas virtuales, saldo libre, progreso. Ya no depende de los compromisos: reserva y compromiso son cosas distintas.
+* **Presupuestos (`/budgets`, mock: `/presupuestos`):** límites mensuales por categoría. **RFC 028 en `DRAFT`.**
 * **Inversiones (`/investments`, mock: `/inversiones`)** — RFC 014 (`014-investments-management.md`): portafolio, cotizaciones y gráficos con Recharts.
 * **Facturación (`/billing`, mock: `/facturacion`)** — RFC 013 (`013-billing-and-invoicing.md`): emisión y preview de comprobantes.
 * **Integraciones y API Keys (`/integrations`, mock: `/integraciones`)** — RFC 012 (`012-integrations-and-api-keys.md`).

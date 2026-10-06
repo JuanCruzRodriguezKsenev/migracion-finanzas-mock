@@ -32,3 +32,8 @@ el dashboard y `derivarResumenDeMes` suman un solo lado del asiento, así que lo
 Cambios sobre lo aprobado en la spec: las cifras salen del libro en vivo (no de `monthly_summaries`: sin divisa) y los meses se delimitan en `profiles.timezone`.
 Hechos: `/accounts` calcula su Patrimonio Neto sólo sobre billeteras (excluye tarjetas y préstamos) y suma divisas; `findEarliestMonthKey` lee `monthly_summaries`;
 `rellenarResumenesFaltantes` recalcula todos los meses en cada apertura del dashboard (el JSDoc dice «los que falten»); el dashboard delimita meses con la zona del servidor.
+
+**Presupuestos y metas (2026-10-06):** specs aprobadas; RFC 028 (nuevo) y RFC 011 (reescrito, sello bajado a DRAFT) esperan firma; 4 planes:
+`presupuestos-1/2`, `metas-1/2`. Orden de ejecución sugerido: estadísticas-1 → (RFC 027 firmado) estadísticas-2 → presupuestos y metas (los de presupuestos exigen `gastoPorHojaDelMes` y `monthKey.ts` de estadísticas-2).
+Decisiones: el ahorro de metas es virtual (sin asiento; registro `goal_movements` sólo de inserción; saldo libre calculado); los presupuestos versionan el límite con vigencia `YYYY-MM` (texto, no el mes 0-indexado de `monthly_summaries`); el total del resumen suma sólo presupuestos raíz.
+`ProgressBar` es único: lo construye el primero que se ejecute (presupuestos-2 o metas-2).

@@ -45,6 +45,8 @@
 
 ### Paso 1 — `ProgressBar`
 
+**Si ya existe** `shared/ui/display/ProgressBar/` (porque `metas-2-pagina` se ejecutó antes), **se reutiliza tal cual y este paso se salta**; el contrato es único (`value`, `state`, `label`). Anotarlo en el reporte.
+
 `shared/ui/display/ProgressBar/ProgressBar.tsx`: recibe `value` (0-100 **sin tope**, para mostrar el 104 %), `state` (`"ok" | "warning" | "danger"`) y `label` (texto para lectores).
 - `role="progressbar"`, `aria-valuenow`, `aria-valuemin={0}`, `aria-valuemax={100}` y `aria-label` con el valor en texto (NFR-6). **El ancho visual se recorta a 100 %**; el exceso se señala con el estado y con el texto «excedido», **no** con una barra más larga que su contenedor.
 - El color depende del `state` (tokens del repo: success / warning / danger); **y el estado también va en texto** (no sólo color).
