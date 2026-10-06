@@ -6,3 +6,4 @@
 - [`resumenes-mensuales-cierre.md`](resumenes-mensuales-cierre.md): Cierre del plan de resúmenes mensuales, contra-asientos en derivación de flujos y verificación con subagente.
 - [`migracion-boveda-limpieza.md`](migracion-boveda-limpieza.md): Lecciones de la migración de documentos a la bóveda (sustitución de enlaces y verificación de referencias huérfanas).
 - [`acceso-1-aprovisionamiento.md`](acceso-1-aprovisionamiento.md): Extracción de catálogo y patrimonio a `organizationProvisioningService`, paridad en `seed.ts` e informes en la bóveda.
+- [`acceso-2-membresias.md`](acceso-2-membresias.md): Lecciones del modelo de membresías en auth, orden de preferencia en resolución de identidad, fallback RN-15 y actualización de tests.
