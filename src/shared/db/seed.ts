@@ -12,8 +12,8 @@ dotenv.config( {path: ".env.local"} ) ;
 
 // Feature: Accounting
 import { categories , accounts , ledgerTransactions , ledgerEntries , monthlySummaries , financialEntities , categoryAccounts , outboxEvents } from "@/features/accounting/schema.db" ;
+import { provisionarOrganizacion }                                                                                           from "@/features/accounting/services/organizationProvisioningService" ;
 import { rellenarResumenesFaltantes }                                                                                       from "@/features/accounting/services/monthlySummaryService" ;
-import { INITIAL_CATEGORIES_CATALOG }                                                                                        from "@/features/accounting/constants/initialCatalog" ;
 import { createLedgerTransaction }                                                                                           from "@/features/accounting/services/accountingService" ;
 import type { Category , Account }                                                                                           from "@/features/accounting/types" ;
 
@@ -159,97 +159,24 @@ async function main() {
     // 5. Crear Catálogo Inicial de Categorías Contables y Cuentas Asociadas (RFC 022)
     console.log( "Inicializando catálogo de categorías contables (RFC 022)..." ) ;
 
-    let subSueldos!:        Category ;
-    let subSupermercado!:   Category ;
-    let subServicios!:      Category ;
-    let subAlquiler!:       Category ;
-    let ctaIngSueldo!:      Account ;
-    let ctaGastoSuper!:     Account ;
-    let ctaGastoServicios!: Account ;
-    let ctaGastoAlquiler!:  Account ;
+    const {
+      categoriasPorCodigo ,
+      cuentasPorCodigo ,
+      cuentaPatrimonio: ctaPatrimonio ,
+    } = await provisionarOrganizacion( org.id , db ) ;
+
+    const subSueldos:        Category = categoriasPorCodigo.get( "4.1.01.01" )! ;
+    const subSupermercado:   Category = categoriasPorCodigo.get( "5.1.03.01" )! ;
+    const subServicios:      Category = categoriasPorCodigo.get( "5.1.02.04" )! ;
+    const subAlquiler:       Category = categoriasPorCodigo.get( "5.1.01.01" )! ;
+    const ctaIngSueldo:      Account  = cuentasPorCodigo.get( "4.1.01.01" )! ;
+    const ctaGastoSuper:     Account  = cuentasPorCodigo.get( "5.1.03.01" )! ;
+    const ctaGastoServicios: Account  = cuentasPorCodigo.get( "5.1.02.04" )! ;
+    const ctaGastoAlquiler:  Account  = cuentasPorCodigo.get( "5.1.01.01" )! ;
+
     const subCatByCode = new Map< string , string >() ;
-
-    for( const catDef of INITIAL_CATEGORIES_CATALOG ) {
-      const [ parentCat ] = await db
-        .insert( categories )
-        .values( {
-          organizationId: org.id ,
-          name:           catDef.name ,
-          type:           catDef.type ,
-          accountCode:    catDef.code ,
-          icon:           catDef.icon ,
-          color:          catDef.color ,
-          isSystemLeaf:   false ,
-        } )
-        .returning() ;
-
-      const [ parentAcc ] = await db
-        .insert( accounts )
-        .values( {
-          organizationId: org.id ,
-          code:           `${catDef.code}-ARS` ,
-          name:           `${catDef.name} (ARS)` ,
-          type:           catDef.type ,
-          balance:        0 ,
-          currency:       "ARS" ,
-        } )
-        .returning() ;
-
-      await db.insert( categoryAccounts ).values( {
-        categoryId: parentCat.id ,
-        accountId:  parentAcc.id ,
-        currency:   "ARS" ,
-      } ) ;
-
-      for( const subDef of catDef.subcategories ) {
-        const [ subCat ] = await db
-          .insert( categories )
-          .values( {
-            organizationId: org.id ,
-            parentId:       parentCat.id ,
-            name:           subDef.name ,
-            type:           catDef.type ,
-            accountCode:    subDef.code ,
-            icon:           subDef.icon || catDef.icon ,
-            color:          subDef.color || catDef.color ,
-            isSystemLeaf:   false ,
-          } )
-          .returning() ;
-
-        subCatByCode.set( subDef.code , subCat.id ) ;
-
-        const [ subAcc ] = await db
-          .insert( accounts )
-          .values( {
-            organizationId: org.id ,
-            code:           `${subDef.code}-ARS` ,
-            name:           `${subDef.name} (ARS)` ,
-            type:           catDef.type ,
-            balance:        0 ,
-            currency:       "ARS" ,
-          } )
-          .returning() ;
-
-        await db.insert( categoryAccounts ).values( {
-          categoryId: subCat.id ,
-          accountId:  subAcc.id ,
-          currency:   "ARS" ,
-        } ) ;
-
-        if( subDef.code === "4.1.01.01" ) {
-          subSueldos   = subCat ;
-          ctaIngSueldo = subAcc ;
-        } else if( subDef.code === "5.1.01.01" ) {
-          subAlquiler      = subCat ;
-          ctaGastoAlquiler = subAcc ;
-        } else if( subDef.code === "5.1.02.04" ) {
-          subServicios      = subCat ;
-          ctaGastoServicios = subAcc ;
-        } else if( subDef.code === "5.1.03.01" ) {
-          subSupermercado = subCat ;
-          ctaGastoSuper   = subAcc ;
-        }
-      }
+    for( const [ codigo , cat ] of categoriasPorCodigo.entries() ) {
+      subCatByCode.set( codigo , cat.id ) ;
     }
 
     console.log( "Catálogo de categorías inicializado con éxito." ) ;
@@ -380,19 +307,6 @@ async function main() {
           accountId: ctaTarjeta.id ,
         } ,
       } ) ;
-
-    // Cuentas de Patrimonio, Ingresos y Gastos
-    const [ ctaPatrimonio ] = await db
-      .insert( accounts )
-      .values( {
-        organizationId: org.id ,
-        code:           "3.1.01.01" ,
-        name:           "Patrimonio Neto Inicial" ,
-        type:           "equity" ,
-        balance:        0 ,
-        currency:       "ARS"
-      } )
-      .returning() ;
 
     console.log( "Cuentas contables inicializadas con éxito." ) ;
 
