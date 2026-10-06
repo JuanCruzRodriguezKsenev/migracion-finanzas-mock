@@ -3,7 +3,7 @@
  * Servicio para derivar y rellenar resúmenes mensuales a partir del libro mayor contable.
  */
 // Librerías externas
-import { eq , and , gte , lte , asc , sql } from "drizzle-orm" ;
+import { eq , and , gte , lte , asc , sql , isNull } from "drizzle-orm" ;
 
 // Shared
 import { Result , ok , fail } from "@/shared/lib/result" ;
@@ -38,6 +38,7 @@ export async function derivarResumenDeMes(
   const endOfMonth   = new Date( year , month + 1 , 0 , 23 , 59 , 59 , 999 ) ;
 
   // 1. Flujos mensuales: Ingresos y Gastos del período acotado [startOfMonth, endOfMonth]
+  // Se excluyen asientos reversados y contra-asientos (RN-6): lo reversado no cuenta en los flujos del período.
   const [ monthlyFlows ] = await tx
     .select( {
       revenue: sql< string >`COALESCE(SUM(CASE WHEN ${accounts.type} = 'revenue' THEN (${ledgerEntries.credit} - ${ledgerEntries.debit}) ELSE 0 END), 0)` ,
@@ -51,11 +52,14 @@ export async function derivarResumenDeMes(
         eq( ledgerTransactions.organizationId , organizationId ) ,
         eq( accounts.organizationId , organizationId ) ,
         gte( ledgerTransactions.occurredAt , startOfMonth ) ,
-        lte( ledgerTransactions.occurredAt , endOfMonth )
+        lte( ledgerTransactions.occurredAt , endOfMonth ) ,
+        isNull( ledgerTransactions.reversedAt ) ,
+        isNull( ledgerTransactions.reversesTransactionId )
       )
     ) ;
 
   // 2. Saldos acumulados históricos hasta el instante de cierre endOfMonth (sin piso)
+  // No se excluyen asientos reversados: el original y su reversa se anulan aritméticamente conservando la partida doble.
   const [ snapshots ] = await tx
     .select( {
       assets:      sql< string >`COALESCE(SUM(CASE WHEN ${accounts.type} = 'asset'     THEN (${ledgerEntries.debit} - ${ledgerEntries.credit}) ELSE 0 END), 0)` ,

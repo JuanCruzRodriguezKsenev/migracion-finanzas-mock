@@ -44,6 +44,14 @@ export function calcularBalanceTotal( accounts: Account[] ): number {
 }
 
 /**
+ * Determina si una transacción contable está vigente para el cálculo de flujos,
+ * descartando tanto asientos reversados como sus correspondientes contra-asientos (RN-6).
+ */
+export function esAsientoVigente( tx: TransactionWithEntries ): boolean {
+  return( (tx.reversedAt == null) && (tx.reversesTransactionId == null) ) ;
+}
+
+/**
  * Calcula el total de ingresos del mes actual.
  * Busca transacciones donde haya créditos en cuentas de tipo 'revenue'.
  */
@@ -58,7 +66,7 @@ export function calcularIngresosMes(
   return( transactions
     .filter( ( tx ) => {
       const d = new Date( tx.occurredAt || tx.createdAt ) ;
-      return( (d.getMonth() === now.getMonth()) && (d.getFullYear() === now.getFullYear()) ) ;
+      return( esAsientoVigente( tx ) && (d.getMonth() === now.getMonth()) && (d.getFullYear() === now.getFullYear()) ) ;
     } )
     .flatMap( ( tx ) => tx.entries )
     .filter( ( e ) => revenueIds.has( e.accountId ) )
@@ -80,7 +88,7 @@ export function calcularGastosMes(
   return( transactions
     .filter( ( tx ) => {
       const d = new Date( tx.occurredAt || tx.createdAt ) ;
-      return( (d.getMonth() === now.getMonth()) && (d.getFullYear() === now.getFullYear()) ) ;
+      return( esAsientoVigente( tx ) && (d.getMonth() === now.getMonth()) && (d.getFullYear() === now.getFullYear()) ) ;
     } )
     .flatMap( ( tx ) => tx.entries )
     .filter( ( e ) => expenseIds.has( e.accountId ) )

@@ -461,4 +461,131 @@ describe( "monthlySummaryService" , () => {
     expect( resOrg1.totalRevenue ).toBe( 100000 ) ;
     expect( resOrg2.totalRevenue ).toBe( 750000 ) ;
   } ) ;
+
+  it( "AC-2: un gasto de $100.000 y su reversa en un mes cerrado deja totalExpense en 0" , async () => {
+    const txResult = await createLedgerTransaction( {
+      organizationId: orgId ,
+      occurredAt:     new Date( 2026 , 0 , 10 ) ,
+      description:    "Gasto Enero a reversar" ,
+      entries: [
+        { accountId: ctaGastosId , debit: 100000 , credit: 0 } ,
+        { accountId: ctaBancoId  , debit: 0      , credit: 100000 } ,
+      ] ,
+    } ) ;
+    expect( txResult.success ).toBe( true ) ;
+    if( !txResult.success ) {
+      return ;
+    }
+
+    const revResult = await reverseLedgerTransaction( txResult.value.id , orgId , "Reversión de gasto" ) ;
+    expect( revResult.success ).toBe( true ) ;
+    if( !revResult.success ) {
+      return ;
+    }
+
+    await updateLedgerTransactionMetadata( {
+      transactionId:  revResult.value.id ,
+      organizationId: orgId ,
+      occurredAt:     new Date( 2026 , 0 , 20 ) ,
+    } ) ;
+
+    const resumen = await derivarResumenDeMes( orgId , 2026 , 0 ) ;
+    expect( resumen.totalExpense ).toBe( 0 ) ;
+  } ) ;
+
+  it( "tabla de decisión fila 5: gasto de marzo reversado en abril da totalExpense 0 en ambos meses y balanceSnapshot de marzo incluye el gasto" , async () => {
+    // 1. Ingreso previo en Marzo de 200.000 para disponer de saldo positivo de activo
+    await createLedgerTransaction( {
+      organizationId: orgId ,
+      occurredAt:     new Date( 2026 , 2 , 1 ) ,
+      description:    "Fondeo Marzo" ,
+      entries: [
+        { accountId: ctaBancoId    , debit: 200000 , credit: 0 } ,
+        { accountId: ctaIngresosId , debit: 0      , credit: 200000 } ,
+      ] ,
+    } ) ;
+
+    // 2. Gasto de 100.000 en Marzo (mes 2)
+    const txGasto = await createLedgerTransaction( {
+      organizationId: orgId ,
+      occurredAt:     new Date( 2026 , 2 , 15 ) ,
+      description:    "Gasto Marzo" ,
+      entries: [
+        { accountId: ctaGastosId , debit: 100000 , credit: 0 } ,
+        { accountId: ctaBancoId  , debit: 0      , credit: 100000 } ,
+      ] ,
+    } ) ;
+    expect( txGasto.success ).toBe( true ) ;
+    if( !txGasto.success ) {
+      return ;
+    }
+
+    // 3. Reversión en Abril (mes 3)
+    const revResult = await reverseLedgerTransaction( txGasto.value.id , orgId , "Reversión en Abril" ) ;
+    expect( revResult.success ).toBe( true ) ;
+    if( !revResult.success ) {
+      return ;
+    }
+
+    await updateLedgerTransactionMetadata( {
+      transactionId:  revResult.value.id ,
+      organizationId: orgId ,
+      occurredAt:     new Date( 2026 , 3 , 10 ) ,
+    } ) ;
+
+    const resumenMarzo = await derivarResumenDeMes( orgId , 2026 , 2 ) ;
+    const resumenAbril = await derivarResumenDeMes( orgId , 2026 , 3 ) ;
+
+    // Flujos: ambos meses excluyen el par reversado (RN-6)
+    expect( resumenMarzo.totalExpense ).toBe( 0 ) ;
+    expect( resumenAbril.totalExpense ).toBe( 0 ) ;
+
+    // Saldos: Marzo refleja el gasto ocurrido hasta el 31/03 (200.000 fondeo - 100.000 gasto = 100.000 activo)
+    expect( resumenMarzo.balanceSnapshot ).toBe( 100000 ) ;
+    // En Abril ya impactó la reversa (100.000 devueltos al activo = 200.000)
+    expect( resumenAbril.balanceSnapshot ).toBe( 200000 ) ;
+  } ) ;
+
+  it( "un gasto no reversado del mismo mes sigue contando cuando convive con uno reversado" , async () => {
+    // Gasto 1: 100.000 (reversado en el mismo mes)
+    const txGasto1 = await createLedgerTransaction( {
+      organizationId: orgId ,
+      occurredAt:     new Date( 2026 , 0 , 10 ) ,
+      description:    "Gasto 1 a reversar" ,
+      entries: [
+        { accountId: ctaGastosId , debit: 100000 , credit: 0 } ,
+        { accountId: ctaBancoId  , debit: 0      , credit: 100000 } ,
+      ] ,
+    } ) ;
+    expect( txGasto1.success ).toBe( true ) ;
+    if( !txGasto1.success ) {
+      return ;
+    }
+
+    const revResult = await reverseLedgerTransaction( txGasto1.value.id , orgId , "Reversa Gasto 1" ) ;
+    expect( revResult.success ).toBe( true ) ;
+    if( !revResult.success ) {
+      return ;
+    }
+
+    await updateLedgerTransactionMetadata( {
+      transactionId:  revResult.value.id ,
+      organizationId: orgId ,
+      occurredAt:     new Date( 2026 , 0 , 15 ) ,
+    } ) ;
+
+    // Gasto 2: 45.000 (vigente, no reversado)
+    await createLedgerTransaction( {
+      organizationId: orgId ,
+      occurredAt:     new Date( 2026 , 0 , 20 ) ,
+      description:    "Gasto 2 vigente" ,
+      entries: [
+        { accountId: ctaGastosId , debit: 45000 , credit: 0 } ,
+        { accountId: ctaBancoId  , debit: 0     , credit: 45000 } ,
+      ] ,
+    } ) ;
+
+    const resumen = await derivarResumenDeMes( orgId , 2026 , 0 ) ;
+    expect( resumen.totalExpense ).toBe( 45000 ) ;
+  } ) ;
 } ) ;

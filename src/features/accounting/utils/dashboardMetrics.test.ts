@@ -159,6 +159,26 @@ describe( "dashboardMetrics" , () => {
 
       expect( calcularIngresosMes(transactions , accounts , referenceDate) ).toBe( 0 ) ;
     } ) ;
+
+    it( "debería retornar 0 cuando un ingreso fue reversado" , () => {
+      const accounts = [ makeAccount( {id: "rev-1" , type: "revenue"} ) ] ;
+      const transactions = [
+        makeTransaction( {
+          id:         "tx-rev" ,
+          createdAt:  referenceDate ,
+          reversedAt: new Date( 2026 , 5 , 16 ) ,
+          entries:    [ makeEntry( {accountId: "rev-1" , credit: 5000} ) ] ,
+        } ) ,
+        makeTransaction( {
+          id:                    "tx-contra" ,
+          createdAt:             referenceDate ,
+          reversesTransactionId: "tx-rev" ,
+          entries:               [ makeEntry( {accountId: "rev-1" , debit: 5000} ) ] ,
+        } ) ,
+      ] ;
+
+      expect( calcularIngresosMes( transactions , accounts , referenceDate ) ).toBe( 0 ) ;
+    } ) ;
   } ) ;
 
   describe( "calcularGastosMes" , () => {
@@ -174,6 +194,70 @@ describe( "dashboardMetrics" , () => {
       ] ;
 
       expect( calcularGastosMes(transactions , accounts , referenceDate) ).toBe( 3000 ) ;
+    } ) ;
+
+    it( "debería retornar 0 para un gasto y su reversa en el mismo mes" , () => {
+      const accounts = [ makeAccount( {id: "exp-1" , type: "expense"} ) ] ;
+      const transactions = [
+        makeTransaction( {
+          id:         "tx-exp" ,
+          createdAt:  referenceDate ,
+          reversedAt: new Date( 2026 , 5 , 16 ) ,
+          entries:    [ makeEntry( {accountId: "exp-1" , debit: 3000} ) ] ,
+        } ) ,
+        makeTransaction( {
+          id:                    "tx-contra" ,
+          createdAt:             referenceDate ,
+          reversesTransactionId: "tx-exp" ,
+          entries:               [ makeEntry( {accountId: "exp-1" , credit: 3000} ) ] ,
+        } ) ,
+      ] ;
+
+      expect( calcularGastosMes( transactions , accounts , referenceDate ) ).toBe( 0 ) ;
+    } ) ;
+
+    it( "debería contar solo el gasto no reversado cuando convive con uno reversado" , () => {
+      const accounts = [ makeAccount( {id: "exp-1" , type: "expense"} ) ] ;
+      const transactions = [
+        makeTransaction( {
+          id:        "tx-vigente" ,
+          createdAt: referenceDate ,
+          entries:   [ makeEntry( {accountId: "exp-1" , debit: 4000} ) ] ,
+        } ) ,
+        makeTransaction( {
+          id:         "tx-rev" ,
+          createdAt:  referenceDate ,
+          reversedAt: new Date( 2026 , 5 , 16 ) ,
+          entries:    [ makeEntry( {accountId: "exp-1" , debit: 3000} ) ] ,
+        } ) ,
+        makeTransaction( {
+          id:                    "tx-contra" ,
+          createdAt:             referenceDate ,
+          reversesTransactionId: "tx-rev" ,
+          entries:               [ makeEntry( {accountId: "exp-1" , credit: 3000} ) ] ,
+        } ) ,
+      ] ;
+
+      expect( calcularGastosMes( transactions , accounts , referenceDate ) ).toBe( 4000 ) ;
+    } ) ;
+
+    it( "debería excluir tanto el gasto original con reversedAt como la reversa con reversesTransactionId por separado" , () => {
+      const accounts = [ makeAccount( {id: "exp-1" , type: "expense"} ) ] ;
+      const txOriginal = makeTransaction( {
+        id:         "tx-orig" ,
+        createdAt:  referenceDate ,
+        reversedAt: new Date( 2026 , 5 , 16 ) ,
+        entries:    [ makeEntry( {accountId: "exp-1" , debit: 2500} ) ] ,
+      } ) ;
+      const txReversa = makeTransaction( {
+        id:                    "tx-contra" ,
+        createdAt:             referenceDate ,
+        reversesTransactionId: "tx-orig" ,
+        entries:               [ makeEntry( {accountId: "exp-1" , credit: 2500} ) ] ,
+      } ) ;
+
+      expect( calcularGastosMes( [ txOriginal ] , accounts , referenceDate ) ).toBe( 0 ) ;
+      expect( calcularGastosMes( [ txReversa ]  , accounts , referenceDate ) ).toBe( 0 ) ;
     } ) ;
   } ) ;
 
