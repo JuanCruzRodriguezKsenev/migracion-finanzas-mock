@@ -23,6 +23,8 @@ import {
   cards ,
   loanAccounts ,
   loans ,
+  goalMovements ,
+  goals ,
   contactPaymentMethods ,
   contacts ,
   subscriptions ,
@@ -93,6 +95,12 @@ export async function limpiarBase(): Promise< void > {
 
     // 14. subscriptions → antes que accounts y categories
     await tx.delete( subscriptions ) ;
+
+    // 14b. goal_movements → restrict a goals y accounts; antes que goals y que accounts
+    await tx.delete( goalMovements ) ;
+
+    // 14c. goals
+    await tx.delete( goals ) ;
 
     // 15. category_accounts → restrict a categories y accounts
     await tx.delete( categoryAccounts ) ;

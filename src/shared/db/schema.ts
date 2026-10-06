@@ -11,4 +11,5 @@ export * from "@/features/profile/schema.db" ;
 export * from "@/features/cards/schema.db" ;
 export * from "@/features/loans/schema.db" ;
 export * from "@/features/budgets/schema.db" ;
+export * from "@/features/goals/schema.db" ;
 export * from "@/features/auth/schema.db" ;

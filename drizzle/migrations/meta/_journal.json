@@ -232,6 +232,13 @@
       "when": 1791330683550,
       "tag": "0032_melted_paladin",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791344980402,
+      "tag": "0033_special_patriot",
+      "breakpoints": true
     }
   ]
 }
