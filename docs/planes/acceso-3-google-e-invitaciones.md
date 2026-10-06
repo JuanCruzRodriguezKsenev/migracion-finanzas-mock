@@ -2,7 +2,7 @@
 
 **Rama:** `feat/acceso-3-google` (sale de la punta de `feat/acceso-2-membresias`) · **Escrito:** 2026-10-06
 **Spec:** [`../specs/acceso-con-google/spec.md`](../specs/acceso-con-google/spec.md) — implementa **RN-1 a RN-8**, **RN-19** y **RN-20**, la tabla de decisión completa, las secciones **Datos** (`googleSub`, `image`, `invitations`) y **NFR-3/NFR-4**. Cubre **AC-1** a **AC-6**, **AC-14**, **AC-16** y **AC-17**.
-**Serie:** 0 → 1 → 2 `acceso-2-membresias-y-organizacion-activa` → **3 este** → 4 `acceso-4-miembros-y-selector` → 5 `acceso-5-despliegue-vercel-neon`.
+**Serie:** 0 → 1 → 2 `acceso-2-membresias-y-organizacion-activa` → **3 este** → 4 `acceso-4-miembros-y-selector` → 4b `acceso-4b-rol-de-solo-lectura` → 5 `acceso-5-despliegue-vercel-neon`.
 
 No hay RFC y no hace falta: la spec aprobada es la fuente. **Precondición dura:** el plan 2 está mergeado y
 verificado; sin `memberships` nada de esto tiene dónde apoyarse.
@@ -67,7 +67,7 @@ empezar: si aparece otro lector, **el tipo nullable lo va a marcar** en `tsc`.
 - **Coherencia (Datos de la spec):** `CHECK ( password_hash IS NOT NULL OR google_sub IS NOT NULL )`. Un usuario
   sin ninguna forma de entrar no debe poder existir. `hash_params` no se toca (ya es nullable).
 - `invitations`: `id` uuid; `organizationId` (→ `organizations`, `cascade`); `email` `varchar(255)` normalizado;
-  `role` (`'owner' | 'member'`); `invitedBy` uuid → `users`, **`onDelete: "set null"` y nullable** (la primera
+  `role` (`'owner' | 'member' | 'viewer'`); `invitedBy` uuid → `users`, **`onDelete: "set null"` y nullable** (la primera
   invitación la crea el script de arranque, no un usuario); `status` (`'pending' | 'accepted' | 'revoked'`);
   `expiresAt`; `createdAt`; `acceptedAt` nullable.
 - **Única vigente por `(organizationId, email)`:** índice único **parcial** `WHERE status = 'pending'`
@@ -152,7 +152,7 @@ con el patrón de `seed.ts` (`pnpm tsx`, `await import( "./client" )`), tres sub
 | Subcomando | Qué hace | Guarda |
 | :--- | :--- | :--- |
 | `crear-organizacion --nombre "Casa"` | Dentro de **una transacción**: inserta la organización (`slug` derivado del nombre, único) y llama a `provisionarOrganizacion` | Falla si el `slug` ya existe |
-| `invitar --org <slug> --email <e> --rol owner\|member [--dias 7]` | Inserta la invitación (`invitedBy` nulo) | Normaliza el email; una vigente por par |
+| `invitar --org <slug> --email <e> --rol owner\|member\|viewer [--dias 7]` | Inserta la invitación (`invitedBy` nulo) | Normaliza el email; una vigente por par |
 | `retirar-admin` | Elimina `admin@ejemplo.com` | **Se niega** si la organización de ese usuario no tiene **otro** `owner`. Es la protección que pide RN-19 |
 
 Script en `package.json`: `"db:bootstrap": "pnpm tsx src/shared/db/bootstrap.ts"`. Los argumentos se validan con

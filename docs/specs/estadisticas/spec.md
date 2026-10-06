@@ -1,6 +1,6 @@
 # Spec — Página de estadísticas
 
-**Estado:** `draft` — los supuestos se aprobaron «sin leer»; falta la aprobación del texto escrito.
+**Estado:** `aprobada` (2026-10-06) — supuestos y texto aprobados «sin leer». PA-1 (cascada y «Resumen por cuenta») queda **fuera**: no se respondió y no estaba en lo aprobado.
 **Fecha:** 2026-10-06
 **Traza:** [`assumptions.md`](assumptions.md) · **Después de esta spec:** un RFC en `DRAFT` (el repo exige un RFC `APPROVED` antes del código) y recién entonces el plan.
 **Referencia visual:** `/reportes` de `~/Dev/finanzas/FinanzasMock`.

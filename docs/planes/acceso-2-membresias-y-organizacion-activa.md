@@ -2,7 +2,7 @@
 
 **Rama:** `feat/acceso-2-membresias` (sale de la punta de `feat/acceso-1-aprovisionamiento`) · **Escrito:** 2026-10-06
 **Spec:** [`../specs/acceso-con-google/spec.md`](../specs/acceso-con-google/spec.md) — implementa **RN-5** (sin membresías no se entra), **RN-13** (verificación de la membresía en el servidor), **RN-14** (última organización usada), **RN-15** (revalidación con membresía) y **RN-16**; la migración de la sección **Datos**. Cubre **AC-8**, **AC-10** (la mitad de «pierde el acceso») y **AC-15**.
-**Serie:** 0 → 1 `acceso-1-aprovisionamiento-de-organizacion` → **2 este** → 3 `acceso-3-google-e-invitaciones` → 4 `acceso-4-miembros-y-selector` → 5 `acceso-5-despliegue-vercel-neon`.
+**Serie:** 0 → 1 `acceso-1-aprovisionamiento-de-organizacion` → **2 este** → 3 `acceso-3-google-e-invitaciones` → 4 `acceso-4-miembros-y-selector` → 4b `acceso-4b-rol-de-solo-lectura` → 5 `acceso-5-despliegue-vercel-neon`.
 
 No hay RFC y no hace falta: es el modelo de pertenencia que la spec ya fija. **Es una refactorización que no
 cambia lo que el usuario ve**: al terminar, el login por contraseña de `admin@ejemplo.com` anda igual, con una
@@ -71,7 +71,7 @@ sin saber quién es de quién. Tres migraciones, tres comandos, en este orden:
 1. En `auth/schema.db.ts`: agregar `memberships` y `users.lastOrganizationId`. **No** tocar `organizationId`
    ni `role` todavía.
    - `memberships`: `userId` (→ `users`, `cascade`), `organizationId` (→ `organizations`, `cascade`),
-     `role` `varchar(50)` default `"member"` (`'owner' | 'member'`), `createdAt` con zona horaria. **Clave única
+     `role` `varchar(50)` default `"member"` (`'owner' | 'member' | 'viewer'`; el rol `viewer` es el de sólo lectura, RN-21 a RN-27 de la spec, y lo hace cumplir el plan 4b), `createdAt` con zona horaria. **Clave única
      `(userId, organizationId)`**; mirar cómo declara `categoryAccounts` su unicidad compuesta
      (`accounting/schema.db.ts:76`, `uniqueIndex(...)`) y copiar esa forma. Índice por `organizationId`.
    - `lastOrganizationId`: `uuid` → `organizations`, **`onDelete: "set null"`**, nullable.
@@ -108,8 +108,7 @@ last_organization_id`. Se llama sólo cuando el cambio de organización fue veri
 
 **`User`** (`typeof users.$inferSelect`) pierde `organizationId` y `role` solo, por el cambio de esquema.
 
-**`membershipRepository`** — sólo `findByUser( userId )` (con el nombre de la organización, para el selector del
-plan 4) y `findMembership( userId , organizationId )`. El resto (invitar, quitar, contar `owner`) es del plan 3.
+**`membershipRepository`** — sólo `findByUser( userId )` (con el nombre de la organización **y el rol de esa membresía**, para el selector del plan 4 y para el plan 4b) y `findMembership( userId , organizationId )`. El resto (invitar, quitar, contar `owner`) es del plan 3.
 
 ### Paso 3 — `auth.ts`
 

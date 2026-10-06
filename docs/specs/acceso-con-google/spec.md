@@ -1,7 +1,7 @@
 # Spec — Acceso con Google a organizaciones compartidas
 
 **Estado:** `aprobada` (2026-10-06) — el usuario aprobó supuestos y texto, ambos sin leer.
-**Fecha:** 2026-10-06
+**Fecha:** 2026-10-06 · **Revisión 2026-10-06:** se suma el rol de sólo lectura (ronda 3, para el contador)
 **Traza:** [`assumptions.md`](assumptions.md) · **Hermano técnico:** ninguno todavía (el plan viene después).
 
 ---
@@ -31,7 +31,7 @@ necesitan las pantallas que siguen (despliegue, estadísticas, la API del RFC 01
 
 **Incluye**
 - Login con Google junto al login por contraseña, que se conserva.
-- Modelo de pertenencia: una persona en N organizaciones, con rol por organización.
+- Modelo de pertenencia: una persona en N organizaciones, con rol por organización: `owner`, `member` y `viewer` (sólo lectura, pensado para un contador).
 - Invitaciones por organización y gestión de miembros (invitar, revocar, quitar).
 - Organización activa en la sesión, con selector para cambiarla.
 - Alta de organizaciones nuevas por usuarios ya autorizados, con su plan de cuentas inicial.
@@ -53,19 +53,21 @@ necesitan las pantallas que siguen (despliegue, estadísticas, la API del RFC 01
 | **Membresía** | El vínculo persona↔organización, con su rol |
 | **Organización activa** | La que la sesión está usando ahora; todo lo que se lee o escribe es de ella |
 | **Invitación** | Autorización previa, por email y organización, para entrar con Google |
-| **Rol** | `owner` (administra miembros) o `member` (opera lo contable) |
+| **Rol** | `owner` (administra miembros), `member` (opera lo contable) o `viewer` (sólo mira) |
 | **`sub`** | Identificador estable que Google da a una cuenta, distinto del email |
 
 ## Actores
 
-| Acción | `owner` | `member` | Con Google, sin invitación ni usuario |
-| :--- | :---: | :---: | :---: |
-| Entrar con Google | ✓ | ✓ | ✗ |
-| Operar lo contable de la organización activa | ✓ | ✓ | — |
-| Ver la lista de miembros | ✓ | ✗ | — |
-| Invitar, revocar invitaciones, quitar miembros | ✓ | ✗ | — |
-| Cambiar de organización activa | ✓ | ✓ | — |
-| Crear una organización nueva (queda `owner`) | ✓ | ✓ | ✗ |
+| Acción | `owner` | `member` | `viewer` | Con Google, sin invitación ni usuario |
+| :--- | :---: | :---: | :---: | :---: |
+| Entrar con Google | ✓ | ✓ | ✓ | ✗ |
+| Ver todo lo contable y todas las pantallas | ✓ | ✓ | ✓ | — |
+| Modificar lo contable de la organización activa | ✓ | ✓ | ✗ | — |
+| Ver la lista de miembros e invitaciones | ✓ | ✗ | ✗ | — |
+| Invitar, revocar invitaciones, quitar miembros | ✓ | ✗ | ✗ | — |
+| Cambiar de organización activa | ✓ | ✓ | ✓ | — |
+| Crear una organización nueva (queda `owner`) | ✓ | ✓ | ✓ | ✗ |
+| Editar su propio perfil | ✓ | ✓ | ✓ | — |
 
 ## Reglas de negocio
 
@@ -84,10 +86,10 @@ necesitan las pantallas que siguen (despliegue, estadísticas, la API del RFC 01
 - **RN-8.** Nombre y foto se toman de Google en cada login. Moneda, zona horaria e idioma son del perfil y no se tocan.
 
 **Invitaciones y miembros**
-- **RN-9.** Sólo un `owner` invita, revoca y quita, y sólo en la organización activa. Puede invitar con rol `owner` o `member`.
+- **RN-9.** Sólo un `owner` invita, revoca y quita, y sólo en la organización activa. Puede invitar con rol `owner`, `member` o `viewer`.
 - **RN-10.** Una invitación vence a los 7 días. Hay a lo sumo una vigente por (organización, email), y no se invita a quien ya es miembro.
 - **RN-11.** Quitar a un miembro borra su membresía en esa organización. Su usuario, sus otras organizaciones y todos los movimientos que cargó se conservan: los datos son de la organización.
-- **RN-12.** No se puede quitar al único `owner` de una organización.
+- **RN-12.** No se puede quitar al único `owner` de una organización. Un `viewer` no cuenta como `owner`.
 
 **Organización activa**
 - **RN-13.** La sesión lleva una organización activa. Cambiarla exige que el servidor verifique la membresía; el identificador que manda el cliente no se acepta sin esa verificación.
@@ -102,6 +104,15 @@ necesitan las pantallas que siguen (despliegue, estadísticas, la API del RFC 01
 **Arranque**
 - **RN-19.** No hay ningún `owner` que pueda invitar al primero, así que la **primera invitación** (rol `owner`, sobre la organización existente) la crea un procedimiento operativo fuera de la interfaz. `admin@ejemplo.com` se elimina **sólo después** de que esa membresía `owner` exista.
 - **RN-20.** El botón de Google aparece sólo si el entorno trae las credenciales; sin ellas, la aplicación funciona con contraseña como hoy.
+
+**Sólo lectura (`viewer`)**
+- **RN-21.** Un `viewer` ve **todo** lo contable y todas las pantallas, incluidas las de presupuestos, estadísticas y metas. No ve la pestaña Miembros ni la lista de miembros e invitaciones.
+- **RN-22.** Un `viewer` **no modifica nada**: los botones de acción **no se muestran** (no se deshabilitan), incluida la bandeja de recurrencias. Puede crear organizaciones propias y editar su perfil, porque eso no toca la organización ajena.
+- **RN-23.** El **servidor** rechaza toda escritura de un `viewer` aunque la interfaz se fuerce, con el mensaje «No tenés permiso para modificar esta organización».
+- **RN-24.** El rol que decide una escritura se lee de la **base** en cada escritura, no del token: una sesión cuyo token dice `member` pero cuya membresía ya es `viewer` queda rechazada. Cuesta una consulta por escritura.
+- **RN-25.** El relleno automático de resúmenes mensuales al abrir el dashboard sigue permitido para un `viewer`: es dato derivado, no una acción suya.
+- **RN-26.** Para pasar a alguien de `viewer` a `member`, o al revés, se lo quita y se lo reinvita; cambiar el rol sigue fuera de alcance.
+- **RN-27.** La organización activa muestra «Sólo lectura» junto a su nombre en el selector cuando el rol es `viewer`.
 
 ### Tabla de decisión — qué pasa al entrar con Google
 
@@ -188,6 +199,7 @@ stateDiagram-v2
 │ + Crear organización     │
 └──────────────────────────┘
 ```
+*Con rol `viewer`:* al lado del nombre de la organización aparece «Sólo lectura».
 *Con una sola organización:* el selector se muestra igual, porque es la puerta a «Crear organización».
 
 **Configuración → Miembros — sólo `owner`**
@@ -209,8 +221,8 @@ stateDiagram-v2
 | Entidad | Campos | Validaciones y notas |
 | :--- | :--- | :--- |
 | `users` (cambia) | `googleSub` único, nullable · `image` nullable · `lastOrganizationId` nullable · `passwordHash`/`salt` pasan a nullable | Se **retiran** `organizationId` y `role`. Un usuario con `googleSub` nulo debe tener contraseña, y al revés |
-| `memberships` (nueva) | `userId` · `organizationId` · `role` (`owner`/`member`) · `createdAt` | Clave única `(userId, organizationId)`. `onDelete: cascade` hacia ambos lados |
-| `invitations` (nueva) | `id` · `organizationId` · `email` normalizado · `role` · `invitedBy` · `status` (`pending`/`accepted`/`revoked`) · `expiresAt` · `createdAt` · `acceptedAt` | Única vigente por `(organizationId, email)`. Se conservan como historial; no se purgan |
+| `memberships` (nueva) | `userId` · `organizationId` · `role` (`owner`/`member`/`viewer`) · `createdAt` | Clave única `(userId, organizationId)`. `onDelete: cascade` hacia ambos lados |
+| `invitations` (nueva) | `id` · `organizationId` · `email` normalizado · `role` (`owner`/`member`/`viewer`) · `invitedBy` · `status` (`pending`/`accepted`/`revoked`) · `expiresAt` · `createdAt` · `acceptedAt` | Única vigente por `(organizationId, email)`. Se conservan como historial; no se purgan |
 | `organizations` | sin cambios | `slug` generado único a partir del nombre |
 | `profiles` | sin cambios | Ya es por usuario (`profile/schema.db.ts:12`) |
 
@@ -334,6 +346,46 @@ AC-17 — Arranque
     y recién entonces admin@ejemplo.com deja de existir
 ```
 
+```gherkin
+AC-18 — Un contador mira y no toca
+  Dado un viewer invitado a «Casa» por un owner
+  Cuando entra con Google y recorre cuentas, movimientos, tarjetas y estadísticas
+  Entonces ve todo
+    y ningún botón de alta, edición, reversa o archivado aparece en ninguna pantalla
+```
+```gherkin
+AC-19 — El servidor lo frena aunque se fuerce
+  Dado un viewer de «Casa»
+  Cuando invoca directamente una acción de escritura, como crear un movimiento
+  Entonces recibe «No tenés permiso para modificar esta organización»
+    y no se escribe nada
+```
+```gherkin
+AC-20 — El rol se lee de la base
+  Dado una sesión cuyo token dice member y cuya membresía en la base es viewer
+  Cuando intenta crear un movimiento
+  Entonces es rechazada
+```
+```gherkin
+AC-21 — Un contador con varios clientes
+  Dado un usuario viewer en «Casa» y owner en «Estudio»
+  Cuando cambia de una a otra en el selector
+  Entonces en «Casa» no ve acciones de escritura y ve «Sólo lectura»
+    y en «Estudio» ve todas
+```
+```gherkin
+AC-22 — Lo que no ve un viewer
+  Dado un viewer
+  Cuando abre Configuración
+  Entonces no ve la pestaña Miembros
+```
+```gherkin
+AC-23 — El dashboard sigue funcionando
+  Dado un viewer
+  Cuando abre el dashboard y faltan resúmenes mensuales
+  Entonces se rellenan y el dashboard carga normalmente
+```
+
 ## Requisitos no funcionales
 
 - **NFR-1.** La sesión sigue siendo JWT de 12 h con renovación horaria (`auth.ts:36-37`).
@@ -361,6 +413,7 @@ AC-17 — Arranque
 | Primer `owner` | Procedimiento operativo | No hay `owner` previo que invite |
 | Identidad | Por `sub`, con el email sólo para el primer enlace | El email de Google puede cambiar; el `sub` no |
 | Despliegue | Fuera de esta spec | Es una cadena de trabajo propia |
+| Rol de sólo lectura | `viewer`, enforcement en el servidor leyendo el rol de la base | Un contador tiene que poder mirar sin poder tocar, y el cliente no es una barrera |
 
 ## Preguntas abiertas
 

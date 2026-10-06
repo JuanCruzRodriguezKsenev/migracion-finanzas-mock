@@ -2,7 +2,7 @@
 
 **Rama:** `feat/acceso-4-miembros-y-selector` (sale de la punta de `feat/acceso-3-google`) · **Escrito:** 2026-10-06
 **Spec:** [`../specs/acceso-con-google/spec.md`](../specs/acceso-con-google/spec.md) — implementa **RN-9** a **RN-14**, **RN-17**, **RN-18** (la parte de alta), **NFR-5** y los tres wireframes (selector, pestaña Miembros, alta). Cubre **AC-7**, **AC-9**, **AC-10** (completo), **AC-11**, **AC-12**, **AC-13**, y la parte de interfaz de **AC-1**.
-**Serie:** 0 → 1 → 2 → 3 `acceso-3-google-e-invitaciones` → **4 este** → 5 `acceso-5-despliegue-vercel-neon`.
+**Serie:** 0 → 1 → 2 → 3 `acceso-3-google-e-invitaciones` → **4 este** → 4b `acceso-4b-rol-de-solo-lectura` → 5 `acceso-5-despliegue-vercel-neon`.
 
 No hay RFC y no hace falta. **Precondición dura:** el plan 3 está mergeado y verificado: acá se usan `memberships`,
 `invitations`, el servicio de Google y el aprovisionamiento.
@@ -81,7 +81,7 @@ Todas filtran **siempre por `session.user.organizationId`**: el `organizationId`
 
 - **`listarMiembrosAction()`** → `{ miembros: { userId , nombre , email , rol }[] , invitaciones: { id , email , rol , venceEl }[] }`.
   Las invitaciones son sólo `pending` con `expiresAt` futuro.
-- **`invitarMiembroAction( { email , rol } )`:** validar con Zod (email válido, rol ∈ `owner | member`);
+- **`invitarMiembroAction( { email , rol } )`:** validar con Zod (email válido, rol ∈ `owner | member | viewer`);
   normalizar con la **misma** función de normalización del plan 3 (no copiarla). En **una transacción**:
   1. si ese email ya es miembro de la organización → `fail`, y **no** se crea la invitación (RN-10);
   2. `marcarVencidasComoRevocadas( orgId , email )` — un `pending` vencido bloquearía el índice único parcial;
@@ -131,7 +131,7 @@ cliente entonces llama `update( { organizationId } )` y `router.refresh()`.
   `MonthSelector`, M6 de `TECHNICAL_DEBT.md`). **Sin movimiento ni cambio de tamaño en `:hover`** (§4).
 
 **`(main)/layout.tsx`:** después del `getServerSession`, `membershipRepository.findByUser( session.user.id )` y le
-pasa al `AppShell` `{ organizaciones: { id , nombre }[] , activaId }`. Una consulta por render del layout; es
+pasa al `AppShell` `{ organizaciones: { id , nombre , rol }[] , activaId }` —el `rol` de cada membresía sale de la misma consulta; es lo que el plan 4b usa para ocultar botones y el selector para mostrar «Sólo lectura»—. Una consulta por render del layout; es
 barata, pero **si el layout se vuelve el cuello de botella es hallazgo, no motivo para cachear acá**.
 
 **Pestaña Miembros:** `SettingsContainer` recibe `esOwner: boolean` y los datos de miembros (o `null`). Cambios:
@@ -236,7 +236,8 @@ pnpm dev
 | No | Por qué |
 | :--- | :--- |
 | Enviar un correo de invitación | No hay envío de email en el repo. Resend es infraestructura pendiente |
-| Cambiar el rol de un miembro | Fuera de alcance de la spec |
+| Cambiar el rol de un miembro | Fuera de alcance de la spec (RN-26: se quita y se reinvita) |
+| Hacer cumplir el rol `viewer` en las acciones y ocultar los botones | Plan 4b. **Este plan sólo deja que se invite con ese rol y que el selector lo muestre** |
 | Eliminar, transferir o renombrar organizaciones | Fuera de alcance |
 | Autoría por movimiento («quién cargó esto») | Fuera de alcance |
 | Vista consolidada entre organizaciones | Fuera de alcance |

@@ -2,7 +2,7 @@
 
 **Rama:** `feat/acceso-5-despliegue` (sale de la punta de `feat/acceso-4-miembros-y-selector`) · **Escrito:** 2026-10-06
 **Spec:** [`../specs/acceso-con-google/spec.md`](../specs/acceso-con-google/spec.md) — es la **Dependencia 2** (despliegue con HTTPS) y la que habilita **AC-17** sobre una base real. No agrega reglas nuevas.
-**Serie:** 0 → 1 → 2 → 3 → 4 `acceso-4-miembros-y-selector` → **5 este**.
+**Serie:** 0 → 1 → 2 → 3 → 4 `acceso-4-miembros-y-selector` → 4b `acceso-4b-rol-de-solo-lectura` → **5 este**.
 **Decisión del usuario (2026-10-06):** producción corre en **Vercel + Neon**. Se eligió sobre una PC con túnel, un VPS y «sólo local».
 
 > **Este plan no lo ejecuta `obra` solo.** Mezcla **código chico** (que `obra` hace) con **pasos que sólo vos podés dar**

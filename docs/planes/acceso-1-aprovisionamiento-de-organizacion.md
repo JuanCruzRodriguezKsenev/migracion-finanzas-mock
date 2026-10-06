@@ -2,7 +2,7 @@
 
 **Rama:** `feat/acceso-1-aprovisionamiento` (sale de la punta de `fix/resumenes-mensuales`, **después** de que ese plan se ejecute y se verifique) · **Escrito:** 2026-10-06
 **Spec:** [`../specs/acceso-con-google/spec.md`](../specs/acceso-con-google/spec.md) — implementa **RN-18**; prepara **AC-12** y **AC-13** (el alta completa de una organización es el plan 4).
-**Serie:** 0 `fix-resumenes-mensuales` → **1 este** → 2 `acceso-2-membresias` → 3 `acceso-3-google-e-invitaciones` → 4 `acceso-4-miembros-y-selector` → 5 `acceso-5-despliegue-vercel-neon`.
+**Serie:** 0 `fix-resumenes-mensuales` → **1 este** → 2 `acceso-2-membresias` → 3 `acceso-3-google-e-invitaciones` → 4 `acceso-4-miembros-y-selector` → 4b `acceso-4b-rol-de-solo-lectura` → 5 `acceso-5-despliegue-vercel-neon`.
 
 No hay RFC y no hace falta: no cambia el modelo ni agrega tablas. **Mueve código que ya existe** de un
 script a un servicio reutilizable. Contrato: **§4 de [`.agents/AGENTS.md`](../../.agents/AGENTS.md)** (estilo) y **§8**

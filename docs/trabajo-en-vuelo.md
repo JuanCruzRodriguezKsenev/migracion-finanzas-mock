@@ -52,7 +52,10 @@ organizaciones, invitaciones. Cinco planes, **cada uno sale de la punta del ante
 2.  [`acceso-2-membresias-y-organizacion-activa.md`](planes/acceso-2-membresias-y-organizacion-activa.md) — `memberships`; la sesión conserva su forma.
 3.  [`acceso-3-google-e-invitaciones.md`](planes/acceso-3-google-e-invitaciones.md) — proveedor Google, `invitations`, script de arranque.
 4.  [`acceso-4-miembros-y-selector.md`](planes/acceso-4-miembros-y-selector.md) — pestaña Miembros, selector, alta de organizaciones.
+4b. [`acceso-4b-rol-de-solo-lectura.md`](planes/acceso-4b-rol-de-solo-lectura.md) — el rol `viewer` (contador) se cumple en las 31 acciones de escritura y en la interfaz.
 5.  [`acceso-5-despliegue-vercel-neon.md`](planes/acceso-5-despliegue-vercel-neon.md) — Vercel + Neon; mezcla pasos de `obra` y del usuario.
+
+**Specs aprobadas sin plan todavía (2026-10-06):** [`specs/estadisticas/spec.md`](specs/estadisticas/spec.md). Exige un RFC `APPROVED` antes del código. Presupuestos y metas: sin spec.
 
 **Por qué esta tanda y no otra:** de los 40 commits anteriores, sólo 8 tocaron `src/`. Ésta es
 chica, se verifica sola y arregla algo que ya se usa todos los días.

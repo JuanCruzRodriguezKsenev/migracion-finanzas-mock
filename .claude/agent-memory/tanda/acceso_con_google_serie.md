@@ -22,3 +22,8 @@ sin registro abierto, sólo invitación; producción en **Vercel + Neon**. **Why
 **Decisiones mías, a vigilar:** caso 3b (email de usuario con otro `sub` → rechazo; no estaba en la spec); producción nace por `db:bootstrap`
 en una Neon vacía (se apartó de R2-2: no hay organización existente que reusar); las invitaciones no avisan por correo (no hay Resend).
 **How to apply:** si vuelve un informe de `obra` sobre alguno de los planes, contrastar con esos tres puntos primero.
+
+**Actualización 2026-10-06 (tarde):** se sumó el rol `viewer` (contador, sólo lectura) a la spec y se escribió el plan `acceso-4b-rol-de-solo-lectura`
+(guarda `obtenerSesionDeEscritura` que lee el rol de la base; registro `actionPolicy` fail-closed; 31 acciones de escritura, 15 de lectura, 2 exentas).
+Spec de estadísticas aprobada en `docs/specs/estadisticas/` (falta su RFC en DRAFT). Hallazgos de código: `obtenerCuentaPorMoneda` exportada desde `"use server"`;
+el dashboard y `derivarResumenDeMes` suman un solo lado del asiento, así que lo reversado hoy sí cuenta. Pendientes sin spec: presupuestos y metas.
