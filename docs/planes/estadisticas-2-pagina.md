@@ -60,10 +60,13 @@
 - Filtrar la divisa por `ledgerEntries.currency`, que existe (`accounting/schema.db.ts:113`), no por una unión con `accounts`.
 - Las sumas de `bigint` vuelven como `string` desde `sql<string>` y se convierten con `Number(...)`, igual que `derivarResumenDeMes`. **Verificar que ningún total pase de `2^53`** (el repo ya lo asume con `mode: "number"`).
 - **No** traer filas para sumarlas en JavaScript, salvo el agrupado final de hojas en padres (§Paso 2).
+- **Q3 se escribe como función exportada con nombre estable:** `reportsRepository.gastoPorHojaDelMes( { orgId , monthKey , zona , currency , tipo } )`, que devuelve `{ categoryId | null , accountId , total }[]`.
+  **Presupuestos reutiliza esa misma función** (plan `presupuestos-1`): que la regla de «qué cuenta como gasto» viva en **un solo lugar** es la razón. No la cambies de nombre ni de forma sin avisar.
 
 ### Paso 2 — Servicio
 
 `reportsService.armarReporte( { orgId , userId , monthKey , currency } )`:
+0. **Utilidad pura de mes:** `src/shared/lib/monthKey.ts` con `claveDeMes( fecha: Date , zona: string ): string` (`"YYYY-MM"` en esa zona, con `Intl.DateTimeFormat`, **sin** `getMonth()` del servidor) y `claveDeMesActual( zona )`. Con test (incluye el caso de las 22:00 del 31 en Buenos Aires = 01:00 UTC del 1). La reutilizan Estadísticas, Presupuestos y Metas.
 1. Carga el perfil (`profileRepository.findByUserId`) para `timezone` y `currency`. **Si no hay perfil**, usa los defaults de las columnas (`America/Argentina/Buenos_Aires`, `ARS`): no falla. (Los usuarios creados por Google tienen su fila de `profiles` desde el plan 3 del acceso, pero la base actual puede no tenerla.)
 2. **Divisa (RN-2):** la pedida, si está entre las de la organización; si no, la del perfil si la organización la tiene; si no, la de más movimientos.
 3. Variación porcentual: `( actual − anterior ) / anterior` **sólo si `anterior > 0`**; si no, `null`. Tasa de ahorro: `null` si ingresos es 0; variación de la tasa en puntos porcentuales, `null` si el mes anterior no tuvo ingresos.
