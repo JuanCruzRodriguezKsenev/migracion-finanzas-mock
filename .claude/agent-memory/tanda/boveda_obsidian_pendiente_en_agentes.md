@@ -11,3 +11,9 @@ El diseño que lo aterriza en los agentes es `~/Boveda/Sistema/Diseño de forja 
 **Estado al 2026-10-06:** `~/Dev/agentes/reglas/` no existe y `agentes/tanda.md` no menciona la bóveda → fases 2/3 sin aplicar. Las aplica `forja`, no `tanda`.
 Este repo (`migracion-finanzas-mock`) no tiene carpeta en `Proyectos/`; su ficha apunta a `docs/`, y los agentes son compatibles hacia atrás con eso.
 **How to apply:** si el usuario pregunta por la bóveda, decir que está decidido y sin aplicar; no reescribir mi propia definición ni mudar docs por mi cuenta.
+
+
+**Actualización 2026-10-06 (tarde):** forja ya aplicó el diseño (`~/Dev/agentes`, commit `fe5ad19`: `reglas/global.md`, tanda/obra/verificador/forja/spec; `generar --check` en 0).
+La migración de ESTE repo quedó planificada, no ejecutada: tarjeta y planes `00 - Migración 1 importar a la bóveda` (bibliotecario) y `01 - Migración 2 limpiar el repo` (obra)
+en `~/Boveda/Proyectos/migracion-finanzas-mock/Planes/`. Decisión del usuario: los 28 RFC de `docs/proposals/` se QUEDAN en el repo (como los ADR). La memoria de los agentes también se queda.
+**Pendiente mío tras el plan 01:** actualizar las rutas `docs/trabajo-en-vuelo`, `docs/planes`, `TECHNICAL_DEBT` que citan mis notas (estado_actual, ciclo_de_trabajo, trampas_del_repo, decisiones_*, i18n_*, verificacion_no_tocar_el_arbol) a las de la bóveda.
