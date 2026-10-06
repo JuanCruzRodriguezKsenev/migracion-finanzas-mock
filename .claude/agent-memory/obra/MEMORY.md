@@ -7,3 +7,5 @@
 - [`migracion-boveda-limpieza.md`](migracion-boveda-limpieza.md): Lecciones de la migración de documentos a la bóveda (sustitución de enlaces y verificación de referencias huérfanas).
 - [`acceso-1-aprovisionamiento.md`](acceso-1-aprovisionamiento.md): Extracción de catálogo y patrimonio a `organizationProvisioningService`, paridad en `seed.ts` e informes en la bóveda.
 - [`acceso-2-membresias.md`](acceso-2-membresias.md): Lecciones del modelo de membresías en auth, orden de preferencia en resolución de identidad, fallback RN-15 y actualización de tests.
+- [`estadisticas-1-reversados.md`](estadisticas-1-reversados.md): Exclusión de asientos reversados y contra-asientos en flujos vs saldos patrimoniales (RN-6).
+
