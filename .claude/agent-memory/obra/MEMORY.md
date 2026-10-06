@@ -9,3 +9,4 @@
 - [`acceso-2-membresias.md`](acceso-2-membresias.md): Lecciones del modelo de membresías en auth, orden de preferencia en resolución de identidad, fallback RN-15 y actualización de tests.
 - [`estadisticas-1-reversados.md`](estadisticas-1-reversados.md): Exclusión de asientos reversados y contra-asientos en flujos vs saldos patrimoniales (RN-6).
 
+- [`acceso-3-google.md`](acceso-3-google.md): Lecciones de autenticación federada Google, invitaciones atómicas, NextAuth v4 quirks y verificación señuelo.
