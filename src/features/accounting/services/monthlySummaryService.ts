@@ -40,8 +40,8 @@ export async function derivarResumenDeMes(
   // 1. Flujos mensuales: Ingresos y Gastos del período acotado [startOfMonth, endOfMonth]
   const [ monthlyFlows ] = await tx
     .select( {
-      revenue: sql< string >`COALESCE(SUM(CASE WHEN ${accounts.type} = 'revenue' THEN ${ledgerEntries.credit} ELSE 0 END), 0)` ,
-      expense: sql< string >`COALESCE(SUM(CASE WHEN ${accounts.type} = 'expense' THEN ${ledgerEntries.debit}  ELSE 0 END), 0)` ,
+      revenue: sql< string >`COALESCE(SUM(CASE WHEN ${accounts.type} = 'revenue' THEN (${ledgerEntries.credit} - ${ledgerEntries.debit}) ELSE 0 END), 0)` ,
+      expense: sql< string >`COALESCE(SUM(CASE WHEN ${accounts.type} = 'expense' THEN (${ledgerEntries.debit} - ${ledgerEntries.credit})  ELSE 0 END), 0)` ,
     } )
     .from( ledgerEntries )
     .innerJoin( ledgerTransactions , eq( ledgerEntries.transactionId , ledgerTransactions.id ) )

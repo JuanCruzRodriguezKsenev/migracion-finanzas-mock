@@ -6,26 +6,32 @@
  */
 // Librerías externas
 import * as dotenv from "dotenv" ;
-import { eq }      from "drizzle-orm" ;
 
 // Carga las variables de entorno de .env.local antes de inicializar la conexión
 dotenv.config( {path: ".env.local"} ) ;
 
 // Feature: Accounting
-import { categories , accounts , ledgerTransactions , ledgerEntries , monthlySummaries , financialEntities , categoryAccounts } from "@/features/accounting/schema.db" ;
+import { categories , accounts , ledgerTransactions , ledgerEntries , monthlySummaries , financialEntities , categoryAccounts , outboxEvents } from "@/features/accounting/schema.db" ;
+import { rellenarResumenesFaltantes }                                                                                       from "@/features/accounting/services/monthlySummaryService" ;
 import { INITIAL_CATEGORIES_CATALOG }                                                                                        from "@/features/accounting/constants/initialCatalog" ;
 import { createLedgerTransaction }                                                                                           from "@/features/accounting/services/accountingService" ;
 import type { Category , Account }                                                                                           from "@/features/accounting/types" ;
 
 // Feature: Cards
-import { cards , cardAccounts } from "@/features/cards/schema.db" ;
+import { cards , cardAccounts , cardInstallmentPlans } from "@/features/cards/schema.db" ;
+
+// Feature: Contacts
+import { contacts , contactPaymentMethods } from "@/features/contacts/schema.db" ;
+
+// Feature: Loans
+import { loans , loanAccounts } from "@/features/loans/schema.db" ;
 
 // Feature: Subscriptions
 import { subscriptions } from "@/features/subscriptions/schema.db" ;
 
 // Feature: Auth
-import { hashPassword } from "@/features/auth/services/authService" ;
 import { organizations , users } from "@/features/auth/schema.db" ;
+import { hashPassword }          from "@/features/auth/services/authService" ;
 
 // Feature: Profile
 import { profiles } from "@/features/profile/schema.db" ;
@@ -40,17 +46,23 @@ async function main() {
     // 1. Garantizar idempotencia limpiando registros previos en el orden correcto
     // Se preservan organizations y users con upsert para no invalidar sesiones JWT activas
     console.log( "Limpiando registros previos..." ) ;
-    await db.delete( categoryAccounts   ) ;
-    await db.delete( cardAccounts       ) ;
-    await db.delete( cards              ) ;
-    await db.delete( subscriptions      ) ;
-    await db.delete( ledgerEntries      ) ;
-    await db.delete( ledgerTransactions ) ;
-    await db.delete( monthlySummaries   ) ;
-    await db.delete( accounts           ) ;
-    await db.delete( financialEntities  ) ;
-    await db.delete( categories         ) ;
-    await db.delete( profiles           ) ;
+    await db.delete( cardInstallmentPlans  ) ;
+    await db.delete( categoryAccounts      ) ;
+    await db.delete( cardAccounts          ) ;
+    await db.delete( cards                 ) ;
+    await db.delete( subscriptions         ) ;
+    await db.delete( contactPaymentMethods ) ;
+    await db.delete( loanAccounts          ) ;
+    await db.delete( loans                 ) ;
+    await db.delete( contacts              ) ;
+    await db.delete( ledgerEntries         ) ;
+    await db.delete( ledgerTransactions    ) ;
+    await db.delete( outboxEvents          ) ;
+    await db.delete( monthlySummaries      ) ;
+    await db.delete( accounts              ) ;
+    await db.delete( financialEntities     ) ;
+    await db.delete( categories            ) ;
+    await db.delete( profiles              ) ;
 
     // 2. Crear u obtener Organización demo existente y hashear contraseña en paralelo
     const [ [org] , {hash , salt , params} ] = await Promise.all( [
@@ -387,23 +399,12 @@ async function main() {
     // 7. Sembrar Transacciones de Partida Doble
     console.log( "Registrando transacciones contables balanceadas de prueba..." ) ;
 
-    // Helper para registrar y fechar una transacción contable
+    // Helper para registrar una transacción contable con su fecha de ocurrencia
     async function registrarTransaccion( params: Parameters< typeof createLedgerTransaction >[0] , fecha: Date ) {
-      const result = await createLedgerTransaction( params ) ;
+      const result = await createLedgerTransaction( { ...params , occurredAt: fecha } ) ;
       if( !result.success ) {
         throw( new Error( `Error al registrar transacción contable: ${result.error}` ) ) ;
       }
-
-      // Actualizar createdAt en ledger_transactions y ledger_entries
-      await db
-        .update( ledgerTransactions )
-        .set( { createdAt: fecha } )
-        .where( eq( ledgerTransactions.id , result.value.id ) ) ;
-
-      await db
-        .update( ledgerEntries )
-        .set( { createdAt: fecha } )
-        .where( eq( ledgerEntries.transactionId , result.value.id ) ) ;
 
       return( result.value ) ;
     }
@@ -425,171 +426,137 @@ async function main() {
       ]
     } , fechaInicio ) ;
 
-    // Sembrando resúmenes mensuales históricos cerrados (los últimos 11 meses cerrados)
-    console.log( "Sembrando resúmenes mensuales históricos cerrados..." ) ;
-    let saldoAcumulado = 19000000 ;
+    // Sembrando transacciones diarias de los últimos doce meses: los cerrados completos,
+    // el mes en curso sólo hasta hoy.
+    console.log( "Sembrando transacciones diarias de los últimos doce meses..." ) ;
 
-    for( let m = 11 ; m >= 1 ; m-- ) {
-      const fechaMes = new Date( ahora.getFullYear() , ahora.getMonth() - m , 1 ) ;
-      const year = fechaMes.getFullYear() ;
-      const month = fechaMes.getMonth() ;
+    for( let m = 11 ; m >= 0 ; m-- ) {
+      const primerDiaMes = new Date( ahora.getFullYear() , ahora.getMonth() - m , 1 ) ;
+      const anio         = primerDiaMes.getFullYear() ;
+      const mes          = primerDiaMes.getMonth() ;
+      const ultimoDiaMes = new Date( anio , mes + 1 , 0 ).getDate() ;
+      const diasASembrar = ( m === 0 ) ? ahora.getDate() : ultimoDiaMes ;
 
-      const totalIngresos = ( ( Math.floor( Math.random() * 60000 ) + 320000 ) * 100 ) ;
-      const totalGastos = ( ( Math.floor( Math.random() * 30000 ) + 230000 ) * 100 ) ;
+      for( let diaDelMes = 1 ; diaDelMes <= diasASembrar ; diaDelMes++ ) {
+        const fechaDia      = new Date( anio , mes , diaDelMes ) ;
+        const diaDeLaSemana = fechaDia.getDay() ;
 
-      saldoAcumulado = ( saldoAcumulado + totalIngresos - totalGastos ) ;
-
-      // Pasivos mensuales coherentes (saldos de tarjeta/deudas mensuales entre 20.000 y 35.000 pesos)
-      const pasivosMes = ( ( Math.floor( Math.random() * 15000 ) + 20000 ) * 100 ) ;
-      const activosMes = ( saldoAcumulado + pasivosMes ) ; // Invariante contable: Activos = Patrimonio Neto + Pasivos
-
-      await db
-        .insert( monthlySummaries )
-        .values( {
-          organizationId:      org.id ,
-          year:                year ,
-          month:               month ,
-          totalRevenue:        totalIngresos ,
-          totalExpense:        totalGastos ,
-          balanceSnapshot:     saldoAcumulado ,
-          assetsSnapshot:      activosMes ,
-          liabilitiesSnapshot: pasivosMes ,
-          createdAt:           new Date( year , month + 1 , 0 , 23 , 59 , 59 )
-        } ) ;
-    }
-
-    // Registrar ajuste de saldos por acumulación histórica de ahorros
-    const diferenciaAjuste = ( saldoAcumulado - 19000000 ) ;
-    const fechaFinMayo     = new Date( ahora.getFullYear() , ahora.getMonth() , 0 , 18 , 0 ) ; // 31 de Mayo
-
-    console.log( `Registrando ajuste de saldos históricos acumulados: $${( diferenciaAjuste / 100 ).toLocaleString()} ARS...` ) ;
-    await registrarTransaccion( {
-      organizationId: org.id ,
-      description:    "Ajuste de saldos por acumulación histórica de ahorros" ,
-      entries: [
-        { accountId: ctaBanco.id , debit: diferenciaAjuste , credit: 0 } ,
-        { accountId: ctaPatrimonio.id , debit: 0 , credit: diferenciaAjuste }
-      ]
-    } , fechaFinMayo ) ;
-
-    // Sembrando transacciones diarias únicamente para el mes actual en curso (hasta el día de hoy)
-    console.log( "Sembrando transacciones diarias del mes en curso..." ) ;
-    const diasMesActual = ahora.getDate() ;
-
-    for( let d = diasMesActual ; d >= 0 ; d-- ) {
-      const fechaDia = new Date( ahora.getFullYear() , ahora.getMonth() , ahora.getDate() - d ) ;
-      
-      const diaDelMes = fechaDia.getDate() ;
-      const diaDeLaSemana = fechaDia.getDay() ;
-
-      // --- 1. Movimientos mensuales fijos ---
-      // A. Sueldo (Día 5)
-      if( diaDelMes === 5 ) {
-        const fechaSueldo = new Date( fechaDia.getFullYear() , fechaDia.getMonth() , diaDelMes , 9 , 0 ) ;
-        const montoSueldo = ( ( Math.floor( Math.random() * 60000 ) + 320000 ) * 100 ) ;
-        await registrarTransaccion( {
-          organizationId: org.id ,
-          categoryId:     subSueldos.id ,
-          description:    "Acreditación de haberes del mes" ,
-          merchantName:   "Tech Innovators S.A." ,
-          entries: [
-            { accountId: ctaBanco.id , debit: montoSueldo , credit: 0 } ,
-            { accountId: ctaIngSueldo.id , debit: 0 , credit: montoSueldo }
-          ]
-        } , fechaSueldo ) ;
-      }
-
-      // B. Alquiler (Día 10)
-      if( ( diaDelMes === 10 ) && ( diaDelMes <= diasMesActual ) ) {
-        const fechaAlquiler = new Date( fechaDia.getFullYear() , fechaDia.getMonth() , diaDelMes , 11 , 30 ) ;
-        await registrarTransaccion( {
-          organizationId: org.id ,
-          categoryId:     subAlquiler.id ,
-          description:    "Pago de alquiler mensual" ,
-          entries: [
-            { accountId: ctaGastoAlquiler.id , debit: 8500000 , credit: 0 } ,
-            { accountId: ctaBanco.id , debit: 0 , credit: 8500000 }
-          ]
-        } , fechaAlquiler ) ;
-      }
-
-      // C. Servicios (Día 15)
-      if( ( diaDelMes === 15 ) && ( diaDelMes <= diasMesActual ) ) {
-        const fechaServicios = new Date( fechaDia.getFullYear() , fechaDia.getMonth() , diaDelMes , 14 , 15 ) ;
-        const montoServicios = ( ( Math.floor( Math.random() * 6000 ) + 22000 ) * 100 ) ;
-        await registrarTransaccion( {
-          organizationId: org.id ,
-          categoryId:     subServicios.id ,
-          description:    "Pago de luz y telecomunicaciones" ,
-          merchantName:   "Edesur / Fibertel" ,
-          entries: [
-            { accountId: ctaGastoServicios.id , debit: montoServicios , credit: 0 } ,
-            { accountId: ctaBanco.id , debit: 0 , credit: montoServicios }
-          ]
-        } , fechaServicios ) ;
-      }
-
-      // D. Pago de Tarjeta de Crédito (Día 22)
-      if( ( diaDelMes === 22 ) && ( diaDelMes <= diasMesActual ) ) {
-        const fechaTarjeta = new Date( fechaDia.getFullYear() , fechaDia.getMonth() , diaDelMes , 10 , 0 ) ;
-        const montoPagoTarjeta = ( ( Math.floor( Math.random() * 30000 ) + 30000 ) * 100 ) ;
-        await registrarTransaccion( {
-          organizationId: org.id ,
-          description:    "Pago de saldo del resumen de tarjeta" ,
-          entries: [
-            { accountId: ctaTarjeta.id , debit: montoPagoTarjeta , credit: 0 } ,
-            { accountId: ctaBanco.id , debit: 0 , credit: montoPagoTarjeta }
-          ]
-        } , fechaTarjeta ) ;
-      }
-
-      // --- 2. Movimientos cotidianos (gastos diarios aleatorios) ---
-      if( Math.random() < 0.65 ) {
-        const cantCompras = ( Math.floor( Math.random() * 3 ) + 1 ) ;
-        
-        for( let c = 0 ; c < cantCompras ; c++ ) {
-          const hora = ( Math.floor( Math.random() * 12 ) + 8 ) ;
-          const min = Math.floor( Math.random() * 60 ) ;
-          const fechaCompra = new Date( fechaDia.getFullYear() , fechaDia.getMonth() , diaDelMes , hora , min ) ;
-
-          const montoGasto = ( ( Math.floor( Math.random() * 3900 ) + 600 ) * 100 ) ;
-          const ctaPagoId = Math.random() > 0.5 ? ctaEfectivo.id : ctaBanco.id ;
-
+        // --- 1. Movimientos mensuales fijos ---
+        // A. Sueldo (Día 5)
+        if( diaDelMes === 5 ) {
+          const fechaSueldo = new Date( fechaDia.getFullYear() , fechaDia.getMonth() , diaDelMes , 9 , 0 ) ;
+          const montoSueldo = ( ( Math.floor( Math.random() * 60000 ) + 320000 ) * 100 ) ;
           await registrarTransaccion( {
             organizationId: org.id ,
-            categoryId:     subSupermercado.id ,
-            description:    c === 0 ? "Café y colación de paso" : c === 1 ? "Carga de transporte público" : "Gastos menores diarios" ,
+            categoryId:     subSueldos.id ,
+            description:    "Acreditación de haberes del mes" ,
+            merchantName:   "Tech Innovators S.A." ,
             entries: [
-              { accountId: ctaGastoSuper.id , debit: montoGasto , credit: 0 } ,
-              { accountId: ctaPagoId , debit: 0 , credit: montoGasto }
+              { accountId: ctaBanco.id , debit: montoSueldo , credit: 0 } ,
+              { accountId: ctaIngSueldo.id , debit: 0 , credit: montoSueldo }
             ]
-          } , fechaCompra ) ;
+          } , fechaSueldo ) ;
         }
-      }
 
-      // --- 3. Movimientos del fin de semana (Viernes, Sábado o Domingo) ---
-      if( ( diaDeLaSemana === 0 ) || ( diaDeLaSemana === 5 ) || ( diaDeLaSemana === 6 ) ) {
-        if( Math.random() < 0.40 ) {
-          const hora = ( Math.floor( Math.random() * 4 ) + 20 ) ;
-          const fechaSalida = new Date( fechaDia.getFullYear() , fechaDia.getMonth() , diaDelMes , hora , 0 ) ;
-          
-          const montoSalida = ( ( Math.floor( Math.random() * 17000 ) + 8000 ) * 100 ) ;
-          const ctaPagoId = Math.random() > 0.3 ? ctaTarjeta.id : ctaBanco.id ;
-
+        // B. Alquiler (Día 10)
+        if( diaDelMes === 10 ) {
+          const fechaAlquiler = new Date( fechaDia.getFullYear() , fechaDia.getMonth() , diaDelMes , 11 , 30 ) ;
           await registrarTransaccion( {
             organizationId: org.id ,
-            categoryId:     subSupermercado.id ,
-            description:    "Salida fin de semana y esparcimiento" ,
+            categoryId:     subAlquiler.id ,
+            description:    "Pago de alquiler mensual" ,
             entries: [
-              { accountId: ctaGastoSuper.id , debit: montoSalida , credit: 0 } ,
-              { accountId: ctaPagoId , debit: 0 , credit: montoSalida }
+              { accountId: ctaGastoAlquiler.id , debit: 8500000 , credit: 0 } ,
+              { accountId: ctaBanco.id , debit: 0 , credit: 8500000 }
             ]
-          } , fechaSalida ) ;
+          } , fechaAlquiler ) ;
+        }
+
+        // C. Servicios (Día 15)
+        if( diaDelMes === 15 ) {
+          const fechaServicios = new Date( fechaDia.getFullYear() , fechaDia.getMonth() , diaDelMes , 14 , 15 ) ;
+          const montoServicios = ( ( Math.floor( Math.random() * 6000 ) + 22000 ) * 100 ) ;
+          await registrarTransaccion( {
+            organizationId: org.id ,
+            categoryId:     subServicios.id ,
+            description:    "Pago de luz y telecomunicaciones" ,
+            merchantName:   "Edesur / Fibertel" ,
+            entries: [
+              { accountId: ctaGastoServicios.id , debit: montoServicios , credit: 0 } ,
+              { accountId: ctaBanco.id , debit: 0 , credit: montoServicios }
+            ]
+          } , fechaServicios ) ;
+        }
+
+        // D. Pago de Tarjeta de Crédito (Día 22)
+        if( diaDelMes === 22 ) {
+          const fechaTarjeta = new Date( fechaDia.getFullYear() , fechaDia.getMonth() , diaDelMes , 10 , 0 ) ;
+          const montoPagoTarjeta = ( ( Math.floor( Math.random() * 30000 ) + 30000 ) * 100 ) ;
+          await registrarTransaccion( {
+            organizationId: org.id ,
+            description:    "Pago de saldo del resumen de tarjeta" ,
+            entries: [
+              { accountId: ctaTarjeta.id , debit: montoPagoTarjeta , credit: 0 } ,
+              { accountId: ctaBanco.id , debit: 0 , credit: montoPagoTarjeta }
+            ]
+          } , fechaTarjeta ) ;
+        }
+
+        // --- 2. Movimientos cotidianos (gastos diarios aleatorios) ---
+        if( Math.random() < 0.65 ) {
+          const cantCompras = ( Math.floor( Math.random() * 3 ) + 1 ) ;
+
+          for( let c = 0 ; c < cantCompras ; c++ ) {
+            const hora = ( Math.floor( Math.random() * 12 ) + 8 ) ;
+            const min = Math.floor( Math.random() * 60 ) ;
+            const fechaCompra = new Date( fechaDia.getFullYear() , fechaDia.getMonth() , diaDelMes , hora , min ) ;
+
+            const montoGasto = ( ( Math.floor( Math.random() * 3900 ) + 600 ) * 100 ) ;
+            const ctaPagoId = Math.random() > 0.5 ? ctaEfectivo.id : ctaBanco.id ;
+
+            await registrarTransaccion( {
+              organizationId: org.id ,
+              categoryId:     subSupermercado.id ,
+              description:    c === 0 ? "Café y colación de paso" : c === 1 ? "Carga de transporte público" : "Gastos menores diarios" ,
+              entries: [
+                { accountId: ctaGastoSuper.id , debit: montoGasto , credit: 0 } ,
+                { accountId: ctaPagoId , debit: 0 , credit: montoGasto }
+              ]
+            } , fechaCompra ) ;
+          }
+        }
+
+        // --- 3. Movimientos del fin de semana (Viernes, Sábado o Domingo) ---
+        if( ( diaDeLaSemana === 0 ) || ( diaDeLaSemana === 5 ) || ( diaDeLaSemana === 6 ) ) {
+          if( Math.random() < 0.40 ) {
+            const hora = ( Math.floor( Math.random() * 4 ) + 20 ) ;
+            const fechaSalida = new Date( fechaDia.getFullYear() , fechaDia.getMonth() , diaDelMes , hora , 0 ) ;
+
+            const montoSalida = ( ( Math.floor( Math.random() * 17000 ) + 8000 ) * 100 ) ;
+            const ctaPagoId = Math.random() > 0.3 ? ctaTarjeta.id : ctaBanco.id ;
+
+            await registrarTransaccion( {
+              organizationId: org.id ,
+              categoryId:     subSupermercado.id ,
+              description:    "Salida fin de semana y esparcimiento" ,
+              entries: [
+                { accountId: ctaGastoSuper.id , debit: montoSalida , credit: 0 } ,
+                { accountId: ctaPagoId , debit: 0 , credit: montoSalida }
+              ]
+            } , fechaSalida ) ;
+          }
         }
       }
     }
 
     console.log( "Transacciones contables de partida doble sembradas con éxito." ) ;
+
+    console.log( "Derivando resúmenes mensuales cerrados a partir del libro..." ) ;
+    const resumenes = await rellenarResumenesFaltantes( org.id ) ;
+    if( !resumenes.success ) {
+      throw( new Error( `Error al derivar los resúmenes mensuales: ${resumenes.error}` ) ) ;
+    }
+    console.log( `Resúmenes mensuales derivados: ${resumenes.value}` ) ;
 
     // 10. Sembrar Suscripciones Recurrentes demo (montos en centavos)
     console.log( "Sembrando suscripciones recurrentes demo..." ) ;
