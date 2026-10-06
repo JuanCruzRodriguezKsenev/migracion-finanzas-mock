@@ -1,8 +1,8 @@
 // Librerías externas
-import { describe , it , expect , beforeEach , afterEach , afterAll } from "vitest" ;
-import { JWT }                                                         from "next-auth/jwt" ;
-import { Session }                                                     from "next-auth" ;
-import { eq }                                                          from "drizzle-orm" ;
+import { describe , it , expect , beforeEach , afterEach , afterAll , vi } from "vitest" ;
+import { JWT }                                                             from "next-auth/jwt" ;
+import { Session }                                                         from "next-auth" ;
+import { eq }                                                              from "drizzle-orm" ;
 
 // Shared
 import { crearUsuarioConMembresia } from "@/shared/db/testFixtures" ;
@@ -11,8 +11,10 @@ import { limpiarBase }              from "@/shared/db/testCleanup" ;
 import { authOptions }              from "./auth" ;
 
 // Feature: Auth
-import { organizations , users , memberships } from "@/features/auth/schema.db" ;
-import { hashPassword }                        from "@/features/auth/services/authService" ;
+import { organizations , users , memberships , loginAttempts } from "@/features/auth/schema.db" ;
+import { invitationRepository }                                              from "@/features/auth/repositories/invitationRepository" ;
+import * as authServiceModule                                                from "@/features/auth/services/authService" ;
+import { hashPassword }                                                      from "@/features/auth/services/authService" ;
 
 /**
  * Los callbacks de NextAuth declaran un objeto de parámetros con más campos de los que estas
@@ -21,6 +23,7 @@ import { hashPassword }                        from "@/features/auth/services/au
  */
 type ParametrosJwt     = Parameters< NonNullable< NonNullable< typeof authOptions.callbacks >[ "jwt" ] > > [0] ;
 type ParametrosSession = Parameters< NonNullable< NonNullable< typeof authOptions.callbacks >[ "session" ] > > [0] ;
+type ParametrosSignIn  = Parameters< NonNullable< NonNullable< typeof authOptions.callbacks >[ "signIn" ] > > [0] ;
 
 describe( "authOptions callbacks (JWT & Session)" , () => {
   let orgId:  string ;
@@ -273,15 +276,135 @@ describe( "authOptions callbacks (JWT & Session)" , () => {
         } ) ;
 
       const credentialsProvider = authOptions.providers[0] as unknown as {
-        authorize: ( credentials: Record< string , string > , req: unknown ) => Promise< unknown > ;
+        options: {
+          authorize: ( credentials: Record< string , string > , req: unknown ) => Promise< unknown > ;
+        } ;
       } ;
 
-      const resultado = await credentialsProvider.authorize( {
+      const resultado = await credentialsProvider.options.authorize( {
         email:    "sin-membresia-auth@ejemplo.com" ,
         password: "ValidaPassword123!" ,
       } , { headers: {} } ) ;
 
       expect( resultado ).toBeNull() ;
+    } ) ;
+
+    it( "debería rechazar con null y ejecutar verificación señuelo ante usuario de Google sin contraseña (RN-6, AC-14)" , async () => {
+      const spy = vi.spyOn( authServiceModule.authService , "verifyPassword" ) ;
+
+      const [ usuarioGoogle ] = await db
+        .insert( users )
+        .values( {
+          email:        "google-solo-auth@ejemplo.com" ,
+          name:         "Google Solo" ,
+          googleSub:    "sub-google-solo-auth" ,
+          passwordHash: null ,
+          salt:         null
+        } )
+        .returning() ;
+
+      await db
+        .insert( memberships )
+        .values( {
+          userId:         usuarioGoogle.id ,
+          organizationId: orgId ,
+          role:           "member"
+        } ) ;
+
+      const credentialsProvider = authOptions.providers[0] as unknown as {
+        options: {
+          authorize: ( credentials: Record< string , string > , req: unknown ) => Promise< unknown > ;
+        } ;
+      } ;
+
+      const resultado = await credentialsProvider.options.authorize( {
+        email:    "google-solo-auth@ejemplo.com" ,
+        password: "CualquierPassword123!"
+      } , { headers: {} } ) ;
+
+      expect( resultado ).toBeNull() ;
+      expect( spy ).toHaveBeenCalled() ;
+      spy.mockRestore() ;
+    } ) ;
+  } ) ;
+
+  describe( "signIn callback" , () => {
+    it( "debería retornar true inmediatamente si el proveedor no es Google" , async () => {
+      const signInFn = authOptions.callbacks?.signIn ;
+      expect( signInFn ).toBeDefined() ;
+
+      const resultado = await signInFn!( {
+        user:    { id: "u-1" } ,
+        account: { provider: "credentials" , type: "credentials" , providerAccountId: "u-1" } ,
+        profile: undefined
+      } as unknown as ParametrosSignIn ) ;
+
+      expect( resultado ).toBe( true ) ;
+    } ) ;
+
+    it( "debería rechazar con false si el usuario de Google no tiene acceso ni invitaciones" , async () => {
+      const signInFn = authOptions.callbacks?.signIn ;
+
+      const resultado = await signInFn!( {
+        user:    { email: "desconocido-google@ejemplo.com" } ,
+        account: { provider: "google" , type: "oauth" , providerAccountId: "sub-desconocido-google" } ,
+        profile: { email: "desconocido-google@ejemplo.com" , email_verified: true }
+      } as unknown as ParametrosSignIn ) ;
+
+      expect( resultado ).toBe( false ) ;
+    } ) ;
+
+    it( "debería autenticar exitosamente con Google, asignar datos a user y propagar a jwt callback" , async () => {
+      await invitationRepository.crearInvitacion( {
+        organizationId: orgId ,
+        email:          "invitado-signin@ejemplo.com" ,
+        role:           "member" ,
+        expiresAt:      new Date( Date.now() + 86400000 )
+      } ) ;
+
+      const signInFn = authOptions.callbacks?.signIn ;
+      const jwtFn    = authOptions.callbacks?.jwt ;
+
+      const mockUserObj: Record< string , unknown > = {
+        email: "invitado-signin@ejemplo.com" ,
+        name:  "Invitado Google"
+      } ;
+
+      const resultadoSignIn = await signInFn!( {
+        user:    mockUserObj ,
+        account: { provider: "google" , type: "oauth" , providerAccountId: "sub-invitado-signin" } ,
+        profile: { email: "invitado-signin@ejemplo.com" , email_verified: true , name: "Invitado Google" }
+      } as unknown as ParametrosSignIn ) ;
+
+      expect( resultadoSignIn ).toBe( true ) ;
+      expect( mockUserObj.id ).toBeDefined() ;
+      expect( mockUserObj.organizationId ).toBe( orgId ) ;
+      expect( mockUserObj.role ).toBe( "member" ) ;
+
+      // Comprobar que lo asignado en signIn llega al token en jwt
+      const token = await jwtFn!( {
+        token:   {} as JWT ,
+        user:    mockUserObj ,
+        account: null
+      } as unknown as ParametrosJwt ) ;
+
+      expect( token.id ).toBe( mockUserObj.id ) ;
+      expect( token.organizationId ).toBe( orgId ) ;
+      expect( token.role ).toBe( "member" ) ;
+    } ) ;
+
+    it( "un login de Google no incrementa loginAttempts (RN-7)" , async () => {
+      const signInFn = authOptions.callbacks?.signIn ;
+
+      // Intento rechazado de Google
+      await signInFn!( {
+        user:    { email: "no-existe-google@ejemplo.com" } ,
+        account: { provider: "google" , type: "oauth" , providerAccountId: "sub-no-existe" } ,
+        profile: { email: "no-existe-google@ejemplo.com" , email_verified: true }
+      } as unknown as ParametrosSignIn ) ;
+
+      const intentos = await db.select().from( loginAttempts ) ;
+      expect( intentos.length ).toBe( 0 ) ;
     } ) ;
   } ) ;
 

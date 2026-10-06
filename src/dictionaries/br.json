@@ -54,7 +54,12 @@
     "loadingBtn": "Carregando...",
     "errorMsg": "Credenciais incorretas. Tente novamente.",
     "unexpectedError": "Ocorreu um erro inesperado ao iniciar a sessão.",
-    "tooManyAttempts": "Muitas tentativas falhas. Aguarde alguns minutos antes de tentar novamente."
+    "tooManyAttempts": "Muitas tentativas falhas. Aguarde alguns minutos antes de tentar novamente.",
+    "googleBtn": "Continuar com o Google",
+    "googleLoading": "Conectando...",
+    "orSeparator": "ou",
+    "accessDenied": "Sua conta não tem acesso. Peça ao administrador da sua organização para convidá-lo.",
+    "googleError": "Não foi possível completar o login com o Google. Tente novamente."
   },
   "goalsPage": {
     "title": "Metas",

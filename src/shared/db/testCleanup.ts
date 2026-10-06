@@ -35,6 +35,7 @@ import {
   financialEntities ,
   categories ,
   profiles ,
+  invitations ,
   memberships ,
   users ,
   organizations
@@ -125,10 +126,13 @@ export async function limpiarBase(): Promise< void > {
     // 20. memberships → cascade a users y organizations; antes que users
     await tx.delete( memberships ) ;
 
-    // 21. users
+    // 21. invitations → cascade a organizations, set null a users; antes que users y organizations
+    await tx.delete( invitations ) ;
+
+    // 22. users
     await tx.delete( users ) ;
 
-    // 22. organizations
+    // 23. organizations
     await tx.delete( organizations ) ;
   } ) ;
 }

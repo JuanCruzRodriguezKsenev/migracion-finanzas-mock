@@ -15,6 +15,8 @@ export const envSchema = z.object( {
   NEXTAUTH_URL: z.string().url( "NEXTAUTH_URL debe ser una URL válida" ).optional() ,
   BRANDFETCH_API_KEY: z.string().optional() ,
   NEXT_PUBLIC_BRANDFETCH_CLIENT_ID: z.string().default( "brandfetch" ) ,
+  GOOGLE_CLIENT_ID: z.string().optional() ,
+  GOOGLE_CLIENT_SECRET: z.string().optional() ,
 } ).refine(
   ( data ) => {
     if( (data.NODE_ENV === "production") && !data.NEXTAUTH_SECRET ) {
@@ -25,6 +27,16 @@ export const envSchema = z.object( {
   {
     message: "NEXTAUTH_SECRET es obligatoria en entorno de producción." ,
     path: [ "NEXTAUTH_SECRET" ] ,
+  }
+).refine(
+  ( data ) => {
+    const tieneId     = Boolean( data.GOOGLE_CLIENT_ID ) ;
+    const tieneSecret = Boolean( data.GOOGLE_CLIENT_SECRET ) ;
+    return( tieneId === tieneSecret ) ;
+  } ,
+  {
+    message: "GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET deben definirse ambas o ninguna." ,
+    path: [ "GOOGLE_CLIENT_ID" ] ,
   }
 ) ;
 

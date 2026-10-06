@@ -15,9 +15,10 @@ import { ERROR_DEMASIADOS_INTENTOS } from "@/features/auth/constants" ;
 
 // Shared UI
 import { PasswordInput } from "@/shared/ui/forms/Form/PasswordInput" ;
-import { Button }        from "@/shared/ui/display/Button/Button" ;
+import { IconGoogle }    from "@/shared/ui/display/Icons/Icons" ;
 import { FormInput }     from "@/shared/ui/forms/Form/FormInput" ;
 import { FormError }     from "@/shared/ui/forms/Form/FormError" ;
+import { Button }        from "@/shared/ui/display/Button/Button" ;
 import { Card }          from "@/shared/ui/display/Card/Card" ;
 
 // Local styles
@@ -25,16 +26,22 @@ import styles from "./Signin.module.css" ;
 
 
 interface SignInFormProps {
-  lang: string ;
+  lang:              string ;
+  googleHabilitado?: boolean ;
   dict: {
-    title:           string ;
-    emailLabel:      string ;
-    passwordLabel:   string ;
-    submitBtn:       string ;
-    loadingBtn:      string ;
-    errorMsg:        string ;
-    unexpectedError: string ;
+    title:            string ;
+    emailLabel:       string ;
+    passwordLabel:    string ;
+    submitBtn:        string ;
+    loadingBtn:       string ;
+    errorMsg:         string ;
+    unexpectedError:  string ;
     tooManyAttempts?: string ;
+    googleBtn?:       string ;
+    googleLoading?:   string ;
+    orSeparator?:     string ;
+    accessDenied?:    string ;
+    googleError?:     string ;
   } ;
 }
 
@@ -72,13 +79,43 @@ function resolverDestino( callbackUrl: string | null , lang: string ): string {
 /**
  * Componente cliente interactivo que contiene los campos y lógica de envío de sesión.
  */
-export function SignInForm( { dict , lang }: SignInFormProps ) {
-  const router               = useRouter() ;
-  const searchParams         = useSearchParams() ;
-  const [ email , setEmail ] = useState( "" ) ;
-  const [ password , setPassword ] = useState( "" ) ;
-  const [ error , setError ] = useState( "" ) ;
-  const [ loading , setLoading ] = useState( false ) ;
+export function SignInForm( { dict , lang , googleHabilitado = false }: SignInFormProps ) {
+  const router                               = useRouter() ;
+  const searchParams                         = useSearchParams() ;
+  const [ email , setEmail ]                 = useState( "" ) ;
+  const [ password , setPassword ]           = useState( "" ) ;
+  const [ error , setError ]                 = useState( "" ) ;
+  const [ loading , setLoading ]             = useState( false ) ;
+  const [ googleLoading , setGoogleLoading ] = useState( false ) ;
+
+  // Mensaje de error derivado de query parameters de OAuth / NextAuth
+  const errorParam = searchParams.get( "error" ) ;
+  let mensajeErrorQuery = "" ;
+  if( errorParam === "AccessDenied" ){
+    mensajeErrorQuery = ( dict.accessDenied || "Tu cuenta no tiene acceso. Pedile a quien administra tu organización que te invite." ) ;
+  } else if( errorParam && (errorParam.startsWith( "OAuth" ) || errorParam.includes( "Callback" )) ){
+    mensajeErrorQuery = ( dict.googleError || "No se pudo completar el inicio de sesión con Google. Intentá de nuevo." ) ;
+  } else if( errorParam ){
+    mensajeErrorQuery = dict.errorMsg ;
+  }
+
+  const errorAMostrar = ( error || mensajeErrorQuery ) ;
+
+  /**
+   * Dispara el flujo de inicio de sesión con el proveedor federado de Google.
+   */
+  const handleGoogleSignIn = async () => {
+    setError( "" ) ;
+    setGoogleLoading( true ) ;
+
+    try {
+      const destino = resolverDestino( searchParams.get( "callbackUrl" ) , lang ) ;
+      await signIn( "google" , { callbackUrl: destino } ) ;
+    } catch {
+      setError( dict.googleError || dict.unexpectedError ) ;
+      setGoogleLoading( false ) ;
+    }
+  } ;
 
   /**
    * Procesa el envío del formulario intentando iniciar sesión mediante el proveedor 'credentials'.
@@ -117,7 +154,25 @@ export function SignInForm( { dict , lang }: SignInFormProps ) {
       <Card className={styles.card}>
         <h2 className={styles.header}>{ dict.title }</h2>
 
-        <FormError error={error} />
+        <FormError error={errorAMostrar} />
+
+        {googleHabilitado && (
+          <>
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={loading || googleLoading}
+              className={styles.googleButton}
+            >
+              <IconGoogle size={18} />
+              <span>{ googleLoading ? (dict.googleLoading || "Conectando...") : (dict.googleBtn || "Continuar con Google") }</span>
+            </button>
+
+            <div className={styles.separator} role="separator">
+              <span className={styles.separatorText}>{ dict.orSeparator || "o" }</span>
+            </div>
+          </>
+        )}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <FormInput

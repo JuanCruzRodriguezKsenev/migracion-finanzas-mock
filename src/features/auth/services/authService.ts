@@ -179,3 +179,12 @@ export async function verifyPassword(
 
   return( crypto.timingSafeEqual(derivedKey , hashBuffer) ) ;
 }
+
+export const authService = {
+  verifyPassword ,
+  hashPassword ,
+  necesitaRehash ,
+  serializarParams ,
+  PARAMS_ACTUALES ,
+  PARAMS_LEGADO ,
+} ;

@@ -24,6 +24,16 @@ export interface IdentidadVigente {
 }
 
 /**
+ * Normaliza una dirección de correo electrónico a minúsculas y sin espacios laterales.
+ *
+ * @param email - Correo a normalizar.
+ * @returns El correo limpio en minúsculas.
+ */
+export function normalizarEmail( email: string ): string {
+  return( email.trim().toLowerCase() ) ;
+}
+
+/**
  * Repositorio de Usuarios.
  * Centraliza las consultas y mutaciones asociadas a la tabla de usuarios.
  */
@@ -38,7 +48,7 @@ export const userRepository = {
   async findByEmail( email: string , tx: DBOrTx = db ): Promise< User | null > {
     // Normalizar a minúsculas: los emails son case-insensitive en la práctica,
     // y la columna tiene unicidad case-sensitive en Postgres.
-    const emailNormalizado = email.trim().toLowerCase() ;
+    const emailNormalizado = normalizarEmail( email ) ;
 
     const [ usuario ] = await tx
       .select()
@@ -47,6 +57,105 @@ export const userRepository = {
       .limit( 1 ) ;
 
     return( usuario || null ) ;
+  } ,
+
+  /**
+   * Busca un usuario por su identificador único de cuenta en Google (sub claim).
+   *
+   * @param googleSub - Identificador único de Google.
+   * @param tx - Instancia de transacción opcional.
+   * @returns El usuario encontrado o null si no existe.
+   */
+  async findByGoogleSub( googleSub: string , tx: DBOrTx = db ): Promise< User | null > {
+    const [ usuario ] = await tx
+      .select()
+      .from( users )
+      .where( eq(users.googleSub , googleSub) )
+      .limit( 1 ) ;
+
+    return( usuario || null ) ;
+  } ,
+
+  /**
+   * Da de alta un nuevo usuario autenticado exclusivamente vía Google (sin credenciales de contraseña).
+   *
+   * @param datos - Parámetros de identidad recibidos de Google.
+   * @param tx - Instancia de transacción opcional.
+   * @returns El registro de usuario recién creado.
+   */
+  async createFromGoogle(
+    datos: {
+      googleSub: string ;
+      email:     string ;
+      name?:     string | null ;
+      image?:    string | null ;
+    } ,
+    tx: DBOrTx = db
+  ): Promise< User > {
+    const emailNormalizado = normalizarEmail( datos.email ) ;
+
+    const [ usuario ] = await tx
+      .insert( users )
+      .values( {
+        email:     emailNormalizado ,
+        googleSub: datos.googleSub ,
+        name:      datos.name ?? null ,
+        image:     datos.image ?? null ,
+      } )
+      .returning() ;
+
+    return( usuario ) ;
+  } ,
+
+  /**
+   * Vincula una cuenta de Google a un usuario existente mediante su `googleSub`.
+   *
+   * @param id - Identificador único del usuario local.
+   * @param googleSub - Identificador único del usuario en Google.
+   * @param tx - Instancia de transacción opcional.
+   */
+  async linkGoogle(
+    id:        string ,
+    googleSub: string ,
+    tx:        DBOrTx = db
+  ): Promise< void > {
+    await tx
+      .update( users )
+      .set( {
+        googleSub ,
+        updatedAt: new Date() ,
+      } )
+      .where( eq(users.id , id) ) ;
+  } ,
+
+  /**
+   * Actualiza los datos de perfil (nombre e imagen) sincronizados desde Google (RN-8).
+   *
+   * @param id - Identificador único del usuario local.
+   * @param datos - Nombre e imagen actualizados desde el proveedor.
+   * @param tx - Instancia de transacción opcional.
+   */
+  async updateProfileFromGoogle(
+    id:    string ,
+    datos: {name?: string | null ; image?: string | null} ,
+    tx:    DBOrTx = db
+  ): Promise< void > {
+    const setValues: {name?: string | null ; image?: string | null ; updatedAt: Date} = {
+      updatedAt: new Date() ,
+    } ;
+
+    if( datos.name !== undefined ){
+      setValues.name = datos.name ;
+    }
+
+    if( datos.image !== undefined ){
+      setValues.image = datos.image ;
+    }
+
+    await tx
+      .update( users )
+      .set( setValues )
+      .where( eq(users.id , id) ) ;
   } ,
 
   /**

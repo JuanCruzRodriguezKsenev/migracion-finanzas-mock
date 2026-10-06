@@ -82,4 +82,38 @@ describe( "env validation (obtenerEnv)" , () => {
 
     expect( () => obtenerEnv( invalidUrlConfig ) ).toThrow( "NEXTAUTH_URL debe ser una URL válida" ) ;
   } ) ;
+
+  it( "debería permitir configuración válida con ambas variables de Google OAuth presentes" , () => {
+    const configConGoogle = {
+      DATABASE_URL:         "postgresql://postgres:pwd@localhost:5432/finanzas_db" ,
+      GOOGLE_CLIENT_ID:     "google-client-id" ,
+      GOOGLE_CLIENT_SECRET: "google-client-secret"
+    } ;
+
+    const env = obtenerEnv( configConGoogle ) ;
+    expect( env.GOOGLE_CLIENT_ID ).toBe( "google-client-id" ) ;
+    expect( env.GOOGLE_CLIENT_SECRET ).toBe( "google-client-secret" ) ;
+  } ) ;
+
+  it( "debería lanzar error si sólo GOOGLE_CLIENT_ID está definida sin GOOGLE_CLIENT_SECRET" , () => {
+    const configSoloId = {
+      DATABASE_URL:     "postgresql://postgres:pwd@localhost:5432/finanzas_db" ,
+      GOOGLE_CLIENT_ID: "google-client-id"
+    } ;
+
+    expect( () => obtenerEnv( configSoloId ) ).toThrow(
+      "GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET deben definirse ambas o ninguna."
+    ) ;
+  } ) ;
+
+  it( "debería lanzar error si sólo GOOGLE_CLIENT_SECRET está definida sin GOOGLE_CLIENT_ID" , () => {
+    const configSoloSecret = {
+      DATABASE_URL:         "postgresql://postgres:pwd@localhost:5432/finanzas_db" ,
+      GOOGLE_CLIENT_SECRET: "google-client-secret"
+    } ;
+
+    expect( () => obtenerEnv( configSoloSecret ) ).toThrow(
+      "GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET deben definirse ambas o ninguna."
+    ) ;
+  } ) ;
 } ) ;

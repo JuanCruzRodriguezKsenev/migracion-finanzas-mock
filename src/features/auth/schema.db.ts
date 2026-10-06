@@ -1,5 +1,6 @@
 // Librerías externas
-import { pgTable , uuid , varchar , text , integer , timestamp , uniqueIndex , index } from "drizzle-orm/pg-core" ;
+import { pgTable , uuid , varchar , text , integer , timestamp , uniqueIndex , index , check } from "drizzle-orm/pg-core" ;
+import { sql }                                                                                  from "drizzle-orm" ;
 
 
 /**
@@ -22,8 +23,10 @@ export const users = pgTable( "users" , {
   lastOrganizationId: uuid( "last_organization_id" ).references( () => organizations.id , {onDelete: "set null"} ) ,
   email:              varchar( "email" , {length: 255} ).notNull().unique() ,
   name:               varchar( "name"  , {length: 255} ) ,
-  passwordHash:       text( "password_hash" ).notNull() ,
-  salt:               varchar( "salt"  , {length: 64 } ).notNull() ,
+  googleSub:          varchar( "google_sub" , {length: 255} ).unique() ,
+  image:              text( "image" ) ,
+  passwordHash:       text( "password_hash" ) ,
+  salt:               varchar( "salt"  , {length: 64 } ) ,
   // Parámetros de costo con los que se derivó `password_hash`, en la forma `scrypt$N$r$p$keylen`.
   // Nulo en las filas anteriores a esta columna: authService las verifica con PARAMS_LEGADO y las
   // rehashea en su próximo login. Sin este dato, subir el costo criptográfico obligaría a resetear
@@ -31,7 +34,9 @@ export const users = pgTable( "users" , {
   hashParams:         varchar( "hash_params" , {length: 100} ) ,
   createdAt:          timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
   updatedAt:          timestamp( "updated_at" , {withTimezone: true} ).defaultNow().notNull()
-} ) ;
+} , ( table ) => { return( {
+  authMethodCheck: check( "users_auth_method_check" , sql`${table.passwordHash} IS NOT NULL OR ${table.googleSub} IS NOT NULL` ) ,
+} ) ; } ) ;
 
 /**
  * Definición del esquema para la tabla de Membresías.
@@ -45,6 +50,27 @@ export const memberships = pgTable( "memberships" , {
 } , ( table ) => { return( {
   uniqueUserOrg: uniqueIndex( "memberships_user_id_organization_id_unique" ).on( table.userId , table.organizationId ) ,
   orgIdx:        index( "memberships_organization_id_idx" ).on( table.organizationId ) ,
+} ) ; } ) ;
+
+/**
+ * Definición del esquema para la tabla de Invitaciones.
+ * Modela invitaciones pendientes o resueltas a organizaciones para nuevos o existentes usuarios.
+ */
+export const invitations = pgTable( "invitations" , {
+  id:             uuid( "id" ).primaryKey().defaultRandom() ,
+  organizationId: uuid( "organization_id" ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
+  email:          varchar( "email" , {length: 255} ).notNull() ,
+  role:           varchar( "role"  , {length: 50 } ).notNull() , // 'owner' | 'member' | 'viewer'
+  invitedBy:      uuid( "invited_by" ).references( () => users.id , {onDelete: "set null"} ) ,
+  status:         varchar( "status" , {length: 50} ).default( "pending" ).notNull() , // 'pending' | 'accepted' | 'revoked'
+  expiresAt:      timestamp( "expires_at"  , {withTimezone: true} ).notNull() ,
+  createdAt:      timestamp( "created_at"  , {withTimezone: true} ).defaultNow().notNull() ,
+  acceptedAt:     timestamp( "accepted_at" , {withTimezone: true} )
+} , ( table ) => { return( {
+  // Un 'pending' vencido seguiría estorbando: por eso 'invitar' (plan 4) marca como 'revoked' los vencidos de ese par antes de insertar.
+  uniquePendingOrgEmail: uniqueIndex( "invitations_organization_id_email_pending_unique" )
+    .on( table.organizationId , table.email )
+    .where( sql`${table.status} = 'pending'` ) ,
 } ) ; } ) ;
 
 /**

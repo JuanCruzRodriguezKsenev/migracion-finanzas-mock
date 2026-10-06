@@ -239,6 +239,13 @@
       "when": 1791344980402,
       "tag": "0033_special_patriot",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791348770589,
+      "tag": "0034_lying_timeslip",
+      "breakpoints": true
     }
   ]
 }

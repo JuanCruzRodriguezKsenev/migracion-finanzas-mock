@@ -54,7 +54,12 @@
     "loadingBtn": "Loading...",
     "errorMsg": "Invalid credentials. Please try again.",
     "unexpectedError": "An unexpected error occurred during sign in.",
-    "tooManyAttempts": "Too many failed attempts. Please wait a few minutes before trying again."
+    "tooManyAttempts": "Too many failed attempts. Please wait a few minutes before trying again.",
+    "googleBtn": "Continue with Google",
+    "googleLoading": "Connecting...",
+    "orSeparator": "or",
+    "accessDenied": "Your account does not have access. Ask your organization admin for an invitation.",
+    "googleError": "Could not complete sign in with Google. Please try again."
   },
   "goalsPage": {
     "title": "Goals",
