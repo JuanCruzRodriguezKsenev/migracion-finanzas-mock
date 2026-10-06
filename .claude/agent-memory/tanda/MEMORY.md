@@ -34,6 +34,8 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 
 ## Cómo trabajar
 
+- [Carriles en paralelo](carriles_en_paralelo.md) — worktree + base propia por carril; qué planes son independientes; choque de migraciones.
+
 - [El ciclo: preparar a `obra`, cerrar una rama, qué forma de plan sale limpia](ciclo_de_trabajo.md) — árbol limpio antes del traspaso, fast-forward sin merge commits, y la tabla "lo que NO hay que construir".
 - [Mientras corre `verificador`, el árbol no se toca](verificacion_no_tocar_el_arbol.md) — `pgrep` no prueba que terminó; sólo su notificación. Y cómo diagnosticar una suite "intermitente".
 
