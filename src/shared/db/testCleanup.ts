@@ -31,6 +31,7 @@ import {
   financialEntities ,
   categories ,
   profiles ,
+  memberships ,
   users ,
   organizations
 } from "./schema" ;
@@ -107,10 +108,13 @@ export async function limpiarBase(): Promise< void > {
     // 19. profiles → antes que users
     await tx.delete( profiles ) ;
 
-    // 20. users
+    // 20. memberships → cascade a users y organizations; antes que users
+    await tx.delete( memberships ) ;
+
+    // 21. users
     await tx.delete( users ) ;
 
-    // 21. organizations
+    // 22. organizations
     await tx.delete( organizations ) ;
   } ) ;
 }

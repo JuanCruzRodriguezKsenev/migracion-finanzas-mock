@@ -169,13 +169,21 @@ export const authOptions: NextAuthOptions = {
           }
         }
 
+        // Resolver la organización activa y el rol del usuario a partir de sus membresías (RN-5)
+        const identidad = await userRepository.findIdentidadVigente( usuario.id ) ;
+
+        if( !identidad ){
+          // RN-5: sin membresías vigentes no se entra al sistema.
+          return( null ) ;
+        }
+
         // Retornar la información del usuario mapeada con los tipos extendidos
         return( {
           id:             usuario.id ,
           email:          usuario.email ,
           name:           usuario.name ,
-          organizationId: usuario.organizationId ,
-          role:           usuario.role ,
+          organizationId: identidad.organizationId ,
+          role:           identidad.role ,
         } ) ;
       } ,
     } ) ,
@@ -189,12 +197,47 @@ export const authOptions: NextAuthOptions = {
      * viva la sesión de un usuario borrado, y arrastra para siempre el `role` que tenía al iniciar
      * sesión. La consulta devuelve ambos datos de un viaje y refresca el rol.
      */
-    async jwt( {token , user} ) {
+    async jwt( {token , user , trigger , session} ) {
       if( user ){
         token.id             = user.id ;
         token.organizationId = user.organizationId ;
         token.role           = user.role ;
         token.lastVerified   = Date.now() ;
+        return( token ) ;
+      }
+
+      // Rama de actualización explícita disparada por el cliente (trigger === "update")
+      if( (trigger === "update") && token.id ){
+        if( typeof session?.organizationId === "string" ){
+          try {
+            const identidad = await userRepository.findIdentidadVigente( token.id , session.organizationId ) ;
+
+            // El session entrante es input no confiable del cliente: sólo se acepta si la consulta
+            // a la base confirma que el usuario es miembro de esa organización en particular.
+            if( identidad && (identidad.organizationId === session.organizationId) ){
+              token.organizationId = identidad.organizationId ;
+              token.role           = identidad.role ;
+              token.lastVerified   = Date.now() ;
+
+              await userRepository.registrarUltimaOrganizacion( token.id , identidad.organizationId ) ;
+            } else {
+              logger.warn( "Petición de cambio de organización rechazada por pertenecer a otra entidad o no existir." , {
+                userId:                 token.id ,
+                solicitadaOrganization: session.organizationId ,
+              } ) ;
+            }
+          } catch( error ) {
+            logger.error( "Error al procesar actualización de organización activa en callback jwt." , {
+              userId: token.id ,
+              error:  String( error ) ,
+            } ) ;
+          }
+        } else {
+          logger.warn( "Petición de update en callback jwt recibida sin organizationId de tipo string; se ignora." , {
+            userId: token.id ,
+          } ) ;
+        }
+
         return( token ) ;
       }
 
@@ -206,15 +249,12 @@ export const authOptions: NextAuthOptions = {
 
         if( !token.lastVerified || ((ahora - token.lastVerified) > REVALIDACION_MS) ){
           try {
-            const identidad = await userRepository.findIdentidadVigente( token.id ) ;
+            const identidad = await userRepository.findIdentidadVigente( token.id , token.organizationId ) ;
 
-            // Se invalida tanto si la identidad ya no existe (usuario u organización eliminados)
-            // como si la organización del token no es la que la base le asigna hoy. Reescribir el
-            // valor en silencio sería más permisivo: dejaría pasar un token manipulado como si
-            // fuese un token viejo, y ninguna de las dos situaciones debería sobrevivir sin un
-            // login nuevo.
-            if( !identidad || (identidad.organizationId !== token.organizationId) ){
-              logger.warn( "Sesión huérfana o inconsistente detectada en JWT; invalidando token." , {
+            // Se invalida únicamente si la identidad ya no existe (usuario sin membresías activas
+            // u organización eliminada).
+            if( !identidad ){
+              logger.warn( "Sesión huérfana detectada en JWT; invalidando token." , {
                 organizationId: token.organizationId ,
                 userId:         token.id ,
               } ) ;
@@ -225,10 +265,27 @@ export const authOptions: NextAuthOptions = {
               return( token ) ;
             }
 
-            // El rol sí se refresca desde la base: un cambio de permisos tiene que reflejarse en la
-            // sesión vigente, y no amerita expulsar al usuario como sí lo amerita un cambio de tenant.
-            token.role         = identidad.role ;
-            token.lastVerified = ahora ;
+            // Fallback (RN-15): si el usuario perdió acceso a la organización activa pero tiene otras,
+            // la sesión migra a la usada más recientemente en vez de invalidarse en silencio.
+            // Es seguro porque el JWT viaja cifrado y firmado, y el reemplazo sólo apunta a una
+            // membresía confirmada por la base de datos.
+            if( identidad.organizationId !== token.organizationId ){
+              logger.info( "Organización activa anterior no disponible; conmutando a organización alternativa según RN-15." , {
+                userId:        token.id ,
+                anteriorOrgId: token.organizationId ,
+                nuevaOrgId:    identidad.organizationId ,
+              } ) ;
+
+              token.organizationId = identidad.organizationId ;
+              token.role           = identidad.role ;
+              token.lastVerified   = ahora ;
+
+              await userRepository.registrarUltimaOrganizacion( token.id , identidad.organizationId ) ;
+            } else {
+              // El rol se refresca desde la base: un cambio de permisos se refleja en la sesión vigente.
+              token.role         = identidad.role ;
+              token.lastVerified = ahora ;
+            }
           } catch( error ) {
             logger.error( "Error al revalidar la identidad en el callback jwt." , {error: String(error)} ) ;
           }

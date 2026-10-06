@@ -1,5 +1,5 @@
 // Librerías externas
-import { pgTable , uuid , varchar , text , integer , timestamp } from "drizzle-orm/pg-core" ;
+import { pgTable , uuid , varchar , text , integer , timestamp , uniqueIndex , index } from "drizzle-orm/pg-core" ;
 
 
 /**
@@ -18,21 +18,34 @@ export const organizations = pgTable( "organizations" , {
  * Contiene los datos de perfil, credenciales criptográficas y pertenencia a organización.
  */
 export const users = pgTable( "users" , {
-  id:             uuid( "id" ).primaryKey().defaultRandom() ,
-  organizationId: uuid( "organization_id" ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() , // Relación multi-tenant obligatoria
-  email:          varchar( "email" , {length: 255} ).notNull().unique() ,
-  name:           varchar( "name"  , {length: 255} ) ,
-  role:           varchar( "role"  , {length: 50 } ).default( "member" ).notNull() , // Rol del usuario: 'owner' | 'admin' | 'member'
-  passwordHash:   text( "password_hash" ).notNull() ,
-  salt:           varchar( "salt"  , {length: 64 } ).notNull() ,
+  id:                 uuid( "id" ).primaryKey().defaultRandom() ,
+  lastOrganizationId: uuid( "last_organization_id" ).references( () => organizations.id , {onDelete: "set null"} ) ,
+  email:              varchar( "email" , {length: 255} ).notNull().unique() ,
+  name:               varchar( "name"  , {length: 255} ) ,
+  passwordHash:       text( "password_hash" ).notNull() ,
+  salt:               varchar( "salt"  , {length: 64 } ).notNull() ,
   // Parámetros de costo con los que se derivó `password_hash`, en la forma `scrypt$N$r$p$keylen`.
   // Nulo en las filas anteriores a esta columna: authService las verifica con PARAMS_LEGADO y las
   // rehashea en su próximo login. Sin este dato, subir el costo criptográfico obligaría a resetear
   // todas las contraseñas de golpe.
-  hashParams:     varchar( "hash_params" , {length: 100} ) ,
-  createdAt:      timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
-  updatedAt:      timestamp( "updated_at" , {withTimezone: true} ).defaultNow().notNull()
+  hashParams:         varchar( "hash_params" , {length: 100} ) ,
+  createdAt:          timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
+  updatedAt:          timestamp( "updated_at" , {withTimezone: true} ).defaultNow().notNull()
 } ) ;
+
+/**
+ * Definición del esquema para la tabla de Membresías.
+ * Modela la pertenencia de usuarios a organizaciones (N:M) y su rol específico en cada una.
+ */
+export const memberships = pgTable( "memberships" , {
+  userId:         uuid( "user_id"         ).references( () => users.id         , {onDelete: "cascade"} ).notNull() ,
+  organizationId: uuid( "organization_id" ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
+  role:           varchar( "role"         , {length: 50} ).default( "member" ).notNull() , // Rol del usuario: 'owner' | 'member' | 'viewer'
+  createdAt:      timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
+} , ( table ) => { return( {
+  uniqueUserOrg: uniqueIndex( "memberships_user_id_organization_id_unique" ).on( table.userId , table.organizationId ) ,
+  orgIdx:        index( "memberships_organization_id_idx" ).on( table.organizationId ) ,
+} ) ; } ) ;
 
 /**
  * Registro de intentos de autenticación fallidos, para frenar la fuerza bruta contra credenciales.

@@ -9,11 +9,12 @@ import { describe , it , expect , vi , beforeEach , afterEach , afterAll } from 
 import { eq }                                                              from "drizzle-orm" ;
 
 // Shared
-import { db }          from "@/shared/db/client" ;
-import { limpiarBase } from "@/shared/db/testCleanup" ;
+import { crearUsuarioConMembresia } from "@/shared/db/testFixtures" ;
+import { db }                       from "@/shared/db/client" ;
+import { limpiarBase }              from "@/shared/db/testCleanup" ;
 
 // Feature: Auth
-import { organizations , users } from "@/features/auth/schema.db" ;
+import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Profile
 import { profiles } from "@/features/profile/schema.db" ;
@@ -70,17 +71,14 @@ describe( "installmentPlansActions (RFC 025 Integration Suite)" , () => {
     orgId = org.id ;
 
     // 2. Crear Usuario y Perfil
-    const [ usr ] = await db
-      .insert( users )
-      .values( {
-        organizationId: orgId ,
-        email:          "cuotas@ejemplo.com" ,
-        name:           "Tester Cuotas" ,
-        passwordHash:   "hash-mock" ,
-        salt:           "salt-mock" ,
-        role:           "owner" ,
-      } )
-      .returning() ;
+    const usr = await crearUsuarioConMembresia( {
+      organizationId: orgId ,
+      email:          "cuotas@ejemplo.com" ,
+      name:           "Tester Cuotas" ,
+      passwordHash:   "hash-mock" ,
+      salt:           "salt-mock" ,
+      role:           "owner" ,
+    } ) ;
     userId = usr.id ;
 
     await db.insert( profiles ).values( {

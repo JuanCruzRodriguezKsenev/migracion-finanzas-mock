@@ -40,6 +40,6 @@ declare module "next-auth/jwt" {
     organizationId: string ;
     role:           string ;
     lastVerified?:  number ; // Timestamp unix en ms de la última validación contra DB
-    invalid?:       boolean ; // Flag de invalidación si la organización fue eliminada
+    invalid?:       boolean ; // Flag de invalidación si el usuario ya no tiene membresías o fue eliminado
   }
 }

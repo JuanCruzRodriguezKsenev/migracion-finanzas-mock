@@ -30,8 +30,8 @@ import { loans , loanAccounts } from "@/features/loans/schema.db" ;
 import { subscriptions } from "@/features/subscriptions/schema.db" ;
 
 // Feature: Auth
-import { organizations , users } from "@/features/auth/schema.db" ;
-import { hashPassword }          from "@/features/auth/services/authService" ;
+import { organizations , users , memberships } from "@/features/auth/schema.db" ;
+import { hashPassword }                        from "@/features/auth/services/authService" ;
 
 // Feature: Profile
 import { profiles } from "@/features/profile/schema.db" ;
@@ -86,29 +86,42 @@ async function main() {
     const [ usuario ] = await db
       .insert( users )
       .values( {
-        organizationId: org.id ,
-        email:          "admin@ejemplo.com" ,
-        name:           "Admin Demo" ,
-        role:           "owner" ,
-        passwordHash:   hash ,
-        salt:           salt ,
-        hashParams:     params ,
+        lastOrganizationId: org.id ,
+        email:              "admin@ejemplo.com" ,
+        name:               "Admin Demo" ,
+        passwordHash:       hash ,
+        salt:               salt ,
+        hashParams:         params ,
       } )
       .onConflictDoUpdate( {
         target: users.email ,
         set: {
-          organizationId: org.id ,
-          name:           "Admin Demo" ,
-          role:           "owner" ,
-          passwordHash:   hash ,
-          salt:           salt ,
-          hashParams:     params ,
-          updatedAt:      new Date() ,
+          lastOrganizationId: org.id ,
+          name:               "Admin Demo" ,
+          passwordHash:       hash ,
+          salt:               salt ,
+          hashParams:         params ,
+          updatedAt:          new Date() ,
         } ,
       } )
       .returning() ;
 
     console.log( `Usuario demo creado con Email: ${usuario.email}` ) ;
+
+    // 3.5 Crear o actualizar membresía owner para el usuario demo (idempotente)
+    await db
+      .insert( memberships )
+      .values( {
+        userId:         usuario.id ,
+        organizationId: org.id ,
+        role:           "owner" ,
+      } )
+      .onConflictDoUpdate( {
+        target: [ memberships.userId , memberships.organizationId ] ,
+        set:    { role: "owner" } ,
+      } ) ;
+
+    console.log( "Membresía 'owner' demo configurada con éxito." ) ;
 
     // 4. Crear Perfil y Preferencias asociadas en Argentina/ARS (idempotente)
     await db

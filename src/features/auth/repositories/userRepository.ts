@@ -3,13 +3,13 @@
  * Repositorio para la gestión de usuarios (Capa de Acceso a Datos - DAL).
  */
 // Librerías externas
-import { eq } from "drizzle-orm" ;
+import { eq , desc , sql } from "drizzle-orm" ;
 
 // Shared
 import { db , DBOrTx } from "@/shared/db/client" ;
 
 // Feature: Auth
-import { users , organizations } from "../schema.db" ;
+import { users , organizations , memberships } from "../schema.db" ;
 
 export type User = typeof users.$inferSelect ;
 
@@ -50,31 +50,74 @@ export const userRepository = {
   } ,
 
   /**
-   * Resuelve la identidad vigente de un usuario verificando, en la misma consulta, que su
-   * organización siga existiendo.
+   * Resuelve la identidad vigente de un usuario en una sola consulta.
    *
-   * El `INNER JOIN` es la clave: comprobar sólo la organización dejaría viva la sesión de un
-   * usuario borrado, y comprobar sólo el usuario no detectaría una organización eliminada.
-   * Devolver el `role` desde la base permite además refrescarlo en el token, en vez de arrastrar
-   * indefinidamente el que se emitió en el login.
+   * Une `memberships` con `organizations` (el INNER JOIN comprueba que la organización
+   * siga existiendo) y con `users`, y elige una fila según este orden de preferencia:
+   * 1. La membresía de la organización `preferida` si existe;
+   * 2. La de `users.lastOrganizationId`;
+   * 3. La más reciente (`memberships.createdAt` descendente).
    *
    * @param id - Identificador del usuario tal como viaja en el JWT.
+   * @param preferida - Identificador opcional de organización preferida a priorizar.
    * @param tx - Instancia de transacción opcional.
-   * @returns La identidad vigente, o null si el usuario o su organización ya no existen.
+   * @returns La identidad vigente con el rol de esa membresía, o null si el usuario no existe o no tiene ninguna.
    */
-  async findIdentidadVigente( id: string , tx: DBOrTx = db ): Promise< IdentidadVigente | null > {
+  async findIdentidadVigente(
+    id:         string ,
+    preferida?: string ,
+    tx:         DBOrTx = db
+  ): Promise< IdentidadVigente | null > {
+    const orden = [] ;
+
+    if( preferida ) {
+      orden.push(
+        sql`CASE WHEN ${memberships.organizationId} = ${preferida} THEN 0 ELSE 1 END`
+      ) ;
+    }
+
+    orden.push(
+      sql`CASE WHEN ${memberships.organizationId} = ${users.lastOrganizationId} THEN 0 ELSE 1 END`
+    ) ;
+
+    orden.push( desc( memberships.createdAt ) ) ;
+
     const [ fila ] = await tx
       .select( {
         id:             users.id ,
-        organizationId: users.organizationId ,
-        role:           users.role
+        organizationId: memberships.organizationId ,
+        role:           memberships.role ,
       } )
       .from( users )
-      .innerJoin( organizations , eq(users.organizationId , organizations.id) )
+      .innerJoin( memberships   , eq(users.id                 , memberships.userId) )
+      .innerJoin( organizations , eq(memberships.organizationId , organizations.id) )
       .where( eq(users.id , id) )
+      .orderBy( ...orden )
       .limit( 1 ) ;
 
     return( fila || null ) ;
+  } ,
+
+  /**
+   * Registra la última organización activa utilizada por el usuario.
+   * Se invoca únicamente cuando el cambio o acceso a dicha organización fue verificado.
+   *
+   * @param userId - Identificador del usuario.
+   * @param organizationId - Identificador de la organización activa verificada.
+   * @param tx - Instancia de transacción opcional.
+   */
+  async registrarUltimaOrganizacion(
+    userId:         string ,
+    organizationId: string ,
+    tx:             DBOrTx = db
+  ): Promise< void > {
+    await tx
+      .update( users )
+      .set( {
+        lastOrganizationId: organizationId ,
+        updatedAt:          new Date() ,
+      } )
+      .where( eq(users.id , userId) ) ;
   } ,
 
   /**

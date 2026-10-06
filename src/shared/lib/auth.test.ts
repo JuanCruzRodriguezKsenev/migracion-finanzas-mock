@@ -2,15 +2,17 @@
 import { describe , it , expect , beforeEach , afterEach , afterAll } from "vitest" ;
 import { JWT }                                                         from "next-auth/jwt" ;
 import { Session }                                                     from "next-auth" ;
+import { eq }                                                          from "drizzle-orm" ;
 
 // Shared
-import { db }          from "@/shared/db/client" ;
-import { limpiarBase } from "@/shared/db/testCleanup" ;
-import { authOptions } from "./auth" ;
-
+import { crearUsuarioConMembresia } from "@/shared/db/testFixtures" ;
+import { db }                       from "@/shared/db/client" ;
+import { limpiarBase }              from "@/shared/db/testCleanup" ;
+import { authOptions }              from "./auth" ;
 
 // Feature: Auth
-import { organizations , users } from "@/features/auth/schema.db" ;
+import { organizations , users , memberships } from "@/features/auth/schema.db" ;
+import { hashPassword }                        from "@/features/auth/services/authService" ;
 
 /**
  * Los callbacks de NextAuth declaran un objeto de parámetros con más campos de los que estas
@@ -37,17 +39,14 @@ describe( "authOptions callbacks (JWT & Session)" , () => {
       .returning() ;
     orgId = org.id ;
 
-    const [ u ] = await db
-      .insert( users )
-      .values( {
-        organizationId: orgId ,
-        email:          "auth-test@ejemplo.com" ,
-        name:           "Auth Test User" ,
-        role:           "owner" ,
-        passwordHash:   "dummy_hash" ,
-        salt:           "dummy_salt" ,
-      } )
-      .returning() ;
+    const u = await crearUsuarioConMembresia( {
+      organizationId: orgId ,
+      email:          "auth-test@ejemplo.com" ,
+      name:           "Auth Test User" ,
+      role:           "owner" ,
+      passwordHash:   "dummy_hash" ,
+      salt:           "dummy_salt" ,
+    } ) ;
     userId = u.id ;
   } ) ;
 
@@ -102,9 +101,12 @@ describe( "authOptions callbacks (JWT & Session)" , () => {
     it( "debería invalidar el token si la organización ya no existe en la base de datos (sesión huérfana)" , async () => {
       const jwtFn = authOptions.callbacks?.jwt ;
 
+      // Eliminar la organización de la base de datos
+      await db.delete( organizations ).where( eq(organizations.id , orgId) ) ;
+
       const tokenHuerfano: JWT = {
         id:             userId ,
-        organizationId: "9c74aa32-f8e1-498e-bb9c-45cf19b683b7" , // UUID inexistente
+        organizationId: orgId ,
         role:           "owner" ,
         lastVerified:   ( Date.now() - 60000 ) ,
       } ;
@@ -114,6 +116,172 @@ describe( "authOptions callbacks (JWT & Session)" , () => {
       expect( token.invalid ).toBe( true ) ;
       expect( token.organizationId ).toBe( "" ) ;
       expect( token.id ).toBe( "" ) ;
+    } ) ;
+
+    it( "debería actualizar la organización activa y persistirla en lastOrganizationId cuando trigger es update" , async () => {
+      const jwtFn = authOptions.callbacks?.jwt ;
+
+      const [ org2 ] = await db
+        .insert( organizations )
+        .values( { name: "Org Alternativa" , slug: `org-alt-${Date.now()}` } )
+        .returning() ;
+
+      await db.insert( memberships ).values( {
+        userId ,
+        organizationId: org2.id ,
+        role:           "viewer" ,
+      } ) ;
+
+      const tokenActual: JWT = {
+        id:             userId ,
+        organizationId: orgId ,
+        role:           "owner" ,
+      } ;
+
+      const token = await jwtFn!( {
+        token:   tokenActual ,
+        trigger: "update" ,
+        session: { organizationId: org2.id } ,
+      } as unknown as ParametrosJwt ) ;
+
+      expect( token.organizationId ).toBe( org2.id ) ;
+      expect( token.role ).toBe( "viewer" ) ;
+
+      const [ usuarioDb ] = await db.select().from( users ).where( eq(users.id , userId) ) ;
+      expect( usuarioDb.lastOrganizationId ).toBe( org2.id ) ;
+    } ) ;
+
+    it( "no debería modificar el token si se intenta update a una organización ajena (AC-8)" , async () => {
+      const jwtFn = authOptions.callbacks?.jwt ;
+
+      const [ orgAjena ] = await db
+        .insert( organizations )
+        .values( { name: "Org Ajena" , slug: `org-ajena-${Date.now()}` } )
+        .returning() ;
+
+      const tokenActual: JWT = {
+        id:             userId ,
+        organizationId: orgId ,
+        role:           "owner" ,
+      } ;
+
+      const token = await jwtFn!( {
+        token:   tokenActual ,
+        trigger: "update" ,
+        session: { organizationId: orgAjena.id } ,
+      } as unknown as ParametrosJwt ) ;
+
+      expect( token.organizationId ).toBe( orgId ) ;
+      expect( token.role ).toBe( "owner" ) ;
+    } ) ;
+
+    it( "no debería modificar el token si trigger es update pero organizationId no es un string" , async () => {
+      const jwtFn = authOptions.callbacks?.jwt ;
+
+      const tokenActual: JWT = {
+        id:             userId ,
+        organizationId: orgId ,
+        role:           "owner" ,
+      } ;
+
+      const tokenNumero = await jwtFn!( {
+        token:   { ...tokenActual } ,
+        trigger: "update" ,
+        session: { organizationId: 12345 } ,
+      } as unknown as ParametrosJwt ) ;
+      expect( tokenNumero.organizationId ).toBe( orgId ) ;
+
+      const tokenSinOrg = await jwtFn!( {
+        token:   { ...tokenActual } ,
+        trigger: "update" ,
+        session: {} ,
+      } as unknown as ParametrosJwt ) ;
+      expect( tokenSinOrg.organizationId ).toBe( orgId ) ;
+    } ) ;
+
+    it( "debería conmutar a otra organización disponible si el usuario perdió acceso a la activa (RN-15, AC-10)" , async () => {
+      const jwtFn = authOptions.callbacks?.jwt ;
+
+      const [ org2 ] = await db
+        .insert( organizations )
+        .values( { name: "Org de Respaldo" , slug: `org-respaldo-${Date.now()}` } )
+        .returning() ;
+
+      await db.insert( memberships ).values( {
+        userId ,
+        organizationId: org2.id ,
+        role:           "member" ,
+      } ) ;
+
+      // Quitar membresía de la organización activa actual
+      await db
+        .delete( memberships )
+        .where( eq(memberships.organizationId , orgId) ) ;
+
+      const tokenExistente: JWT = {
+        id:             userId ,
+        organizationId: orgId ,
+        role:           "owner" ,
+        lastVerified:   ( Date.now() - 60000 ) , // Forzar revalidación
+      } ;
+
+      const token = await jwtFn!( {token: tokenExistente} as unknown as ParametrosJwt ) ;
+
+      expect( token.invalid ).toBeFalsy() ;
+      expect( token.organizationId ).toBe( org2.id ) ;
+      expect( token.role ).toBe( "member" ) ;
+
+      const [ usuarioDb ] = await db.select().from( users ).where( eq(users.id , userId) ) ;
+      expect( usuarioDb.lastOrganizationId ).toBe( org2.id ) ;
+    } ) ;
+
+    it( "debería invalidar el token si el usuario perdió acceso a la organización y no tiene otra membresía" , async () => {
+      const jwtFn = authOptions.callbacks?.jwt ;
+
+      // Quitar la única membresía del usuario
+      await db
+        .delete( memberships )
+        .where( eq(memberships.userId , userId) ) ;
+
+      const tokenExistente: JWT = {
+        id:             userId ,
+        organizationId: orgId ,
+        role:           "owner" ,
+        lastVerified:   ( Date.now() - 60000 ) ,
+      } ;
+
+      const token = await jwtFn!( {token: tokenExistente} as unknown as ParametrosJwt ) ;
+
+      expect( token.invalid ).toBe( true ) ;
+      expect( token.organizationId ).toBe( "" ) ;
+      expect( token.id ).toBe( "" ) ;
+    } ) ;
+  } ) ;
+
+  describe( "credentials provider authorize" , () => {
+    it( "debería rechazar con null si el usuario no tiene ninguna membresía activa (RN-5)" , async () => {
+      const { hash , salt , params } = await hashPassword( "ValidaPassword123!" ) ;
+
+      await db
+        .insert( users )
+        .values( {
+          email:        "sin-membresia-auth@ejemplo.com" ,
+          name:         "Sin Org" ,
+          passwordHash: hash ,
+          salt:         salt ,
+          hashParams:   params ,
+        } ) ;
+
+      const credentialsProvider = authOptions.providers[0] as unknown as {
+        authorize: ( credentials: Record< string , string > , req: unknown ) => Promise< unknown > ;
+      } ;
+
+      const resultado = await credentialsProvider.authorize( {
+        email:    "sin-membresia-auth@ejemplo.com" ,
+        password: "ValidaPassword123!" ,
+      } , { headers: {} } ) ;
+
+      expect( resultado ).toBeNull() ;
     } ) ;
   } ) ;
 
