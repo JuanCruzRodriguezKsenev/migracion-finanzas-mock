@@ -21,3 +21,4 @@
 - [`notificaciones-1-campana.md`](notificaciones-1-campana.md): Plan 18 campana real y avisos de autoría: currency varchar(10) vs plan, locale por perfil, lint react-hooks/refs.
 - [`reparto-1-acuerdo.md`](reparto-1-acuerdo.md): Plan 19 reparto: `transaction_id` nullable por `agreement_changed`, test S-S contradictorio, vista previa y caja común, trampas de tests.
 - [`acceso-5-despliegue.md`](acceso-5-despliegue.md): Plan 08 §2 pooler de Neon: vitest no incluye `src/shared/db`, tests van en `shared/lib`.
+- [`reparto-3-caja-comun.md`](reparto-3-caja-comun.md): Plan 21 caja común: sin consultas, `z.input` por default, plantillas vs cuentas, archivo ajeno modificado en el árbol.
