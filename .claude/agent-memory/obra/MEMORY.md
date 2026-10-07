@@ -19,3 +19,4 @@
 - [`autoria-1-titular.md`](autoria-1-titular.md): Plan 15 autoría/titular/habilitaciones: 19 tests con sesión mock rompieron por FK, desvíos del plan y fixtures.
 - [`integracion-17-rebase.md`](integracion-17-rebase.md): Plan 17: --update-refs mueve respaldos, journal autofusionado, choque de inmutabilidad de goal_movements.
 - [`notificaciones-1-campana.md`](notificaciones-1-campana.md): Plan 18 campana real y avisos de autoría: currency varchar(10) vs plan, locale por perfil, lint react-hooks/refs.
+- [`reparto-1-acuerdo.md`](reparto-1-acuerdo.md): Plan 19 reparto: `transaction_id` nullable por `agreement_changed`, test S-S contradictorio, vista previa y caja común, trampas de tests.
