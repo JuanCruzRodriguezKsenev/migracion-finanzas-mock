@@ -10,6 +10,7 @@ import { db , DBOrTx }        from "@/shared/db/client" ;
 // Feature: Auth
 import { habilitacionRepository } from "../repositories/habilitacionRepository" ;
 import { membershipRepository }   from "../repositories/membershipRepository" ;
+import { nombreVisible }          from "../utils/nombreVisible" ;
 
 
 /**
@@ -18,19 +19,6 @@ import { membershipRepository }   from "../repositories/membershipRepository" ;
 export interface TitularPosible {
   userId: string ;
   nombre: string ;
-}
-
-/**
- * Nombre que se muestra de una persona: su nombre, o la parte local del correo si no tiene.
- *
- * @param nombre - `users.name`, posiblemente nulo o vacío.
- * @param email - Correo del usuario.
- * @returns Texto visible, nunca vacío.
- */
-export function nombreVisible( nombre: string | null | undefined , email: string ): string {
-  const limpio = nombre?.trim() ;
-
-  return( limpio ? limpio : email.split( "@" )[0] ) ;
 }
 
 /**

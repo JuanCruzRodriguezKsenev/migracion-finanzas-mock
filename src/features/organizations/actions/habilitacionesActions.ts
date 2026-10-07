@@ -15,9 +15,10 @@ import { logger }             from "@/shared/lib/logger" ;
 import { db }                 from "@/shared/db/client" ;
 
 // Feature: Auth
-import { habilitacionRepository }                           from "@/features/auth/repositories/habilitacionRepository" ;
-import { membershipRepository }                             from "@/features/auth/repositories/membershipRepository" ;
-import { nombreVisible , titularesPosibles , TitularPosible } from "@/features/auth/services/titularService" ;
+import { titularesPosibles , TitularPosible } from "@/features/auth/services/titularService" ;
+import { habilitacionRepository }              from "@/features/auth/repositories/habilitacionRepository" ;
+import { membershipRepository }                from "@/features/auth/repositories/membershipRepository" ;
+import { nombreVisible }                       from "@/features/auth/utils/nombreVisible" ;
 
 // Feature: Organizations
 import { habilitacionSchema , HabilitacionInput } from "../schemas/organization.schema" ;

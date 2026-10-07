@@ -4,9 +4,14 @@
  */
 // Librerías externas
 import { eq , and , desc , inArray , gte , lte , lt , gt , or , ilike , isNull , sql } from "drizzle-orm" ;
+import { alias }                                                                       from "drizzle-orm/pg-core" ;
 
 // Shared
 import { db , DBOrTx } from "@/shared/db/client" ;
+
+// Feature: Auth
+import { nombreVisible } from "@/features/auth/utils/nombreVisible" ;
+import { users }         from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
 import { LedgerTransaction , InsertLedgerTransaction , LedgerEntry , InsertLedgerEntry } from "../types" ;
@@ -14,10 +19,22 @@ import { ledgerTransactions , ledgerEntries }                                   
 
 
 /**
+ * Persona que cargó un movimiento o a cuyo nombre se cargó, con el nombre ya resuelto para mostrar.
+ */
+export interface PersonaDeMovimiento {
+  id:     string ;
+  nombre: string ;
+}
+
+/**
  * Tipo compuesto que representa una transacción junto con todas sus líneas contables asociadas.
+ * `holder` y `createdBy` sólo los completa la consulta paginada; `null` en los movimientos anteriores
+ * a la autoría o sin autor (cron, outbox).
  */
 export type TransactionWithEntries = LedgerTransaction & {
-  entries: LedgerEntry[] ;
+  entries:    LedgerEntry[] ;
+  holder?:    PersonaDeMovimiento | null ;
+  createdBy?: PersonaDeMovimiento | null ;
 } ;
 
 /**
@@ -30,6 +47,7 @@ export interface QueryTransactionsParams {
   search?:        string ;
   categoryId?:    string ;
   accountId?:     string ;
+  holderUserId?:  string ;
   fromDate?:      Date ;
   toDate?:        Date ;
 }
@@ -271,7 +289,7 @@ export const ledgerRepository = {
     params: QueryTransactionsParams ,
     tx:     DBOrTx = db
   ): Promise< TransactionsPageResult > {
-    const { organizationId , cursor , limit = 20 , search , categoryId , accountId , fromDate , toDate } = params ;
+    const { organizationId , cursor , limit = 20 , search , categoryId , accountId , holderUserId , fromDate , toDate } = params ;
     const conditions = [ eq(ledgerTransactions.organizationId , organizationId) ] ;
 
     if( fromDate ) {
@@ -282,6 +300,9 @@ export const ledgerRepository = {
     }
     if( categoryId ) {
       conditions.push( eq(ledgerTransactions.categoryId , categoryId) ) ;
+    }
+    if( holderUserId ) {
+      conditions.push( eq(ledgerTransactions.holderUserId , holderUserId) ) ;
     }
     if( search && (search.trim() !== "") ) {
       const pattern = `%${search.trim()}%` ;
@@ -312,16 +333,29 @@ export const ledgerRepository = {
       ) ;
     }
 
+    // El join va en la cabecera: los asientos se piden aparte, por id de transacción.
+    const titular = alias( users , "titular" ) ;
+    const autor   = alias( users , "autor" ) ;
+
     const queryLimit = limit + 1 ;
-    const fetched = await tx
-      .select()
+    const fetchedConPersonas = await tx
+      .select( {
+        cabecera:     ledgerTransactions ,
+        titularName:  titular.name ,
+        titularEmail: titular.email ,
+        autorName:    autor.name ,
+        autorEmail:   autor.email ,
+      } )
       .from( ledgerTransactions )
+      .leftJoin( titular , eq(ledgerTransactions.holderUserId    , titular.id) )
+      .leftJoin( autor   , eq(ledgerTransactions.createdByUserId , autor.id  ) )
       .where( and(...conditions) )
       .orderBy( desc(ledgerTransactions.occurredAt) , desc(ledgerTransactions.id) )
       .limit( queryLimit ) ;
 
-    const hasMore  = ( fetched.length > limit ) ;
-    const pageRows = hasMore ? fetched.slice( 0 , limit ) : fetched ;
+    const hasMore  = ( fetchedConPersonas.length > limit ) ;
+    const filas    = hasMore ? fetchedConPersonas.slice( 0 , limit ) : fetchedConPersonas ;
+    const pageRows = filas.map( ( f ) => f.cabecera ) ;
 
     if( pageRows.length === 0 ) {
       return( {
@@ -334,9 +368,15 @@ export const ledgerRepository = {
     const txIds = pageRows.map( ( t ) => t.id ) ;
     const entries = await this.findEntriesByTransactionIds( txIds , tx ) ;
 
-    const items: TransactionWithEntries[] = pageRows.map( ( txRow ) => ( {
-      ...txRow ,
-      entries: entries.filter( ( e ) => e.transactionId === txRow.id ) ,
+    const items: TransactionWithEntries[] = filas.map( ( fila ) => ( {
+      ...fila.cabecera ,
+      entries:   entries.filter( ( e ) => e.transactionId === fila.cabecera.id ) ,
+      holder:    ( fila.cabecera.holderUserId && fila.titularEmail )
+        ? { id: fila.cabecera.holderUserId , nombre: nombreVisible( fila.titularName , fila.titularEmail ) }
+        : null ,
+      createdBy: ( fila.cabecera.createdByUserId && fila.autorEmail )
+        ? { id: fila.cabecera.createdByUserId , nombre: nombreVisible( fila.autorName , fila.autorEmail ) }
+        : null ,
     } ) ) ;
 
     const lastItem   = pageRows[pageRows.length - 1] ;

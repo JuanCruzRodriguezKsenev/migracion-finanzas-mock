@@ -44,6 +44,11 @@ export const createTransactionSchema = z.object( {
 ) ;
 
 /**
+ * Esquema del filtro por titular de la lista de movimientos: un uuid.
+ */
+export const holderUserIdFiltroSchema = z.string().uuid( "El titular elegido no es válido." ) ;
+
+/**
  * Tipo para la entrada de creación de transacciones inferido del esquema de Zod.
  */
 export type CreateTransactionInput = z.infer< typeof createTransactionSchema > ;

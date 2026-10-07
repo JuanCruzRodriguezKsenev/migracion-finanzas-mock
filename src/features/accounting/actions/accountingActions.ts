@@ -19,6 +19,7 @@ import { autorizarTitular } from "@/features/auth/services/titularService" ;
 // Feature: Accounting
 import {
   createTransactionSchema ,
+  holderUserIdFiltroSchema ,
   createAccountSchema ,
   createFinancialEntitySchema ,
   createAccountForEntitySchema
@@ -459,18 +460,23 @@ export async function getTransactionsAction( params?: {
  * @returns Un objeto Result con las transacciones y próximo cursor.
  */
 export async function getTransactionsPageAction( params: {
-  cursor?:     { occurredAt: Date | string ; id: string } | null ;
-  limit?:      number ;
-  search?:     string ;
-  categoryId?: string ;
-  accountId?:  string ;
-  fromDate?:   Date | string ;
-  toDate?:     Date | string ;
+  cursor?:       { occurredAt: Date | string ; id: string } | null ;
+  limit?:        number ;
+  search?:       string ;
+  categoryId?:   string ;
+  accountId?:    string ;
+  holderUserId?: string ;
+  fromDate?:     Date | string ;
+  toDate?:       Date | string ;
 } ): Promise< Result<TransactionsPageResult , string> > {
   const session = await getServerSession( authOptions ) ;
 
   if( !session?.user?.organizationId ){
     return( fail("No autorizado para consultar transacciones.") ) ;
+  }
+
+  if( params.holderUserId && !holderUserIdFiltroSchema.safeParse( params.holderUserId ).success ) {
+    return( fail("El titular elegido no es válido.") ) ;
   }
 
   try {
@@ -488,6 +494,7 @@ export async function getTransactionsPageAction( params: {
       search:         params.search ,
       categoryId:     params.categoryId ,
       accountId:      params.accountId ,
+      holderUserId:   params.holderUserId ,
       fromDate:       params.fromDate ? new Date( params.fromDate ) : undefined ,
       toDate:         params.toDate   ? new Date( params.toDate   ) : undefined ,
     } ) ;
