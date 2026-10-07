@@ -83,6 +83,21 @@ describe( "campana de avisos" , () => {
     await waitFor( () => expect( boton.textContent ).not.toContain( "2" ) ) ;
   } ) ;
 
+  it( "los avisos de deuda y de cambio de acuerdo se muestran con sus plantillas" , async () => {
+    const nuevos: AvisoVista[] = [
+      { id: "3" , tipo: "debt_created"      , actor: "Ana" , titular: "Ana" , descripcion: "Súper" , montoEnCentavos: 5000 , divisa: "ARS" , leida: false , creadaEn: "2026-10-03T12:00:00.000Z" } ,
+      { id: "4" , tipo: "agreement_changed" , actor: "Ana" , titular: null  , descripcion: ""      , montoEnCentavos: null , divisa: null  , leida: false , creadaEn: "2026-10-04T12:00:00.000Z" } ,
+    ] ;
+    const listar = vi.fn().mockResolvedValue( { success: true , value: { items: nuevos , noLeidas: 2 } } ) ;
+    renderCampana( { listar , marcarLeidas: vi.fn().mockResolvedValue( { success: true , value: true } ) } ) ;
+
+    fireEvent.click( await screen.findByRole( "button" , { name: dict.notifications.title } ) ) ;
+
+    expect( await screen.findByText( /te toca/ ) ).toBeDefined() ;
+    expect( screen.getByText( /50,00/ ) ).toBeDefined() ;
+    expect( screen.getByText( /cambió el acuerdo de la organización/ ) ).toBeDefined() ;
+  } ) ;
+
   it( "sin listar inyectado no consulta nada: contador 0 y lista vacía" , async () => {
     renderCampana( {} ) ;
 

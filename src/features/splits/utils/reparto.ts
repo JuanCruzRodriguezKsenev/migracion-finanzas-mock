@@ -161,3 +161,74 @@ export function repartir( datos: EntradaRepartir ): ResultadoReparto {
 
   return( { deudas , parteTitular: montoEnCentavos - asignado } ) ;
 }
+
+/**
+ * Puntos básicos como texto de porcentaje: `9000` → `"90"`, `3333` → `"33,33"`, `1050` → `"10,5"`.
+ *
+ * @param bp - Puntos básicos enteros.
+ * @returns Porcentaje con coma decimal y sin ceros sobrantes.
+ */
+export function porcentajeComoTexto( bp: number ): string {
+  const entero  = Math.trunc( bp / 100 ) ;
+  const decimal = String( Math.abs( bp % 100 ) ).padStart( 2 , "0" ).replace( /0+$/ , "" ) ;
+
+  return( decimal ? `${entero},${decimal}` : String( entero ) ) ;
+}
+
+/**
+ * Convierte el texto que escribe el usuario (`"33,33"`, `"33.3"`, `"50"`) a puntos básicos enteros.
+ *
+ * @param texto - Porcentaje con hasta dos decimales.
+ * @returns Puntos básicos, o `null` si el texto no es un porcentaje válido de 0 a 100.
+ */
+export function porcentajeABp( texto: string ): number | null {
+  const m = /^(\d{1,3})(?:[.,](\d{1,2}))?$/.exec( texto.trim() ) ;
+
+  if( !m ) {
+    return( null ) ;
+  }
+
+  const bp = ( (Number( m[1] ) * 100) + Number( (m[2] ?? "").padEnd( 2 , "0" ) || 0 ) ) ;
+
+  return( (bp <= 10000) ? bp : null ) ;
+}
+
+/**
+ * Convierte un importe escrito por el usuario (`"600000,50"`) a centavos enteros, sin pasar por punto flotante.
+ *
+ * @param texto - Importe con hasta dos decimales.
+ * @returns Centavos, o `null` si no es un importe válido.
+ */
+export function importeACentavos( texto: string ): number | null {
+  const m = /^(\d{1,13})(?:[.,](\d{1,2}))?$/.exec( texto.trim() ) ;
+
+  if( !m ) {
+    return( null ) ;
+  }
+
+  return( (Number( m[1] ) * 100) + Number( (m[2] ?? "").padEnd( 2 , "0" ) || 0 ) ) ;
+}
+
+/**
+ * Centavos como texto editable: `60000050` → `"600000,50"`.
+ *
+ * @param centavos - Centavos enteros.
+ * @returns Importe con coma decimal.
+ */
+export function centavosComoTexto( centavos: number ): string {
+  return( `${Math.trunc( centavos / 100 )},${String( centavos % 100 ).padStart( 2 , "0" )}` ) ;
+}
+
+/**
+ * Reparte `10000` bp en partes iguales entre `cantidad` miembros: los primeros absorben el resto, así que
+ * la suma es siempre exacta.
+ *
+ * @param cantidad - Cantidad de miembros (`>= 1`).
+ * @returns Puntos básicos de cada miembro.
+ */
+export function porcentajesIguales( cantidad: number ): number[] {
+  const base  = Math.floor( 10000 / cantidad ) ;
+  const resto = ( 10000 % cantidad ) ;
+
+  return( Array.from( { length: cantidad } , ( _ , i ) => ( base + ((i < resto) ? 1 : 0) ) ) ) ;
+}

@@ -21,6 +21,9 @@ import { membershipRepository } from "@/features/auth/repositories/membershipRep
 import { listarHabilitacionesAction } from "@/features/organizations/actions/habilitacionesActions" ;
 import { listarMiembrosAction }        from "@/features/organizations/actions/membersActions" ;
 
+// Feature: Splits
+import { obtenerAcuerdoAction } from "@/features/splits/actions/acuerdoActions" ;
+
 // Feature: Accounting
 import { getAccountsAction }     from "@/features/accounting/actions/accountingActions" ;
 import { getCategoryTreeAction } from "@/features/accounting/actions/categoryActions" ;
@@ -54,6 +57,8 @@ export default async function SettingsPage( {params}: SettingsPageProps ) {
   const membresia         = ( (session?.user?.id && session.user.organizationId) ? await membershipRepository.findMembership( session.user.id , session.user.organizationId ) : null ) ;
   const rol               = ( membresia?.role ?? "" ) ;
   const habilitacionesRes = ( ((rol === "owner") || (rol === "member")) ? await listarHabilitacionesAction() : null ) ;
+  // La pestaña Acuerdo es para `owner` y `member`; el `viewer` no la ve (S-W)
+  const acuerdoRes        = ( ((rol === "owner") || (rol === "member")) ? await obtenerAcuerdoAction() : null ) ;
 
   return(
     <div className={styles.container}>
@@ -68,6 +73,7 @@ export default async function SettingsPage( {params}: SettingsPageProps ) {
         organizacion={organizacion}
         rol={rol}
         habilitaciones={habilitacionesRes?.success ? habilitacionesRes.value : null}
+        acuerdo={acuerdoRes?.success ? acuerdoRes.value : null}
       />
     </div>
   ) ;

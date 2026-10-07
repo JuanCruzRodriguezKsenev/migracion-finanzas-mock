@@ -20,6 +20,10 @@ import { HabilitacionesPanel }          from "@/features/organizations/component
 import { OrganizationPanel }            from "@/features/organizations/components/OrganizationPanel" ;
 import { MembersPanel }                 from "@/features/organizations/components/MembersPanel" ;
 
+// Feature: Splits
+import type { VistaAcuerdo } from "@/features/splits/actions/acuerdoActions" ;
+import { AcuerdoPanel }      from "@/features/splits/components/AcuerdoPanel" ;
+
 // Feature: Accounting
 import { CategoriesSettingsContainer } from "@/features/accounting/components/CategoriesSettings/CategoriesSettingsContainer" ;
 import { LedgerAuditPanel }            from "@/features/accounting/components/LedgerAudit/LedgerAuditPanel" ;
@@ -43,9 +47,11 @@ export interface SettingsContainerProps {
   rol?:            string ;
   /** Habilitaciones de quien mira; `null` si no corresponde mostrarlas. */
   habilitaciones?: HabilitacionesListadas | null ;
+  /** Acuerdo de reparto según el rol de quien mira; `null` si no corresponde mostrarlo (`viewer`, S-W). */
+  acuerdo?:        VistaAcuerdo | null ;
 }
 
-type PestanaConfiguracion = "categories" | "ledger" | "members" | "organization" | "habilitaciones" ;
+type PestanaConfiguracion = "categories" | "ledger" | "members" | "organization" | "habilitaciones" | "acuerdo" ;
 
 /**
  * Shell principal de la pantalla de configuración.
@@ -61,12 +67,14 @@ export function SettingsContainer( {
   organizacion = null ,
   rol = "" ,
   habilitaciones = null ,
+  acuerdo = null ,
 }: SettingsContainerProps ) {
   const [ activeTab , setActiveTab ] = useState< PestanaConfiguracion >( "categories" ) ;
 
   const mostrarMiembros       = ( esOwner && !!miembros ) ;
   const mostrarOrganizacion   = ( esOwner && !!organizacion ) ;
   const mostrarHabilitaciones = ( ((rol === "owner") || (rol === "member")) && !!habilitaciones ) ;
+  const mostrarAcuerdo        = ( ((rol === "owner") || (rol === "member")) && !!acuerdo ) ;
 
   const settingsTabs = [
     { key: "categories"  , label: dict.settingsPage.tabCategories } ,
@@ -74,6 +82,7 @@ export function SettingsContainer( {
     ...( mostrarMiembros ? [ { key: "members" , label: dict.settingsPage.tabMembers } ] : [] ) ,
     ...( mostrarOrganizacion ? [ { key: "organization" , label: dict.settingsPage.tabOrganization } ] : [] ) ,
     ...( mostrarHabilitaciones ? [ { key: "habilitaciones" , label: dict.settingsPage.tabHabilitaciones } ] : [] ) ,
+    ...( mostrarAcuerdo ? [ { key: "acuerdo" , label: dict.settingsPage.tabAcuerdo } ] : [] ) ,
     { key: "profile"     , label: dict.settingsPage.tabProfile     , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
     { key: "preferences" , label: dict.settingsPage.tabPreferences , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
     { key: "security"    , label: dict.settingsPage.tabSecurity    , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
@@ -114,6 +123,11 @@ export function SettingsContainer( {
         <HabilitacionesPanel
           initialData={habilitaciones}
           dict={dict.habilitaciones}
+        />
+      ) : ( (activeTab === "acuerdo") && mostrarAcuerdo ) ? (
+        <AcuerdoPanel
+          initialData={acuerdo}
+          dict={dict.splits}
         />
       ) : (
         <LedgerAuditPanel accounts={accounts} dict={dict} />

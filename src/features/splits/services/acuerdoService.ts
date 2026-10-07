@@ -22,7 +22,7 @@ import { accounts } from "@/features/accounting/schema.db" ;
 
 // Feature: Splits
 import { acuerdoRepository }              from "../repositories/acuerdoRepository" ;
-import { decidirReparto , calcularPesos , repartir , type ModoAcuerdo , type MotivoReparto } from "../utils/reparto" ;
+import { decidirReparto , calcularPesos , repartir , porcentajeComoTexto , type ModoAcuerdo , type MotivoReparto } from "../utils/reparto" ;
 
 
 /** Total de puntos básicos de un acuerdo completo (100 %). */
@@ -30,19 +30,6 @@ export const TOTAL_BP = 10000 ;
 
 /** Mensaje de rechazo cuando el acuerdo no cuadra con los miembros actuales (S-S). */
 export const MENSAJE_DESACTUALIZADO = "El acuerdo está desactualizado: un owner debe revisarlo." ;
-
-/**
- * Puntos básicos como texto de porcentaje: `9000` → `"90"`, `3333` → `"33,33"`, `1050` → `"10,5"`.
- *
- * @param bp - Puntos básicos enteros.
- * @returns Porcentaje con coma decimal y sin ceros sobrantes.
- */
-export function porcentajeComoTexto( bp: number ): string {
-  const entero   = Math.trunc( bp / 100 ) ;
-  const decimal  = String( Math.abs( bp % 100 ) ).padStart( 2 , "0" ).replace( /0+$/ , "" ) ;
-
-  return( decimal ? `${entero},${decimal}` : String( entero ) ) ;
-}
 
 /** Datos de entrada de la validación. */
 export interface EntradaValidarAcuerdo {

@@ -305,7 +305,9 @@
     "empty": "You have no notices",
     "chargedToHolder": "{actor} charged this to your name: {descripcion} ({monto})",
     "transactionReversed": "{actor} reversed one of your transactions: {descripcion} ({monto})",
-    "unreadAria": "Unread"
+    "unreadAria": "Unread",
+    "debtCreated": "{actor} entered {descripcion}: your share is {monto}",
+    "agreementChanged": "{actor} changed the organization agreement"
   },
   "subscriptionsPage": {
     "title": "Subscriptions",
@@ -471,7 +473,8 @@
     },
     "tabMembers": "Members",
     "tabOrganization": "Organization",
-    "tabHabilitaciones": "Permissions"
+    "tabHabilitaciones": "Permissions",
+    "tabAcuerdo": "Agreement"
   },
   "transactionsPage": {
     "title": "General Ledger",
@@ -695,5 +698,50 @@
     "receivedEmpty": "Nobody has allowed you yet.",
     "saveError": "The change could not be saved.",
     "loadError": "Permissions could not be loaded."
+  },
+  "splits": {
+    "title": "Split agreement",
+    "subtitle": "Defines how expenses entered by hand are split among the members. It applies going forward: expenses already entered do not change.",
+    "templateLabel": "Suggested template",
+    "templatePlaceholder": "Choose a template…",
+    "templateFamilia": "Family",
+    "templateCompaneros": "Housemates",
+    "templateTrabajo": "Work or team",
+    "templatePersonal": "Personal",
+    "templateHint": "It only fills in the form: nothing is saved until you confirm, and you can edit it.",
+    "modeLegend": "Split mode",
+    "modeNone": "No split",
+    "modeFixed": "Fixed percentages",
+    "modeMonthly": "Monthly contributions",
+    "percentagesTitle": "Each member's percentage",
+    "percentageOf": "{nombre}'s percentage",
+    "sumOk": "Total {suma} %",
+    "sumShort": "Total {suma} %: {resto} missing",
+    "sumOver": "Total {suma} %: {resto} too much",
+    "percentageInvalid": "Enter a percentage from 0 to 100 with up to two decimals.",
+    "contributionsTitle": "Contributions for {mes}",
+    "contributionsHint": "The contribution only sets each member's weight: it has no currency. If someone did not declare this month, their latest contribution is used.",
+    "contributionOf": "{nombre}'s contribution",
+    "contributionInvalid": "Enter a valid amount (for example 600000.50).",
+    "commonPotLabel": "Use common pot",
+    "commonPotNote": "Available in the next version",
+    "save": "Save agreement",
+    "confirmTitle": "Save the agreement",
+    "confirmBody": "It applies to new expenses. Expenses already entered do not change.",
+    "confirmAccept": "Confirm",
+    "cancel": "Cancel",
+    "saved": "Agreement saved.",
+    "saveError": "The agreement could not be saved.",
+    "loadError": "The agreement could not be loaded.",
+    "memberModeLabel": "Split mode",
+    "memberShare": "Your share: {porcentaje} %",
+    "memberContribution": "Your contribution for {mes}",
+    "memberSaveContribution": "Save my contribution",
+    "contributionSaved": "Contribution saved.",
+    "previewTitle": "Planned split",
+    "owesTo": "owes {titular}",
+    "noContributions": "Nobody declared a contribution: the split is in equal parts",
+    "outdated": "The agreement is out of date: an owner must review it.",
+    "previewError": "The split could not be calculated."
   }
 }

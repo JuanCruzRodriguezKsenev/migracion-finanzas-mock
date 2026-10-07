@@ -2,7 +2,7 @@
 import { describe , it , expect } from "vitest" ;
 
 // Feature: Splits
-import { decidirReparto , calcularPesos , repartir , type EntradaDecision } from "./reparto" ;
+import { decidirReparto , calcularPesos , repartir , porcentajeComoTexto , porcentajeABp , importeACentavos , centavosComoTexto , porcentajesIguales , type EntradaDecision } from "./reparto" ;
 
 
 /** Entrada que aplica; cada prueba rompe una sola condición. */
@@ -154,5 +154,35 @@ describe( "repartir" , () => {
 
     expect( r.deudas ).toEqual( [] ) ;
     expect( r.parteTitular ).toBe( 1 ) ;
+  } ) ;
+} ) ;
+
+describe( "conversiones de porcentajes e importes" , () => {
+  it( "porcentajeComoTexto y porcentajeABp son inversas con hasta dos decimales" , () => {
+    expect( porcentajeComoTexto( 9000 ) ).toBe( "90" ) ;
+    expect( porcentajeComoTexto( 3333 ) ).toBe( "33,33" ) ;
+    expect( porcentajeComoTexto( 1050 ) ).toBe( "10,5" ) ;
+    expect( porcentajeABp( "33,33" ) ).toBe( 3333 ) ;
+    expect( porcentajeABp( "33.3" ) ).toBe( 3330 ) ;
+    expect( porcentajeABp( "100" ) ).toBe( 10000 ) ;
+    expect( porcentajeABp( "100,01" ) ).toBeNull() ;
+    expect( porcentajeABp( "abc" ) ).toBeNull() ;
+    expect( porcentajeABp( "1,234" ) ).toBeNull() ;
+  } ) ;
+
+  it( "importeACentavos no pasa por punto flotante y rechaza lo inválido" , () => {
+    expect( importeACentavos( "600000,50" ) ).toBe( 60000050 ) ;
+    expect( importeACentavos( "0,1" ) ).toBe( 10 ) ;
+    expect( importeACentavos( "-5" ) ).toBeNull() ;
+    expect( importeACentavos( "1,234" ) ).toBeNull() ;
+    expect( centavosComoTexto( 60000050 ) ).toBe( "600000,50" ) ;
+    expect( centavosComoTexto( 5 ) ).toBe( "0,05" ) ;
+  } ) ;
+
+  it( "porcentajesIguales suma siempre 10000" , () => {
+    for( const n of [ 1 , 2 , 3 , 7 ] ) {
+      expect( porcentajesIguales( n ).reduce( ( s , v ) => ( s + v ) , 0 ) ).toBe( 10000 ) ;
+    }
+    expect( porcentajesIguales( 3 ) ).toEqual( [ 3334 , 3333 , 3333 ] ) ;
   } ) ;
 } ) ;

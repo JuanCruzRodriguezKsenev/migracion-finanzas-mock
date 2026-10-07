@@ -14,6 +14,12 @@ import { Column }              from "@/shared/ui/display/Toolbar/ColumnSelector"
 import { Button }              from "@/shared/ui/display/Button/Button" ;
 import type { getDictionary } from "@/shared/lib/dictionary" ;
 
+// Feature: Profile
+import { useProfileContext } from "@/features/profile/context/ProfileContext" ;
+
+// Feature: Splits
+import { previsualizarRepartoAction } from "@/features/splits/actions/acuerdoActions" ;
+
 // Feature: Auth
 import type { TitularPosible } from "@/features/auth/services/titularService" ;
 
@@ -90,6 +96,7 @@ export function TransactionsContainer( {
 }: TransactionsContainerProps ) {
   const searchParams = useSearchParams() ;
   const monthParam   = searchParams?.get( "month" ) ;
+  const { profile }  = useProfileContext() ;
 
   const [ transactions , setTransactions ] = useState< TransactionWithEntries[] >( initialTransactions ) ;
   const [ nextCursor , setNextCursor ]     = useState( initialNextCursor ) ;
@@ -313,6 +320,9 @@ export function TransactionsContainer( {
         categoryTree={categoryTree}
         titulares={titulares}
         holderDict={dict.transactionsPage}
+        previsualizar={previsualizarRepartoAction}
+        repartoDict={dict.splits}
+        locale={profile?.numberFormat || "es-AR"}
       />
 
       {/* Modal de detalle, edición y reversión */}

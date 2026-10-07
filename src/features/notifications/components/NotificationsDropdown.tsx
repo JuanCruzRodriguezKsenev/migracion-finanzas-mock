@@ -31,6 +31,8 @@ interface NotificationsDropdownProps {
 function plantillaDe( tipo: string , dict: NotificationsDict ): string | null {
   if( tipo === "charged_to_holder" )    { return( dict.chargedToHolder ) ; }
   if( tipo === "transaction_reversed" ) { return( dict.transactionReversed ) ; }
+  if( tipo === "debt_created" )         { return( dict.debtCreated ) ; }
+  if( tipo === "agreement_changed" )    { return( dict.agreementChanged ) ; }
   return( null ) ;
 }
 

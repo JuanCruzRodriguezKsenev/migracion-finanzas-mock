@@ -305,7 +305,9 @@
     "empty": "No tenés avisos",
     "chargedToHolder": "{actor} cargó a tu nombre: {descripcion} ({monto})",
     "transactionReversed": "{actor} reversó un movimiento tuyo: {descripcion} ({monto})",
-    "unreadAria": "Sin leer"
+    "unreadAria": "Sin leer",
+    "debtCreated": "{actor} cargó {descripcion}: te toca {monto}",
+    "agreementChanged": "{actor} cambió el acuerdo de la organización"
   },
   "subscriptionsPage": {
     "title": "Suscripciones",
@@ -471,7 +473,8 @@
     },
     "tabMembers": "Miembros",
     "tabOrganization": "Organización",
-    "tabHabilitaciones": "Habilitaciones"
+    "tabHabilitaciones": "Habilitaciones",
+    "tabAcuerdo": "Acuerdo"
   },
   "transactionsPage": {
     "title": "Libro Diario",
@@ -695,5 +698,50 @@
     "receivedEmpty": "Nadie te habilitó todavía.",
     "saveError": "No se pudo guardar el cambio.",
     "loadError": "No se pudieron cargar las habilitaciones."
+  },
+  "splits": {
+    "title": "Acuerdo de reparto",
+    "subtitle": "Define cómo se reparten entre los miembros los gastos que se cargan a mano. Rige hacia adelante: los gastos ya cargados no cambian.",
+    "templateLabel": "Plantilla sugerida",
+    "templatePlaceholder": "Elegir una plantilla…",
+    "templateFamilia": "Familia",
+    "templateCompaneros": "Compañeros de casa",
+    "templateTrabajo": "Trabajo o equipo",
+    "templatePersonal": "Personal",
+    "templateHint": "Sólo rellena el formulario: no se guarda hasta que confirmes, y podés editarlo.",
+    "modeLegend": "Modo de reparto",
+    "modeNone": "Sin reparto",
+    "modeFixed": "Porcentajes fijos",
+    "modeMonthly": "Aportes mensuales",
+    "percentagesTitle": "Porcentaje de cada miembro",
+    "percentageOf": "Porcentaje de {nombre}",
+    "sumOk": "Suman {suma} %",
+    "sumShort": "Suman {suma} %: faltan {resto}",
+    "sumOver": "Suman {suma} %: sobran {resto}",
+    "percentageInvalid": "Escribí un porcentaje de 0 a 100 con hasta dos decimales.",
+    "contributionsTitle": "Aportes de {mes}",
+    "contributionsHint": "El aporte sólo mide el peso de cada miembro: no lleva divisa. Si alguien no declaró en el mes, se usa su último aporte.",
+    "contributionOf": "Aporte de {nombre}",
+    "contributionInvalid": "Escribí un importe válido (por ejemplo 600000,50).",
+    "commonPotLabel": "Usar caja común",
+    "commonPotNote": "Se activa en la próxima versión",
+    "save": "Guardar acuerdo",
+    "confirmTitle": "Guardar el acuerdo",
+    "confirmBody": "Rige para los gastos nuevos. Los gastos ya cargados no cambian.",
+    "confirmAccept": "Confirmar",
+    "cancel": "Cancelar",
+    "saved": "Acuerdo guardado.",
+    "saveError": "No se pudo guardar el acuerdo.",
+    "loadError": "No se pudo cargar el acuerdo.",
+    "memberModeLabel": "Modo de reparto",
+    "memberShare": "Tu proporción: {porcentaje} %",
+    "memberContribution": "Tu aporte de {mes}",
+    "memberSaveContribution": "Guardar mi aporte",
+    "contributionSaved": "Aporte guardado.",
+    "previewTitle": "Reparto previsto",
+    "owesTo": "te debe a {titular}",
+    "noContributions": "Nadie declaró su aporte: se reparte por partes iguales",
+    "outdated": "El acuerdo está desactualizado: un owner debe revisarlo.",
+    "previewError": "No se pudo calcular el reparto."
   }
 }

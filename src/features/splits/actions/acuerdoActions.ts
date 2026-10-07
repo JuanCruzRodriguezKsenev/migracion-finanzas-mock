@@ -69,6 +69,8 @@ export interface ParteDelReparto {
 export interface VistaPreviaReparto {
   aplica:         boolean ;
   motivo:         MotivoReparto ;
+  /** Nombre del titular (el acreedor) cuando aplica. */
+  titular:        string | null ;
   partes:         ParteDelReparto[] ;
   partesIguales:  boolean ;
   desactualizado: boolean ;
@@ -354,7 +356,7 @@ export async function previsualizarRepartoAction( datos: PrevisualizarInput ): P
     } ) ;
 
     if( !reparto.aplica || reparto.desactualizado ) {
-      return( ok( { aplica: reparto.aplica , motivo: reparto.motivo , partes: [] , partesIguales: false , desactualizado: reparto.desactualizado } ) ) ;
+      return( ok( { aplica: reparto.aplica , motivo: reparto.motivo , titular: null , partes: [] , partesIguales: false , desactualizado: reparto.desactualizado } ) ) ;
     }
 
     const miembros = await membershipRepository.findByOrganization( organizationId ) ;
@@ -379,7 +381,7 @@ export async function previsualizarRepartoAction( datos: PrevisualizarInput ): P
       } ) ;
     } ) ;
 
-    return( ok( { aplica: true , motivo: "aplica" , partes , partesIguales: reparto.partesIguales , desactualizado: false } ) ) ;
+    return( ok( { aplica: true , motivo: "aplica" , titular: ( reparto.titularId ? (nombres.get( reparto.titularId ) ?? null) : null ) , partes , partesIguales: reparto.partesIguales , desactualizado: false } ) ) ;
   } catch( error ) {
     logger.error( "Error en previsualizarRepartoAction." , { organizationId , error: String( error ) } ) ;
     return( fail( "No se pudo calcular el reparto." ) ) ;

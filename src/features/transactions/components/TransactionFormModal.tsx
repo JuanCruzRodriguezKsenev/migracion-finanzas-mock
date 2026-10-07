@@ -5,7 +5,7 @@
 "use client" ;
 
 // Librerías externas
-import React , { useState , useMemo , useTransition } from "react" ;
+import React , { useState , useMemo , useTransition , useEffect , useRef } from "react" ;
 
 // Shared
 import { FormActions } from "@/shared/ui/forms/Form/FormActions" ;
@@ -24,6 +24,13 @@ import { Account , Category }   from "@/features/accounting/types" ;
 // Feature: Auth
 import type { TitularPosible } from "@/features/auth/services/titularService" ;
 
+// Shared (formato)
+import { formatCurrency } from "@/shared/lib/currencyFormatter" ;
+
+// Feature: Splits
+import type { previsualizarRepartoAction , VistaPreviaReparto } from "@/features/splits/actions/acuerdoActions" ;
+import { porcentajeComoTexto }                                  from "@/features/splits/utils/reparto" ;
+
 // Feature: Transactions
 import { createTransactionFromFormAction } from "../actions/transactionsActions" ;
 import { TransactionType }                 from "../utils/derivarTipo" ;
@@ -40,7 +47,15 @@ interface TransactionFormModalProps {
   /** A nombre de quiénes puede cargar quien abre el modal, con uno mismo primero (RN-2, RN-5, RN-6). */
   titulares?:    TitularPosible[] ;
   holderDict?:   { holderSelectLabel: string ; holderSelfOption: string } ;
+  /** Vista previa del reparto. Sin esta prop (o sin `repartoDict`) el formulario no muestra el bloque ni consulta nada. */
+  previsualizar?: typeof previsualizarRepartoAction ;
+  repartoDict?:   { previewTitle: string ; owesTo: string ; noContributions: string ; outdated: string ; previewError: string } ;
+  /** Código de idioma para dar formato al monto de cada parte. */
+  locale?:        string ;
 }
+
+/** Espera antes de pedir la vista previa, para no consultar por cada tecla (ms). */
+const ESPERA_VISTA_PREVIA_MS = 300 ;
 
 /**
  * Reconstruye la estructura arbórea cuando sólo se dispone de una lista plana de categorías.
@@ -75,6 +90,9 @@ export function TransactionFormModal( {
   categoryTree ,
   titulares = [] ,
   holderDict ,
+  previsualizar ,
+  repartoDict ,
+  locale = "es-AR" ,
 }: TransactionFormModalProps ) {
   const [ isPending , startTransition ]                           = useTransition() ;
   const [ isQuickCategoryPending , startQuickCategoryTransition ] = useTransition() ;
@@ -102,6 +120,17 @@ export function TransactionFormModal( {
   const [ quickCategoryColor , setQuickCategoryColor ]       = useState( "" ) ;
   const [ quickCategoryError , setQuickCategoryError ]       = useState( "" ) ;
 
+  // Vista previa del reparto (RN-17): lo que se muestra lo calcula el mismo algoritmo que fija la deuda al guardar
+  const [ vistaPrevia , setVistaPrevia ]     = useState< VistaPreviaReparto | null >( null ) ;
+  const [ errorPrevia , setErrorPrevia ]     = useState( false ) ;
+  const previsualizarRef                      = useRef( previsualizar ) ;
+  const repartoActivo                         = ( !!previsualizar && !!repartoDict ) ;
+
+  // La referencia de la acción puede cambiar en cada render: el efecto lee siempre la última sin depender de ella
+  useEffect( () => {
+    previsualizarRef.current = previsualizar ;
+  } ) ;
+
   const baseTree = useMemo( () => {
     return( (categoryTree && (categoryTree.length > 0))
       ? categoryTree
@@ -118,6 +147,56 @@ export function TransactionFormModal( {
   // dólares contra una caja en pesos, y el saldo terminaba mezclando centavos de dos divisas.
   const monedaDestino = ( accounts.find( ( a ) => a.id === destinationAccountId )?.currency || "" ) ;
 
+  const montoPrevia   = Math.round( parseFloat( amount ) * 100 ) ;
+  const titularPrevia = ( holderUserId || titulares[0]?.userId || "" ) ;
+  const pedirPrevia   = ( isOpen && repartoActivo && (type === "expense") && !!sourceAccountId && Number.isFinite( montoPrevia ) && (montoPrevia > 0) ) ;
+
+  useEffect( () => {
+    if( !pedirPrevia ) {
+      return ;
+    }
+
+    let vigente = true ;
+
+    const espera = setTimeout( async () => {
+      const consulta = previsualizarRef.current ;
+
+      if( !consulta ) {
+        return ;
+      }
+
+      try {
+        const res = await consulta( {
+          tipo:            "expense" ,
+          montoEnCentavos: montoPrevia ,
+          currency ,
+          fecha:           occurredAt ,
+          holderUserId:    ( titularPrevia && (titularPrevia !== titulares[0]?.userId) ) ? titularPrevia : undefined ,
+          accountIds:      [ sourceAccountId ] ,
+        } ) ;
+
+        if( vigente ) {
+          setErrorPrevia( !res.success ) ;
+          setVistaPrevia( res.success ? res.value : null ) ;
+        }
+      } catch {
+        if( vigente ) {
+          setErrorPrevia( true ) ;
+          setVistaPrevia( null ) ;
+        }
+      }
+    } , ESPERA_VISTA_PREVIA_MS ) ;
+
+    return( () => {
+      vigente = false ;
+      clearTimeout( espera ) ;
+    } ) ;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `titulares` sólo aporta el id propio, ya contenido en `titularPrevia`
+  } , [ pedirPrevia , montoPrevia , currency , occurredAt , titularPrevia , sourceAccountId ] ) ;
+
+  // Con el acuerdo desactualizado la carga se rechazaría: se bloquea el botón antes de intentarlo (S-S)
+  const bloqueadoPorAcuerdo = ( pedirPrevia && !!vistaPrevia?.aplica && vistaPrevia.desactualizado ) ;
+
   const handleReset = () => {
     setDescription( "" ) ;
     setAmount( "" ) ;
@@ -130,6 +209,8 @@ export function TransactionFormModal( {
     setOccurredAt( todayStr ) ;
     setHolderUserId( "" ) ;
     setErrorMessage( "" ) ;
+    setVistaPrevia( null ) ;
+    setErrorPrevia( false ) ;
     setType( "expense" ) ;
     setIsCreatingCategory( false ) ;
     setQuickCategoryName( "" ) ;
@@ -358,6 +439,37 @@ export function TransactionFormModal( {
           </FormSelect>
         )}
 
+        {( repartoActivo && pedirPrevia && repartoDict && vistaPrevia?.aplica ) && (
+          <section className={styles.splitPreview} aria-label={repartoDict.previewTitle}>
+            <h4 className={styles.splitTitle}>{repartoDict.previewTitle}</h4>
+
+            {vistaPrevia.desactualizado ? (
+              <p className={styles.splitWarn} role="alert">{repartoDict.outdated}</p>
+            ) : (
+              <ul className={styles.splitList}>
+                {vistaPrevia.partes.map( ( p ) => (
+                  <li key={p.userId} className={styles.splitRow}>
+                    <span className={styles.splitName}>{p.nombre}</span>
+                    <span className={styles.splitPct}>{porcentajeComoTexto( p.porcentajeBp )} %</span>
+                    <span className={styles.splitAmount}>{formatCurrency( p.montoEnCentavos , currency , locale )}</span>
+                    {p.esDeuda && (
+                      <span className={styles.splitDebt}>{repartoDict.owesTo.replace( "{titular}" , ( vistaPrevia.titular ?? "" ) )}</span>
+                    )}
+                  </li>
+                ) )}
+              </ul>
+            )}
+
+            {( vistaPrevia.partesIguales && !vistaPrevia.desactualizado ) && (
+              <p className={styles.splitNote}>{repartoDict.noContributions}</p>
+            )}
+          </section>
+        )}
+
+        {( repartoActivo && pedirPrevia && repartoDict && errorPrevia ) && (
+          <p className={styles.splitWarn} role="alert">{repartoDict.previewError}</p>
+        )}
+
         <FormInput
           label="Descripción"
           placeholder="Ej: Compra supermercado, Sueldo mensual..."
@@ -534,6 +646,7 @@ export function TransactionFormModal( {
           cancelLabel="Cancelar"
           submitLabel="Guardar Transacción"
           submitting={isPending}
+          submitDisabled={bloqueadoPorAcuerdo}
         />
       </form>
     </Modal>

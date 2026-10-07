@@ -255,6 +255,74 @@
   gap: clamp(0.875rem, 0.75rem + 0.4vw, 1.25rem);
 }
 
+/* ── Reparto previsto (vista previa de la deuda entre miembros) ── */
+.splitPreview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: clamp(0.625rem, 0.5rem + 0.4vw, 1rem);
+  background-color: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.splitTitle {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-light);
+}
+
+.splitList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.splitRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  font-size: var(--fs-sm);
+  color: var(--text-main);
+}
+
+.splitName {
+  flex: 1 1 8rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.splitPct,
+.splitAmount {
+  font-variant-numeric: tabular-nums;
+}
+
+.splitDebt {
+  color: var(--color-warning-text);
+  font-weight: 600;
+}
+
+.splitNote {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+.splitWarn {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-danger-text);
+}
+
 .typeTabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

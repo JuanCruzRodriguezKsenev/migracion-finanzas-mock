@@ -305,7 +305,9 @@
     "empty": "Você não tem avisos",
     "chargedToHolder": "{actor} lançou no seu nome: {descripcion} ({monto})",
     "transactionReversed": "{actor} estornou um movimento seu: {descripcion} ({monto})",
-    "unreadAria": "Não lido"
+    "unreadAria": "Não lido",
+    "debtCreated": "{actor} lançou {descripcion}: sua parte é {monto}",
+    "agreementChanged": "{actor} alterou o acordo da organização"
   },
   "subscriptionsPage": {
     "title": "Assinaturas",
@@ -471,7 +473,8 @@
     },
     "tabMembers": "Membros",
     "tabOrganization": "Organização",
-    "tabHabilitaciones": "Permissões"
+    "tabHabilitaciones": "Permissões",
+    "tabAcuerdo": "Acordo"
   },
   "transactionsPage": {
     "title": "Livro Diário",
@@ -695,5 +698,50 @@
     "receivedEmpty": "Ninguém autorizou você ainda.",
     "saveError": "Não foi possível salvar a alteração.",
     "loadError": "Não foi possível carregar as permissões."
+  },
+  "splits": {
+    "title": "Acordo de rateio",
+    "subtitle": "Define como os gastos lançados à mão são divididos entre os membros. Vale daqui para frente: os gastos já lançados não mudam.",
+    "templateLabel": "Modelo sugerido",
+    "templatePlaceholder": "Escolher um modelo…",
+    "templateFamilia": "Família",
+    "templateCompaneros": "Colegas de casa",
+    "templateTrabajo": "Trabalho ou equipe",
+    "templatePersonal": "Pessoal",
+    "templateHint": "Só preenche o formulário: nada é salvo até você confirmar, e você pode editá-lo.",
+    "modeLegend": "Modo de rateio",
+    "modeNone": "Sem rateio",
+    "modeFixed": "Porcentagens fixas",
+    "modeMonthly": "Aportes mensais",
+    "percentagesTitle": "Porcentagem de cada membro",
+    "percentageOf": "Porcentagem de {nombre}",
+    "sumOk": "Somam {suma} %",
+    "sumShort": "Somam {suma} %: faltam {resto}",
+    "sumOver": "Somam {suma} %: sobram {resto}",
+    "percentageInvalid": "Digite uma porcentagem de 0 a 100 com até duas casas decimais.",
+    "contributionsTitle": "Aportes de {mes}",
+    "contributionsHint": "O aporte só mede o peso de cada membro: não tem moeda. Se alguém não declarou no mês, usa-se o último aporte dele.",
+    "contributionOf": "Aporte de {nombre}",
+    "contributionInvalid": "Digite um valor válido (por exemplo 600000,50).",
+    "commonPotLabel": "Usar caixa comum",
+    "commonPotNote": "Ativa na próxima versão",
+    "save": "Salvar acordo",
+    "confirmTitle": "Salvar o acordo",
+    "confirmBody": "Vale para os gastos novos. Os gastos já lançados não mudam.",
+    "confirmAccept": "Confirmar",
+    "cancel": "Cancelar",
+    "saved": "Acordo salvo.",
+    "saveError": "Não foi possível salvar o acordo.",
+    "loadError": "Não foi possível carregar o acordo.",
+    "memberModeLabel": "Modo de rateio",
+    "memberShare": "Sua proporção: {porcentaje} %",
+    "memberContribution": "Seu aporte de {mes}",
+    "memberSaveContribution": "Salvar meu aporte",
+    "contributionSaved": "Aporte salvo.",
+    "previewTitle": "Rateio previsto",
+    "owesTo": "deve a {titular}",
+    "noContributions": "Ninguém declarou seu aporte: o rateio é em partes iguais",
+    "outdated": "O acordo está desatualizado: um owner deve revisá-lo.",
+    "previewError": "Não foi possível calcular o rateio."
   }
 }

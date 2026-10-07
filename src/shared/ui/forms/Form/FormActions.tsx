@@ -18,6 +18,8 @@ interface FormActionsProps {
   cancelLabel?:   string ;
   submitLabel?:   string ;
   submitting?:    boolean ;
+  /** Deshabilita sólo el botón de enviar (por ejemplo, mientras el formulario no se puede guardar). */
+  submitDisabled?: boolean ;
   cancelVariant?: "primary" | "secondary" | "outline" ;
   submitVariant?: "primary" | "secondary" | "outline" ;
   className?:     string ;
@@ -31,6 +33,7 @@ export function FormActions( {
   cancelLabel = "Cancelar" ,
   submitLabel = "Guardar" ,
   submitting = false ,
+  submitDisabled = false ,
   cancelVariant = "secondary" ,
   submitVariant = "primary" ,
   className = ""
@@ -49,6 +52,7 @@ export function FormActions( {
         type="submit" 
         variant={submitVariant}
         isLoading={submitting}
+        disabled={submitDisabled}
       >
         { submitLabel }
       </Button>
