@@ -396,8 +396,9 @@ describe( "goalsService - integración (RFC 011 §9)" , () => {
 
     const raiz = join( process.cwd() , "src" ) ;
     for( const archivo of recorrer( raiz ) ) {
-      // La limpieza de la base de tests es la única excepción: vacía todas las tablas
-      if( archivo.endsWith( "testCleanup.ts" ) ) {
+      // Excepciones: la limpieza de la base de tests y el borrado completo de una organización
+      // vacían la tabla entera; ninguna edita ni borra un movimiento suelto.
+      if( archivo.endsWith( "testCleanup.ts" ) || archivo.endsWith( "organizationRepository.ts" ) ) {
         continue ;
       }
       const lineas = readFileSync( archivo , "utf8" ).split( "\n" ) ;
