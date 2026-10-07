@@ -307,7 +307,9 @@
     "transactionReversed": "{actor} reversed one of your transactions: {descripcion} ({monto})",
     "unreadAria": "Unread",
     "debtCreated": "{actor} entered {descripcion}: your share is {monto}",
-    "agreementChanged": "{actor} changed the organization agreement"
+    "agreementChanged": "{actor} changed the organization agreement",
+    "paymentRequested": "{actor} requested a payment of {monto}",
+    "paymentReceived": "{actor} recorded a payment of {monto}"
   },
   "subscriptionsPage": {
     "title": "Subscriptions",
@@ -474,7 +476,8 @@
     "tabMembers": "Members",
     "tabOrganization": "Organization",
     "tabHabilitaciones": "Permissions",
-    "tabAcuerdo": "Agreement"
+    "tabAcuerdo": "Agreement",
+    "tabSaldos": "Balances"
   },
   "transactionsPage": {
     "title": "General Ledger",
@@ -742,6 +745,23 @@
     "owesTo": "owes {titular}",
     "noContributions": "Nobody declared a contribution: the split is in equal parts",
     "outdated": "The agreement is out of date: an owner must review it.",
-    "previewError": "The split could not be calculated."
+    "previewError": "The split could not be calculated.",
+    "balances": {
+      "title": "Balances between members",
+      "owesYou": "{nombre} owes you",
+      "youOwe": "You owe {nombre}",
+      "formerMember": "Former member",
+      "empty": "There are no pending balances",
+      "request": "Request",
+      "requestSent": "Request sent",
+      "pay": "Payment",
+      "payTitle": "Record a payment from {nombre}",
+      "payAmountLabel": "Amount received ({divisa})",
+      "payAmountInvalid": "Enter a valid amount greater than zero (for example 1500.50).",
+      "paySubmit": "Record payment",
+      "cancel": "Cancel",
+      "loadError": "The balances could not be loaded.",
+      "genericError": "The operation could not be completed."
+    }
   }
 }

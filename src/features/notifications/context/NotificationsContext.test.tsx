@@ -98,6 +98,26 @@ describe( "campana de avisos" , () => {
     expect( screen.getByText( /cambió el acuerdo de la organización/ ) ).toBeDefined() ;
   } ) ;
 
+  it( "los avisos de solicitud y de pago registrado muestran actor y monto; un tipo desconocido no se muestra" , async () => {
+    const nuevos: AvisoVista[] = [
+      { id: "5" , tipo: "payment_requested" , actor: "Ana"  , titular: null , descripcion: "" , montoEnCentavos: 480000 , divisa: "ARS" , leida: false , creadaEn: "2026-10-05T12:00:00.000Z" } ,
+      { id: "6" , tipo: "payment_received"  , actor: "Carla" , titular: null , descripcion: "" , montoEnCentavos: 20000  , divisa: "ARS" , leida: false , creadaEn: "2026-10-06T12:00:00.000Z" } ,
+      { id: "7" , tipo: "tipo_inventado"    , actor: "Zeta"  , titular: null , descripcion: "" , montoEnCentavos: null   , divisa: null  , leida: false , creadaEn: "2026-10-07T12:00:00.000Z" } ,
+    ] ;
+    const listar = vi.fn().mockResolvedValue( { success: true , value: { items: nuevos , noLeidas: 3 } } ) ;
+    renderCampana( { listar , marcarLeidas: vi.fn().mockResolvedValue( { success: true , value: true } ) } ) ;
+
+    fireEvent.click( await screen.findByRole( "button" , { name: dict.notifications.title } ) ) ;
+
+    expect( await screen.findByText( /te solicitó un pago de/ ) ).toBeDefined() ;
+    expect( screen.getByText( "Ana" ) ).toBeDefined() ;
+    expect( screen.getByText( /4\.800,00/ ) ).toBeDefined() ;
+    expect( screen.getByText( /registró un pago de/ ) ).toBeDefined() ;
+    expect( screen.getByText( "Carla" ) ).toBeDefined() ;
+    expect( screen.getByText( /200,00/ ) ).toBeDefined() ;
+    expect( screen.queryByText( "Zeta" ) ).toBeNull() ;
+  } ) ;
+
   it( "sin listar inyectado no consulta nada: contador 0 y lista vacía" , async () => {
     renderCampana( {} ) ;
 

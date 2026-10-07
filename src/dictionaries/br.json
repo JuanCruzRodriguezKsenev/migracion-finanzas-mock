@@ -307,7 +307,9 @@
     "transactionReversed": "{actor} estornou um movimento seu: {descripcion} ({monto})",
     "unreadAria": "Não lido",
     "debtCreated": "{actor} lançou {descripcion}: sua parte é {monto}",
-    "agreementChanged": "{actor} alterou o acordo da organização"
+    "agreementChanged": "{actor} alterou o acordo da organização",
+    "paymentRequested": "{actor} solicitou um pagamento de {monto}",
+    "paymentReceived": "{actor} registrou um pagamento de {monto}"
   },
   "subscriptionsPage": {
     "title": "Assinaturas",
@@ -474,7 +476,8 @@
     "tabMembers": "Membros",
     "tabOrganization": "Organização",
     "tabHabilitaciones": "Permissões",
-    "tabAcuerdo": "Acordo"
+    "tabAcuerdo": "Acordo",
+    "tabSaldos": "Saldos"
   },
   "transactionsPage": {
     "title": "Livro Diário",
@@ -742,6 +745,23 @@
     "owesTo": "deve a {titular}",
     "noContributions": "Ninguém declarou seu aporte: o rateio é em partes iguais",
     "outdated": "O acordo está desatualizado: um owner deve revisá-lo.",
-    "previewError": "Não foi possível calcular o rateio."
+    "previewError": "Não foi possível calcular o rateio.",
+    "balances": {
+      "title": "Saldos entre membros",
+      "owesYou": "{nombre} te deve",
+      "youOwe": "Você deve a {nombre}",
+      "formerMember": "Ex-membro",
+      "empty": "Não há saldos pendentes",
+      "request": "Solicitar",
+      "requestSent": "Solicitação enviada",
+      "pay": "Pagamento",
+      "payTitle": "Registrar pagamento de {nombre}",
+      "payAmountLabel": "Valor recebido ({divisa})",
+      "payAmountInvalid": "Digite um valor válido, maior que zero (por exemplo 1500,50).",
+      "paySubmit": "Registrar pagamento",
+      "cancel": "Cancelar",
+      "loadError": "Não foi possível carregar os saldos.",
+      "genericError": "Não foi possível concluir a operação."
+    }
   }
 }

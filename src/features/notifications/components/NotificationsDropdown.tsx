@@ -33,6 +33,8 @@ function plantillaDe( tipo: string , dict: NotificationsDict ): string | null {
   if( tipo === "transaction_reversed" ) { return( dict.transactionReversed ) ; }
   if( tipo === "debt_created" )         { return( dict.debtCreated ) ; }
   if( tipo === "agreement_changed" )    { return( dict.agreementChanged ) ; }
+  if( tipo === "payment_requested" )    { return( dict.paymentRequested ) ; }
+  if( tipo === "payment_received" )     { return( dict.paymentReceived ) ; }
   return( null ) ;
 }
 

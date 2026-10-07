@@ -22,7 +22,9 @@ import { MembersPanel }                 from "@/features/organizations/component
 
 // Feature: Splits
 import type { VistaAcuerdo } from "@/features/splits/actions/acuerdoActions" ;
+import type { VistaSaldos }  from "@/features/splits/actions/saldosActions" ;
 import { AcuerdoPanel }      from "@/features/splits/components/AcuerdoPanel" ;
+import { SaldosPanel }       from "@/features/splits/components/SaldosPanel" ;
 
 // Feature: Accounting
 import { CategoriesSettingsContainer } from "@/features/accounting/components/CategoriesSettings/CategoriesSettingsContainer" ;
@@ -49,9 +51,11 @@ export interface SettingsContainerProps {
   habilitaciones?: HabilitacionesListadas | null ;
   /** Acuerdo de reparto según el rol de quien mira; `null` si no corresponde mostrarlo (`viewer`, S-W). */
   acuerdo?:        VistaAcuerdo | null ;
+  /** Saldos entre miembros, para los tres roles; `null` si no hay nada que mostrar (S-X). */
+  saldos?:         VistaSaldos | null ;
 }
 
-type PestanaConfiguracion = "categories" | "ledger" | "members" | "organization" | "habilitaciones" | "acuerdo" ;
+type PestanaConfiguracion = "categories" | "ledger" | "members" | "organization" | "habilitaciones" | "acuerdo" | "saldos" ;
 
 /**
  * Shell principal de la pantalla de configuración.
@@ -68,6 +72,7 @@ export function SettingsContainer( {
   rol = "" ,
   habilitaciones = null ,
   acuerdo = null ,
+  saldos = null ,
 }: SettingsContainerProps ) {
   const [ activeTab , setActiveTab ] = useState< PestanaConfiguracion >( "categories" ) ;
 
@@ -75,6 +80,7 @@ export function SettingsContainer( {
   const mostrarOrganizacion   = ( esOwner && !!organizacion ) ;
   const mostrarHabilitaciones = ( ((rol === "owner") || (rol === "member")) && !!habilitaciones ) ;
   const mostrarAcuerdo        = ( ((rol === "owner") || (rol === "member")) && !!acuerdo ) ;
+  const mostrarSaldos         = ( !!saldos && saldos.visible ) ;
 
   const settingsTabs = [
     { key: "categories"  , label: dict.settingsPage.tabCategories } ,
@@ -83,6 +89,7 @@ export function SettingsContainer( {
     ...( mostrarOrganizacion ? [ { key: "organization" , label: dict.settingsPage.tabOrganization } ] : [] ) ,
     ...( mostrarHabilitaciones ? [ { key: "habilitaciones" , label: dict.settingsPage.tabHabilitaciones } ] : [] ) ,
     ...( mostrarAcuerdo ? [ { key: "acuerdo" , label: dict.settingsPage.tabAcuerdo } ] : [] ) ,
+    ...( mostrarSaldos ? [ { key: "saldos" , label: dict.settingsPage.tabSaldos } ] : [] ) ,
     { key: "profile"     , label: dict.settingsPage.tabProfile     , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
     { key: "preferences" , label: dict.settingsPage.tabPreferences , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
     { key: "security"    , label: dict.settingsPage.tabSecurity    , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
@@ -128,6 +135,11 @@ export function SettingsContainer( {
         <AcuerdoPanel
           initialData={acuerdo}
           dict={dict.splits}
+        />
+      ) : ( (activeTab === "saldos") && mostrarSaldos ) ? (
+        <SaldosPanel
+          initialData={saldos}
+          dict={dict.splits.balances}
         />
       ) : (
         <LedgerAuditPanel accounts={accounts} dict={dict} />

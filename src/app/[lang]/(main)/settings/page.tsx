@@ -23,6 +23,7 @@ import { listarMiembrosAction }        from "@/features/organizations/actions/me
 
 // Feature: Splits
 import { obtenerAcuerdoAction } from "@/features/splits/actions/acuerdoActions" ;
+import { obtenerSaldosAction }  from "@/features/splits/actions/saldosActions" ;
 
 // Feature: Accounting
 import { getAccountsAction }     from "@/features/accounting/actions/accountingActions" ;
@@ -59,6 +60,8 @@ export default async function SettingsPage( {params}: SettingsPageProps ) {
   const habilitacionesRes = ( ((rol === "owner") || (rol === "member")) ? await listarHabilitacionesAction() : null ) ;
   // La pestaña Acuerdo es para `owner` y `member`; el `viewer` no la ve (S-W)
   const acuerdoRes        = ( ((rol === "owner") || (rol === "member")) ? await obtenerAcuerdoAction() : null ) ;
+  // La pestaña Saldos la ven los tres roles cuando hay algo que mostrar (S-X); el `viewer` la ve sin botones
+  const saldosRes         = await obtenerSaldosAction() ;
 
   return(
     <div className={styles.container}>
@@ -74,6 +77,7 @@ export default async function SettingsPage( {params}: SettingsPageProps ) {
         rol={rol}
         habilitaciones={habilitacionesRes?.success ? habilitacionesRes.value : null}
         acuerdo={acuerdoRes?.success ? acuerdoRes.value : null}
+        saldos={saldosRes.success ? saldosRes.value : null}
       />
     </div>
   ) ;

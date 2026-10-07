@@ -1,0 +1,86 @@
+.panel {
+    display:        flex ;
+    flex-direction: column ;
+    gap:            clamp(0.75rem, 0.6rem + 0.6vw, 1.25rem) ;
+    padding:        clamp(1rem, 0.8rem + 1vw, 1.5rem) ;
+    background:     var(--bg-card) ;
+    border:         1px solid var(--border-card) ;
+    border-radius:  var(--radius-lg) ;
+}
+
+.title {
+    margin:      0 ;
+    font-family: var(--font-display) ;
+    font-size:   var(--fs-md) ;
+    color:       var(--text-main) ;
+}
+
+.notice {
+    margin:        0 ;
+    padding:       0.5rem 0.75rem ;
+    font-size:     var(--fs-sm) ;
+    color:         var(--color-success-text) ;
+    background:    var(--color-success-light) ;
+    border-radius: var(--radius-md) ;
+}
+
+.empty {
+    margin:    0 ;
+    font-size: var(--fs-sm) ;
+    color:     var(--text-muted) ;
+}
+
+.list {
+    list-style:     none ;
+    margin:         0 ;
+    padding:        0 ;
+    display:        flex ;
+    flex-direction: column ;
+    gap:            0.5rem ;
+}
+
+.row {
+    display:       flex ;
+    flex-wrap:     wrap ;
+    align-items:   center ;
+    gap:           0.5rem 0.75rem ;
+    min-width:     0 ;
+    padding:       0.5rem 0 ;
+    font-size:     var(--fs-base) ;
+    color:         var(--text-main) ;
+    border-bottom: 1px solid var(--border-card) ;
+}
+
+.text {
+    flex:      1 1 12rem ;
+    min-width: 0 ;
+}
+
+.amountIn,
+.amountOut {
+    font-weight: 600 ;
+    white-space: nowrap ;
+}
+.amountIn  { color: var(--color-success-text) ; }
+.amountOut { color: var(--color-danger-text) ; }
+
+.actions {
+    display:         flex ;
+    flex-wrap:       wrap ;
+    justify-content: flex-end ;
+    gap:             0.5rem ;
+    flex:            1 1 100% ;
+}
+
+.form {
+    display:        flex ;
+    flex-direction: column ;
+    gap:            1rem ;
+}
+
+.modalFooter {
+    display:         flex ;
+    flex-wrap:       wrap ;
+    justify-content: flex-end ;
+    gap:             0.75rem ;
+}
