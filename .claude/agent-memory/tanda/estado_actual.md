@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-**Nada corre** (ningún `obra` ni `verificador`). Ver [[feedback-lanzar-obra]]: no lanzar `obra` sin pedido nuevo del usuario.
+**2026-10-06 tarde:** una sesión de `obra` murió a mitad del 06b. Verifiqué su WIP (627 tests, 80 suites, lint/tsc/build verdes) y lo commiteé: `070d1b9` (pasos 1-3 del 06b: repo, acciones, tests). Escribí el plan [[06c]] (`Planes/06c - Acceso 4c interfaz (continuación del 06b).md`: pasos 4-5 + tests de componentes) y el usuario pidió lanzar `obra` sobre él (corriendo en segundo plano). Al terminar: leer `Informes/06c…`, delegar batería a `verificador`. Ver [[feedback-lanzar-obra]]: sólo se lanza con pedido explícito.
 
 - `master` = `cd86ad0` (planes 00-04, 09, 10). Sin pushear. Los tres carriles siguen sin integrar.
 - **Carril A** (checkout principal): rama `feat/acceso-4-miembros-y-selector` (`e68cb33`) incluye plan 05 y 06. **Plan 06 verificado por `verificador`**: 78 suites, 601 tests, lint 0, tsc 0, build verde. Falta checklist manual del usuario (dos cuentas de Google; AC-7). Árbol limpio (memorias commiteadas en `adaabb9`). Server :3000: si se porta raro, reiniciar (el build comparte `.next/`).
