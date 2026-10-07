@@ -14,6 +14,7 @@ import {
   IconDashboard ,
   IconAccounts ,
   IconCreditCard ,
+  IconGoal ,
   IconRepeat ,
   IconContacts ,
   IconSettings ,
@@ -32,6 +33,7 @@ interface BottomNavProps {
     contacts?:     string ;
     cards?:        string ;
     budgets?:      string ;
+    goals?:        string ;
     settings?:     string ;
     stats?:        string ;
   } ;
@@ -53,6 +55,7 @@ export function BottomNav( {dict , onMenuClick}: BottomNavProps ) {
   const isReportsActive       = ( pathname.includes("/reports") ) ;
   const isCardsActive         = ( pathname.includes("/cards") ) ;
   const isBudgetsActive       = ( pathname.includes("/budgets") ) ;
+  const isGoalsActive         = ( pathname.includes("/goals") ) ;
   const isSubscriptionsActive = ( pathname.includes("/subscriptions") ) ;
   const isContactsActive      = ( pathname.includes("/contacts") ) ;
   const isSettingsActive      = ( pathname.includes("/settings") ) ;
@@ -97,6 +100,14 @@ export function BottomNav( {dict , onMenuClick}: BottomNavProps ) {
       >
         <IconCreditCard size={20} />
         <span>{dict.cards || "Tarjetas"}</span>
+      </Link>
+
+      <Link
+        href={ `/${lang}/goals` }
+        className={ `${styles.bottomNavLink} ${isGoalsActive ? styles.active : ""}` }
+      >
+        <IconGoal size={20} />
+        <span>{dict.goals || "Metas"}</span>
       </Link>
 
       <Link

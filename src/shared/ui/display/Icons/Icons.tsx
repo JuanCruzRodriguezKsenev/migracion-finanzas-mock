@@ -202,6 +202,16 @@ export function IconLoan( props: IconProps ) {
   ) ;
 }
 
+export function IconGoal( props: IconProps ) {
+  return(
+    <IconWrapper {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1" />
+    </IconWrapper>
+  ) ;
+}
+
 export function IconStats( props: IconProps ) {
   return(
     <IconWrapper {...props}>

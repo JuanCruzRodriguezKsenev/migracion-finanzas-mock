@@ -17,6 +17,7 @@ import {
   IconAccounts ,
   IconCreditCard ,
   IconLoan ,
+  IconGoal ,
   IconRepeat ,
   IconContacts ,
   IconSandbox ,
@@ -38,6 +39,7 @@ interface NavbarProps {
     cards?:         string ;
     loans?:         string ;
     budgets?:       string ;
+    goals?:         string ;
     stats?:         string ;
     subscriptions:  string ;
     contacts?:      string ;
@@ -67,6 +69,7 @@ export function Navbar( {dict , isOpen , onClose}: NavbarProps ) {
   const isAccountsActive      = ( pathname === `/${lang}/accounts` ) ;
   const isCardsActive         = ( pathname === `/${lang}/cards` ) ;
   const isLoansActive         = ( pathname === `/${lang}/loans` ) ;
+  const isGoalsActive         = ( pathname === `/${lang}/goals` ) ;
   const isSubscriptionsActive = ( pathname === `/${lang}/subscriptions` ) ;
   const isContactsActive      = ( pathname === `/${lang}/contacts` ) ;
   const isReportsActive       = ( pathname === `/${lang}/reports` ) ;
@@ -149,6 +152,12 @@ export function Navbar( {dict , isOpen , onClose}: NavbarProps ) {
               <Link href={ `/${lang}/loans` } className={ `${styles.link} ${isLoansActive ? styles.active : ""}` }>
                 <IconLoan size={15} />
                 <span>{dict.loans || "Préstamos"}</span>
+              </Link>
+            </li>
+            <li>
+              <Link href={ `/${lang}/goals` } className={ `${styles.link} ${isGoalsActive ? styles.active : ""}` }>
+                <IconGoal size={15} />
+                <span>{dict.goals || "Metas"}</span>
               </Link>
             </li>
             <li>
