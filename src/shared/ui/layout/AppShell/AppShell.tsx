@@ -18,13 +18,15 @@ import styles from "./AppShell.module.css" ;
 interface AppShellProps {
   children: React.ReactNode ;
   dict:     Awaited< ReturnType< typeof getDictionary > > ;
+  /** Selector de organización ya armado por el layout; si no llega, el Navbar no lo muestra. */
+  selector?: React.ReactNode ;
 }
 
 /**
  * App Shell unificado para la aplicación.
  * Maneja el estado de visibilidad del sidebar en móvil (Drawer).
  */
-export function AppShell( {children , dict}: AppShellProps ) {
+export function AppShell( {children , dict , selector}: AppShellProps ) {
   const [ isDrawerOpen , setIsDrawerOpen ] = useState( false ) ;
 
   const openDrawer  = () => setIsDrawerOpen( true ) ;
@@ -42,6 +44,7 @@ export function AppShell( {children , dict}: AppShellProps ) {
         dict={dict.sidebar}
         isOpen={isDrawerOpen}
         onClose={closeDrawer}
+        selector={selector}
       />
 
       <div className={styles.mainWrapper}>

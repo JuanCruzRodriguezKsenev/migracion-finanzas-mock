@@ -13,6 +13,12 @@ import { AppShell }                  from "@/shared/ui/layout/AppShell/AppShell"
 import { getDictionary }             from "@/shared/lib/dictionary" ;
 import { authOptions }               from "@/shared/lib/auth" ;
 
+// Feature: Auth
+import { membershipRepository } from "@/features/auth/repositories/membershipRepository" ;
+
+// Feature: Organizations
+import { OrganizationSwitcher } from "@/features/organizations/components/OrganizationSwitcher" ;
+
 
 interface MainLayoutProps {
   children: React.ReactNode ;
@@ -31,11 +37,26 @@ export default async function MainLayout( {children , params}: MainLayoutProps )
     redirect( `/${lang}/auth/signin?expired=1` ) ;
   }
 
-  const dict = await getDictionary( lang ) ;
+  const [ dict , membresias ] = await Promise.all( [
+    getDictionary( lang ) ,
+    membershipRepository.findByUser( session.user.id ) ,
+  ] ) ;
+
+  const organizaciones = membresias.map( ( m ) => ( { id: m.organizationId , nombre: m.organizationName , rol: m.role } ) ) ;
+  const t              = dict.organizations ;
 
   return(
     <MetricsVisibilityProvider>
-      <AppShell dict={dict}>
+      <AppShell
+        dict={dict}
+        selector={
+          <OrganizationSwitcher
+            organizaciones={organizaciones}
+            activaId={session.user.organizationId}
+            dict={ { ...t.switcher , create: t.create } }
+          />
+        }
+      >
         { children }
       </AppShell>
     </MetricsVisibilityProvider>

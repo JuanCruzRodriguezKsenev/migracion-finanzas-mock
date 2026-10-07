@@ -32,6 +32,8 @@ import styles          from "./Navbar.module.css" ;
 interface NavbarProps {
   isOpen?:  boolean ;
   onClose?: () => void ;
+  /** Selector de organización (nodo ya armado). Si no llega, no se renderiza. */
+  selector?: React.ReactNode ;
   dict: {
     dashboard:      string ;
     accounts:       string ;
@@ -58,7 +60,7 @@ interface NavbarProps {
 /**
  * Componente principal de barra lateral (Navbar).
  */
-export function Navbar( {dict , isOpen , onClose}: NavbarProps ) {
+export function Navbar( {dict , isOpen , onClose , selector}: NavbarProps ) {
   const params               = useParams() ;
   const pathname             = usePathname() ;
   const lang                 = ( params?.lang || "es" ) ;
@@ -88,6 +90,9 @@ export function Navbar( {dict , isOpen , onClose}: NavbarProps ) {
         <span className={styles.brandIcon}><IconBrand size={16} /></span>
         <span>FinanzIA</span>
       </div>
+
+      {/* Selector de organización */}
+      {selector}
 
       {/* Navegación */}
       <nav className={styles.nav}>

@@ -1,0 +1,206 @@
+/**
+ * @file OrganizationSwitcher.tsx
+ * Selector de organización activa del Navbar (RN-9, AC-7, NFR-5).
+ * Cambiar actualiza el JWT con `update( { organizationId } )` y luego refresca el router:
+ * sin ese refresco, las páginas del servidor seguirían mostrando datos de la organización anterior.
+ */
+"use client" ;
+
+// Librerías externas
+import React , { useRef , useState } from "react" ;
+import { useSession }                from "next-auth/react" ;
+import { useRouter }                 from "next/navigation" ;
+
+// Shared
+import { IconChevronDown , IconCheck } from "@/shared/ui/display/Icons/Icons" ;
+import { Popup }                       from "@/shared/ui/feedback/Popup/Popup" ;
+
+// Feature: Organizations
+import { CreateOrganizationModal } from "./CreateOrganizationModal" ;
+import styles                      from "./OrganizationSwitcher.module.css" ;
+
+
+export interface OrganizacionDelSelector {
+  id:     string ;
+  nombre: string ;
+  rol:    string ;
+}
+
+export interface OrganizationSwitcherProps {
+  organizaciones: OrganizacionDelSelector[] ;
+  activaId:       string ;
+  dict: {
+    ariaLabel:    string ;
+    listLabel:    string ;
+    createNew:    string ;
+    viewerBadge:  string ;
+    switchError:  string ;
+    create:       React.ComponentProps< typeof CreateOrganizationModal >[ "dict" ] ;
+  } ;
+}
+
+/**
+ * Botón con la organización activa que abre una lista para cambiar de organización o crear otra.
+ */
+export function OrganizationSwitcher( { organizaciones , activaId , dict }: OrganizationSwitcherProps ) {
+  const { update }                    = useSession() ;
+  const router                        = useRouter() ;
+  const triggerRef                    = useRef< HTMLButtonElement >( null ) ;
+  const listRef                       = useRef< HTMLDivElement >( null ) ;
+  const [ abierto , setAbierto ]      = useState( false ) ;
+  const [ creando , setCreando ]      = useState( false ) ;
+  const [ cambiando , setCambiando ]  = useState( false ) ;
+  const [ error , setError ]          = useState( "" ) ;
+
+  const activa = organizaciones.find( ( o ) => o.id === activaId ) ;
+
+  const cerrar = () => {
+    setAbierto( false ) ;
+    triggerRef.current?.focus() ;
+  } ;
+
+  const abrir = () => {
+    setError( "" ) ;
+    setAbierto( true ) ;
+    // El Popup monta su contenido en un portal: el foco va a la opción activa recién cuando existe.
+    setTimeout( () => {
+      const items = listRef.current?.querySelectorAll< HTMLElement >( "[role='menuitemradio']" ) ;
+      const activo = listRef.current?.querySelector< HTMLElement >( "[aria-checked='true']" ) ;
+      ( activo || items?.[0] )?.focus() ;
+    } , 0 ) ;
+  } ;
+
+  const handleTriggerKeyDown = ( e: React.KeyboardEvent ) => {
+    if( (e.key === "ArrowDown") && !abierto ) {
+      e.preventDefault() ;
+      abrir() ;
+    }
+  } ;
+
+  const handleListKeyDown = ( e: React.KeyboardEvent ) => {
+    if( (e.key !== "ArrowDown") && (e.key !== "ArrowUp") && (e.key !== "Home") && (e.key !== "End") ) { return ; }
+
+    const items = Array.from( listRef.current?.querySelectorAll< HTMLElement >( "[role='menuitemradio'],[role='menuitem']" ) ?? [] ) ;
+    if( items.length === 0 ) { return ; }
+
+    e.preventDefault() ;
+    const actual = items.indexOf( document.activeElement as HTMLElement ) ;
+    let destino  = actual ;
+
+    if( e.key === "ArrowDown" ) { destino = ( (actual + 1) % items.length ) ; }
+    if( e.key === "ArrowUp" )   { destino = ( (actual <= 0) ? (items.length - 1) : (actual - 1) ) ; }
+    if( e.key === "Home" )      { destino = 0 ; }
+    if( e.key === "End" )       { destino = ( items.length - 1 ) ; }
+
+    items[destino].focus() ;
+  } ;
+
+  /**
+   * Cambia la organización activa. Si el servidor rechaza el cambio (AC-8) la sesión no cambia
+   * y se muestra el mensaje en vez de dejar la interfaz diciendo una cosa y sirviendo otra.
+   */
+  const cambiarA = async ( organizationId: string ) => {
+    if( organizationId === activaId ) {
+      cerrar() ;
+      return ;
+    }
+
+    setError( "" ) ;
+    setCambiando( true ) ;
+
+    try {
+      const sesion = await update( { organizationId } ) ;
+
+      if( sesion?.user?.organizationId !== organizationId ) {
+        setError( dict.switchError ) ;
+        return ;
+      }
+
+      setAbierto( false ) ;
+      router.refresh() ;
+    } catch {
+      setError( dict.switchError ) ;
+    } finally {
+      setCambiando( false ) ;
+    }
+  } ;
+
+  const alCrear = async ( organizationId: string ) => {
+    const sesion = await update( { organizationId } ) ;
+
+    if( sesion?.user?.organizationId === organizationId ) {
+      router.refresh() ;
+    }
+  } ;
+
+  return(
+    <div className={styles.wrap}>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={ `${styles.trigger} ${abierto ? styles.open : ""}` }
+        onClick={ () => ( abierto ? cerrar() : abrir() ) }
+        onKeyDown={handleTriggerKeyDown}
+        aria-haspopup="menu"
+        aria-expanded={abierto}
+        aria-label={dict.ariaLabel}
+      >
+        <span className={styles.name}>{activa?.nombre ?? ""}</span>
+        <IconChevronDown size={12} className={styles.chevron} />
+      </button>
+
+      <Popup anchor={triggerRef} open={abierto} onClose={cerrar} placement="bottom-start" offset={6}>
+        <div
+          ref={listRef}
+          className={styles.list}
+          role="menu"
+          aria-label={dict.listLabel}
+          onKeyDown={handleListKeyDown}
+        >
+          {organizaciones.map( ( org ) => {
+            const esActiva = ( org.id === activaId ) ;
+            return(
+              <button
+                key={org.id}
+                type="button"
+                role="menuitemradio"
+                aria-checked={esActiva}
+                className={ `${styles.item} ${esActiva ? styles.itemActive : ""}` }
+                disabled={cambiando}
+                onClick={ () => cambiarA( org.id ) }
+              >
+                <span className={styles.check}>{esActiva ? <IconCheck size={12} /> : null}</span>
+                <span className={styles.itemName}>{org.nombre}</span>
+                {(org.rol === "viewer") && <span className={styles.badge}>{dict.viewerBadge}</span>}
+              </button>
+            ) ;
+          } )}
+
+          <div className={styles.separator} role="separator" />
+
+          <button
+            type="button"
+            role="menuitem"
+            className={ `${styles.item} ${styles.itemCreate}` }
+            disabled={cambiando}
+            onClick={ () => {
+              setAbierto( false ) ;
+              setCreando( true ) ;
+            } }
+          >
+            {dict.createNew}
+          </button>
+
+          {error && <p className={styles.error} role="alert">{error}</p>}
+        </div>
+      </Popup>
+
+      <CreateOrganizationModal
+        isOpen={creando}
+        onClose={ () => setCreando( false ) }
+        onCreated={alCrear}
+        dict={dict.create}
+      />
+    </div>
+  ) ;
+}

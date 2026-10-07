@@ -1,0 +1,112 @@
+.wrap {
+    margin-bottom: 1rem ;
+    padding:       0 0.125rem ;
+    flex-shrink:   0 ;
+}
+
+/* ── Botón con la organización activa ─────────── */
+.trigger {
+    width:            100% ;
+    display:          flex ;
+    align-items:      center ;
+    justify-content:  space-between ;
+    gap:              0.5rem ;
+    padding:          0.4375rem 0.625rem ;
+    background-color: var(--bg-inset) ;
+    border:           1px solid var(--border-card) ;
+    border-radius:    var(--radius-md) ;
+    color:            var(--text-main) ;
+    font-size:        var(--fs-xs) ;
+    font-weight:      700 ;
+    text-align:       left ;
+    cursor:           pointer ;
+    transition:       var(--transition-smooth) ;
+}
+.trigger:hover { background-color: var(--border-subtle) ; border-color: var(--border-strong) ; }
+.trigger:focus-visible { outline: none ; box-shadow: var(--shadow-glow) ; border-color: var(--color-primary) ; }
+
+.name {
+    flex:          1 ;
+    min-width:     0 ;
+    white-space:   nowrap ;
+    overflow:      hidden ;
+    text-overflow: ellipsis ;
+}
+
+.chevron {
+    flex-shrink: 0 ;
+    color:       var(--text-light) ;
+    transition:  transform 0.2s ease ;
+}
+.trigger.open .chevron { transform: rotate(180deg) ; }
+
+/* ── Lista del popup ──────────────────────────── */
+.list {
+    display:        flex ;
+    flex-direction: column ;
+    gap:            0.125rem ;
+    padding:        0.375rem ;
+    min-width:      clamp(11rem, 14vw, 15rem) ;
+    max-width:      min(90vw, 20rem) ;
+}
+
+.item {
+    display:          flex ;
+    align-items:      center ;
+    gap:              0.5rem ;
+    width:            100% ;
+    padding:          0.5rem 0.625rem ;
+    background-color: transparent ;
+    border:           none ;
+    border-radius:    var(--radius-sm) ;
+    color:            var(--text-main) ;
+    font-size:        var(--fs-sm) ;
+    text-align:       left ;
+    cursor:           pointer ;
+    transition:       var(--transition-smooth) ;
+}
+.item:hover:not(:disabled)  { background-color: var(--border-subtle) ; }
+.item:focus-visible         { outline: none ; background-color: var(--border-subtle) ; box-shadow: var(--shadow-glow) ; }
+.item:disabled              { opacity: 0.6 ; cursor: default ; }
+
+.itemActive { font-weight: 700 ; color: var(--color-primary-text) ; }
+.itemCreate { color: var(--color-primary-text) ; font-weight: 600 ; }
+
+.check {
+    display:         inline-flex ;
+    align-items:     center ;
+    justify-content: center ;
+    width:           1rem ;
+    flex-shrink:     0 ;
+    color:           var(--color-primary-text) ;
+}
+
+.itemName {
+    flex:          1 ;
+    min-width:     0 ;
+    white-space:   nowrap ;
+    overflow:      hidden ;
+    text-overflow: ellipsis ;
+}
+
+.badge {
+    flex-shrink:      0 ;
+    padding:          0.0625rem 0.375rem ;
+    border-radius:    var(--radius-xs) ;
+    background-color: var(--color-warning-light) ;
+    color:            var(--color-warning-text) ;
+    font-size:        var(--fs-xs) ;
+    font-weight:      600 ;
+}
+
+.separator {
+    height:           1px ;
+    margin:           0.25rem 0 ;
+    background-color: var(--border-subtle) ;
+}
+
+.error {
+    margin:    0.25rem 0.625rem 0.375rem ;
+    color:     var(--color-danger-text) ;
+    font-size: var(--fs-xs) ;
+}

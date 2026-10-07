@@ -17,6 +17,13 @@ import { SettingsContainer } from "./SettingsContainer" ;
 import { Account , CategoryTreeNode } from "@/features/accounting/types" ;
 
 // Mocks
+vi.mock( "@/features/organizations/actions/membersActions" , () => ( {
+  listarMiembrosAction:    vi.fn() ,
+  invitarMiembroAction:    vi.fn() ,
+  revocarInvitacionAction: vi.fn() ,
+  quitarMiembroAction:     vi.fn() ,
+} ) ) ;
+
 vi.mock( "@/features/accounting/actions/categoryActions" , () => ( {
   getCategoryTreeAction:          vi.fn() ,
   createCategoryAction:           vi.fn() ,
@@ -125,5 +132,31 @@ describe( "SettingsContainer - Shell de navegación" , () => {
     expect( screen.getByText( "Banco Galicia" ) ).toBeTruthy() ;
     expect( screen.getByText( "2.1.01.01" ) ).toBeTruthy() ;
     expect( screen.getByText( "Tarjeta Visa" ) ).toBeTruthy() ;
+  } ) ;
+
+  it( "sin esOwner no existe la pestaña Miembros" , () => {
+    renderShell() ;
+
+    expect( screen.queryByRole( "tab" , { name: /Miembros/i } ) ).toBeNull() ;
+  } ) ;
+
+  it( "con esOwner aparece la pestaña Miembros y muestra el panel" , () => {
+    render(
+      <NotificationsProvider>
+        <SettingsContainer
+          initialTree={sampleTree}
+          accounts={sampleAccounts}
+          dict={dict}
+          lang="es"
+          esOwner
+          miembros={ { miembros: [ { userId: "u-1" , nombre: "Juan" , email: "juan@ejemplo.com" , rol: "owner" } ] , invitaciones: [] } }
+          currentUserId="u-1"
+        />
+      </NotificationsProvider>
+    ) ;
+
+    fireEvent.click( screen.getByRole( "tab" , { name: /Miembros/i } ) ) ;
+
+    expect( screen.getByText( "juan@ejemplo.com" ) ).toBeTruthy() ;
   } ) ;
 } ) ;

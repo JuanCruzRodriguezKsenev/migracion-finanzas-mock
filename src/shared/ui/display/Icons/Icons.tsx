@@ -81,6 +81,14 @@ export function IconChevronDown( props: IconProps ) {
   ) ;
 }
 
+export function IconCheck( props: IconProps ) {
+  return(
+    <IconWrapper {...props} size={props.size || 12}>
+      <polyline points="20 6 9 17 4 12" />
+    </IconWrapper>
+  ) ;
+}
+
 export function IconLogout( props: IconProps ) {
   return(
     <IconWrapper {...props} size={props.size || 14}>

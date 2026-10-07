@@ -1,0 +1,120 @@
+.panel {
+    display:        flex ;
+    flex-direction: column ;
+    gap:            clamp(0.75rem, 0.6rem + 0.6vw, 1.25rem) ;
+    padding:        clamp(1rem, 0.8rem + 1vw, 1.5rem) ;
+    background:     var(--bg-card) ;
+    border:         1px solid var(--border-card) ;
+    border-radius:  var(--radius-lg) ;
+}
+
+.header {
+    display:         flex ;
+    align-items:     flex-start ;
+    justify-content: space-between ;
+    flex-wrap:       wrap ;
+    gap:             0.75rem ;
+}
+
+.title {
+    margin:      0 ;
+    font-family: var(--font-display) ;
+    font-size:   var(--fs-md) ;
+    color:       var(--text-main) ;
+}
+
+.subtitle {
+    margin:    0.25rem 0 0 ;
+    font-size: var(--fs-sm) ;
+    color:     var(--text-muted) ;
+}
+
+.notice {
+    margin:           0 ;
+    padding:          0.625rem 0.875rem ;
+    background-color: var(--color-success-light) ;
+    color:            var(--color-success-text) ;
+    border-radius:    var(--radius-md) ;
+    font-size:        var(--fs-sm) ;
+}
+
+.list {
+    list-style:     none ;
+    margin:         0 ;
+    padding:        0 ;
+    display:        flex ;
+    flex-direction: column ;
+}
+
+.row {
+    display:     flex ;
+    align-items: center ;
+    gap:         clamp(0.5rem, 0.4rem + 0.5vw, 1rem) ;
+    flex-wrap:   wrap ;
+    padding:     0.75rem 0 ;
+    border-top:  1px solid var(--border-subtle) ;
+}
+.row:first-child { border-top: none ; }
+
+.person {
+    display:        flex ;
+    flex-direction: column ;
+    flex:           1 1 12rem ;
+    min-width:      0 ;
+}
+
+.personName {
+    font-size:     var(--fs-base) ;
+    font-weight:   600 ;
+    color:         var(--text-main) ;
+    overflow:      hidden ;
+    text-overflow: ellipsis ;
+}
+
+.you {
+    font-weight: 400 ;
+    color:       var(--text-light) ;
+}
+
+.personEmail {
+    font-size: var(--fs-xs) ;
+    color:     var(--text-muted) ;
+}
+
+.hint {
+    margin-top: 0.125rem ;
+    font-size:  var(--fs-xs) ;
+    color:      var(--color-warning-text) ;
+}
+
+.role {
+    padding:          0.125rem 0.625rem ;
+    border-radius:    var(--radius-xl) ;
+    background-color: var(--color-primary-light) ;
+    color:            var(--color-primary-text) ;
+    font-size:        var(--fs-xs) ;
+    font-weight:      600 ;
+}
+
+.pending {
+    display:        flex ;
+    flex-direction: column ;
+    gap:            0.25rem ;
+    margin-top:     0.5rem ;
+}
+
+.pendingTitle {
+    margin:         0 ;
+    font-size:      var(--fs-sm) ;
+    font-weight:    700 ;
+    text-transform: uppercase ;
+    letter-spacing: 0.06em ;
+    color:          var(--text-light) ;
+}
+
+.confirmActions {
+    display:         flex ;
+    justify-content: flex-end ;
+    gap:             0.5rem ;
+    margin-top:      1rem ;
+}

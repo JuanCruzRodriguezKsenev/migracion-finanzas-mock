@@ -13,6 +13,10 @@ import { PageHeader }          from "@/shared/ui/layout/PageHeader/PageHeader" ;
 import type { getDictionary } from "@/shared/lib/dictionary" ;
 import { Tabs }                from "@/shared/ui/display/Tabs/Tabs" ;
 
+// Feature: Organizations
+import type { ListadoMiembros } from "@/features/organizations/actions/membersActions" ;
+import { MembersPanel }         from "@/features/organizations/components/MembersPanel" ;
+
 // Feature: Accounting
 import { CategoriesSettingsContainer } from "@/features/accounting/components/CategoriesSettings/CategoriesSettingsContainer" ;
 import { LedgerAuditPanel }            from "@/features/accounting/components/LedgerAudit/LedgerAuditPanel" ;
@@ -25,6 +29,11 @@ export interface SettingsContainerProps {
   accounts:    Account[] ;
   dict:        Awaited< ReturnType< typeof getDictionary > > ;
   lang:        string ;
+  /** Sólo un `owner` ve la pestaña Miembros (por defecto, no). */
+  esOwner?:       boolean ;
+  /** Miembros e invitaciones de la organización; `null` si quien mira no es `owner`. */
+  miembros?:      ListadoMiembros | null ;
+  currentUserId?: string ;
 }
 
 /**
@@ -35,12 +44,18 @@ export function SettingsContainer( {
   accounts ,
   dict ,
   lang ,
+  esOwner = false ,
+  miembros = null ,
+  currentUserId = "" ,
 }: SettingsContainerProps ) {
-  const [ activeTab , setActiveTab ] = useState< "categories" | "ledger" >( "categories" ) ;
+  const [ activeTab , setActiveTab ] = useState< "categories" | "ledger" | "members" >( "categories" ) ;
+
+  const mostrarMiembros = ( esOwner && !!miembros ) ;
 
   const settingsTabs = [
     { key: "categories"  , label: dict.settingsPage.tabCategories } ,
     { key: "ledger"      , label: dict.settingsPage.tabLedger } ,
+    ...( mostrarMiembros ? [ { key: "members" , label: dict.settingsPage.tabMembers } ] : [] ) ,
     { key: "profile"     , label: dict.settingsPage.tabProfile     , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
     { key: "preferences" , label: dict.settingsPage.tabPreferences , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
     { key: "security"    , label: dict.settingsPage.tabSecurity    , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
@@ -59,11 +74,18 @@ export function SettingsContainer( {
       <Tabs
         tabs={settingsTabs}
         activeTab={activeTab}
-        onChange={ ( key ) => setActiveTab( key as "categories" | "ledger" ) }
+        onChange={ ( key ) => setActiveTab( key as "categories" | "ledger" | "members" ) }
       />
 
       {activeTab === "categories" ? (
         <CategoriesSettingsContainer initialTree={initialTree} dict={dict} />
+      ) : ( (activeTab === "members") && mostrarMiembros ) ? (
+        <MembersPanel
+          initialData={miembros}
+          currentUserId={currentUserId}
+          lang={lang}
+          dict={dict.organizations.members}
+        />
       ) : (
         <LedgerAuditPanel accounts={accounts} dict={dict} />
       )}

@@ -482,7 +482,8 @@
       "errorChildNameRequired": "Digite um nome para a subcategoria.",
       "errorNameInvalid": "Digite um nome válido.",
       "errorColorInvalid": "A cor deve ser um hexadecimal de 6 caracteres (ex: #3498db)."
-    }
+    },
+    "tabMembers": "Membros"
   },
   "transactionsPage": {
     "title": "Livro Diário",
@@ -615,6 +616,51 @@
       "limitPositive": "O limite deve ser maior que zero.",
       "cancel": "Cancelar",
       "save": "Salvar"
+    }
+  },
+  "organizations": {
+    "switcher": {
+      "ariaLabel": "Trocar de organização",
+      "listLabel": "Suas organizações",
+      "createNew": "+ Criar organização",
+      "viewerBadge": "Somente leitura",
+      "switchError": "Não foi possível trocar de organização. Tente novamente."
+    },
+    "create": {
+      "title": "Criar organização",
+      "subtitle": "Uma organização nova começa vazia, com o catálogo padrão de categorias, e você como proprietário.",
+      "nameLabel": "Nome",
+      "namePlaceholder": "Ex: Finanças do negócio",
+      "cancel": "Cancelar",
+      "submit": "Criar organização",
+      "genericError": "Não foi possível criar a organização."
+    },
+    "members": {
+      "title": "Membros",
+      "subtitle": "Quem tem acesso a esta organização e com qual papel.",
+      "inviteButton": "+ Convidar",
+      "roleOwner": "Proprietário",
+      "roleMember": "Membro",
+      "roleViewer": "Somente leitura",
+      "you": "(você)",
+      "remove": "Remover",
+      "removeDisabledOnlyOwner": "É o único proprietário: nomeie outro antes de removê-lo.",
+      "pendingTitle": "Convites pendentes",
+      "expiresOn": "Vence em {fecha}",
+      "revoke": "Revogar",
+      "inviteTitle": "Convidar uma pessoa",
+      "inviteSubtitle": "Ela entrará com a conta do Google. Não enviamos nenhum e-mail: avise você que ela já pode entrar.",
+      "emailLabel": "E-mail do Google",
+      "emailPlaceholder": "pessoa@gmail.com",
+      "roleLabel": "Papel",
+      "inviteSubmit": "Convidar",
+      "cancel": "Cancelar",
+      "inviteSuccess": "Convite criado. Avise {email} para entrar com o Google e ver esta organização.",
+      "removeConfirmTitle": "Remover {nombre}",
+      "removeConfirmBody": "Perde o acesso a esta organização. As movimentações que lançou são mantidas.",
+      "removeConfirmSubmit": "Remover",
+      "loadError": "Não foi possível atualizar a lista de membros.",
+      "genericError": "Não foi possível concluir a ação."
     }
   }
 }

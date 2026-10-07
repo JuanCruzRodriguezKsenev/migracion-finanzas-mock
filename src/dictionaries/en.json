@@ -482,7 +482,8 @@
       "errorChildNameRequired": "Enter a name for the subcategory.",
       "errorNameInvalid": "Enter a valid name.",
       "errorColorInvalid": "The color must be a 6-character hexadecimal value (e.g. #3498db)."
-    }
+    },
+    "tabMembers": "Members"
   },
   "transactionsPage": {
     "title": "General Ledger",
@@ -615,6 +616,51 @@
       "limitPositive": "The limit must be greater than zero.",
       "cancel": "Cancel",
       "save": "Save"
+    }
+  },
+  "organizations": {
+    "switcher": {
+      "ariaLabel": "Switch organization",
+      "listLabel": "Your organizations",
+      "createNew": "+ Create organization",
+      "viewerBadge": "Read-only",
+      "switchError": "Could not switch organization. Please try again."
+    },
+    "create": {
+      "title": "Create organization",
+      "subtitle": "A new organization starts empty, with the standard category catalog, and you as its owner.",
+      "nameLabel": "Name",
+      "namePlaceholder": "E.g. Business finances",
+      "cancel": "Cancel",
+      "submit": "Create organization",
+      "genericError": "Could not create the organization."
+    },
+    "members": {
+      "title": "Members",
+      "subtitle": "Who has access to this organization and with which role.",
+      "inviteButton": "+ Invite",
+      "roleOwner": "Owner",
+      "roleMember": "Member",
+      "roleViewer": "Read-only",
+      "you": "(you)",
+      "remove": "Remove",
+      "removeDisabledOnlyOwner": "They are the only owner: appoint another one before removing them.",
+      "pendingTitle": "Pending invitations",
+      "expiresOn": "Expires on {fecha}",
+      "revoke": "Revoke",
+      "inviteTitle": "Invite a person",
+      "inviteSubtitle": "They will sign in with their Google account. We do not send any email: let them know they can sign in.",
+      "emailLabel": "Google email",
+      "emailPlaceholder": "person@gmail.com",
+      "roleLabel": "Role",
+      "inviteSubmit": "Invite",
+      "cancel": "Cancel",
+      "inviteSuccess": "Invitation created. Let {email} know to sign in with Google to see this organization.",
+      "removeConfirmTitle": "Remove {nombre}",
+      "removeConfirmBody": "They lose access to this organization. The transactions they entered are kept.",
+      "removeConfirmSubmit": "Remove",
+      "loadError": "Could not refresh the member list.",
+      "genericError": "Could not complete the action."
     }
   }
 }
