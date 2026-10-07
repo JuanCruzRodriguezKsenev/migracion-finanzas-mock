@@ -15,3 +15,4 @@
 - [`presupuestos-2-pagina.md`](presupuestos-2-pagina.md): Plan 12 página /budgets: minKey omitido, hero y ojito, PageHeader maxKey, checklist pendiente.
 - [`metas-2-pagina.md`](metas-2-pagina.md): Plan 14 Metas 2: GoalView sin reservas/descubierta, ProgressBar copiada byte a byte de presupuestos, trampas jsdom.
 - [`acceso-4-miembros.md`](acceso-4-miembros.md): Plan 06 miembros/selector: métodos ya existentes, test de carrera con demora, selector bajado por layout, mocks de next-auth/react.
+- [`acceso-4c-interfaz.md`](acceso-4c-interfaz.md): Plan 06c interfaz del ciclo de vida: `esUnicoOwner` contradictorio, selector no se remonta (aviso), FormSelect en fila, mutación de tests.
