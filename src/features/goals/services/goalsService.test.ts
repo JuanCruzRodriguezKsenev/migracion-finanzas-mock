@@ -302,6 +302,11 @@ describe( "goalsService - integración (RFC 011 §9)" , () => {
     const res = await goalsService.reservadoPorCuenta( orgId ) ;
     expect( res[ ctaA ].libre ).toBe( -3000000 ) ;
 
+    // La vista marca la meta como descubierta y trae lo apartado por cuenta (para «Retirar»)
+    const v = await goalsService.vista( { orgId , currency: "ARS" } ) ;
+    expect( v.metas[ 0 ].descubierta ).toBe( true ) ;
+    expect( v.metas[ 0 ].reservas.map( ( x ) => { return( [ x.accountId , x.amount ] ) ; } ) ).toEqual( [ [ ctaA , 8000000 ] ] ) ;
+
     const r = await goalsService.aportar( { orgId , goalId: meta , accountId: ctaA , amount: 1 } ) ;
     expect( r.success ).toBe( false ) ;
     expect( r.error ).toContain( "saldo libre" ) ;

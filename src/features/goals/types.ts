@@ -29,6 +29,13 @@ export interface GoalHistoryItem {
   occurredAt:  Date ;
 }
 
+/** Lo apartado por una meta en una cuenta (siempre mayor a cero). */
+export interface GoalReserve {
+  accountId:   string ;
+  accountName: string ;
+  amount:      number ;
+}
+
 /** Meta con lo que se calcula al vuelo (RFC 011 §3). */
 export interface GoalView {
   goal:             Goal ;
@@ -39,6 +46,8 @@ export interface GoalView {
   aporteSugerido:   number | null ;
   vencida:          boolean ;
   historial:        GoalHistoryItem[] ;
+  reservas:         GoalReserve[] ;
+  descubierta:      boolean ;
 }
 
 /** Indicadores de una divisa. */

@@ -34,6 +34,7 @@ import type {
   GoalPriority ,
   GoalStatus ,
   GoalView ,
+  GoalReserve ,
   GoalsViewData ,
   GoalIndicators ,
   GoalCompatibleAccount ,
@@ -353,6 +354,23 @@ export const goalsService = {
     const totales  = await goalMovementsRepository.sumSignedByGoal( ids , orgId ) ;
     const historia = await goalMovementsRepository.history( ids , orgId , HISTORIAL_CORTO ) ;
 
+    const compatibles = cuentasActivo.filter( ( c ) => { return( c.currency === activa ) ; } ) ;
+    const reservados  = await goalMovementsRepository.sumReservedByAccount( orgId , compatibles.map( ( c ) => { return( c.id ) ; } ) ) ;
+    const cuentasVista: GoalCompatibleAccount[] = compatibles.map( ( c ) => {
+      const reservado = reservados[ c.id ] ?? 0 ;
+      return( { id: c.id , name: c.name , currency: c.currency , balance: c.balance , reservado , libre: c.balance - reservado } ) ;
+    } ) ;
+    const cuentaPorId = new Map( cuentasVista.map( ( c ) => { return( [ c.id , c ] as const ) ; } ) ) ;
+
+    // Lo apartado por cada meta en cada cuenta (para retirar y para marcar «descubierta»)
+    const reservasPorMeta: Record< string , GoalReserve[] > = {} ;
+    await Promise.all( visibles.map( async ( g ) => {
+      const filas = await goalMovementsRepository.sumSignedByGoalAndAccount( g.id , orgId ) ;
+      reservasPorMeta[ g.id ] = filas
+        .filter( ( f ) => { return( (f.total > 0) && cuentaPorId.has( f.accountId ) ) ; } )
+        .map( ( f ) => { return( { accountId: f.accountId , accountName: cuentaPorId.get( f.accountId )!.name , amount: f.total } ) ; } ) ;
+    } ) ) ;
+
     const vistas: GoalView[] = visibles.sort( compararMetas ).map( ( goal ) => {
       const ahorrado   = totales[ goal.id ] ?? 0 ;
       const activaMeta = ( goal.status === "active" ) ;
@@ -365,6 +383,8 @@ export const goalsService = {
         sugerido = aporteSugerido( goal.targetAmount - ahorrado , meses ) ;
       }
 
+      const reservas = ( reservasPorMeta[ goal.id ] ?? [] ) ;
+
       return( {
         goal ,
         ahorrado ,
@@ -374,6 +394,8 @@ export const goalsService = {
         aporteSugerido:  sugerido ,
         vencida ,
         historial:       historia[ goal.id ] ?? [] ,
+        reservas ,
+        descubierta:     reservas.some( ( r ) => { return( (cuentaPorId.get( r.accountId )?.libre ?? 0) < 0 ) ; } ) ,
       } ) ;
     } ) ;
 
@@ -398,13 +420,6 @@ export const goalsService = {
         return( v.goal.status === "completed" ) ;
       }
       return( true ) ;
-    } ) ;
-
-    const compatibles = cuentasActivo.filter( ( c ) => { return( c.currency === activa ) ; } ) ;
-    const reservados  = await goalMovementsRepository.sumReservedByAccount( orgId , compatibles.map( ( c ) => { return( c.id ) ; } ) ) ;
-    const cuentasVista: GoalCompatibleAccount[] = compatibles.map( ( c ) => {
-      const reservado = reservados[ c.id ] ?? 0 ;
-      return( { id: c.id , name: c.name , currency: c.currency , balance: c.balance , reservado , libre: c.balance - reservado } ) ;
     } ) ;
 
     return( { currency: activa , divisas , metas: filtradas , indicadores , cuentas: cuentasVista } ) ;
