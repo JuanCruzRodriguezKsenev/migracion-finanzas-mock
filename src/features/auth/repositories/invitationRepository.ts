@@ -125,5 +125,77 @@ export const invitationRepository = {
           lte( invitations.expiresAt     , ahora )
         )
       ) ;
+  } ,
+
+  /**
+   * Lista las invitaciones pendientes y aún no vencidas de una organización.
+   *
+   * @param organizationId - Identificador de la organización.
+   * @param tx - Instancia de transacción opcional.
+   * @returns Invitaciones vigentes, de la más reciente a la más antigua.
+   */
+  async findPendientesVigentes( organizationId: string , tx: DBOrTx = db ): Promise< Invitation[] > {
+    return(
+      await tx
+        .select()
+        .from( invitations )
+        .where(
+          and(
+            eq( invitations.organizationId , organizationId ) ,
+            eq( invitations.status         , "pending" ) ,
+            gt( invitations.expiresAt      , new Date() )
+          )
+        )
+        .orderBy( desc( invitations.createdAt ) )
+    ) ;
+  } ,
+
+  /**
+   * Indica si ya hay una invitación pendiente y vigente para un par (organización, email).
+   *
+   * @param organizationId - Identificador de la organización.
+   * @param email - Correo invitado (se normaliza).
+   * @param tx - Instancia de transacción opcional.
+   */
+  async existeVigente( organizationId: string , email: string , tx: DBOrTx = db ): Promise< boolean > {
+    const [ fila ] = await tx
+      .select( { id: invitations.id } )
+      .from( invitations )
+      .where(
+        and(
+          eq( invitations.organizationId , organizationId ) ,
+          eq( invitations.email          , normalizarEmail( email ) ) ,
+          eq( invitations.status         , "pending" ) ,
+          gt( invitations.expiresAt      , new Date() )
+        )
+      )
+      .limit( 1 ) ;
+
+    return( !!fila ) ;
+  } ,
+
+  /**
+   * Revoca una invitación pendiente. El filtro por organización es el aislamiento multi-tenant:
+   * sin él, un `owner` de otra organización podría revocar ésta.
+   *
+   * @param id - Identificador de la invitación.
+   * @param organizationId - Organización a la que debe pertenecer.
+   * @param tx - Instancia de transacción opcional.
+   * @returns `true` si había una invitación pendiente de esa organización y quedó revocada.
+   */
+  async revocar( id: string , organizationId: string , tx: DBOrTx = db ): Promise< boolean > {
+    const filas = await tx
+      .update( invitations )
+      .set( { status: "revoked" } )
+      .where(
+        and(
+          eq( invitations.id             , id ) ,
+          eq( invitations.organizationId , organizationId ) ,
+          eq( invitations.status         , "pending" )
+        )
+      )
+      .returning( { id: invitations.id } ) ;
+
+    return( filas.length > 0 ) ;
   }
 } ;

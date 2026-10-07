@@ -3,13 +3,14 @@
  * Repositorio para la gestión de membresías de usuarios en organizaciones (Capa DAL).
  */
 // Librerías externas
-import { eq , and , desc } from "drizzle-orm" ;
+import { eq , and , asc , desc } from "drizzle-orm" ;
 
 // Shared
 import { db , DBOrTx } from "@/shared/db/client" ;
 
 // Feature: Auth
-import { memberships , organizations } from "../schema.db" ;
+import { memberships , organizations , users } from "../schema.db" ;
+import { normalizarEmail }                      from "./userRepository" ;
 
 
 export type Membership = typeof memberships.$inferSelect ;
@@ -22,6 +23,16 @@ export interface MembresiaConOrganizacion {
   organizationName: string ;
   role:             string ;
   createdAt:        Date ;
+}
+
+/**
+ * Miembro de una organización proyectado junto con los datos visibles del usuario.
+ */
+export interface MiembroDeOrganizacion {
+  userId: string ;
+  nombre: string | null ;
+  email:  string ;
+  rol:    string ;
 }
 
 /**
@@ -77,5 +88,108 @@ export const membershipRepository = {
       .limit( 1 ) ;
 
     return( fila || null ) ;
+  } ,
+  /**
+   * Lista los miembros de una organización con el nombre y el correo de cada uno.
+   *
+   * @param organizationId - Identificador de la organización.
+   * @param tx - Instancia de transacción opcional.
+   * @returns Miembros ordenados por antigüedad de la membresía.
+   */
+  async findByOrganization( organizationId: string , tx: DBOrTx = db ): Promise< MiembroDeOrganizacion[] > {
+    return(
+      await tx
+        .select( {
+          userId: users.id ,
+          nombre: users.name ,
+          email:  users.email ,
+          rol:    memberships.role ,
+        } )
+        .from( memberships )
+        .innerJoin( users , eq(memberships.userId , users.id) )
+        .where( eq(memberships.organizationId , organizationId) )
+        .orderBy( asc( memberships.createdAt ) )
+    ) ;
+  } ,
+
+  /**
+   * Indica si un correo ya pertenece a la organización como miembro.
+   *
+   * @param organizationId - Identificador de la organización.
+   * @param email - Correo a consultar (se normaliza).
+   * @param tx - Instancia de transacción opcional.
+   * @returns `true` si existe un usuario con ese correo y membresía en la organización.
+   */
+  async existeMiembroPorEmail( organizationId: string , email: string , tx: DBOrTx = db ): Promise< boolean > {
+    const [ fila ] = await tx
+      .select( { userId: memberships.userId } )
+      .from( memberships )
+      .innerJoin( users , eq(memberships.userId , users.id) )
+      .where(
+        and(
+          eq( memberships.organizationId , organizationId ) ,
+          eq( users.email                , normalizarEmail( email ) )
+        )
+      )
+      .limit( 1 ) ;
+
+    return( !!fila ) ;
+  } ,
+
+  /**
+   * Bloquea (`SELECT … FOR UPDATE`) las filas de los `owner` de la organización y devuelve sus ids.
+   * Serializa a quienes quieran quitar owners a la vez: el segundo espera al primero y ve su resultado (RN-12).
+   *
+   * @param organizationId - Identificador de la organización.
+   * @param tx - Transacción activa: el bloqueo vive hasta que termina.
+   * @returns Ids de usuario de los `owner` actuales.
+   */
+  async bloquearOwners( organizationId: string , tx: DBOrTx ): Promise< string[] > {
+    const filas = await tx
+      .select( { userId: memberships.userId } )
+      .from( memberships )
+      .where(
+        and(
+          eq( memberships.organizationId , organizationId ) ,
+          eq( memberships.role           , "owner" )
+        )
+      )
+      .for( "update" ) ;
+
+    return( filas.map( ( f ) => f.userId ) ) ;
+  } ,
+
+  /**
+   * Crea una membresía.
+   *
+   * @param userId - Identificador del usuario.
+   * @param organizationId - Identificador de la organización.
+   * @param role - Rol inicial (`owner` | `member` | `viewer`).
+   * @param tx - Instancia de transacción opcional.
+   */
+  async add( userId: string , organizationId: string , role: string , tx: DBOrTx = db ): Promise< void > {
+    await tx.insert( memberships ).values( { userId , organizationId , role } ) ;
+  } ,
+
+  /**
+   * Elimina la membresía de un usuario en una organización.
+   *
+   * @param userId - Identificador del usuario.
+   * @param organizationId - Identificador de la organización.
+   * @param tx - Instancia de transacción opcional.
+   * @returns `true` si había una membresía y se borró.
+   */
+  async remove( userId: string , organizationId: string , tx: DBOrTx = db ): Promise< boolean > {
+    const borradas = await tx
+      .delete( memberships )
+      .where(
+        and(
+          eq( memberships.userId         , userId ) ,
+          eq( memberships.organizationId , organizationId )
+        )
+      )
+      .returning( { userId: memberships.userId } ) ;
+
+    return( borradas.length > 0 ) ;
   } ,
 } ;

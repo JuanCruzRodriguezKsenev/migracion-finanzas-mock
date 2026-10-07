@@ -3,7 +3,7 @@
  * Repositorio para la gestión de usuarios (Capa de Acceso a Datos - DAL).
  */
 // Librerías externas
-import { eq , desc , sql } from "drizzle-orm" ;
+import { eq , and , desc , sql } from "drizzle-orm" ;
 
 // Shared
 import { db , DBOrTx } from "@/shared/db/client" ;
@@ -227,6 +227,30 @@ export const userRepository = {
         updatedAt:          new Date() ,
       } )
       .where( eq(users.id , userId) ) ;
+  } ,
+
+  /**
+   * Limpia `last_organization_id` de un usuario sólo si apunta a la organización indicada.
+   * Se usa al quitarle la membresía: el `ON DELETE SET NULL` cubre borrar la organización, no la membresía.
+   *
+   * @param userId - Identificador del usuario.
+   * @param organizationId - Organización de la que se lo quitó.
+   * @param tx - Instancia de transacción opcional.
+   */
+  async limpiarUltimaOrganizacion(
+    userId:         string ,
+    organizationId: string ,
+    tx:             DBOrTx = db
+  ): Promise< void > {
+    await tx
+      .update( users )
+      .set( { lastOrganizationId: null , updatedAt: new Date() } )
+      .where(
+        and(
+          eq( users.id                 , userId ) ,
+          eq( users.lastOrganizationId , organizationId )
+        )
+      ) ;
   } ,
 
   /**
