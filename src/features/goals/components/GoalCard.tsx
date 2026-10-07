@@ -50,6 +50,7 @@ export function GoalCard( { view , dict , locale , puedeEscribir , onContribute 
   const { goal }             = view ;
   const completada           = ( goal.status === "completed" ) ;
   const ultimo               = view.historial[ 0 ] ;
+  const estadoTexto          = ( view.descubierta ? dict.uncovered : view.vencida ? dict.overdue : completada ? dict.statusCompleted : dict.statusActive ) ;
 
   return(
     <Card className={styles.goalCard}>
@@ -70,7 +71,7 @@ export function GoalCard( { view , dict , locale , puedeEscribir , onContribute 
       <ProgressBar
         value={view.porcentaje}
         state={estadoDeBarra( view )}
-        label={ fmt( dict.progressLabel , { name: goal.name } ) }
+        label={ fmt( dict.progressLabel , { name: goal.name , percent: view.porcentaje , state: estadoTexto } ) }
       />
 
       <div className={styles.progressRow}>

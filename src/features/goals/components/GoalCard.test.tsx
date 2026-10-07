@@ -38,24 +38,25 @@ function renderCard( view = makeGoalView() , props?: { puedeEscribir?: boolean ;
 describe( "GoalCard" , () => {
   it( "estado normal: barra ok, porcentaje, ahorrado de objetivo, fecha y sugerido" , () => {
     renderCard() ;
-    expect( screen.getByRole( "progressbar" ).getAttribute( "data-state" ) ).toBe( "ok" ) ;
+    expect( screen.getByTestId( "progress-fill" ).className ).toMatch( /ok/ ) ;
     expect( screen.getByText( "10 %" ) ).toBeDefined() ;
     expect( screen.getByText( /ahorrado de/ ).textContent ).toMatch( /200\.000,00.*2\.000\.000,00/ ) ;
     expect( screen.getByText( /Fecha objetivo/ ) ).toBeDefined() ;
     expect( screen.getByText( /Aporte sugerido: .*180\.000,00 por mes/ ) ).toBeDefined() ;
     expect( screen.getByText( "Activa" ) ).toBeDefined() ;
+    expect( screen.getByRole( "progressbar" ).getAttribute( "aria-label" ) ).toBe( "Progreso de Viaje: 10 %, Activa" ) ;
   } ) ;
 
   it( "vencida: barra warning y rótulo «Vencida» en texto; sin sugerido" , () => {
     renderCard( makeGoalView( { vencida: true , aporteSugerido: null , mesesRestantes: null } ) ) ;
-    expect( screen.getByRole( "progressbar" ).getAttribute( "data-state" ) ).toBe( "warning" ) ;
+    expect( screen.getByTestId( "progress-fill" ).className ).toMatch( /warning/ ) ;
     expect( screen.getByText( "Vencida" ) ).toBeDefined() ;
     expect( screen.queryByText( /Aporte sugerido/ ) ).toBeNull() ;
   } ) ;
 
   it( "descubierta: barra danger y rótulo «Descubierta» en texto" , () => {
     renderCard( makeGoalView( { descubierta: true } ) ) ;
-    expect( screen.getByRole( "progressbar" ).getAttribute( "data-state" ) ).toBe( "danger" ) ;
+    expect( screen.getByTestId( "progress-fill" ).className ).toMatch( /danger/ ) ;
     expect( screen.getByText( "Descubierta" ) ).toBeDefined() ;
   } ) ;
 
@@ -77,7 +78,7 @@ describe( "GoalCard" , () => {
     renderCard( makeGoalView( { porcentaje: 104 , porcentajeBarra: 100 , aporteSugerido: null } , { status: "completed" } ) ) ;
     const bar = screen.getByRole( "progressbar" ) ;
     expect( bar.getAttribute( "aria-valuenow" ) ).toBe( "100" ) ;
-    expect( screen.getByTestId( "progress-fill" ).style.getPropertyValue( "--progress" ) ).toBe( "100%" ) ;
+    expect( screen.getByTestId( "progress-fill" ).style.width ).toBe( "100%" ) ;
     expect( screen.getByText( "104 %" ) ).toBeDefined() ;
     expect( screen.getByText( "Completada" ) ).toBeDefined() ;
   } ) ;

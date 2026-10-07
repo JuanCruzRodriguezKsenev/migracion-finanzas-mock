@@ -82,7 +82,7 @@
     "lastContribution": "Último aporte: {amount} desde {account} el {date}",
     "lastWithdrawal": "Último retiro: {amount} hacia {account} el {date}",
     "noHistory": "Sin movimientos todavía",
-    "progressLabel": "Progreso de {name}",
+    "progressLabel": "Progreso de {name}: {percent} %, {state}",
     "contribute": "Aportar",
     "withdraw": "Retirar",
     "edit": "Editar",
