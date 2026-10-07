@@ -39,3 +39,31 @@ export function claveDeMes( fecha: Date | string , zona: string ): string {
 export function claveDeMesActual( zona: string ): string {
   return( claveDeMes( new Date() , zona ) ) ;
 }
+
+/**
+ * Devuelve la clave de día "YYYY-MM-DD" de una fecha evaluada en una zona horaria IANA específica.
+ *
+ * @param fecha - Objeto Date o cadena de fecha parseable.
+ * @param zona - Identificador de zona horaria IANA.
+ * @returns Cadena con formato "YYYY-MM-DD".
+ */
+export function claveDeDia( fecha: Date | string , zona: string ): string {
+  const f = ( fecha instanceof Date ) ? fecha : new Date( fecha ) ;
+  if( isNaN( f.getTime() ) ) {
+    throw( new Error( `Fecha inválida provista a claveDeDia: ${fecha}` ) ) ;
+  }
+
+  const formatter = new Intl.DateTimeFormat( "en-CA" , {
+    timeZone: zona ,
+    year:     "numeric" ,
+    month:    "2-digit" ,
+    day:      "2-digit" ,
+  } ) ;
+
+  const parts = formatter.formatToParts( f ) ;
+  const year  = parts.find( ( p ) => { return( p.type === "year" ) ; } )?.value ;
+  const month = parts.find( ( p ) => { return( p.type === "month" ) ; } )?.value ;
+  const day   = parts.find( ( p ) => { return( p.type === "day" ) ; } )?.value ;
+
+  return( `${year}-${month}-${day}` ) ;
+}

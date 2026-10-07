@@ -1,7 +1,7 @@
 import { describe , it , expect } from "vitest" ;
 
 // Shared
-import { claveDeMes , claveDeMesActual } from "./monthKey" ;
+import { claveDeMes , claveDeMesActual , claveDeDia } from "./monthKey" ;
 
 describe( "monthKey utility" , () => {
   it( "calcula correctamente el mes en Buenos Aires vs UTC para las 22:00 del 31 de mayo (AC-17)" , () => {
@@ -26,5 +26,17 @@ describe( "monthKey utility" , () => {
   it( "claveDeMesActual devuelve un formato YYYY-MM válido" , () => {
     const actual = claveDeMesActual( "America/Argentina/Buenos_Aires" ) ;
     expect( actual ).toMatch( /^\d{4}-\d{2}$/ ) ;
+  } ) ;
+
+  it( "claveDeDia: la 01:00 UTC es el día anterior en Buenos Aires" , () => {
+    const fecha = new Date( "2026-06-01T01:00:00Z" ) ;
+
+    expect( claveDeDia( fecha , "America/Argentina/Buenos_Aires" ) ).toBe( "2026-05-31" ) ;
+    expect( claveDeDia( fecha , "UTC" ) ).toBe( "2026-06-01" ) ;
+  } ) ;
+
+  it( "claveDeDia acepta cadenas y rechaza fechas inválidas" , () => {
+    expect( claveDeDia( "2026-12-31T23:59:59Z" , "UTC" ) ).toBe( "2026-12-31" ) ;
+    expect( () => claveDeDia( "no es fecha" , "UTC" ) ).toThrow( /claveDeDia/ ) ;
   } ) ;
 } ) ;

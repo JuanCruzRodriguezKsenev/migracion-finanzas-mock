@@ -76,3 +76,38 @@ export const expenseSplits = pgTable( "expense_splits" , {
   amountCheck:    check( "expense_splits_amount_check" , sql`${table.amountInCents} > 0` ) ,
   debtorIdx:      index( "expense_splits_org_debtor_idx" ).on( table.organizationId , table.debtorUserId ) ,
 } ) ; } ) ;
+
+/**
+ * Pago entre miembros (RN-23): `from_user_id` paga (el deudor) y `to_user_id` recibe (el acreedor, quien lo registra).
+ * Vive aparte del libro mayor: no genera asientos. Los tres usuarios quedan en `SET NULL` (A11): quien sale de
+ * la organización deja sus pagos visibles.
+ */
+export const memberPayments = pgTable( "member_payments" , {
+  id:                 uuid( "id"                    ).primaryKey().defaultRandom() ,
+  organizationId:     uuid( "organization_id"       ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
+  fromUserId:         uuid( "from_user_id"          ).references( () => users.id         , {onDelete: "set null"} ) ,
+  toUserId:           uuid( "to_user_id"            ).references( () => users.id         , {onDelete: "set null"} ) ,
+  amountInCents:      bigint( "amount_in_cents" , {mode: "number"} ).notNull() ,
+  currency:           varchar( "currency" , {length: 10} ).notNull() ,
+  registeredByUserId: uuid( "registered_by_user_id" ).references( () => users.id         , {onDelete: "set null"} ) ,
+  createdAt:          timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
+} , ( table ) => { return( {
+  amountCheck: check( "member_payments_amount_check" , sql`${table.amountInCents} > 0` ) ,
+  pairIdx:     index( "member_payments_org_pair_idx" ).on( table.organizationId , table.fromUserId , table.toUserId ) ,
+} ) ; } ) ;
+
+/**
+ * Solicitud de pago (RN-11): una por día, par y divisa. `from_user_id` es el acreedor que solicita y `to_user_id`
+ * el deudor. La restricción única hace atómico el «una vez por día» y no depende de la campana.
+ */
+export const paymentRequests = pgTable( "payment_requests" , {
+  id:             uuid( "id"              ).primaryKey().defaultRandom() ,
+  organizationId: uuid( "organization_id" ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
+  fromUserId:     uuid( "from_user_id"    ).references( () => users.id         , {onDelete: "set null"} ) ,
+  toUserId:       uuid( "to_user_id"      ).references( () => users.id         , {onDelete: "set null"} ) ,
+  currency:       varchar( "currency" , {length: 10} ).notNull() ,
+  dayKey:         varchar( "day_key" , {length: 10} ).notNull() , // "AAAA-MM-DD" en la zona del acreedor
+  createdAt:      timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
+} , ( table ) => { return( {
+  uniqueDay: uniqueIndex( "payment_requests_day_unique" ).on( table.organizationId , table.fromUserId , table.toUserId , table.currency , table.dayKey ) ,
+} ) ; } ) ;

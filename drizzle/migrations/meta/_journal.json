@@ -267,6 +267,13 @@
       "when": 1791375863002,
       "tag": "0037_glossy_mesmero",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791388221255,
+      "tag": "0038_nebulous_moonstone",
+      "breakpoints": true
     }
   ]
 }
