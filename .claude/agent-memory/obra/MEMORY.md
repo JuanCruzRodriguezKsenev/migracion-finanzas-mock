@@ -18,3 +18,4 @@
 - [`acceso-4c-interfaz.md`](acceso-4c-interfaz.md): Plan 06c interfaz del ciclo de vida: `esUnicoOwner` contradictorio, selector no se remonta (aviso), FormSelect en fila, mutación de tests.
 - [`autoria-1-titular.md`](autoria-1-titular.md): Plan 15 autoría/titular/habilitaciones: 19 tests con sesión mock rompieron por FK, desvíos del plan y fixtures.
 - [`integracion-17-rebase.md`](integracion-17-rebase.md): Plan 17: --update-refs mueve respaldos, journal autofusionado, choque de inmutabilidad de goal_movements.
+- [`notificaciones-1-campana.md`](notificaciones-1-campana.md): Plan 18 campana real y avisos de autoría: currency varchar(10) vs plan, locale por perfil, lint react-hooks/refs.
