@@ -67,3 +67,31 @@ export interface CreateTransactionParams {
     currency?: string ;
   } [] ;
 }
+
+/**
+ * Cómo se presenta una cuenta (RN-15). Sin textos: la interfaz los traduce.
+ * - `organizacion`: cuenta de la organización (sin titular).
+ * - `privada`: personal, sin comparticiones.
+ * - `compartida`: personal, visible en las organizaciones indicadas.
+ */
+export type EtiquetaCuenta =
+  | { tipo: "organizacion" }
+  | { tipo: "privada" }
+  | { tipo: "compartida" ; organizaciones: { id: string ; nombre: string }[] } ;
+
+/**
+ * Calcula la etiqueta de una cuenta a partir de su titular y de las organizaciones donde está compartida.
+ *
+ * @param cuenta - La cuenta (sólo importa su titular).
+ * @param shares - Organizaciones con las que se compartió; vacío si no se compartió.
+ * @returns La etiqueta de la cuenta.
+ */
+export function etiquetaDeCuenta( cuenta: Pick< Account , "ownerUserId" > , shares: { id: string ; nombre: string }[] ): EtiquetaCuenta {
+  if( !cuenta.ownerUserId ) {
+    return( {tipo: "organizacion"} ) ;
+  }
+  if( shares.length === 0 ) {
+    return( {tipo: "privada"} ) ;
+  }
+  return( {tipo: "compartida" , organizaciones: shares} ) ;
+}

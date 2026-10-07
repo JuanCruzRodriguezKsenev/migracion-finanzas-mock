@@ -22,6 +22,7 @@ import {
   subscriptions ,
   categoryAccounts ,
   accounts ,
+  accountShares ,
   financialEntities ,
   categories ,
   invitations ,
@@ -53,6 +54,7 @@ import { organizations } from "../schema.db" ;
  * se borran por subconsulta dentro del mismo borrado.
  */
 export const TABLAS_CON_ORGANIZACION = [
+  "account_shares" ,
   "accounts" ,
   "agreement_percentages" ,
   "budgets" ,
@@ -185,7 +187,10 @@ export const organizationRepository = {
     // 9. Vínculos categoría-cuenta (restrict a ambas)
     await tx.delete( categoryAccounts ).where( inArray( categoryAccounts.categoryId , categoriasDeLaOrg ) ) ;
 
-    // 10. Cuentas y entidades
+    // 10. Cuentas y entidades. Primero las comparticiones: las de esta organización y las de sus cuentas
+    // ancladas (personales compartidas en otra). Una personal con movimientos ajenos sigue frenada por el restrict.
+    await tx.delete( accountShares ).where( eq( accountShares.organizationId , organizationId ) ) ;
+    await tx.delete( accountShares ).where( inArray( accountShares.accountId , tx.select( {id: accounts.id} ).from( accounts ).where( eq( accounts.organizationId , organizationId ) ) ) ) ;
     await tx.delete( accounts          ).where( eq( accounts.organizationId          , organizationId ) ) ;
     await tx.delete( financialEntities ).where( eq( financialEntities.organizationId , organizationId ) ) ;
 

@@ -11,6 +11,7 @@ import { db , DBOrTx } from "@/shared/db/client" ;
 
 // Feature: Accounting
 import { accounts , categories , categoryAccounts , ledgerEntries , ledgerTransactions } from "@/features/accounting/schema.db" ;
+import { cuentaDeLaOrg } from "@/features/accounting/repositories/accountRepository" ;
 
 // Feature: Reports
 import { GastoPorHojaItem } from "../types" ;
@@ -87,7 +88,7 @@ export const reportsRepository = {
       .where(
         and(
           eq( ledgerTransactions.organizationId , orgId ) ,
-          eq( accounts.organizationId           , orgId ) ,
+          cuentaDeLaOrg( orgId ) ,
           eq( ledgerEntries.currency            , currency ) ,
           inArray(
             sql< string >`to_char(date_trunc('month', ${ledgerTransactions.occurredAt} AT TIME ZONE ${zona}), 'YYYY-MM')` ,
@@ -130,7 +131,7 @@ export const reportsRepository = {
       .where(
         and(
           eq( ledgerTransactions.organizationId , orgId ) ,
-          eq( accounts.organizationId           , orgId ) ,
+          cuentaDeLaOrg( orgId ) ,
           eq( ledgerEntries.currency            , currency ) ,
           inArray( accounts.type                , [ "asset" , "liability" ] ) ,
           lte(
@@ -178,7 +179,7 @@ export const reportsRepository = {
       .where(
         and(
           eq( ledgerTransactions.organizationId , orgId ) ,
-          eq( accounts.organizationId           , orgId ) ,
+          cuentaDeLaOrg( orgId ) ,
           eq( ledgerEntries.currency            , currency ) ,
           eq( accounts.type                     , tipo ) ,
           eq(
@@ -222,7 +223,7 @@ export const reportsRepository = {
       .where(
         and(
           eq( ledgerTransactions.organizationId , orgId ) ,
-          eq( accounts.organizationId           , orgId ) ,
+          cuentaDeLaOrg( orgId ) ,
           eq( ledgerEntries.currency            , currency ) ,
           eq( accounts.type                     , "expense" ) ,
           eq(
@@ -310,7 +311,7 @@ export const reportsRepository = {
         currency: accounts.currency ,
       } )
       .from( accounts )
-      .where( eq( accounts.organizationId , orgId ) ) ;
+      .where( cuentaDeLaOrg( orgId ) ) ;
 
     return( rows.map( ( r ) => { return( r.currency ) ; } ).filter( Boolean ) ) ;
   } ,
@@ -351,7 +352,7 @@ export const reportsRepository = {
       .from( accounts )
       .where(
         and(
-          eq( accounts.organizationId , orgId ) ,
+          cuentaDeLaOrg( orgId ) ,
           eq( accounts.currency       , currency ) ,
           inArray( accounts.type      , [ "asset" , "liability" ] )
         )

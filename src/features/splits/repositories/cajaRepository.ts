@@ -10,7 +10,8 @@ import { eq , and , desc , sql , inArray , notInArray } from "drizzle-orm" ;
 import { db , DBOrTx } from "@/shared/db/client" ;
 
 // Feature: Accounting
-import { accounts } from "@/features/accounting/schema.db" ;
+import { cuentaDeLaOrg } from "@/features/accounting/repositories/accountRepository" ;
+import { accounts }      from "@/features/accounting/schema.db" ;
 
 // Feature: Splits
 import { commonPotContributions } from "../schema.db" ;
@@ -148,7 +149,7 @@ export const cajaRepository = {
       await tx
         .select( { id: accounts.id , name: accounts.name , currency: accounts.currency , isCommonPot: accounts.isCommonPot } )
         .from( accounts )
-        .where( and( eq( accounts.organizationId , organizationId ) , eq( accounts.type , "asset" ) ) )
+        .where( and( cuentaDeLaOrg( organizationId ) , eq( accounts.type , "asset" ) ) )
         .orderBy( accounts.name )
     ) ;
   } ,
@@ -165,7 +166,7 @@ export const cajaRepository = {
       await tx
         .select( { id: accounts.id , name: accounts.name , currency: accounts.currency , isCommonPot: accounts.isCommonPot } )
         .from( accounts )
-        .where( and( eq( accounts.organizationId , organizationId ) , eq( accounts.isCommonPot , true ) ) )
+        .where( and( cuentaDeLaOrg( organizationId ) , eq( accounts.isCommonPot , true ) ) )
         .orderBy( accounts.name )
     ) ;
   } ,
@@ -180,11 +181,11 @@ export const cajaRepository = {
    */
   async marcarCuentas( organizationId: string , ids: string[] , tx: DBOrTx ): Promise< void > {
     if( ids.length === 0 ) {
-      await tx.update( accounts ).set( { isCommonPot: false } ).where( eq( accounts.organizationId , organizationId ) ) ;
+      await tx.update( accounts ).set( { isCommonPot: false } ).where( cuentaDeLaOrg( organizationId ) ) ;
       return ;
     }
 
-    await tx.update( accounts ).set( { isCommonPot: true } ).where( and( eq( accounts.organizationId , organizationId ) , inArray( accounts.id , ids ) ) ) ;
-    await tx.update( accounts ).set( { isCommonPot: false } ).where( and( eq( accounts.organizationId , organizationId ) , notInArray( accounts.id , ids ) ) ) ;
+    await tx.update( accounts ).set( { isCommonPot: true } ).where( and( cuentaDeLaOrg( organizationId ) , inArray( accounts.id , ids ) ) ) ;
+    await tx.update( accounts ).set( { isCommonPot: false } ).where( and( cuentaDeLaOrg( organizationId ) , notInArray( accounts.id , ids ) ) ) ;
   } ,
 } ;

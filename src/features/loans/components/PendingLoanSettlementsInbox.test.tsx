@@ -51,6 +51,7 @@ const mockAccountARS: Account = {
   cbuCvu:         null ,
   alias:          null ,
   isCommonPot:    false ,
+  ownerUserId:    null ,
   createdAt:      new Date()
 } ;
 

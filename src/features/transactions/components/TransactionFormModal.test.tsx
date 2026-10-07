@@ -36,6 +36,7 @@ describe( "TransactionFormModal - Selector jerárquico y creación al vuelo" , (
       cbuCvu:         null ,
       alias:          null ,
       isCommonPot:    false ,
+      ownerUserId:    null ,
       createdAt:      new Date() ,
     } ,
   ] ;

@@ -78,6 +78,7 @@ describe( "SettingsContainer - Shell de navegación" , () => {
       cbuCvu:         null ,
       alias:          null ,
       isCommonPot:    false ,
+      ownerUserId:    null ,
       createdAt:      new Date() ,
     } ,
     {
@@ -92,6 +93,7 @@ describe( "SettingsContainer - Shell de navegación" , () => {
       cbuCvu:         null ,
       alias:          null ,
       isCommonPot:    false ,
+      ownerUserId:    null ,
       createdAt:      new Date() ,
     } ,
   ] ;

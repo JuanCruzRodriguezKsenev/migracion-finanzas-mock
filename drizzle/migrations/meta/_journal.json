@@ -281,6 +281,13 @@
       "when": 1791392308785,
       "tag": "0039_puzzling_lord_hawal",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791415063298,
+      "tag": "0040_strange_ultimo",
+      "breakpoints": true
     }
   ]
 }

@@ -28,6 +28,7 @@ function makeAccount( overrides?: Partial< Account > ): Account {
     cbuCvu:         null ,
     alias:          null ,
     isCommonPot:    false ,
+    ownerUserId:    null ,
     createdAt:      new Date( "2026-09-15T12:00:00Z" ) ,
     ...overrides
   } ) ;

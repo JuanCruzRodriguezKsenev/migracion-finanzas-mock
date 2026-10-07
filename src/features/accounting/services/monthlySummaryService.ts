@@ -13,6 +13,7 @@ import { logger }             from "@/shared/lib/logger" ;
 // Feature: Accounting
 import { monthlySummaryRepository }                     from "../repositories/monthlySummaryRepository" ;
 import { ledgerTransactions , ledgerEntries , accounts } from "../schema.db" ;
+import { cuentaDeLaOrg }                                 from "../repositories/accountRepository" ;
 import { InsertMonthlySummary }                          from "../types" ;
 
 
@@ -50,7 +51,7 @@ export async function derivarResumenDeMes(
     .where(
       and(
         eq( ledgerTransactions.organizationId , organizationId ) ,
-        eq( accounts.organizationId , organizationId ) ,
+        cuentaDeLaOrg( organizationId ) ,
         gte( ledgerTransactions.occurredAt , startOfMonth ) ,
         lte( ledgerTransactions.occurredAt , endOfMonth ) ,
         isNull( ledgerTransactions.reversedAt ) ,
@@ -71,7 +72,7 @@ export async function derivarResumenDeMes(
     .where(
       and(
         eq( ledgerTransactions.organizationId , organizationId ) ,
-        eq( accounts.organizationId , organizationId ) ,
+        cuentaDeLaOrg( organizationId ) ,
         lte( ledgerTransactions.occurredAt , endOfMonth )
       )
     ) ;

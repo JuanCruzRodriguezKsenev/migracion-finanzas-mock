@@ -39,7 +39,7 @@ describe( "TransactionFormModal - Reparto previsto" , () => {
   const cuentas: Account[] = [
     {
       id: "acc-1" , organizationId: "org-1" , code: "1.1.01" , name: "Caja" , type: "asset" , balance: 0 , currency: "ARS" ,
-      entityId: null , cbuCvu: null , alias: null , isCommonPot: false , createdAt: new Date() ,
+      entityId: null , cbuCvu: null , alias: null , isCommonPot: false , ownerUserId: null , createdAt: new Date() ,
     } ,
   ] ;
 

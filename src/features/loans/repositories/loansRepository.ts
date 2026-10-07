@@ -10,6 +10,7 @@ import { eq , and , isNull , desc , inArray } from "drizzle-orm" ;
 import { db , DBOrTx } from "@/shared/db/client" ;
 
 // Feature: Accounting
+import { cuentaDeLaOrg } from "@/features/accounting/repositories/accountRepository" ;
 import { accounts , financialEntities } from "@/features/accounting/schema.db" ;
 
 // Feature: Contacts
@@ -90,7 +91,7 @@ export const loansRepository = {
       .where(
         and(
           inArray( loanAccounts.loanId , loanIds ) ,
-          eq( accounts.organizationId  , organizationId )
+          cuentaDeLaOrg( organizationId )
         )
       ) ;
 
@@ -272,7 +273,7 @@ export const loansRepository = {
       .where(
         and(
           eq( loanAccounts.loanId     , loanId         ) ,
-          eq( accounts.organizationId , organizationId )
+          cuentaDeLaOrg( organizationId )
         )
       ) ;
 

@@ -68,6 +68,18 @@ export const createAccountSchema = z.object( {
 } ) ;
 
 /**
+ * Esquema de la cuenta personal: como `createAccountSchema` pero sin tipo ni código (siempre `asset`,
+ * con código autogenerado en la organización ancla).
+ */
+export const createPersonalAccountSchema = createAccountSchema.omit( {type: true , code: true} ) ;
+
+/** Esquema de compartir o dejar de compartir una cuenta personal con una organización. */
+export const compartirCuentaSchema = z.object( {
+  accountId:      z.string().uuid( "El ID de la cuenta debe ser un UUID válido." ) ,
+  organizationId: z.string().uuid( "El ID de la organización debe ser un UUID válido." ) ,
+} ) ;
+
+/**
  * Tipo para la entrada de creación de cuentas inferido del esquema de Zod.
  */
 export type CreateAccountInput = z.infer< typeof createAccountSchema > ;

@@ -4,7 +4,8 @@
  * Define las tablas de cuentas, categorías contables, transacciones y asientos de diario.
  */
 // Librerías externas
-import { pgTable , uuid , varchar , integer , bigint , timestamp , text , jsonb , uniqueIndex , index , boolean , AnyPgColumn } from "drizzle-orm/pg-core" ;
+import { sql } from "drizzle-orm" ;
+import { pgTable , uuid , varchar , integer , bigint , timestamp , text , jsonb , uniqueIndex , index , boolean , check , primaryKey , AnyPgColumn } from "drizzle-orm/pg-core" ;
 
 // Feature: Auth
 import { organizations , users } from "@/features/auth/schema.db" ;
@@ -58,9 +59,27 @@ export const accounts = pgTable( "accounts" , {
   cbuCvu:         varchar( "cbu_cvu" , {length: 22} ) , // Datos de transferencia propios (22 dígitos)
   alias:          varchar( "alias"   , {length: 20} ) , // Alias bancario/billetera (6-20 caracteres)
   isCommonPot:    boolean( "is_common_pot" ).default( false ).notNull() , // Cuenta de caja común: sus gastos no generan deuda entre miembros
+  // Titularidad: nula = cuenta de la organización; con valor = personal (sólo tipo 'asset'). `restrict`:
+  // borrar al usuario no debe volver pública su cuenta privada. `organizationId` es la organización ancla.
+  ownerUserId:    uuid( "owner_user_id" ).references( () => users.id , {onDelete: "restrict"} ) ,
   createdAt:      timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
 } , ( table ) => { return( {
-  uniqueOrgCode: uniqueIndex( "accounts_org_code_unique" ).on( table.organizationId , table.code ) ,
+  uniqueOrgCode:   uniqueIndex( "accounts_org_code_unique" ).on( table.organizationId , table.code ) ,
+  ownerAssetCheck: check( "accounts_owner_asset_check" , sql`${table.ownerUserId} IS NULL OR ${table.type} = 'asset'` ) ,
+  ownerPotCheck:   check( "accounts_owner_pot_check"   , sql`NOT (${table.ownerUserId} IS NOT NULL AND ${table.isCommonPot})` ) ,
+} ) ; } ) ;
+
+/**
+ * Comparticiones de cuentas personales: una fila por (cuenta, organización) donde la cuenta es visible.
+ * Sin filas = privada. La organización ancla también necesita su fila para ver la cuenta.
+ */
+export const accountShares = pgTable( "account_shares" , {
+  accountId:      uuid( "account_id"      ).references( () => accounts.id      , {onDelete: "cascade"} ).notNull() ,
+  organizationId: uuid( "organization_id" ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
+  createdAt:      timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
+} , ( table ) => { return( {
+  pk:     primaryKey( {columns: [ table.accountId , table.organizationId ]} ) ,
+  orgIdx: index( "account_shares_organization_id_idx" ).on( table.organizationId ) ,
 } ) ; } ) ;
 
 /**

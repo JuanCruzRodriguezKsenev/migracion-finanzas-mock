@@ -20,6 +20,7 @@ import { db , DBOrTx }        from "@/shared/db/client" ;
 
 // Feature: Accounting
 import { provisionarOrganizacion } from "@/features/accounting/services/organizationProvisioningService" ;
+import { accountRepository }       from "@/features/accounting/repositories/accountRepository" ;
 
 // Feature: Auth
 import { habilitacionRepository } from "@/features/auth/repositories/habilitacionRepository" ;
@@ -228,6 +229,7 @@ export async function abandonarOrganizacionAction(): Promise< Result< CambioDeOr
 
       await habilitacionRepository.eliminarDeUsuario( organizationId , userId , tx ) ;
       await notificationRepository.eliminarDeUsuario( organizationId , userId , tx ) ;
+      await accountRepository.quitarComparticionesDe( userId , organizationId , tx ) ;
       await membershipRepository.remove( userId , organizationId , tx ) ;
       await userRepository.limpiarUltimaOrganizacion( userId , organizationId , tx ) ;
 

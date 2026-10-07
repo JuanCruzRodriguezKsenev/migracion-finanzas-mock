@@ -14,6 +14,9 @@ import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
 import { db }                 from "@/shared/db/client" ;
 
+// Feature: Accounting
+import { accountRepository } from "@/features/accounting/repositories/accountRepository" ;
+
 // Feature: Auth
 import { habilitacionRepository } from "@/features/auth/repositories/habilitacionRepository" ;
 import { membershipRepository }    from "@/features/auth/repositories/membershipRepository" ;
@@ -203,6 +206,7 @@ export async function quitarMiembroAction( userId: string ): Promise< Result< nu
 
       await habilitacionRepository.eliminarDeUsuario( organizationId , userId , tx ) ;
       await notificationRepository.eliminarDeUsuario( organizationId , userId , tx ) ;
+      await accountRepository.quitarComparticionesDe( userId , organizationId , tx ) ;
 
       const quitado = await membershipRepository.remove( userId , organizationId , tx ) ;
 
@@ -266,6 +270,11 @@ export async function cambiarRolAction( rawInput: CambiarRolInput ): Promise< Re
 
       if( objetivo.role !== rol ) {
         await membershipRepository.cambiarRol( userId , organizationId , rol , tx ) ;
+
+        // Un viewer no puede tener cuentas compartidas en la organización (RN-14).
+        if( rol === "viewer" ) {
+          await accountRepository.quitarComparticionesDe( userId , organizationId , tx ) ;
+        }
       }
 
       return( ok( null ) ) ;

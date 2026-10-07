@@ -9,8 +9,9 @@ import { eq , and , asc , isNull , sql } from "drizzle-orm" ;
 import { db , DBOrTx } from "@/shared/db/client" ;
 
 // Feature: Accounting
-import { Category , InsertCategory , Account , CategoryTreeNode } from "../types" ;
 import { categories , accounts , categoryAccounts , ledgerEntries , ledgerTransactions } from "../schema.db" ;
+import { Category , InsertCategory , Account , CategoryTreeNode } from "../types" ;
+import { cuentaDeLaOrg } from "./accountRepository" ;
 
 export type { CategoryTreeNode } ;
 
@@ -272,7 +273,7 @@ export const categoryRepository = {
       .select()
       .from( accounts )
       .where( and(
-        eq( accounts.organizationId , cat.organizationId ) ,
+        cuentaDeLaOrg( cat.organizationId ) ,
         eq( accounts.code , code )
       ) ) ;
 

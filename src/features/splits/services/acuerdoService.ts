@@ -4,7 +4,7 @@
  * Todo se lee de la base dentro de la transacción recibida; nada viene del token ni del cliente.
  */
 // Librerías externas
-import { eq , and , inArray } from "drizzle-orm" ;
+import { and , inArray } from "drizzle-orm" ;
 
 // Shared
 import { Result , ok , fail } from "@/shared/lib/result" ;
@@ -18,7 +18,8 @@ import { budgetsService } from "@/features/budgets/services/budgetsService" ;
 import { membershipRepository } from "@/features/auth/repositories/membershipRepository" ;
 
 // Feature: Accounting
-import { accounts } from "@/features/accounting/schema.db" ;
+import { cuentaDeLaOrg } from "@/features/accounting/repositories/accountRepository" ;
+import { accounts }      from "@/features/accounting/schema.db" ;
 
 // Feature: Splits
 import { acuerdoRepository }              from "../repositories/acuerdoRepository" ;
@@ -139,7 +140,7 @@ export async function resolverReparto( datos: EntradaResolverReparto , tx: DBOrT
   const rolTitular = miembros.find( ( m ) => (m.userId === titular) )?.rol ;
 
   const cuentasDelGasto = ( cuentas.length > 0 )
-    ? await tx.select( { id: accounts.id , isCommonPot: accounts.isCommonPot } ).from( accounts ).where( and( eq( accounts.organizationId , orgId ) , inArray( accounts.id , cuentas ) ) )
+    ? await tx.select( { id: accounts.id , isCommonPot: accounts.isCommonPot } ).from( accounts ).where( and( cuentaDeLaOrg( orgId ) , inArray( accounts.id , cuentas ) ) )
     : [] ;
 
   const decision = decidirReparto( {

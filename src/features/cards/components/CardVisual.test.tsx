@@ -57,6 +57,7 @@ describe( "CardVisual" , () => {
           cbuCvu:         null ,
           alias:          null ,
           isCommonPot:    false ,
+          ownerUserId:    null ,
           createdAt:      new Date() ,
         } ,
       } ,

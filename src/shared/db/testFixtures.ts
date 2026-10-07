@@ -13,7 +13,7 @@ import { users , memberships , invitations , holderAuthorizations } from "@/feat
 import type { User }                                                from "@/features/auth/repositories/userRepository" ;
 
 // Feature: Accounting
-import { categories , financialEntities , accounts , categoryAccounts , ledgerTransactions , ledgerEntries , outboxEvents , monthlySummaries } from "@/features/accounting/schema.db" ;
+import { categories , financialEntities , accounts , accountShares , categoryAccounts , ledgerTransactions , ledgerEntries , outboxEvents , monthlySummaries } from "@/features/accounting/schema.db" ;
 
 // Feature: Cards
 import { cards , cardAccounts , cardInstallmentPlans } from "@/features/cards/schema.db" ;
@@ -83,6 +83,46 @@ export async function crearUsuarioConMembresia(
     } ) ;
 
   return( usuario ) ;
+}
+
+/** Opciones de {@link crearCuentaPersonal}. */
+export interface OpcionesCrearCuentaPersonal {
+  ownerUserId:    string ;
+  organizationId: string ;
+  name?:          string ;
+  code?:          string ;
+  currency?:      string ;
+  balance?:       number ;
+  /** Organizaciones con las que nace compartida (vacío = privada). */
+  compartidaCon?: string[] ;
+}
+
+/**
+ * Inserta una cuenta personal (`asset` con titular) anclada en una organización, y opcionalmente sus comparticiones.
+ *
+ * @param opciones - Titular, ancla y datos de la cuenta.
+ * @param tx - Instancia de transacción opcional.
+ * @returns La cuenta insertada.
+ */
+export async function crearCuentaPersonal( opciones: OpcionesCrearCuentaPersonal , tx: DBOrTx = db ) {
+  const [ cuenta ] = await tx
+    .insert( accounts )
+    .values( {
+      organizationId: opciones.organizationId ,
+      ownerUserId:    opciones.ownerUserId ,
+      code:           opciones.code ?? `1.1.90.${Math.random().toString( 36 ).slice( 2 , 8 )}` ,
+      name:           opciones.name ?? "Cuenta personal" ,
+      type:           "asset" ,
+      currency:       opciones.currency ?? "ARS" ,
+      balance:        opciones.balance ?? 0 ,
+    } )
+    .returning() ;
+
+  for( const orgId of ( opciones.compartidaCon ?? [] ) ) {
+    await tx.insert( accountShares ).values( {accountId: cuenta.id , organizationId: orgId} ) ;
+  }
+
+  return( cuenta ) ;
 }
 
 /**
@@ -195,6 +235,12 @@ export async function crearOrganizacionRica( organizationId: string , tx: DBOrTx
 
   await tx.insert( holderAuthorizations ).values( { organizationId , grantorUserId: otorgante.id , granteeUserId: habilitado.id } ) ;
 
+  // Cuenta personal del otorgante anclada acá y compartida con esta organización
+  const [ personal ] = await tx.insert( accounts ).values( {
+    organizationId , code: "1.1.90" , name: "Personal de prueba" , type: "asset" , ownerUserId: otorgante.id ,
+  } ).returning() ;
+  await tx.insert( accountShares ).values( { accountId: personal.id , organizationId } ) ;
+
   await tx.insert( notifications ).values( {
     organizationId , recipientUserId: otorgante.id , type: "charged_to_holder" , actorUserId: habilitado.id ,
     transactionId: transaccion.id , amountInCents: 1000 , currency: "ARS" ,
@@ -216,6 +262,7 @@ export async function crearOrganizacionRica( organizationId: string , tx: DBOrTx
 
 /** Consultas de conteo por organización: una por cada tabla que `eliminarCompleta` borra. */
 const CONSULTAS: Record< string , ( id: string ) => ReturnType< typeof sql > > = {
+  account_shares:           ( id ) => sql`select count(*) from account_shares where organization_id = ${id}` ,
   accounts:                 ( id ) => sql`select count(*) from accounts where organization_id = ${id}` ,
   agreement_percentages:    ( id ) => sql`select count(*) from agreement_percentages where organization_id = ${id}` ,
   expense_splits:           ( id ) => sql`select count(*) from expense_splits where organization_id = ${id}` ,
