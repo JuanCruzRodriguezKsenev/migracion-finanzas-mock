@@ -9,8 +9,8 @@ import { sql } from "drizzle-orm" ;
 import { db , DBOrTx } from "./client" ;
 
 // Feature: Auth
-import { users , memberships , invitations } from "@/features/auth/schema.db" ;
-import type { User }                         from "@/features/auth/repositories/userRepository" ;
+import { users , memberships , invitations , holderAuthorizations } from "@/features/auth/schema.db" ;
+import type { User }                                                from "@/features/auth/repositories/userRepository" ;
 
 // Feature: Accounting
 import { categories , financialEntities , accounts , categoryAccounts , ledgerTransactions , ledgerEntries , outboxEvents , monthlySummaries } from "@/features/accounting/schema.db" ;
@@ -162,6 +162,18 @@ export async function crearOrganizacionRica( organizationId: string , tx: DBOrTx
   await tx.insert( invitations ).values( {
     organizationId , email: "pendiente@ejemplo.com" , role: "member" , expiresAt: new Date( Date.now() + 86400000 ) ,
   } ) ;
+
+  // Habilitación entre dos usuarios sueltos (sin membresía: no altera quiénes pertenecen a la organización)
+  const sufijo = `${Date.now()}-${Math.random().toString( 36 ).slice( 2 , 7 )}` ;
+  const [ otorgante , habilitado ] = await tx
+    .insert( users )
+    .values( [
+      { email: `otorgante-${sufijo}@ejemplo.com`  , name: "Otorgante de prueba"  , passwordHash: "0".repeat( 128 ) , salt: "0123456789abcdef0123456789abcdef" } ,
+      { email: `habilitado-${sufijo}@ejemplo.com` , name: "Habilitado de prueba" , passwordHash: "0".repeat( 128 ) , salt: "0123456789abcdef0123456789abcdef" } ,
+    ] )
+    .returning() ;
+
+  await tx.insert( holderAuthorizations ).values( { organizationId , grantorUserId: otorgante.id , granteeUserId: habilitado.id } ) ;
 }
 
 /** Consultas de conteo por organización: una por cada tabla que `eliminarCompleta` borra. */
@@ -172,6 +184,7 @@ const CONSULTAS: Record< string , ( id: string ) => ReturnType< typeof sql > > =
   categories:              ( id ) => sql`select count(*) from categories where organization_id = ${id}` ,
   contacts:                ( id ) => sql`select count(*) from contacts where organization_id = ${id}` ,
   financial_entities:      ( id ) => sql`select count(*) from financial_entities where organization_id = ${id}` ,
+  holder_authorizations:   ( id ) => sql`select count(*) from holder_authorizations where organization_id = ${id}` ,
   invitations:             ( id ) => sql`select count(*) from invitations where organization_id = ${id}` ,
   ledger_transactions:     ( id ) => sql`select count(*) from ledger_transactions where organization_id = ${id}` ,
   loans:                   ( id ) => sql`select count(*) from loans where organization_id = ${id}` ,

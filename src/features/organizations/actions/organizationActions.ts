@@ -22,6 +22,7 @@ import { db , DBOrTx }        from "@/shared/db/client" ;
 import { provisionarOrganizacion } from "@/features/accounting/services/organizationProvisioningService" ;
 
 // Feature: Auth
+import { habilitacionRepository } from "@/features/auth/repositories/habilitacionRepository" ;
 import { organizationRepository } from "@/features/auth/repositories/organizationRepository" ;
 import { membershipRepository }   from "@/features/auth/repositories/membershipRepository" ;
 import { userRepository }         from "@/features/auth/repositories/userRepository" ;
@@ -222,6 +223,7 @@ export async function abandonarOrganizacionAction(): Promise< Result< CambioDeOr
 
       const nombreAnterior = await organizationRepository.findNombre( organizationId , tx ) ;
 
+      await habilitacionRepository.eliminarDeUsuario( organizationId , userId , tx ) ;
       await membershipRepository.remove( userId , organizationId , tx ) ;
       await userRepository.limpiarUltimaOrganizacion( userId , organizationId , tx ) ;
 

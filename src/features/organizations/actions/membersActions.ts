@@ -15,9 +15,10 @@ import { logger }             from "@/shared/lib/logger" ;
 import { db }                 from "@/shared/db/client" ;
 
 // Feature: Auth
-import { membershipRepository }  from "@/features/auth/repositories/membershipRepository" ;
-import { invitationRepository }  from "@/features/auth/repositories/invitationRepository" ;
-import { userRepository }        from "@/features/auth/repositories/userRepository" ;
+import { habilitacionRepository } from "@/features/auth/repositories/habilitacionRepository" ;
+import { membershipRepository }    from "@/features/auth/repositories/membershipRepository" ;
+import { invitationRepository }    from "@/features/auth/repositories/invitationRepository" ;
+import { userRepository }          from "@/features/auth/repositories/userRepository" ;
 
 // Feature: Organizations
 import { invitarMiembroSchema , cambiarRolSchema , InvitarMiembroInput , CambiarRolInput } from "../schemas/organization.schema" ;
@@ -196,6 +197,8 @@ export async function quitarMiembroAction( userId: string ): Promise< Result< nu
       if( owners.includes( userId ) && (owners.length === 1) ) {
         return( fail( "No se puede quitar al único propietario de la organización." ) ) ;
       }
+
+      await habilitacionRepository.eliminarDeUsuario( organizationId , userId , tx ) ;
 
       const quitado = await membershipRepository.remove( userId , organizationId , tx ) ;
 

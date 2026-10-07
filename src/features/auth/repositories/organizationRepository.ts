@@ -25,6 +25,7 @@ import {
   financialEntities ,
   categories ,
   invitations ,
+  holderAuthorizations ,
   memberships
 } from "@/shared/db/schema" ;
 
@@ -46,6 +47,7 @@ export const TABLAS_CON_ORGANIZACION = [
   "categories" ,
   "contacts" ,
   "financial_entities" ,
+  "holder_authorizations" ,
   "invitations" ,
   "ledger_transactions" ,
   "loans" ,
@@ -148,7 +150,8 @@ export const organizationRepository = {
     await tx.delete( categories ).where( and( eq( categories.organizationId , organizationId ) , isNotNull( categories.parentId ) ) ) ;
     await tx.delete( categories ).where( eq( categories.organizationId , organizationId ) ) ;
 
-    // 12. Membresías e invitaciones
+    // 12. Habilitaciones, membresías e invitaciones (habilitaciones antes que membresías)
+    await tx.delete( holderAuthorizations ).where( eq( holderAuthorizations.organizationId , organizationId ) ) ;
     await tx.delete( memberships ).where( eq( memberships.organizationId , organizationId ) ) ;
     await tx.delete( invitations ).where( eq( invitations.organizationId , organizationId ) ) ;
 

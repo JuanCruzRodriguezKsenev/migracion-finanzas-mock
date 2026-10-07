@@ -7,7 +7,7 @@
 import { pgTable , uuid , varchar , integer , bigint , timestamp , text , jsonb , uniqueIndex , index , boolean , AnyPgColumn } from "drizzle-orm/pg-core" ;
 
 // Feature: Auth
-import { organizations } from "@/features/auth/schema.db" ;
+import { organizations , users } from "@/features/auth/schema.db" ;
 
 
 /**
@@ -93,12 +93,18 @@ export const ledgerTransactions = pgTable( "ledger_transactions" , {
   // no podría marcar una transacción como reversada ni el servicio impedir que se reverse dos veces.
   reversesTransactionId: uuid( "reverses_transaction_id" ) , // En el contra-asiento: apunta a la original
   reversedAt:            timestamp( "reversed_at" , {withTimezone: true} ) , // En la original: cuándo se reversó
+  // Autoría: quién cargó el movimiento y a nombre de quién. Nulables: los movimientos anteriores no
+  // se retro-completan, y los generados por cron u outbox no tienen autor. Si el usuario se borra,
+  // el movimiento sobrevive con el campo en nulo.
+  createdByUserId: uuid( "created_by_user_id" ).references( () => users.id , {onDelete: "set null"} ) ,
+  holderUserId:    uuid( "holder_user_id"     ).references( () => users.id , {onDelete: "set null"} ) ,
   createdAt:      timestamp( "created_at"  , {withTimezone: true} ).defaultNow().notNull() ,
 } , ( table ) => { return( {
   // Un único índice para la paginación por cursor, que ordena por (occurred_at, id). El índice
   // sobre (organization_id, occurred_at) que existía antes era redundante: este lo cubre por
   // prefijo, y mantener los dos sólo costaba escrituras.
   orgOccurredIdIdx: index( "ledger_tx_org_occurred_id_idx" ).on( table.organizationId , table.occurredAt , table.id ) ,
+  orgHolderIdx:     index( "ledger_tx_org_holder_idx"      ).on( table.organizationId , table.holderUserId ) ,
 } ) ; } ) ;
 
 /**

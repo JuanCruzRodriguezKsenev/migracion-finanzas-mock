@@ -62,6 +62,8 @@ function makeTransaction( overrides: Partial<TransactionWithEntries> ): Transact
     occurredAt:     date ,
     reversesTransactionId: null ,
     reversedAt:            null ,
+    createdByUserId:       null ,
+    holderUserId:          null ,
     entries:        [] ,
     ...overrides ,
   } ) ;

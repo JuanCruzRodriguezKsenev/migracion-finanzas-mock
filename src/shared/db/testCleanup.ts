@@ -36,6 +36,7 @@ import {
   categories ,
   profiles ,
   invitations ,
+  holderAuthorizations ,
   memberships ,
   users ,
   organizations
@@ -122,6 +123,9 @@ export async function limpiarBase(): Promise< void > {
 
     // 19. profiles → antes que users
     await tx.delete( profiles ) ;
+
+    // 19b. holder_authorizations → cascade a users y organizations; antes que memberships y users
+    await tx.delete( holderAuthorizations ) ;
 
     // 20. memberships → cascade a users y organizations; antes que users
     await tx.delete( memberships ) ;
