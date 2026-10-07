@@ -13,3 +13,5 @@
 - [`metas-1-modelo.md`](metas-1-modelo.md): Plan 13 Metas 1 en worktree propio: paso 6/7 omitidos, excepción de testCleanup en greps de inmutabilidad, revalidatePath con `(main)`.
 - [`presupuestos-1-modelo.md`](presupuestos-1-modelo.md): Plan 11 presupuestos: trampa `\d` en sql de drizzle, índice parcial, huecos menores del plan.
 - [`presupuestos-2-pagina.md`](presupuestos-2-pagina.md): Plan 12 página /budgets: minKey omitido, hero y ojito, PageHeader maxKey, checklist pendiente.
+- [`metas-2-pagina.md`](metas-2-pagina.md): Plan 14 Metas 2: GoalView sin reservas/descubierta, ProgressBar copiada byte a byte de presupuestos, trampas jsdom.
+- [`acceso-4-miembros.md`](acceso-4-miembros.md): Plan 06 miembros/selector: métodos ya existentes, test de carrera con demora, selector bajado por layout, mocks de next-auth/react.

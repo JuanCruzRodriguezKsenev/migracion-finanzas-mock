@@ -39,11 +39,15 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 - [El ciclo: preparar a `obra`, cerrar una rama, qué forma de plan sale limpia](ciclo_de_trabajo.md) — árbol limpio antes del traspaso, fast-forward sin merge commits, y la tabla "lo que NO hay que construir".
 - [Mientras corre `verificador`, el árbol no se toca](verificacion_no_tocar_el_arbol.md) — `pgrep` no prueba que terminó; sólo su notificación. Y cómo diagnosticar una suite "intermitente".
 
+- [Reglas para lanzar `obra`](feedback_lanzar_obra.md) — hasta 2 a la vez, sonnet medium; **orden vigente: no lanzar más al terminar los actuales**.
+
 ## Cómo consultarle al usuario
 
 - [Una pregunta por vez en diseño](feedback_una_pregunta_por_vez.md) — decisiones de arquitectura: una sola, con el impacto analizado antes. "Haceme las preguntas que necesites" no es permiso para agrupar.
 - [El mapa completo primero, la decisión después](preferencias_consulta_mapa_primero.md) — y si corta con "pará", contestá eso antes de volver.
 
 ## Ideas aparcadas
+
+- [Cargar movimientos por otra persona, con autoría](idea_cargar_por_otro.md) — idea del 2026-10-06, Deuda §16; pide spec nueva, depende de la autoría por movimiento.
 
 - [Página de proyecciones](idea_pagina_proyecciones.md) — por tendencia sobre recurrencias reales, ajustable por inflación. Sin discutir; idea del 2026-09-09.
