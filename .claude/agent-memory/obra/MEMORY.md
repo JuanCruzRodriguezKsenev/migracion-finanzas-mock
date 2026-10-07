@@ -10,3 +10,6 @@
 - [`estadisticas-1-reversados.md`](estadisticas-1-reversados.md): Exclusión de asientos reversados y contra-asientos en flujos vs saldos patrimoniales (RN-6).
 
 - [`acceso-3-google.md`](acceso-3-google.md): Lecciones de autenticación federada Google, invitaciones atómicas, NextAuth v4 quirks y verificación señuelo.
+- [`metas-1-modelo.md`](metas-1-modelo.md): Plan 13 Metas 1 en worktree propio: paso 6/7 omitidos, excepción de testCleanup en greps de inmutabilidad, revalidatePath con `(main)`.
+- [`presupuestos-1-modelo.md`](presupuestos-1-modelo.md): Plan 11 presupuestos: trampa `\d` en sql de drizzle, índice parcial, huecos menores del plan.
+- [`presupuestos-2-pagina.md`](presupuestos-2-pagina.md): Plan 12 página /budgets: minKey omitido, hero y ojito, PageHeader maxKey, checklist pendiente.
