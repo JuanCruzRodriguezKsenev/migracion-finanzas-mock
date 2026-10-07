@@ -3,8 +3,11 @@
  * Contratos del sistema de avisos (campana de notificaciones).
  */
 
-/** Tipos de aviso vigentes: carga a nombre del titular (RN-9a) y reverso de un movimiento (RN-9f). */
-export type TipoAviso = "charged_to_holder" | "transaction_reversed" ;
+/**
+ * Tipos de aviso vigentes: carga a nombre del titular (RN-9a), reverso de un movimiento (RN-9f),
+ * deuda a cargo por un gasto repartido (RN-9b) y cambio del acuerdo de la organización (RN-9e).
+ */
+export type TipoAviso = "charged_to_holder" | "transaction_reversed" | "debt_created" | "agreement_changed" ;
 
 /**
  * Aviso listo para mostrar. La interfaz arma el texto desde `tipo` y estos campos con el diccionario (NFR-4).

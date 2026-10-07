@@ -24,6 +24,7 @@ describe( "LedgerAuditPanel - Auditoría de plan de cuentas" , () => {
       entityId:       null ,
       cbuCvu:         null ,
       alias:          null ,
+      isCommonPot:    false ,
       createdAt:      new Date() ,
     } ,
     {
@@ -37,6 +38,7 @@ describe( "LedgerAuditPanel - Auditoría de plan de cuentas" , () => {
       entityId:       null ,
       cbuCvu:         null ,
       alias:          null ,
+      isCommonPot:    false ,
       createdAt:      new Date() ,
     } ,
     {
@@ -50,6 +52,7 @@ describe( "LedgerAuditPanel - Auditoría de plan de cuentas" , () => {
       entityId:       null ,
       cbuCvu:         null ,
       alias:          null ,
+      isCommonPot:    false ,
       createdAt:      new Date() ,
     } ,
     {
@@ -63,6 +66,7 @@ describe( "LedgerAuditPanel - Auditoría de plan de cuentas" , () => {
       entityId:       null ,
       cbuCvu:         null ,
       alias:          null ,
+      isCommonPot:    false ,
       createdAt:      new Date() ,
     } ,
     {
@@ -76,6 +80,7 @@ describe( "LedgerAuditPanel - Auditoría de plan de cuentas" , () => {
       entityId:       null ,
       cbuCvu:         null ,
       alias:          null ,
+      isCommonPot:    false ,
       createdAt:      new Date() ,
     } ,
   ] ;

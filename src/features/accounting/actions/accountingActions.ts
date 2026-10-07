@@ -358,8 +358,10 @@ export async function createLedgerTransactionAction(
       const bizRes = await createLedgerTransaction( {
         ...validation.data ,
         organizationId ,
-        createdByUserId: autorUserId ,
-        holderUserId:    titular.value ,
+        createdByUserId:   autorUserId ,
+        holderUserId:      titular.value ,
+        aplicarReparto:    true ,
+        titularPorDefecto: autorUserId ,
       } ) ;
 
       if( !bizRes.success ){

@@ -13,6 +13,10 @@ import { calcularResumenTransaccion } from "@/features/transactions/utils/deriva
 // Feature: Notifications
 import { notificar , destinatariosDeCarga , destinatariosDeReverso } from "@/features/notifications/services/notificationService" ;
 
+// Feature: Splits
+import { resolverReparto , MENSAJE_DESACTUALIZADO , type RepartoResuelto } from "@/features/splits/services/acuerdoService" ;
+import { repartoRepository }                                                from "@/features/splits/repositories/repartoRepository" ;
+
 // Feature: Accounting
 import { CreateTransactionParams , LedgerTransaction , InsertLedgerEntry } from "../types" ;
 import { accountRepository } from "../repositories/accountRepository" ;
@@ -23,6 +27,52 @@ import { outboxEvents }      from "../schema.db" ;
 /** Moneda que se asume cuando un asiento no declara la suya y la cuenta tampoco pudo resolverse. */
 export const MONEDA_POR_DEFECTO = "ARS" ;
 
+
+/**
+ * Resuelve el reparto de una carga manual: lee las cuentas de los asientos para derivar tipo, monto y divisa
+ * y delega en `resolverReparto`. Si alguna cuenta no existe devuelve `null`: el paso de saldos lanza el
+ * error descriptivo y la carga se aborta igual.
+ */
+async function resolverRepartoDeLaCarga(
+  datos: {
+    organizationId:  string ;
+    createdByUserId: string ;
+    holderUserId?:   string | null ;
+    occurredAt?:     Date | string | null ;
+    entries:         CreateTransactionParams["entries"] ;
+  } ,
+  tx: DBOrTx
+): Promise< RepartoResuelto | null > {
+  const { organizationId , createdByUserId , holderUserId , occurredAt , entries } = datos ;
+  const idsDeCuentas = [ ...new Set( entries.map( ( e ) => e.accountId ) ) ] ;
+  const cuentas      = new Map< string , NonNullable< Awaited< ReturnType< typeof accountRepository.findById > > > >() ;
+
+  for( const id of idsDeCuentas ) {
+    const cuenta = await accountRepository.findById( id , organizationId , tx ) ;
+
+    if( !cuenta ) {
+      return( null ) ;
+    }
+
+    cuentas.set( id , cuenta ) ;
+  }
+
+  const resumen = calcularResumenTransaccion( entries.map( ( e ) => ( { accountId: e.accountId , debit: e.debit , credit: e.credit , currency: e.currency } ) ) , cuentas ) ;
+
+  return(
+    await resolverReparto( {
+      orgId:           organizationId ,
+      autorId:         createdByUserId ,
+      titularId:       holderUserId ,
+      tipo:            resumen.type ,
+      montoEnCentavos: ( resumen.amountInCents ?? 0 ) ,
+      currency:        ( resumen.currency ?? MONEDA_POR_DEFECTO ) ,
+      occurredAt ,
+      cuentas:         idsDeCuentas ,
+      esGastoManual:   true ,
+    } , tx )
+  ) ;
+}
 
 /**
  * Crea una transacción contable de partida doble de manera transaccional.
@@ -37,7 +87,7 @@ export async function createLedgerTransaction(
   params:     CreateTransactionParams ,
   externalTx?: DBOrTx
 ): Promise< Result<LedgerTransaction , string> > {
-  const { organizationId , categoryId , description , merchantName , merchantDomain , occurredAt , createdByUserId , holderUserId , entries } = params ;
+  const { organizationId , categoryId , description , merchantName , merchantDomain , occurredAt , createdByUserId , holderUserId , aplicarReparto , titularPorDefecto , entries } = params ;
 
   // 1. Validar que la transacción no esté vacía
   if( !entries || (entries.length < 2) ){
@@ -50,7 +100,24 @@ export async function createLedgerTransaction(
   // regla en dos lugares, que es precisamente lo que este repositorio cobra caro.
   try {
     const execute = async ( tx: DBOrTx ) => {
-      
+
+      // A0. Reparto del acuerdo (sólo la carga manual). Se resuelve **antes** de insertar la cabecera: con el
+      //     acuerdo desactualizado no se guarda nada (S-S), y si aplica el titular pasa a ser el autor (RN-7).
+      let reparto: RepartoResuelto | null = null ;
+      let titularFinal                    = holderUserId ;
+
+      if( aplicarReparto && createdByUserId ) {
+        reparto = await resolverRepartoDeLaCarga( { organizationId , createdByUserId , holderUserId , occurredAt , entries } , tx ) ;
+
+        if( reparto?.desactualizado ) {
+          throw new Error( MENSAJE_DESACTUALIZADO ) ;
+        }
+
+        if( reparto?.aplica && !titularFinal ) {
+          titularFinal = ( titularPorDefecto ?? createdByUserId ) ;
+        }
+      }
+
       // A. Insertar cabecera de la transacción usando el DAL
       const insertedTx = await ledgerRepository.createTransaction( {
         organizationId ,
@@ -60,7 +127,7 @@ export async function createLedgerTransaction(
         merchantDomain ,
         occurredAt: occurredAt ? new Date( occurredAt ) : undefined ,
         createdByUserId ,
-        holderUserId ,
+        holderUserId: titularFinal ,
       } , tx ) ;
 
       const entriesToInsert: InsertLedgerEntry[] = [] ;
@@ -170,6 +237,43 @@ export async function createLedgerTransaction(
           divisa:        resumen.currency ?? null ,
           destinatarios ,
         } , tx ) ;
+      }
+
+      // E3. Deudas del reparto (RN-18, RN-19) y aviso a cada deudor distinto del autor (RN-9b, RN-10). Misma
+      //     transacción que el asiento: o se guarda todo o nada (NFR-3). El aviso lleva la parte del deudor.
+      if( reparto?.aplica && (reparto.deudas.length > 0) ) {
+        const resumen = calcularResumenTransaccion(
+          resueltos.map( ( r ) => ( { accountId: r.entry.accountId , debit: r.entry.debit , credit: r.entry.credit , currency: r.moneda } ) ) ,
+          new Map( resueltos.map( ( r ) => [ r.account.id , r.account ] ) )
+        ) ;
+        const divisaGasto = ( resumen.currency ?? MONEDA_POR_DEFECTO ) ;
+
+        await repartoRepository.insertar(
+          reparto.deudas.map( ( d ) => ( {
+            organizationId ,
+            transactionId: insertedTx.id ,
+            debtorUserId:  d.userId ,
+            amountInCents: d.montoEnCentavos ,
+            currency:      divisaGasto ,
+          } ) ) ,
+          tx
+        ) ;
+
+        for( const deuda of reparto.deudas ) {
+          if( deuda.userId === createdByUserId ) {
+            continue ;
+          }
+
+          await notificar( {
+            organizationId ,
+            tipo:          "debt_created" ,
+            actorId:       createdByUserId ,
+            transactionId: insertedTx.id ,
+            monto:         deuda.montoEnCentavos ,
+            divisa:        divisaGasto ,
+            destinatarios: [ deuda.userId ] ,
+          } , tx ) ;
+        }
       }
 
       // F. Registrar evento en la tabla Outbox para webhooks

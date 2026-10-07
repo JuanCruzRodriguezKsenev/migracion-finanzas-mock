@@ -36,6 +36,9 @@ import { goals , goalMovements } from "@/features/goals/schema.db" ;
 // Feature: Notifications
 import { notifications } from "@/features/notifications/schema.db" ;
 
+// Feature: Splits
+import { organizationAgreements , agreementPercentages , monthlyContributions , expenseSplits } from "@/features/splits/schema.db" ;
+
 
 export interface OpcionesCrearUsuarioConMembresia {
   organizationId:      string ;
@@ -196,11 +199,21 @@ export async function crearOrganizacionRica( organizationId: string , tx: DBOrTx
     organizationId , recipientUserId: otorgante.id , type: "charged_to_holder" , actorUserId: habilitado.id ,
     transactionId: transaccion.id , amountInCents: 1000 , currency: "ARS" ,
   } ) ;
+
+  // Reparto: acuerdo, porcentaje, aporte y una deuda (el deudor es un usuario suelto, sin membresía)
+  await tx.insert( organizationAgreements ).values( { organizationId , mode: "fixed_percentages" } ) ;
+  await tx.insert( agreementPercentages ).values( { organizationId , userId: otorgante.id , percentageBp: 10000 } ) ;
+  await tx.insert( monthlyContributions ).values( { organizationId , userId: otorgante.id , year: 2030 , month: 1 , amountInCents: 100 } ) ;
+  await tx.insert( expenseSplits ).values( { organizationId , transactionId: transaccion.id , debtorUserId: habilitado.id , amountInCents: 500 , currency: "ARS" } ) ;
 }
 
 /** Consultas de conteo por organización: una por cada tabla que `eliminarCompleta` borra. */
 const CONSULTAS: Record< string , ( id: string ) => ReturnType< typeof sql > > = {
   accounts:                ( id ) => sql`select count(*) from accounts where organization_id = ${id}` ,
+  agreement_percentages:   ( id ) => sql`select count(*) from agreement_percentages where organization_id = ${id}` ,
+  expense_splits:          ( id ) => sql`select count(*) from expense_splits where organization_id = ${id}` ,
+  monthly_contributions:   ( id ) => sql`select count(*) from monthly_contributions where organization_id = ${id}` ,
+  organization_agreements: ( id ) => sql`select count(*) from organization_agreements where organization_id = ${id}` ,
   budgets:                 ( id ) => sql`select count(*) from budgets where organization_id = ${id}` ,
   card_installment_plans:  ( id ) => sql`select count(*) from card_installment_plans where organization_id = ${id}` ,
   cards:                   ( id ) => sql`select count(*) from cards where organization_id = ${id}` ,

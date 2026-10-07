@@ -69,6 +69,7 @@ describe( "InstallmentPlanFormModal" , () => {
           entityId:       null ,
           cbuCvu:         null ,
           alias:          null ,
+          isCommonPot:    false ,
           createdAt:      new Date() ,
         } ,
       } ,

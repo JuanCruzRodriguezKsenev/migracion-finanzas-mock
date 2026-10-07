@@ -260,6 +260,13 @@
       "when": 1791352222874,
       "tag": "0036_powerful_leper_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791375863002,
+      "tag": "0037_glossy_mesmero",
+      "breakpoints": true
     }
   ]
 }

@@ -31,7 +31,11 @@ import {
   budgetLimits ,
   goals ,
   goalMovements ,
-  notifications
+  notifications ,
+  organizationAgreements ,
+  agreementPercentages ,
+  monthlyContributions ,
+  expenseSplits
 } from "@/shared/db/schema" ;
 
 // Feature: Auth
@@ -47,11 +51,13 @@ import { organizations } from "../schema.db" ;
  */
 export const TABLAS_CON_ORGANIZACION = [
   "accounts" ,
+  "agreement_percentages" ,
   "budgets" ,
   "card_installment_plans" ,
   "cards" ,
   "categories" ,
   "contacts" ,
+  "expense_splits" ,
   "financial_entities" ,
   "goal_movements" ,
   "goals" ,
@@ -60,8 +66,10 @@ export const TABLAS_CON_ORGANIZACION = [
   "ledger_transactions" ,
   "loans" ,
   "memberships" ,
+  "monthly_contributions" ,
   "monthly_summaries" ,
   "notifications" ,
+  "organization_agreements" ,
   "outbox_events" ,
   "subscriptions" ,
 ] as const ;
@@ -129,6 +137,13 @@ export const organizationRepository = {
 
     // 1b. Avisos (cuelgan de transacciones, usuarios y organización: antes que ledger_transactions)
     await tx.delete( notifications ).where( eq( notifications.organizationId , organizationId ) ) ;
+
+    // 1c. Reparto: las deudas cuelgan de transacciones (antes que ledger_transactions); el acuerdo, los porcentajes
+    //     y los aportes cuelgan de usuarios y organización (antes que memberships)
+    await tx.delete( expenseSplits         ).where( eq( expenseSplits.organizationId         , organizationId ) ) ;
+    await tx.delete( agreementPercentages  ).where( eq( agreementPercentages.organizationId  , organizationId ) ) ;
+    await tx.delete( monthlyContributions  ).where( eq( monthlyContributions.organizationId  , organizationId ) ) ;
+    await tx.delete( organizationAgreements ).where( eq( organizationAgreements.organizationId , organizationId ) ) ;
 
     // 2-3. Asientos antes que transacciones (restrict a accounts)
     await tx.delete( ledgerEntries      ).where( inArray( ledgerEntries.transactionId , transaccionesDeLaOrg ) ) ;

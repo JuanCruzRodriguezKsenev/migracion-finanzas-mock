@@ -18,6 +18,7 @@ function makeAccount( code: string , type: string ): Account {
     entityId:       null ,
     cbuCvu:         null ,
     alias:          null ,
+    isCommonPot:    false ,
     createdAt:      new Date() ,
   } ) ;
 }

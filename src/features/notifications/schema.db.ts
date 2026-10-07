@@ -22,9 +22,9 @@ export const notifications = pgTable( "notifications" , {
   id:              uuid( "id" ).primaryKey().defaultRandom() ,
   organizationId:  uuid( "organization_id"   ).references( () => organizations.id       , {onDelete: "cascade"} ).notNull() ,
   recipientUserId: uuid( "recipient_user_id" ).references( () => users.id               , {onDelete: "cascade"} ).notNull() ,
-  type:            varchar( "type" , {length: 40} ).notNull() , // 'charged_to_holder' | 'transaction_reversed'
+  type:            varchar( "type" , {length: 40} ).notNull() , // 'charged_to_holder' | 'transaction_reversed' | 'debt_created' | 'agreement_changed'
   actorUserId:     uuid( "actor_user_id"     ).references( () => users.id               , {onDelete: "set null"} ) ,
-  transactionId:   uuid( "transaction_id"    ).references( () => ledgerTransactions.id  , {onDelete: "cascade"} ).notNull() ,
+  transactionId:   uuid( "transaction_id"    ).references( () => ledgerTransactions.id  , {onDelete: "cascade"} ) , // Nulo en los avisos que no cuelgan de un movimiento (cambió el acuerdo)
   amountInCents:   bigint( "amount_in_cents" , {mode: "number"} ) , // Foto del monto en centavos
   currency:        varchar( "currency" , {length: 10} ) ,
   readAt:          timestamp( "read_at"    , {withTimezone: true} ) ,

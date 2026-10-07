@@ -77,6 +77,7 @@ describe( "SettingsContainer - Shell de navegación" , () => {
       entityId:       null ,
       cbuCvu:         null ,
       alias:          null ,
+      isCommonPot:    false ,
       createdAt:      new Date() ,
     } ,
     {
@@ -90,6 +91,7 @@ describe( "SettingsContainer - Shell de navegación" , () => {
       entityId:       null ,
       cbuCvu:         null ,
       alias:          null ,
+      isCommonPot:    false ,
       createdAt:      new Date() ,
     } ,
   ] ;

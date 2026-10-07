@@ -66,7 +66,7 @@ export const notificationRepository = {
         titularEmail: titular.email ,
       } )
       .from( notifications )
-      .innerJoin( ledgerTransactions , eq( notifications.transactionId , ledgerTransactions.id ) )
+      .leftJoin( ledgerTransactions , eq( notifications.transactionId , ledgerTransactions.id ) )
       .leftJoin( actor   , eq( notifications.actorUserId , actor.id ) )
       .leftJoin( titular , eq( ledgerTransactions.holderUserId , titular.id ) )
       .where(
@@ -84,7 +84,7 @@ export const notificationRepository = {
         tipo:            f.aviso.type ,
         actor:           f.actorEmail   ? nombreVisible( f.actorName   , f.actorEmail   ) : null ,
         titular:         f.titularEmail ? nombreVisible( f.titularName , f.titularEmail ) : null ,
-        descripcion:     f.descripcion ,
+        descripcion:     ( f.descripcion ?? "" ) ,
         montoEnCentavos: f.aviso.amountInCents ,
         divisa:          f.aviso.currency ,
         leida:           f.aviso.readAt !== null ,

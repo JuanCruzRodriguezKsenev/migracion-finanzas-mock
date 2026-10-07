@@ -53,6 +53,13 @@ export interface CreateTransactionParams {
   createdByUserId?: string | null ;
   /** A nombre de quién se carga (RN-2). Sólo lo informa la carga a mano; nunca los asientos generados (RN-8). */
   holderUserId?:    string | null ;
+  /**
+   * Aplica el reparto del acuerdo de la organización (RN-7, RN-18). Sólo la carga manual lo pasa en `true`:
+   * los movimientos generados (apertura, tarjetas, cuotas, suscripciones, préstamos) nunca reparten (RN-8).
+   */
+  aplicarReparto?:   boolean ;
+  /** Titular que se asigna **sólo** si el reparto aplica y no se pidió ninguno (RN-7): el autor. */
+  titularPorDefecto?: string | null ;
   entries: {
     accountId: string ;
     debit:     number ;

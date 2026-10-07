@@ -57,6 +57,7 @@ export const accounts = pgTable( "accounts" , {
   entityId:       uuid( "entity_id" ).references( () => financialEntities.id , {onDelete: "restrict"} ) , // Entidad vinculada
   cbuCvu:         varchar( "cbu_cvu" , {length: 22} ) , // Datos de transferencia propios (22 dígitos)
   alias:          varchar( "alias"   , {length: 20} ) , // Alias bancario/billetera (6-20 caracteres)
+  isCommonPot:    boolean( "is_common_pot" ).default( false ).notNull() , // Cuenta de caja común: sus gastos no generan deuda entre miembros
   createdAt:      timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull() ,
 } , ( table ) => { return( {
   uniqueOrgCode: uniqueIndex( "accounts_org_code_unique" ).on( table.organizationId , table.code ) ,

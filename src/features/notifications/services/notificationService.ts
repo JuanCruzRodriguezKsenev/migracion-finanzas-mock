@@ -53,7 +53,8 @@ export interface EmitirAviso {
   organizationId: string ;
   tipo:           TipoAviso ;
   actorId?:       string | null ;
-  transactionId:  string ;
+  /** Ausente en los avisos que no cuelgan de un movimiento (`agreement_changed`). */
+  transactionId?: string | null ;
   monto?:         number | null ;
   divisa?:        string | null ;
   destinatarios:  string[] ;
@@ -75,7 +76,7 @@ export async function notificar( datos: EmitirAviso , tx: DBOrTx ): Promise< voi
       recipientUserId ,
       type:          tipo ,
       actorUserId:   actorId ?? null ,
-      transactionId ,
+      transactionId: transactionId ?? null ,
       amountInCents: monto ?? null ,
       currency:      divisa ?? null ,
     } ) ) ,

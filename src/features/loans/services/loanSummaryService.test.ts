@@ -27,6 +27,7 @@ function makeAccount( overrides?: Partial< Account > ): Account {
     entityId:       null ,
     cbuCvu:         null ,
     alias:          null ,
+    isCommonPot:    false ,
     createdAt:      new Date( "2026-09-15T12:00:00Z" ) ,
     ...overrides
   } ) ;

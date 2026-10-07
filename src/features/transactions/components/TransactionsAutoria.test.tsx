@@ -50,7 +50,7 @@ const perfil: ProfileData = {
 
 const cuenta: Account = {
   id: "acc-1" , organizationId: "org-1" , code: "1.1.01" , name: "Caja" , type: "asset" , balance: 0 ,
-  currency: "ARS" , entityId: null , cbuCvu: null , alias: null , createdAt: new Date() ,
+  currency: "ARS" , entityId: null , cbuCvu: null , alias: null , isCommonPot: false , createdAt: new Date() ,
 } ;
 
 function movimiento( extra: Partial< TransactionWithEntries > ): TransactionWithEntries {
