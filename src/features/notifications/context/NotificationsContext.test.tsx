@@ -114,4 +114,25 @@ describe( "campana de avisos" , () => {
     expect( await screen.findByText( dict.notifications.empty ) ).toBeDefined() ;
     expect( marcarLeidas ).not.toHaveBeenCalled() ;
   } ) ;
+
+  it( "un re-render con otra referencia de listar no vuelve a consultar (regresión del bucle de server actions)" , async () => {
+    const respuesta = { success: true , value: { items: avisos , noLeidas: 2 } } ;
+    const primera   = vi.fn().mockResolvedValue( respuesta ) ;
+    const segunda   = vi.fn().mockResolvedValue( respuesta ) ;
+
+    const vista = renderCampana( { listar: primera } ) ;
+    await waitFor( () => expect( primera ).toHaveBeenCalledTimes( 1 ) ) ;
+
+    vista.rerender(
+      <ProfileProvider initialProfile={mockProfile}>
+        <NotificationsProvider listar={segunda}>
+          <PageHeader title="Inicio" dict={dict} lang="es" />
+        </NotificationsProvider>
+      </ProfileProvider>
+    ) ;
+    await new Promise( ( r ) => setTimeout( r , 50 ) ) ;
+
+    expect( primera ).toHaveBeenCalledTimes( 1 ) ;
+    expect( segunda ).not.toHaveBeenCalled() ;
+  } ) ;
 } ) ;

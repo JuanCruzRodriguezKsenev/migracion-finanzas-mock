@@ -6,7 +6,7 @@
 "use client" ;
 
 // Librerías externas
-import React , { createContext , useContext , useState , useEffect , useCallback , useMemo } from "react" ;
+import React , { createContext , useContext , useState , useEffect , useCallback , useMemo , useRef } from "react" ;
 
 // Feature: Notifications
 import type { listarNotificacionesAction , marcarLeidasAction } from "../actions/notificationsActions" ;
@@ -35,14 +35,28 @@ export function NotificationsProvider( {children , listar , marcarLeidas: marcar
   const [ notifications , setNotifications ] = useState< AvisoVista[] >( [] ) ;
   const [ unreadCount , setUnreadCount ]     = useState( 0 ) ;
 
+  /*
+   * `listar` es un server action: cada re-render del layout entrega una referencia nueva. Si el efecto
+   * dependiera de ella, cada consulta provocaría un re-render que la volvería a disparar (bucle). Se
+   * guarda en un ref y el efecto sólo depende de que exista.
+   */
+  const listarRef = useRef( listar ) ;
+  const hayListar = Boolean( listar ) ;
+
   useEffect( () => {
-    if( !listar ) {
+    listarRef.current = listar ;
+  } ) ;
+
+  useEffect( () => {
+    const consultar = listarRef.current ;
+
+    if( !hayListar || !consultar ) {
       return ;
     }
 
     let vigente = true ;
 
-    listar()
+    consultar()
       .then( ( res ) => {
         if( vigente && res.success ) {
           setNotifications( res.value.items ) ;
@@ -52,7 +66,7 @@ export function NotificationsProvider( {children , listar , marcarLeidas: marcar
       .catch( () => { /* sin sesión o sin red: la campana queda vacía */ } ) ;
 
     return( () => { vigente = false ; } ) ;
-  } , [ listar ] ) ;
+  } , [ hayListar ] ) ;
 
   const marcarLeidas = useCallback( async () => {
     if( !marcarLeidasAccion || (unreadCount === 0) ) {
