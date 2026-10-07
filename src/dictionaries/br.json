@@ -30,7 +30,8 @@
     "cards": "Cartões",
     "loans": "Empréstimos",
     "stats": "Estatísticas",
-    "upgradePlan": "Gerenciar Plano"
+    "upgradePlan": "Gerenciar Plano",
+    "budgets": "Orçamentos"
   },
   "dashboard": {
     "title": "Painel FinanzIA",
@@ -490,6 +491,54 @@
     "uncategorized": "Sem categoria",
     "others": "Outras",
     "bookNetWorth": "Patrimônio contábil"
+  },
+  "budgetsPage": {
+    "title": "Orçamentos",
+    "subtitle": "Acompanhe quanto você gasta por categoria em cada mês.",
+    "newBudget": "Novo orçamento",
+    "currencySelectorLabel": "Moeda:",
+    "summaryTitle": "Uso do mês",
+    "summaryAmounts": "Gasto {spent} de {limit}",
+    "summaryRemaining": "restante {amount}",
+    "summaryExceeded": "excedido em {amount}",
+    "exceededLabel": "Excedidas",
+    "alertLabel": "Em alerta",
+    "daysLeftLabel": "Dias restantes",
+    "daysLeftSuffix": "no mês",
+    "stateOk": "Em ordem",
+    "stateWarning": "Em alerta",
+    "stateExceeded": "Excedido",
+    "remaining": "restante {amount}",
+    "exceededBy": "excedido em {amount}",
+    "percentUsed": "{pct} % utilizado",
+    "progressAriaLabel": "{name}: {pct} % utilizado, {state}",
+    "summaryAriaLabel": "Total do mês: {pct} % utilizado, {state}",
+    "subLimitTag": "Sublimite",
+    "archivedTag": "arquivada",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "deleteConfirm": "Excluir este orçamento? Ele deixará de valer a partir deste mês; os meses anteriores mantêm o histórico.",
+    "deleteError": "Não foi possível excluir o orçamento.",
+    "listAriaLabel": "Lista de orçamentos",
+    "emptyTitle": "Você ainda não tem orçamentos",
+    "emptyDescription": "Defina um limite mensal para uma categoria de gasto e acompanhe quanto já usou.",
+    "emptyAction": "Criar o primeiro",
+    "noBudgetsMonthTitle": "Sem orçamentos neste mês",
+    "noBudgetsMonthDescription": "Não havia orçamentos vigentes em {month}. Escolha outro mês para ver o resultado.",
+    "form": {
+      "createTitle": "Novo orçamento",
+      "editTitle": "Editar limite",
+      "categoryLabel": "Categoria",
+      "categoryPlaceholder": "Escolha uma categoria",
+      "wholeParent": "Todo {parent}",
+      "currencyLabel": "Moeda",
+      "limitLabel": "Limite mensal",
+      "limitHelper": "Vale a partir do mês atual.",
+      "categoryRequired": "Escolha uma categoria.",
+      "limitInvalid": "Informe um valor válido, com as casas decimais da moeda.",
+      "limitPositive": "O limite deve ser maior que zero.",
+      "cancel": "Cancelar",
+      "save": "Salvar"
+    }
   }
 }
-

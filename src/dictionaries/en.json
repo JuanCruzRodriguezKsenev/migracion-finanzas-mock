@@ -30,7 +30,8 @@
     "cards": "Cards",
     "loans": "Loans",
     "stats": "Statistics",
-    "upgradePlan": "Manage Plan"
+    "upgradePlan": "Manage Plan",
+    "budgets": "Budgets"
   },
   "dashboard": {
     "title": "FinanzIA Dashboard",
@@ -490,6 +491,54 @@
     "uncategorized": "Uncategorized",
     "others": "Others",
     "bookNetWorth": "Book net worth"
+  },
+  "budgetsPage": {
+    "title": "Budgets",
+    "subtitle": "Keep track of how much you spend per category each month.",
+    "newBudget": "New budget",
+    "currencySelectorLabel": "Currency:",
+    "summaryTitle": "Month usage",
+    "summaryAmounts": "Spent {spent} of {limit}",
+    "summaryRemaining": "{amount} remaining",
+    "summaryExceeded": "exceeded by {amount}",
+    "exceededLabel": "Exceeded",
+    "alertLabel": "Warning",
+    "daysLeftLabel": "Days left",
+    "daysLeftSuffix": "in the month",
+    "stateOk": "On track",
+    "stateWarning": "Warning",
+    "stateExceeded": "Exceeded",
+    "remaining": "{amount} remaining",
+    "exceededBy": "exceeded by {amount}",
+    "percentUsed": "{pct} % used",
+    "progressAriaLabel": "{name}: {pct} % used, {state}",
+    "summaryAriaLabel": "Month total: {pct} % used, {state}",
+    "subLimitTag": "Sub-limit",
+    "archivedTag": "archived",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this budget? It will stop applying from this month; earlier months keep their history.",
+    "deleteError": "The budget could not be deleted.",
+    "listAriaLabel": "Budget list",
+    "emptyTitle": "You have no budgets yet",
+    "emptyDescription": "Set a monthly limit on an expense category and track how much you have used.",
+    "emptyAction": "Create the first one",
+    "noBudgetsMonthTitle": "No budgets this month",
+    "noBudgetsMonthDescription": "There were no active budgets in {month}. Pick another month to see its result.",
+    "form": {
+      "createTitle": "New budget",
+      "editTitle": "Edit limit",
+      "categoryLabel": "Category",
+      "categoryPlaceholder": "Choose a category",
+      "wholeParent": "All of {parent}",
+      "currencyLabel": "Currency",
+      "limitLabel": "Monthly limit",
+      "limitHelper": "Applies from the current month.",
+      "categoryRequired": "Choose a category.",
+      "limitInvalid": "Enter a valid amount, using the currency's decimals.",
+      "limitPositive": "The limit must be greater than zero.",
+      "cancel": "Cancel",
+      "save": "Save"
+    }
   }
 }
-

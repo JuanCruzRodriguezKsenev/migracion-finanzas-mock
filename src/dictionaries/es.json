@@ -30,7 +30,8 @@
     "cards": "Tarjetas",
     "loans": "Préstamos",
     "stats": "Estadísticas",
-    "upgradePlan": "Gestionar Plan"
+    "upgradePlan": "Gestionar Plan",
+    "budgets": "Presupuestos"
   },
   "dashboard": {
     "title": "FinanzIA Dashboard",
@@ -490,6 +491,54 @@
     "uncategorized": "Sin categoría",
     "others": "Otras",
     "bookNetWorth": "Patrimonio según libro"
+  },
+  "budgetsPage": {
+    "title": "Presupuestos",
+    "subtitle": "Controlá cuánto gastás por categoría en cada mes.",
+    "newBudget": "Nuevo presupuesto",
+    "currencySelectorLabel": "Divisa:",
+    "summaryTitle": "Uso del mes",
+    "summaryAmounts": "Gastado {spent} de {limit}",
+    "summaryRemaining": "restante {amount}",
+    "summaryExceeded": "excedido por {amount}",
+    "exceededLabel": "Excedidas",
+    "alertLabel": "En alerta",
+    "daysLeftLabel": "Días restantes",
+    "daysLeftSuffix": "en el mes",
+    "stateOk": "En orden",
+    "stateWarning": "En alerta",
+    "stateExceeded": "Excedido",
+    "remaining": "restante {amount}",
+    "exceededBy": "excedido por {amount}",
+    "percentUsed": "{pct} % utilizado",
+    "progressAriaLabel": "{name}: {pct} % utilizado, {state}",
+    "summaryAriaLabel": "Total del mes: {pct} % utilizado, {state}",
+    "subLimitTag": "Sub-límite",
+    "archivedTag": "archivada",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "deleteConfirm": "¿Eliminar este presupuesto? Dejará de aplicarse desde este mes; los meses anteriores conservan su historial.",
+    "deleteError": "No se pudo eliminar el presupuesto.",
+    "listAriaLabel": "Lista de presupuestos",
+    "emptyTitle": "Todavía no tenés presupuestos",
+    "emptyDescription": "Poné un límite mensual a una categoría de gasto y seguí cuánto llevás usado.",
+    "emptyAction": "Crear el primero",
+    "noBudgetsMonthTitle": "Sin presupuestos en este mes",
+    "noBudgetsMonthDescription": "No había presupuestos vigentes en {month}. Elegí otro mes para ver su resultado.",
+    "form": {
+      "createTitle": "Nuevo presupuesto",
+      "editTitle": "Editar límite",
+      "categoryLabel": "Categoría",
+      "categoryPlaceholder": "Elegí una categoría",
+      "wholeParent": "Todo {parent}",
+      "currencyLabel": "Divisa",
+      "limitLabel": "Límite mensual",
+      "limitHelper": "Se aplica desde el mes en curso.",
+      "categoryRequired": "Elegí una categoría.",
+      "limitInvalid": "Ingresá un importe válido, con los decimales de la divisa.",
+      "limitPositive": "El límite debe ser mayor a cero.",
+      "cancel": "Cancelar",
+      "save": "Guardar"
+    }
   }
 }
-

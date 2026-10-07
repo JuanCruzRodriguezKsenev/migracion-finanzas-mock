@@ -22,6 +22,7 @@ import {
   IconSandbox ,
   IconSettings ,
   IconStats ,
+  IconCalendar ,
   IconClose
 } from "@/shared/ui/display/Icons/Icons" ;
 import { ProfileMenu } from "@/shared/ui/feedback/ProfileMenu/ProfileMenu" ;
@@ -36,6 +37,7 @@ interface NavbarProps {
     transactions?:  string ;
     cards?:         string ;
     loans?:         string ;
+    budgets?:       string ;
     stats?:         string ;
     subscriptions:  string ;
     contacts?:      string ;
@@ -68,6 +70,7 @@ export function Navbar( {dict , isOpen , onClose}: NavbarProps ) {
   const isSubscriptionsActive = ( pathname === `/${lang}/subscriptions` ) ;
   const isContactsActive      = ( pathname === `/${lang}/contacts` ) ;
   const isReportsActive       = ( pathname === `/${lang}/reports` ) ;
+  const isBudgetsActive       = ( pathname === `/${lang}/budgets` ) ;
 
   return(
     <aside className={ `${styles.navbar} ${isOpen ? styles.open : ""}` }>
@@ -116,6 +119,12 @@ export function Navbar( {dict , isOpen , onClose}: NavbarProps ) {
               <Link href={ `/${lang}/reports` } className={ `${styles.link} ${isReportsActive ? styles.active : ""}` }>
                 <IconStats size={15} />
                 <span>{dict.stats || "Estadísticas"}</span>
+              </Link>
+            </li>
+            <li>
+              <Link href={ `/${lang}/budgets` } className={ `${styles.link} ${isBudgetsActive ? styles.active : ""}` }>
+                <IconCalendar size={15} />
+                <span>{dict.budgets || "Presupuestos"}</span>
               </Link>
             </li>
             <li>

@@ -18,6 +18,7 @@ import {
   IconContacts ,
   IconSettings ,
   IconStats ,
+  IconCalendar ,
   IconMenu
 } from "@/shared/ui/display/Icons/Icons" ;
 import styles from "./BottomNav.module.css" ;
@@ -30,6 +31,7 @@ interface BottomNavProps {
     subscriptions: string ;
     contacts?:     string ;
     cards?:        string ;
+    budgets?:      string ;
     settings?:     string ;
     stats?:        string ;
   } ;
@@ -50,6 +52,7 @@ export function BottomNav( {dict , onMenuClick}: BottomNavProps ) {
   const isAccountsActive      = ( pathname.includes("/accounts") ) ;
   const isReportsActive       = ( pathname.includes("/reports") ) ;
   const isCardsActive         = ( pathname.includes("/cards") ) ;
+  const isBudgetsActive       = ( pathname.includes("/budgets") ) ;
   const isSubscriptionsActive = ( pathname.includes("/subscriptions") ) ;
   const isContactsActive      = ( pathname.includes("/contacts") ) ;
   const isSettingsActive      = ( pathname.includes("/settings") ) ;
@@ -70,6 +73,14 @@ export function BottomNav( {dict , onMenuClick}: BottomNavProps ) {
       >
         <IconStats size={20} />
         <span>{dict.stats || "Estadísticas"}</span>
+      </Link>
+
+      <Link
+        href={ `/${lang}/budgets` }
+        className={ `${styles.bottomNavLink} ${isBudgetsActive ? styles.active : ""}` }
+      >
+        <IconCalendar size={20} />
+        <span>{dict.budgets || "Presupuestos"}</span>
       </Link>
 
       <Link
