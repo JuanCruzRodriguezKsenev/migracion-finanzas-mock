@@ -41,9 +41,6 @@ import {
   calcularTendenciaDesdeSparkline
 } from "@/features/accounting/utils/dashboardMetrics" ;
 
-// Feature: Notifications
-import { DashboardAlerts } from "@/features/notifications/components/DashboardAlerts" ;
-
 
 interface HomePageProps {
   params:       Promise< {lang: string} > ;
@@ -207,7 +204,6 @@ export default async function HomePage( {params , searchParams}: HomePageProps )
           currentMonthKey={currentMonthKey}
           minKey={minKey}
         />
-        <DashboardAlerts lang={lang} />
         <EmptyState
           title={dict.dashboard.emptyStateTitle}
           description={dict.dashboard.emptyStateDescription}
@@ -232,7 +228,6 @@ export default async function HomePage( {params , searchParams}: HomePageProps )
         currentMonthKey={currentMonthKey}
         minKey={minKey}
       />
-      <DashboardAlerts lang={lang} />
       <MetricsSection
         allowVisibilityToggle={true}
         hero={{

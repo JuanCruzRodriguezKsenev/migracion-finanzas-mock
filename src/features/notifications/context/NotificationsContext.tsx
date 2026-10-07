@@ -1,167 +1,73 @@
 /**
  * @file NotificationsContext.tsx
- * Proveedor de contexto React para gestionar el estado reactivo de las alertas y notificaciones del dashboard.
+ * Proveedor de contexto React de la campana de avisos.
+ * Recibe por props las acciones de servidor; sin ellas no consulta nada y queda vacío (login, tests).
  */
 "use client" ;
 
 // Librerías externas
-import React , { createContext , useContext , useSyncExternalStore , useCallback } from "react" ;
-
-// Shared
-import { readStorage , writeStorage } from "@/shared/lib/safeStorage" ;
+import React , { createContext , useContext , useState , useEffect , useCallback , useMemo } from "react" ;
 
 // Feature: Notifications
-import { getUnreadNotificationsCount } from "../lib/notificationHelpers" ;
-import { Notification }                from "../types" ;
+import type { listarNotificacionesAction , marcarLeidasAction } from "../actions/notificationsActions" ;
+import type { AvisoVista }                                      from "../types" ;
 
 
 interface NotificationsContextType {
-  notifications:  Notification[] ;
-  unreadCount:    number ;
-  markAsSent:     ( id: string ) => void ;
-  confirmReceipt: ( id: string ) => void ;
-  rejectReceipt:  ( id: string ) => void ;
-  resetDemo:      () => void ;
+  notifications: AvisoVista[] ;
+  unreadCount:   number ;
+  marcarLeidas:  () => Promise< void > ;
 }
 
 const NotificationsContext = createContext< NotificationsContextType | undefined >( undefined ) ;
 
-const DEMO_NOTIFICATIONS: Notification[] = [
-  {
-    id:        "notif-1" ,
-    type:      "debt" ,
-    event:     "Asado Viernes" ,
-    amount:    1250000 , // $12.500,00 en centavos
-    name:      "Juan" ,
-    alias:     "juan.mp.finanzas" ,
-    status:    "pending" ,
-    createdAt: new Date().toISOString() ,
-  } ,
-  {
-    id:        "notif-2" ,
-    type:      "receipt" ,
-    event:     "Fútbol Semanal" ,
-    amount:    870000 , // $8.700,00 en centavos
-    name:      "Maria" ,
-    status:    "sent" ,
-    createdAt: new Date().toISOString() ,
-  }
-] ;
-
-const STORAGE_KEY = "finanzia-notifications-demo" ;
-const EMPTY_NOTIFICATIONS: Notification[] = [] ;
-
-let listeners: Array< () => void > = [] ;
-let memoryNotifications: Notification[] | null = null ;
-
-function getStoredNotifications(): Notification[] {
-  if( typeof window === "undefined" ) {
-    return( EMPTY_NOTIFICATIONS ) ;
-  }
-  if( memoryNotifications !== null ) {
-    return( memoryNotifications ) ;
-  }
-  const saved = readStorage( STORAGE_KEY ) ;
-  if( saved ) {
-    try {
-      memoryNotifications = JSON.parse( saved ) ;
-      return( memoryNotifications! ) ;
-    } catch {
-      memoryNotifications = DEMO_NOTIFICATIONS ;
-      return( DEMO_NOTIFICATIONS ) ;
-    }
-  }
-  memoryNotifications = DEMO_NOTIFICATIONS ;
-  return( DEMO_NOTIFICATIONS ) ;
+interface NotificationsProviderProps {
+  children:      React.ReactNode ;
+  listar?:       typeof listarNotificacionesAction ;
+  marcarLeidas?: typeof marcarLeidasAction ;
 }
-
-function emitChange() {
-  for( const listener of listeners ) {
-    listener() ;
-  }
-}
-
-const notificationStore = {
-  subscribe( listener: () => void ) {
-    listeners.push( listener ) ;
-    const onStorage = ( event: StorageEvent ) => {
-      if( event.key === STORAGE_KEY ) {
-        memoryNotifications = null ;
-        listener() ;
-      }
-    } ;
-    if( typeof window !== "undefined" ) {
-      window.addEventListener( "storage" , onStorage ) ;
-    }
-    return( () => {
-      listeners = listeners.filter( ( l ) => l !== listener ) ;
-      if( typeof window !== "undefined" ) {
-        window.removeEventListener( "storage" , onStorage ) ;
-      }
-    } ) ;
-  } ,
-  getSnapshot(): Notification[] {
-    return( getStoredNotifications() ) ;
-  } ,
-  getServerSnapshot(): Notification[] {
-    return( EMPTY_NOTIFICATIONS ) ;
-  } ,
-  setNotifications( updater: ( prev: Notification[] ) => Notification[] ) {
-    const prev = getStoredNotifications() ;
-    const next = updater( prev ) ;
-    memoryNotifications = next ;
-    writeStorage( STORAGE_KEY , JSON.stringify( next ) ) ;
-    emitChange() ;
-  } ,
-  resetDemo() {
-    memoryNotifications = DEMO_NOTIFICATIONS ;
-    writeStorage( STORAGE_KEY , JSON.stringify( DEMO_NOTIFICATIONS ) ) ;
-    emitChange() ;
-  }
-} ;
 
 /**
- * Proveedor de contexto para las alertas y notificaciones.
- * Persiste el estado de demostración interactiva en localStorage mediante useSyncExternalStore.
+ * Proveedor de la campana. Carga los avisos **después del montaje** (NFR-7: no bloquea la página).
+ * Sin `listar` no hace ninguna consulta; si `listar` responde `fail` (sin sesión) el estado queda vacío.
  */
-export function NotificationsProvider( {children}: {children: React.ReactNode} ) {
-  const notifications = useSyncExternalStore(
-    notificationStore.subscribe ,
-    notificationStore.getSnapshot ,
-    notificationStore.getServerSnapshot
-  ) ;
+export function NotificationsProvider( {children , listar , marcarLeidas: marcarLeidasAccion}: NotificationsProviderProps ) {
+  const [ notifications , setNotifications ] = useState< AvisoVista[] >( [] ) ;
+  const [ unreadCount , setUnreadCount ]     = useState( 0 ) ;
 
-  const markAsSent = useCallback( ( id: string ) => {
-    notificationStore.setNotifications( ( prev ) =>
-      prev.map( ( n ) => ( n.id === id ? {...n , status: "sent"} : n ) )
-    ) ;
-  } , [] ) ;
+  useEffect( () => {
+    if( !listar ) {
+      return ;
+    }
 
-  const confirmReceipt = useCallback( ( id: string ) => {
-    notificationStore.setNotifications( ( prev ) => prev.filter( ( n ) => n.id !== id ) ) ;
-  } , [] ) ;
+    let vigente = true ;
 
-  const rejectReceipt = useCallback( ( id: string ) => {
-    notificationStore.setNotifications( ( prev ) =>
-      prev.map( ( n ) => ( n.id === id ? {...n , status: "pending"} : n ) )
-    ) ;
-  } , [] ) ;
+    listar()
+      .then( ( res ) => {
+        if( vigente && res.success ) {
+          setNotifications( res.value.items ) ;
+          setUnreadCount( res.value.noLeidas ) ;
+        }
+      } )
+      .catch( () => { /* sin sesión o sin red: la campana queda vacía */ } ) ;
 
-  const resetDemo = useCallback( () => {
-    notificationStore.resetDemo() ;
-  } , [] ) ;
+    return( () => { vigente = false ; } ) ;
+  } , [ listar ] ) ;
 
-  // Unread count: deudas pendientes o recibos enviados por confirmar
-  const unreadCount = getUnreadNotificationsCount( notifications ) ;
+  const marcarLeidas = useCallback( async () => {
+    if( !marcarLeidasAccion || (unreadCount === 0) ) {
+      return ;
+    }
 
-  const contextValue = {
-    notifications ,
-    unreadCount ,
-    markAsSent ,
-    confirmReceipt ,
-    rejectReceipt ,
-    resetDemo
-  } ;
+    setUnreadCount( 0 ) ;
+    setNotifications( ( prev ) => prev.map( ( n ) => ( {...n , leida: true} ) ) ) ;
+
+    try {
+      await marcarLeidasAccion() ;
+    } catch { /* se reintenta en la próxima apertura si el contador vuelve a cargarse */ }
+  } , [ marcarLeidasAccion , unreadCount ] ) ;
+
+  const contextValue = useMemo( () => ( { notifications , unreadCount , marcarLeidas } ) , [ notifications , unreadCount , marcarLeidas ] ) ;
 
   return(
     <NotificationsContext.Provider value={contextValue}>

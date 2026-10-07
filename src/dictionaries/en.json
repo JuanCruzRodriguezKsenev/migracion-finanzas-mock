@@ -302,24 +302,10 @@
   },
   "notifications": {
     "title": "Notifications",
-    "empty": "No pending alerts",
-    "resetDemo": "Reset Demo",
-    "debtTitle": "Pending Payment",
-    "receiptTitle": "Confirm Receipt",
-    "copy": "Copy",
-    "copied": "Copied!",
-    "transferred": "Mark Sent",
-    "confirm": "Confirm Received",
-    "reject": "Reject",
-    "owes": "You owe",
-    "to": "to",
-    "for": "for",
-    "indicates": "indicated they transferred",
-    "receivedQuestion": "Did you receive the money?",
-    "debtStatusPending": "Pending payment",
-    "debtStatusSent": "Payment sent",
-    "receiptStatusPending": "Payment rejected",
-    "aliasLabel": "Alias / Account number"
+    "empty": "You have no notices",
+    "chargedToHolder": "{actor} charged this to your name: {descripcion} ({monto})",
+    "transactionReversed": "{actor} reversed one of your transactions: {descripcion} ({monto})",
+    "unreadAria": "Unread"
   },
   "subscriptionsPage": {
     "title": "Subscriptions",

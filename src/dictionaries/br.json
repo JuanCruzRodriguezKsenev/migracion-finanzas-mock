@@ -302,24 +302,10 @@
   },
   "notifications": {
     "title": "Notificações",
-    "empty": "Sem alertas pendentes",
-    "resetDemo": "Reiniciar Demo",
-    "debtTitle": "Pagamento Pendente",
-    "receiptTitle": "Confirmar Recebimento",
-    "copy": "Copiar",
-    "copied": "Copiado!",
-    "transferred": "Já transferi",
-    "confirm": "Confirmar Recebido",
-    "reject": "Rejeitar",
-    "owes": "Você deve",
-    "to": "para",
-    "for": "por",
-    "indicates": "indicou que transferiu",
-    "receivedQuestion": "Você recebeu o dinheiro?",
-    "debtStatusPending": "Pendente de pagamento",
-    "debtStatusSent": "Pagamento enviado",
-    "receiptStatusPending": "Pagamento rejeitado",
-    "aliasLabel": "Alias / CVU"
+    "empty": "Você não tem avisos",
+    "chargedToHolder": "{actor} lançou no seu nome: {descripcion} ({monto})",
+    "transactionReversed": "{actor} estornou um movimento seu: {descripcion} ({monto})",
+    "unreadAria": "Não lido"
   },
   "subscriptionsPage": {
     "title": "Assinaturas",

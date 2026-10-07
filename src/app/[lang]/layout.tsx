@@ -19,7 +19,8 @@ import { ProfileProvider }   from "@/features/profile/context/ProfileContext" ;
 import { ProfileData }       from "@/features/profile/types" ;
 
 // Feature: Notifications
-import { NotificationsProvider } from "@/features/notifications/context/NotificationsContext" ;
+import { listarNotificacionesAction , marcarLeidasAction } from "@/features/notifications/actions/notificationsActions" ;
+import { NotificationsProvider }                           from "@/features/notifications/context/NotificationsContext" ;
 
 // Estilos
 import "../globals.css" ;
@@ -104,7 +105,7 @@ export default async function RootLayout( {children , params}: RootLayoutProps )
       <body>
         <SessionProvider>
           <ProfileProvider initialProfile={initialProfile}>
-            <NotificationsProvider>
+            <NotificationsProvider listar={listarNotificacionesAction} marcarLeidas={marcarLeidasAction}>
               {children}
             </NotificationsProvider>
           </ProfileProvider>
