@@ -42,6 +42,9 @@ import { deudaDe }                   from "@/features/cards/utils/ciclo" ;
 // Feature: Loans
 import type { LoanConResumen } from "@/features/loans/types" ;
 
+// Feature: Goals
+import type { ReservedByAccount } from "@/features/goals/types" ;
+
 
 interface AccountsContainerProps {
   accounts:          (Account & { entity?: { name: string ; logo: string | null ; color: string | null } | null })[] ;
@@ -51,6 +54,8 @@ interface AccountsContainerProps {
   summaries:         MonthlySummary[] ;
   dict:              Awaited< ReturnType< typeof getDictionary > > ;
   lang:              string ;
+  /** Reservado y libre por cuenta de activo (Metas, RFC 011). Opcional: sin él, nada cambia. */
+  reservado?:        Record< string , ReservedByAccount > ;
 }
 
 export function AccountsContainer( {
@@ -60,7 +65,8 @@ export function AccountsContainer( {
   financialEntities ,
   summaries ,
   dict ,
-  lang
+  lang ,
+  reservado
 }: AccountsContainerProps ) {
   const { isContentVisible }                         = useMetricsVisibility() ;
   const [ isModalOpen , setIsModalOpen ]             = useState( false ) ;
@@ -408,6 +414,19 @@ export function AccountsContainer( {
                                 {isContentVisible ? formatCents( balanceDisplay ) : ""}
                               </span>
                             </div>
+                            { reservado?.[ a.id ] ? (
+                              <div className={styles.freeLine}>
+                                <span>
+                                  { `${accountsPageDict.freeLabel || "libre"} ` }
+                                  { isContentVisible ? formatCents( reservado[ a.id ].libre ) : "" }
+                                </span>
+                                { ( reservado[ a.id ].libre < 0 ) ? (
+                                  <span className={styles.uncoveredBadge}>
+                                    { accountsPageDict.uncoveredLabel || "descubierta" }
+                                  </span>
+                                ) : null }
+                              </div>
+                            ) : null }
                           </Card>
                         ) ;
                       } )}

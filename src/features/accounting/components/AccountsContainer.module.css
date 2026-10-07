@@ -214,6 +214,27 @@
   text-shadow: 0 0 12px rgba(5, 150, 105, 0.15) ;
 }
 
+.freeLine {
+  display: flex ;
+  flex-wrap: wrap ;
+  align-items: center ;
+  justify-content: space-between ;
+  gap: 0.25rem 0.5rem ;
+  font-size: var(--fs-sm) ;
+  color: var(--text-muted) ;
+}
+
+.uncoveredBadge {
+  display: inline-flex ;
+  align-items: center ;
+  padding: 0.125rem 0.5rem ;
+  border-radius: var(--radius-sm) ;
+  font-size: var(--fs-xs) ;
+  font-weight: 600 ;
+  background-color: var(--color-danger-light) ;
+  color: var(--color-danger-text) ;
+}
+
 .redText {
   color: var(--color-danger) ;
   text-shadow: 0 0 12px rgba(225, 29, 72, 0.15) ;

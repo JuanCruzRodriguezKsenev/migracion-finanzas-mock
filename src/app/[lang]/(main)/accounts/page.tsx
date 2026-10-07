@@ -16,6 +16,9 @@ import { getCardsAction } from "@/features/cards/actions/cardsActions" ;
 // Feature: Loans
 import { getLoansAction } from "@/features/loans/actions/loansActions" ;
 
+// Feature: Goals
+import { getReservedByAccountAction } from "@/features/goals/actions/goalsActions" ;
+
 
 interface AccountsPageProps {
   params: Promise< {lang: string} > ;
@@ -26,12 +29,13 @@ export default async function AccountsPage( {params}: AccountsPageProps ) {
   const dict     = await getDictionary( lang ) ;
 
   // Consultar cuentas, históricos, entidades, tarjetas y préstamos concurrentemente de la DB
-  const [ accountsRes , summariesRes , entitiesRes , cardsRes , loansRes ] = await Promise.all( [
+  const [ accountsRes , summariesRes , entitiesRes , cardsRes , loansRes , reservedRes ] = await Promise.all( [
     getAccountsAction() ,
     getMonthlySummariesAction() ,
     getFinancialEntitiesAction() ,
     getCardsAction() ,
-    getLoansAction()
+    getLoansAction() ,
+    getReservedByAccountAction()
   ] ) ;
 
   const accounts          = ( accountsRes.success ? accountsRes.value : [] ) ;
@@ -39,6 +43,9 @@ export default async function AccountsPage( {params}: AccountsPageProps ) {
   const financialEntities = ( entitiesRes.success ? entitiesRes.value : [] ) ;
   const cards             = ( cardsRes.success ? cardsRes.value : [] ) ;
   const loans             = ( loansRes.success ? loansRes.value : [] ) ;
+
+  // Un fallo de Metas no puede impedir que /accounts cargue: sin reservas, la pantalla queda como siempre
+  const reservado         = ( reservedRes.success ? reservedRes.value : undefined ) ;
 
   return(
     <div className={styles.container}>
@@ -48,6 +55,7 @@ export default async function AccountsPage( {params}: AccountsPageProps ) {
         loans={loans}
         financialEntities={financialEntities}
         summaries={summaries}
+        reservado={reservado}
         dict={dict}
         lang={lang}
       />
