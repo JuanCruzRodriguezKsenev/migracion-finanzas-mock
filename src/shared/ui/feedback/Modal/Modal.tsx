@@ -43,10 +43,6 @@ export function Modal( {
   const modalBoxRef                     = useRef< HTMLDivElement >( null ) ;
   const mouseDownOnOverlayRef           = useRef( false ) ;
   const previouslyFocusedRef            = useRef< HTMLElement | null >( null ) ;
-  // `onClose` suele ser una función nueva en cada render del padre: si fuera dependencia del efecto,
-  // cada tecla reabriría el modal (foco al botón de cerrar). Se lee siempre la última vía ref.
-  const onCloseRef                      = useRef( onClose ) ;
-  useEffect( () => { onCloseRef.current = onClose ; } ) ;
 
   const handleMouseDown = ( e: React.MouseEvent ) => {
     mouseDownOnOverlayRef.current = ( e.target === overlayRef.current ) ;
@@ -67,7 +63,7 @@ export function Modal( {
     const handleKeyDown = ( e: KeyboardEvent ) => {
       // Cerrar con Escape
       if( e.key === "Escape" ) {
-        onCloseRef.current() ;
+        onClose() ;
         return ;
       }
 
@@ -125,7 +121,7 @@ export function Modal( {
       // Devolver el foco al elemento que lo tenía antes de abrir el modal
       previouslyFocusedRef.current?.focus?.() ;
     } ) ;
-  } , [ isOpen ] ) ;
+  } , [ isOpen , onClose ] ) ;
 
   if( !isOpen ) { return( null ) ; }
 
