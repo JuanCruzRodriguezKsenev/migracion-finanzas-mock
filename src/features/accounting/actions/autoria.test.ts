@@ -17,6 +17,7 @@ import { organizations }          from "@/features/auth/schema.db" ;
 import { createLedgerTransactionAction , reverseLedgerTransactionAction } from "./accountingActions" ;
 import { createLedgerTransaction }                                        from "../services/accountingService" ;
 import { accounts , ledgerTransactions }                                  from "../schema.db" ;
+import { ledgerRepository }                                           from "../repositories/ledgerRepository" ;
 
 
 vi.mock( "next-auth" , () => ( {
@@ -159,19 +160,37 @@ describe( "autoría y titular de los movimientos" , () => {
     expect( await contarMovimientos() ).toBe( antes ) ;
   } ) ;
 
-  it( "AC-5: un owner carga a nombre de un member que no lo habilitó, y también de un viewer" , async () => {
+  it( "AC-5 / AC-9: un owner carga a nombre de un member que no lo habilitó, pero no de un viewer" , async () => {
     sesionDe( owner , orgA , "owner" ) ;
+    const antes = await contarMovimientos() ;
 
     const aMember = await createLedgerTransactionAction( movimiento( { holderUserId: ana } ) ) ;
     const aViewer = await createLedgerTransactionAction( movimiento( { holderUserId: lector } ) ) ;
 
     expect( aMember.success ).toBe( true ) ;
-    expect( aViewer.success ).toBe( true ) ;
-    if( aMember.success && aViewer.success ) {
+    expect( aViewer.success ).toBe( false ) ;
+    if( aMember.success ) {
       expect( aMember.value.holderUserId ).toBe( ana ) ;
-      expect( aViewer.value.holderUserId ).toBe( lector ) ;
-      expect( aViewer.value.createdByUserId ).toBe( owner ) ;
     }
+    expect( await contarMovimientos() ).toBe( antes + 1 ) ;
+  } ) ;
+
+  it( "AC-10: un movimiento ya cargado con titular viewer se sigue listando" , async () => {
+    const creado = await createLedgerTransaction( {
+      organizationId:  orgA ,
+      description:     "Viejo" ,
+      createdByUserId: owner ,
+      holderUserId:    lector ,
+      entries: [
+        { accountId: cajaId  , debit: 0    , credit: 700 } ,
+        { accountId: bancoId , debit: 700  , credit: 0   } ,
+      ] ,
+    } ) ;
+    expect( creado.success ).toBe( true ) ;
+
+    const pagina = await ledgerRepository.findTransactionsPage( { organizationId: orgA } ) ;
+
+    expect( pagina.items.map( ( t ) => t.holderUserId ) ).toEqual( [ lector ] ) ;
   } ) ;
 
   it( "A4: el titular tiene que ser miembro de la organización (de otra organización, o inventado)" , async () => {

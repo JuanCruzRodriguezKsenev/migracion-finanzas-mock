@@ -198,7 +198,7 @@ describe( "habilitacionesActions" , () => {
       expect( res.success && res.value.map( ( t ) => t.userId ) ).toEqual( [ ana ] ) ;
     } ) ;
 
-    it( "titulares posibles de un owner: uno mismo primero y todos los miembros, incluido el viewer (RN-5)" , async () => {
+    it( "titulares posibles de un owner: uno mismo primero y todos los miembros menos el viewer (RN-5, RN-17)" , async () => {
       sesionDe( ownerA , orgA , "owner" ) ;
 
       const res = await listarTitularesPosiblesAction() ;
@@ -206,7 +206,7 @@ describe( "habilitacionesActions" , () => {
       expect( res.success ).toBe( true ) ;
       if( res.success ) {
         expect( res.value[0].userId ).toBe( ownerA ) ;
-        expect( res.value.map( ( t ) => t.userId ).sort() ).toEqual( [ ownerA , ana , beto , lector ].sort() ) ;
+        expect( res.value.map( ( t ) => t.userId ).sort() ).toEqual( [ ownerA , ana , beto ].sort() ) ;
       }
     } ) ;
 

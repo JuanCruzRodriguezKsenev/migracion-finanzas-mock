@@ -25,7 +25,8 @@ export interface TitularPosible {
  * Decide si `autorUserId` puede cargar un movimiento a nombre de `holderUserId` en la organización.
  *
  * - Sin titular, o el titular es el propio autor: se permite.
- * - Titular ajeno: tiene que ser **miembro** de la organización (A4) y el rol del autor se lee de la base:
+ * - Titular ajeno: tiene que ser **miembro** de la organización (A4) y no `viewer` (RN-17: un lector no
+ *   escribe, no puede ser quien pagó). El rol del autor se lee de la base:
  *   `owner` puede a nombre de cualquiera (RN-5); `member` sólo con una habilitación vigente del titular (RN-6);
  *   cualquier otro rol, no.
  *
@@ -57,6 +58,10 @@ export async function autorizarTitular(
     return( fail( "La persona elegida no es miembro de la organización." ) ) ;
   }
 
+  if( membresiaTitular.role === "viewer" ) {
+    return( fail( "Un lector no puede ser titular de un movimiento." ) ) ;
+  }
+
   const membresiaAutor = await membershipRepository.findMembership( autorUserId , organizationId , tx ) ;
 
   if( !membresiaAutor ) {
@@ -77,8 +82,8 @@ export async function autorizarTitular(
 /**
  * Lista las personas a cuyo nombre puede cargar `userId`, con uno mismo primero.
  *
- * - `owner`: todos los miembros (incluidos los `viewer`, RN-5).
- * - `member`: quienes lo habilitaron y siguen siendo miembros.
+ * - `owner`: todos los miembros salvo los `viewer` (RN-5, RN-17).
+ * - `member`: quienes lo habilitaron y siguen siendo miembros no `viewer` (RN-17).
  * - `viewer`: sólo uno mismo.
  *
  * @param organizationId - Organización de la sesión.
@@ -101,14 +106,14 @@ export async function titularesPosibles(
   const propio: TitularPosible = { userId , nombre: nombreVisible( yo.nombre , yo.email ) } ;
 
   if( yo.rol === "owner" ) {
-    const otros = miembros.filter( ( m ) => (m.userId !== userId) ) ;
+    const otros = miembros.filter( ( m ) => (m.userId !== userId) && (m.rol !== "viewer") ) ;
 
     return( [ propio , ...otros.map( ( m ) => ( { userId: m.userId , nombre: nombreVisible( m.nombre , m.email ) } ) ) ] ) ;
   }
 
   if( yo.rol === "member" ) {
     const recibidas = await habilitacionRepository.listarRecibidas( organizationId , userId , tx ) ;
-    const vigentes  = new Set( miembros.map( ( m ) => m.userId ) ) ;
+    const vigentes  = new Set( miembros.filter( ( m ) => (m.rol !== "viewer") ).map( ( m ) => m.userId ) ) ;
 
     return( [ propio , ...recibidas.filter( ( r ) => vigentes.has( r.userId ) ).map( ( r ) => ( { userId: r.userId , nombre: nombreVisible( r.nombre , r.email ) } ) ) ] ) ;
   }

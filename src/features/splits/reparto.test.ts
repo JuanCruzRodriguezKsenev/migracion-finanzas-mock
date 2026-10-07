@@ -225,13 +225,13 @@ describe( "reparto de gastos (plan 19)" , () => {
     expect( await avisos( beto , "debt_created" ) ).toHaveLength( 0 ) ;
   } ) ;
 
-  it( "AC-15: un titular viewer no genera deuda" , async () => {
+  it( "AC-15: un titular viewer ya no se puede cargar (RN-17) y no deja deuda; la fila 5 de decidirReparto sigue cubriendo los movimientos viejos" , async () => {
     await acuerdo5050() ;
     sesionDe( ana , orgA ) ;
 
     const res = await createLedgerTransactionAction( gasto( 10000 , { holderUserId: lector } ) ) ;
 
-    expect( res.success ).toBe( true ) ;
+    expect( res.success ).toBe( false ) ;
     expect( await deudas() ).toHaveLength( 0 ) ;
   } ) ;
 
