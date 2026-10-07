@@ -16,6 +16,8 @@ export const createTransactionSchema = z.object( {
   merchantName:   z.string().max( 150 , "El nombre del comercio no puede superar los 150 caracteres."  ).optional().nullable() ,
   merchantDomain: z.string().max( 100 , "El dominio del comercio no puede superar los 100 caracteres." ).optional().nullable() ,
   occurredAt:     z.coerce.date().optional() ,
+  // A nombre de quién se carga (RN-2). El autor **no** está en el esquema: lo fija el servidor desde la sesión (RN-3).
+  holderUserId:   z.string().uuid( "El titular debe ser un UUID válido." ).nullable().optional() ,
   
   // Apuntes contables (Mínimo deben ser 2 para cumplir partida doble)
   entries: z.array(

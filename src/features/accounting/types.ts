@@ -49,6 +49,10 @@ export interface CreateTransactionParams {
   merchantName?:   string | null ;
   merchantDomain?: string | null ;
   occurredAt?:     Date | string | null ;
+  /** Quién carga el movimiento (RN-1). Nulo si no hay sesión (cron, outbox). */
+  createdByUserId?: string | null ;
+  /** A nombre de quién se carga (RN-2). Sólo lo informa la carga a mano; nunca los asientos generados (RN-8). */
+  holderUserId?:    string | null ;
   entries: {
     accountId: string ;
     debit:     number ;

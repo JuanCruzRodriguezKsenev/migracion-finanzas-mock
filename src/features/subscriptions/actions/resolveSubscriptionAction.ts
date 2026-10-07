@@ -172,6 +172,7 @@ export async function resolveSubscriptionAction(
 
         const ledgerResult = await createLedgerTransaction( {
           organizationId ,
+          createdByUserId: session.user.id ?? null ,
           categoryId:     targetCat.id ,
           description:    freshSub.name ,
           occurredAt ,

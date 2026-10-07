@@ -31,7 +31,7 @@ export async function createLedgerTransaction(
   params:     CreateTransactionParams ,
   externalTx?: DBOrTx
 ): Promise< Result<LedgerTransaction , string> > {
-  const { organizationId , categoryId , description , merchantName , merchantDomain , occurredAt , entries } = params ;
+  const { organizationId , categoryId , description , merchantName , merchantDomain , occurredAt , createdByUserId , holderUserId , entries } = params ;
 
   // 1. Validar que la transacción no esté vacía
   if( !entries || (entries.length < 2) ){
@@ -53,6 +53,8 @@ export async function createLedgerTransaction(
         merchantName ,
         merchantDomain ,
         occurredAt: occurredAt ? new Date( occurredAt ) : undefined ,
+        createdByUserId ,
+        holderUserId ,
       } , tx ) ;
 
       const entriesToInsert: InsertLedgerEntry[] = [] ;
@@ -324,12 +326,14 @@ export async function updateLedgerTransactionMetadata( params: {
  * @param transactionId - ID de la transacción a reversar.
  * @param organizationId - ID de la organización.
  * @param reason - Motivo opcional de la reversión.
+ * @param actorUserId - Quién reversa (autor del contra-asiento). Nulo si no hay sesión.
  * @returns Objeto Result con la transacción compensatoria de reversión creada.
  */
 export async function reverseLedgerTransaction(
   transactionId:  string ,
   organizationId: string ,
-  reason?:        string
+  reason?:        string ,
+  actorUserId?:   string | null
 ): Promise< Result<LedgerTransaction , string> > {
   try {
     return( await db.transaction( async ( tx ) => {
@@ -388,6 +392,9 @@ export async function reverseLedgerTransaction(
         merchantDomain:        original.merchantDomain ,
         occurredAt:            momentoReversion ,
         reversesTransactionId: original.id ,
+        // RN-4: el contra-asiento hereda el titular de la original; el autor es quien reversa.
+        holderUserId:          original.holderUserId ,
+        createdByUserId:       actorUserId ?? null ,
       } , tx ) ;
 
       // Dejar el vínculo en los dos sentidos: la interfaz necesita poder marcar la original como

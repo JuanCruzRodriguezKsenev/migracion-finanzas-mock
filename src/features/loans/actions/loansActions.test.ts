@@ -11,8 +11,9 @@ import { getServerSession }                                                 from
 import type { Session }                                                     from "next-auth" ;
 
 // Shared
-import { db }          from "@/shared/db/client" ;
-import { limpiarBase } from "@/shared/db/testCleanup" ;
+import { db }                       from "@/shared/db/client" ;
+import { limpiarBase }              from "@/shared/db/testCleanup" ;
+import { crearUsuarioConMembresia } from "@/shared/db/testFixtures" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -87,8 +88,11 @@ describe( "loansActions.ts — Server Actions de Préstamos (RFC 008)" , () => {
       .returning() ;
     contactId = ct.id ;
 
+    // El autor del asiento (created_by_user_id) tiene FK a users: la sesión simulada usa un usuario real
+    const usuario = await crearUsuarioConMembresia( { organizationId: orgId , role: "owner" } ) ;
+
     vi.mocked( getServerSession ).mockResolvedValue( {
-      user: { organizationId: orgId , id: "11111111-1111-4111-8111-111111111111" }
+      user: { organizationId: orgId , id: usuario.id }
     } as unknown as Session ) ;
   } ) ;
 

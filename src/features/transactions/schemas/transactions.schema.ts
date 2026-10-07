@@ -19,6 +19,8 @@ export const createTransactionFormSchema = z.object( {
   merchantName:         z.string().max( 150 , "El nombre del comercio no puede superar los 150 caracteres." ).optional().nullable() ,
   occurredAt:           z.coerce.date().optional() ,
   currency:             z.string().max( 10 ).optional() ,
+  /** A nombre de quién se carga (RN-2). Opcional: sin él, el titular es quien carga. */
+  holderUserId:         z.string().uuid( "El titular elegido no es válido." ).optional().nullable() ,
   /**
    * Importe recibido, en la moneda de la cuenta de destino. Sólo aplica a `exchange`: en un cambio
    * de divisas los dos lados tienen importes distintos, y la cotización se deduce de su cociente

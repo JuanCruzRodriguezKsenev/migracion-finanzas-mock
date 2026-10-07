@@ -194,6 +194,7 @@ export async function createLoanAction( params: CreateLoanInput ): Promise< Resu
 
     const txResult = await createLedgerTransaction( {
       organizationId ,
+      createdByUserId: session.user.id ?? null ,
       description: `Alta préstamo ${loanCreado.name}` ,
       occurredAt:  data.startDate ,
       entries
@@ -364,6 +365,7 @@ export async function payLoanInstallmentAction(
 
       const txResult = await createLedgerTransaction( {
         organizationId ,
+        createdByUserId: session.user.id ?? null ,
         categoryId ,
         description: `Cuota ${cuotaPendiente.n}/${freshLoan.totalInstallments} ${freshLoan.name}` ,
         occurredAt ,

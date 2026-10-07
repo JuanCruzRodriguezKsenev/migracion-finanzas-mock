@@ -13,6 +13,9 @@ import { ok , fail , Result } from "@/shared/lib/result" ;
 import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
 
+// Feature: Auth
+import { autorizarTitular } from "@/features/auth/services/titularService" ;
+
 // Feature: Accounting
 import {
   createTransactionSchema ,
@@ -245,8 +248,9 @@ export async function createAccountForEntityAction( params: {
     // 6. Asiento de apertura sólo si balance > 0 (createLedgerTransaction abre su propia transacción)
     if( (balance > 0) && ctaPatrimonio ) {
       const txResult = await createLedgerTransaction( {
-        organizationId: session.user.organizationId ,
-        description:    `Apertura ${cuentaCreada.name}` ,
+        organizationId:  session.user.organizationId ,
+        createdByUserId: session.user.id ?? null ,
+        description:     `Apertura ${cuentaCreada.name}` ,
         occurredAt:     new Date() ,
         entries: [
           { accountId: cuentaCreada.id  , debit: balance , credit: 0       } ,
@@ -310,6 +314,8 @@ export async function createLedgerTransactionAction(
     merchantName?:   string ;
     merchantDomain?: string ;
     occurredAt?:     Date | string ;
+    /** A nombre de quién se carga. El autor nunca viene del cliente: es siempre la sesión (RN-3). */
+    holderUserId?:   string ;
     entries: {
       accountId: string ;
       debit:     number ;
@@ -326,6 +332,7 @@ export async function createLedgerTransactionAction(
   }
 
   const organizationId = session.user.organizationId ;
+  const autorUserId    = session.user.id ?? null ;
 
   // 1. Validar parámetros en runtime con Zod
   const validation = createTransactionSchema.safeParse( params ) ;
@@ -337,9 +344,21 @@ export async function createLedgerTransactionAction(
   try {
     // 2. Ejecutar envuelto en idempotencia
     const result = await executeIdempotent( idempotencyKey || "" , async () => {
+      // El titular se valida contra la base en cada llamada, dentro de la idempotencia: una revocación
+      // entre dos intentos tiene que verse en el segundo (AC-4).
+      const titular = autorUserId
+        ? await autorizarTitular( organizationId , autorUserId , validation.data.holderUserId )
+        : ok( null ) ;
+
+      if( !titular.success ){
+        throw new Error( titular.error ) ;
+      }
+
       const bizRes = await createLedgerTransaction( {
         ...validation.data ,
         organizationId ,
+        createdByUserId: autorUserId ,
+        holderUserId:    titular.value ,
       } ) ;
 
       if( !bizRes.success ){
@@ -536,7 +555,8 @@ export async function reverseLedgerTransactionAction( params: {
     const res = await reverseLedgerTransaction(
       params.transactionId ,
       session.user.organizationId ,
-      params.reason
+      params.reason ,
+      session.user.id ?? null
     ) ;
 
     return( res ) ;

@@ -258,6 +258,7 @@ export async function resolveInstallmentAction(
 
         const ledgerResult = await createLedgerTransaction( {
           organizationId ,
+          createdByUserId: session.user.id ?? null ,
           categoryId:     targetCat.id ,
           description:    ordinalDescripcion ,
           occurredAt ,

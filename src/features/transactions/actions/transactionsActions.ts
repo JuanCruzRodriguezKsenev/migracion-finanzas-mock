@@ -271,6 +271,7 @@ export async function createTransactionFromFormAction(
       categoryId:     resolvedCategoryId ,
       merchantName:   data.merchantName || undefined ,
       occurredAt:     data.occurredAt || new Date() ,
+      holderUserId:   data.holderUserId || undefined ,
       entries ,
     } ) ) ;
   } catch( error ) {

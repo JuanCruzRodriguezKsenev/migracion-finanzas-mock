@@ -7,7 +7,7 @@ import { db }          from "@/shared/db/client" ;
 import { limpiarBase } from "@/shared/db/testCleanup" ;
 
 // Feature: Auth
-import { organizations } from "@/features/auth/schema.db" ;
+import { organizations , users } from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
 import {
@@ -102,6 +102,14 @@ describe( "createFinancialEntityAction & createAccountForEntityAction — Lógic
       .values( { name: "Org Secundaria" , slug: "org-secundaria" } )
       .returning() ;
     otherOrgId = org2.id ;
+
+    // El autor del asiento (created_by_user_id) tiene FK a users: el id fijo de las sesiones simuladas debe existir
+    await db.insert( users ).values( {
+      id:           "00000000-0000-0000-0000-000000000001" ,
+      email:        "autor-sesion@ejemplo.com" ,
+      passwordHash: "0".repeat( 128 ) ,
+      salt:         "0123456789abcdef0123456789abcdef" ,
+    } ) ;
   } ) ;
 
   afterEach( async () => {

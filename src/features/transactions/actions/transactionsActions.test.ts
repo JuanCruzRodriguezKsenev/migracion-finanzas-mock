@@ -4,8 +4,9 @@ import { getServerSession }                                   from "next-auth" ;
 import { eq }                                                 from "drizzle-orm" ;
 
 // Shared
-import { db }          from "@/shared/db/client" ;
-import { limpiarBase } from "@/shared/db/testCleanup" ;
+import { db }                       from "@/shared/db/client" ;
+import { limpiarBase }              from "@/shared/db/testCleanup" ;
+import { crearUsuarioConMembresia } from "@/shared/db/testFixtures" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -63,8 +64,11 @@ describe( "createTransactionFromFormAction — monedas" , () => {
     cajaUsdId  = cajaUsd.id ;
     bancoArsId = bancoArs.id ;
 
+    // El autor del asiento (created_by_user_id) tiene FK a users: la sesión simulada usa un usuario real
+    const usuario = await crearUsuarioConMembresia( { organizationId: orgId , role: "owner" } ) ;
+
     vi.mocked( getServerSession ).mockResolvedValue( {
-      user:    {id: "user-1" , organizationId: orgId , role: "owner"} ,
+      user:    {id: usuario.id , organizationId: orgId , role: "owner"} ,
       expires: new Date().toISOString() ,
     } ) ;
   } ) ;

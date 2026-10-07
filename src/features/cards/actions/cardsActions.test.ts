@@ -10,8 +10,9 @@ import { getServerSession }                                                 from
 import type { Session }                                                     from "next-auth" ;
 
 // Shared
-import { db }          from "@/shared/db/client" ;
-import { limpiarBase } from "@/shared/db/testCleanup" ;
+import { db }                       from "@/shared/db/client" ;
+import { limpiarBase }              from "@/shared/db/testCleanup" ;
+import { crearUsuarioConMembresia } from "@/shared/db/testFixtures" ;
 
 // Feature: Accounting & Auth
 import { accounts , ledgerTransactions , ledgerEntries } from "@/features/accounting/schema.db" ;
@@ -43,8 +44,11 @@ describe( "cardsActions.ts — Server Actions de Tarjetas" , () => {
       .returning() ;
     orgId = org.id ;
 
+    // El autor del asiento (created_by_user_id) tiene FK a users: la sesión simulada usa un usuario real
+    const usuario = await crearUsuarioConMembresia( { organizationId: orgId , role: "owner" } ) ;
+
     vi.mocked( getServerSession ).mockResolvedValue( {
-      user: { organizationId: orgId , id: "user-test" } ,
+      user: { organizationId: orgId , id: usuario.id } ,
     } as unknown as Session ) ;
   } ) ;
 

@@ -57,3 +57,12 @@ export const eliminarSchema = z.object( {
 } ) ;
 
 export type EliminarInput = z.infer< typeof eliminarSchema > ;
+
+/**
+ * Esquema para otorgar o revocar una habilitación: sólo el miembro habilitado; el otorgante es la sesión (RN-6).
+ */
+export const habilitacionSchema = z.object( {
+  habilitadoUserId: z.string().uuid( "Miembro inválido." ) ,
+} ) ;
+
+export type HabilitacionInput = z.infer< typeof habilitacionSchema > ;
