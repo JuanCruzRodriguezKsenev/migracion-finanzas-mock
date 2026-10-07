@@ -118,3 +118,10 @@
     gap:             0.5rem ;
     margin-top:      1rem ;
 }
+
+/* FormSelect trae `width: 100%` y un margen inferior de formulario: se acota y se compensa en la fila. */
+.roleCell {
+    flex:          0 0 auto ;
+    width:         clamp(8rem, 12vw, 11rem) ;
+    margin-bottom: -0.9375rem ;
+}

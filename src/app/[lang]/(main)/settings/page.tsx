@@ -14,6 +14,9 @@ import styles            from "./page.module.css" ;
 // Feature: Settings
 import { SettingsContainer } from "@/features/settings/components/SettingsContainer" ;
 
+// Feature: Auth
+import { membershipRepository } from "@/features/auth/repositories/membershipRepository" ;
+
 // Feature: Organizations
 import { listarMiembrosAction } from "@/features/organizations/actions/membersActions" ;
 
@@ -41,6 +44,11 @@ export default async function SettingsPage( {params}: SettingsPageProps ) {
   const categoryTree = ( categoryTreeRes.success ? categoryTreeRes.value : [] ) ;
   const accounts     = ( accountsRes.success ? accountsRes.value : [] ) ;
 
+  // Nombre y cantidad de organizaciones para la pestaña Organización, que sólo existe para un `owner`.
+  const membresias   = ( (miembrosRes.success && session?.user?.id) ? await membershipRepository.findByUser( session.user.id ) : [] ) ;
+  const activa       = membresias.find( ( m ) => m.organizationId === session?.user?.organizationId ) ;
+  const organizacion = ( activa ? { nombre: activa.organizationName , cantidadOrganizaciones: membresias.length } : null ) ;
+
   return(
     <div className={styles.container}>
       <SettingsContainer
@@ -51,6 +59,7 @@ export default async function SettingsPage( {params}: SettingsPageProps ) {
         esOwner={miembrosRes.success}
         miembros={miembrosRes.success ? miembrosRes.value : null}
         currentUserId={session?.user?.id ?? ""}
+        organizacion={organizacion}
       />
     </div>
   ) ;

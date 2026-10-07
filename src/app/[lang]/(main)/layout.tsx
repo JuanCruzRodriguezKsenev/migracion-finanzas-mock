@@ -37,13 +37,18 @@ export default async function MainLayout( {children , params}: MainLayoutProps )
     redirect( `/${lang}/auth/signin?expired=1` ) ;
   }
 
-  const [ dict , membresias ] = await Promise.all( [
+  const [ dict , membresias , owners ] = await Promise.all( [
     getDictionary( lang ) ,
     membershipRepository.findByUser( session.user.id ) ,
+    membershipRepository.contarOwners( session.user.organizationId ) ,
   ] ) ;
 
   const organizaciones = membresias.map( ( m ) => ( { id: m.organizationId , nombre: m.organizationName , rol: m.role } ) ) ;
   const t              = dict.organizations ;
+
+  // Es el único `owner` de la organización activa: no puede abandonarla sin nombrar a otro antes (RN-29).
+  const rolActivo      = membresias.find( ( m ) => m.organizationId === session.user.organizationId )?.role ;
+  const esUnicoOwner   = ( (rolActivo === "owner") && (owners === 1) ) ;
 
   return(
     <MetricsVisibilityProvider>
@@ -53,7 +58,8 @@ export default async function MainLayout( {children , params}: MainLayoutProps )
           <OrganizationSwitcher
             organizaciones={organizaciones}
             activaId={session.user.organizationId}
-            dict={ { ...t.switcher , create: t.create } }
+            esUnicoOwner={esUnicoOwner}
+            dict={ { ...t.switcher , create: t.create , leave: t.leave } }
           />
         }
       >

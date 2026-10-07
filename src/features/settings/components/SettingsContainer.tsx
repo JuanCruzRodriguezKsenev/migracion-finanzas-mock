@@ -15,6 +15,7 @@ import { Tabs }                from "@/shared/ui/display/Tabs/Tabs" ;
 
 // Feature: Organizations
 import type { ListadoMiembros } from "@/features/organizations/actions/membersActions" ;
+import { OrganizationPanel }    from "@/features/organizations/components/OrganizationPanel" ;
 import { MembersPanel }         from "@/features/organizations/components/MembersPanel" ;
 
 // Feature: Accounting
@@ -34,7 +35,11 @@ export interface SettingsContainerProps {
   /** Miembros e invitaciones de la organización; `null` si quien mira no es `owner`. */
   miembros?:      ListadoMiembros | null ;
   currentUserId?: string ;
+  /** Datos de la organización activa para la pestaña Organización (sólo `owner`). */
+  organizacion?:  { nombre: string ; cantidadOrganizaciones: number } | null ;
 }
+
+type PestanaConfiguracion = "categories" | "ledger" | "members" | "organization" ;
 
 /**
  * Shell principal de la pantalla de configuración.
@@ -47,15 +52,18 @@ export function SettingsContainer( {
   esOwner = false ,
   miembros = null ,
   currentUserId = "" ,
+  organizacion = null ,
 }: SettingsContainerProps ) {
-  const [ activeTab , setActiveTab ] = useState< "categories" | "ledger" | "members" >( "categories" ) ;
+  const [ activeTab , setActiveTab ] = useState< PestanaConfiguracion >( "categories" ) ;
 
-  const mostrarMiembros = ( esOwner && !!miembros ) ;
+  const mostrarMiembros     = ( esOwner && !!miembros ) ;
+  const mostrarOrganizacion = ( esOwner && !!organizacion ) ;
 
   const settingsTabs = [
     { key: "categories"  , label: dict.settingsPage.tabCategories } ,
     { key: "ledger"      , label: dict.settingsPage.tabLedger } ,
     ...( mostrarMiembros ? [ { key: "members" , label: dict.settingsPage.tabMembers } ] : [] ) ,
+    ...( mostrarOrganizacion ? [ { key: "organization" , label: dict.settingsPage.tabOrganization } ] : [] ) ,
     { key: "profile"     , label: dict.settingsPage.tabProfile     , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
     { key: "preferences" , label: dict.settingsPage.tabPreferences , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
     { key: "security"    , label: dict.settingsPage.tabSecurity    , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
@@ -74,7 +82,7 @@ export function SettingsContainer( {
       <Tabs
         tabs={settingsTabs}
         activeTab={activeTab}
-        onChange={ ( key ) => setActiveTab( key as "categories" | "ledger" | "members" ) }
+        onChange={ ( key ) => setActiveTab( key as PestanaConfiguracion ) }
       />
 
       {activeTab === "categories" ? (
@@ -85,6 +93,12 @@ export function SettingsContainer( {
           currentUserId={currentUserId}
           lang={lang}
           dict={dict.organizations.members}
+        />
+      ) : ( (activeTab === "organization") && mostrarOrganizacion ) ? (
+        <OrganizationPanel
+          nombre={organizacion.nombre}
+          cantidadOrganizaciones={organizacion.cantidadOrganizaciones}
+          dict={dict.organizations.panel}
         />
       ) : (
         <LedgerAuditPanel accounts={accounts} dict={dict} />

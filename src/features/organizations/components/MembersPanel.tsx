@@ -23,6 +23,7 @@ import {
   invitarMiembroAction ,
   revocarInvitacionAction ,
   quitarMiembroAction ,
+  cambiarRolAction ,
   type ListadoMiembros ,
   type MiembroListado
 } from "../actions/membersActions" ;
@@ -43,6 +44,8 @@ export interface MembersPanelProps {
     you:                     string ;
     remove:                  string ;
     removeDisabledOnlyOwner: string ;
+    roleSelectLabel:         string ;
+    roleDisabledOnlyOwner:   string ;
     pendingTitle:            string ;
     expiresOn:               string ;
     revoke:                  string ;
@@ -78,6 +81,9 @@ export function MembersPanel( { initialData , currentUserId , lang , dict }: Mem
   const [ emailInvitado , setEmailInvitado ]    = useState( "" ) ;
   const [ rolInvitado , setRolInvitado ]        = useState< RolInvitable >( "member" ) ;
   const [ errorInvitar , setErrorInvitar ]      = useState( "" ) ;
+
+  const [ rolesPendientes , setRolesPendientes ] = useState< Record< string , RolInvitable > >( {} ) ;
+  const [ cambiandoRol , setCambiandoRol ]      = useState( false ) ;
 
   const [ aQuitar , setAQuitar ]                = useState< MiembroListado | null >( null ) ;
   const [ errorQuitar , setErrorQuitar ]        = useState( "" ) ;
@@ -154,6 +160,44 @@ export function MembersPanel( { initialData , currentUserId , lang , dict }: Mem
     }
   } ;
 
+  /**
+   * Cambia el rol de un miembro. El desplegable muestra el valor pedido mientras guarda; si el servidor
+   * lo rechaza se descarta y vuelve al valor real, con el error a la vista.
+   */
+  const handleCambiarRol = async ( miembro: MiembroListado , rol: RolInvitable ) => {
+    if( cambiandoRol || cargando || (rol === miembro.rol) ) { return ; }
+
+    setError( "" ) ;
+    setAviso( "" ) ;
+    setRolesPendientes( ( previos ) => ( { ...previos , [miembro.userId]: rol } ) ) ;
+    setCambiandoRol( true ) ;
+
+    try {
+      const res = await cambiarRolAction( { userId: miembro.userId , rol } ) ;
+
+      if( !res.success ) {
+        setError( res.error || dict.genericError ) ;
+        return ;
+      }
+
+      // Quien se quita el rol de `owner` ya no puede listar: se refresca la página en vez de pedir la lista.
+      if( (miembro.userId === currentUserId) && (rol !== "owner") ) {
+        router.refresh() ;
+      } else {
+        await recargar() ;
+      }
+    } catch {
+      setError( dict.genericError ) ;
+    } finally {
+      setRolesPendientes( ( previos ) => {
+        const resto = { ...previos } ;
+        delete resto[miembro.userId] ;
+        return( resto ) ;
+      } ) ;
+      setCambiandoRol( false ) ;
+    }
+  } ;
+
   const handleQuitar = async () => {
     if( !aQuitar || cargando ) { return ; }
 
@@ -202,6 +246,7 @@ export function MembersPanel( { initialData , currentUserId , lang , dict }: Mem
         {data.miembros.map( ( m ) => {
           const unicoOwner = ( (m.rol === "owner") && (cantidadOwners === 1) ) ;
           const hintId     = `miembro-${m.userId}-hint` ;
+          const rolHintId  = `miembro-${m.userId}-rol-hint` ;
           return(
             <li key={m.userId} className={styles.row}>
               <div className={styles.person}>
@@ -211,9 +256,22 @@ export function MembersPanel( { initialData , currentUserId , lang , dict }: Mem
                 </span>
                 {m.nombre && <span className={styles.personEmail}>{m.email}</span>}
                 {unicoOwner && <span id={hintId} className={styles.hint}>{dict.removeDisabledOnlyOwner}</span>}
+                {unicoOwner && <span id={rolHintId} className={styles.hint}>{dict.roleDisabledOnlyOwner}</span>}
               </div>
 
-              <span className={styles.role}>{etiquetasRol[m.rol] ?? m.rol}</span>
+              <div className={styles.roleCell}>
+                <FormSelect
+                  aria-label={dict.roleSelectLabel.replace( "{nombre}" , m.nombre || m.email )}
+                  aria-describedby={unicoOwner ? rolHintId : undefined}
+                  value={rolesPendientes[m.userId] ?? m.rol}
+                  disabled={unicoOwner || cambiandoRol || cargando}
+                  onChange={ ( e ) => handleCambiarRol( m , e.target.value as RolInvitable ) }
+                >
+                  <option value="owner">{dict.roleOwner}</option>
+                  <option value="member">{dict.roleMember}</option>
+                  <option value="viewer">{dict.roleViewer}</option>
+                </FormSelect>
+              </div>
 
               <Button
                 variant="outline"
@@ -269,15 +327,15 @@ export function MembersPanel( { initialData , currentUserId , lang , dict }: Mem
             required
           />
 
-          <FormSelect
-            label={dict.roleLabel}
-            value={rolInvitado}
-            onChange={ ( e ) => setRolInvitado( e.target.value as RolInvitable ) }
-          >
-            <option value="member">{dict.roleMember}</option>
-            <option value="viewer">{dict.roleViewer}</option>
-            <option value="owner">{dict.roleOwner}</option>
-          </FormSelect>
+            <FormSelect
+              label={dict.roleLabel}
+              value={rolInvitado}
+              onChange={ ( e ) => setRolInvitado( e.target.value as RolInvitable ) }
+            >
+              <option value="member">{dict.roleMember}</option>
+              <option value="viewer">{dict.roleViewer}</option>
+              <option value="owner">{dict.roleOwner}</option>
+            </FormSelect>
 
           <FormActions
             onCancel={ () => setInvitando( false ) }

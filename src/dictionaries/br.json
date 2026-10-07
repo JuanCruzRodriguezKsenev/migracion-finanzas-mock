@@ -483,7 +483,8 @@
       "errorNameInvalid": "Digite um nome válido.",
       "errorColorInvalid": "A cor deve ser um hexadecimal de 6 caracteres (ex: #3498db)."
     },
-    "tabMembers": "Membros"
+    "tabMembers": "Membros",
+    "tabOrganization": "Organização"
   },
   "transactionsPage": {
     "title": "Livro Diário",
@@ -660,6 +661,34 @@
       "removeConfirmBody": "Perde o acesso a esta organização. As movimentações que lançou são mantidas.",
       "removeConfirmSubmit": "Remover",
       "loadError": "Não foi possível atualizar a lista de membros.",
+      "genericError": "Não foi possível concluir a ação.",
+      "roleSelectLabel": "Papel de {nombre}",
+      "roleDisabledOnlyOwner": "É o único proprietário: nomeie outro antes de alterar o papel."
+    },
+    "leave": {
+      "menuLabel": "Sair de «{nombre}»",
+      "disabledOnlyOrg": "Esta é a sua única organização: você não pode sair dela.",
+      "disabledOnlyOwner": "Você é o único proprietário: nomeie outro antes de sair.",
+      "title": "Sair de «{nombre}»",
+      "subtitle": "Você perde o acesso a esta organização. As movimentações que você registrou são mantidas e você pode voltar se for convidado novamente.",
+      "cancel": "Cancelar",
+      "submit": "Sair",
+      "genericError": "Não foi possível sair da organização.",
+      "notice": "Você saiu de {nombre}",
+      "dismiss": "Fechar aviso"
+    },
+    "panel": {
+      "title": "Organização",
+      "subtitle": "O nome com que esta organização é exibida aos seus membros.",
+      "renameLabel": "Nome",
+      "renameSubmit": "Salvar",
+      "renameSuccess": "Nome atualizado.",
+      "dangerZoneTitle": "Zona de perigo",
+      "dangerZoneBody": "Excluir a organização apaga para sempre suas contas, movimentações, cartões, empréstimos e contatos. Não é possível desfazer.",
+      "dangerZoneConfirmLabel": "Digite «{nombre}» para confirmar",
+      "dangerZoneSubmit": "Excluir organização",
+      "dangerZoneOnlyOrg": "Esta é a sua única organização: você não pode excluí-la.",
+      "deleteNotice": "Você excluiu {nombre}",
       "genericError": "Não foi possível concluir a ação."
     }
   }

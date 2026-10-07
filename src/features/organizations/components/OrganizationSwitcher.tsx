@@ -7,7 +7,7 @@
 "use client" ;
 
 // Librerías externas
-import React , { useRef , useState } from "react" ;
+import React , { useEffect , useRef , useState } from "react" ;
 import { useSession }                from "next-auth/react" ;
 import { useRouter }                 from "next/navigation" ;
 
@@ -16,8 +16,11 @@ import { IconChevronDown , IconCheck } from "@/shared/ui/display/Icons/Icons" ;
 import { Popup }                       from "@/shared/ui/feedback/Popup/Popup" ;
 
 // Feature: Organizations
-import { CreateOrganizationModal } from "./CreateOrganizationModal" ;
-import styles                      from "./OrganizationSwitcher.module.css" ;
+import { consumirAvisoOrganizacion } from "./avisoOrganizacion" ;
+import type { CambioDeOrganizacion }  from "../actions/organizationActions" ;
+import { CreateOrganizationModal }    from "./CreateOrganizationModal" ;
+import { LeaveOrganizationModal }     from "./LeaveOrganizationModal" ;
+import styles                         from "./OrganizationSwitcher.module.css" ;
 
 
 export interface OrganizacionDelSelector {
@@ -29,6 +32,8 @@ export interface OrganizacionDelSelector {
 export interface OrganizationSwitcherProps {
   organizaciones: OrganizacionDelSelector[] ;
   activaId:       string ;
+  /** La persona es el único `owner` de la organización activa: no puede abandonarla (RN-29). */
+  esUnicoOwner?:  boolean ;
   dict: {
     ariaLabel:    string ;
     listLabel:    string ;
@@ -36,13 +41,21 @@ export interface OrganizationSwitcherProps {
     viewerBadge:  string ;
     switchError:  string ;
     create:       React.ComponentProps< typeof CreateOrganizationModal >[ "dict" ] ;
+    /** Textos de «Abandonar»; sin ellos el selector no ofrece esa línea. */
+    leave?: React.ComponentProps< typeof LeaveOrganizationModal >[ "dict" ] & {
+      menuLabel:         string ;
+      disabledOnlyOrg:   string ;
+      disabledOnlyOwner: string ;
+      notice:            string ;
+      dismiss:           string ;
+    } ;
   } ;
 }
 
 /**
  * Botón con la organización activa que abre una lista para cambiar de organización o crear otra.
  */
-export function OrganizationSwitcher( { organizaciones , activaId , dict }: OrganizationSwitcherProps ) {
+export function OrganizationSwitcher( { organizaciones , activaId , esUnicoOwner = false , dict }: OrganizationSwitcherProps ) {
   const { update }                    = useSession() ;
   const router                        = useRouter() ;
   const triggerRef                    = useRef< HTMLButtonElement >( null ) ;
@@ -50,9 +63,26 @@ export function OrganizationSwitcher( { organizaciones , activaId , dict }: Orga
   const [ abierto , setAbierto ]      = useState( false ) ;
   const [ creando , setCreando ]      = useState( false ) ;
   const [ cambiando , setCambiando ]  = useState( false ) ;
+  const [ abandonando , setAbandonando ] = useState( false ) ;
+  const [ aviso , setAviso ]          = useState( "" ) ;
   const [ error , setError ]          = useState( "" ) ;
 
   const activa = organizaciones.find( ( o ) => o.id === activaId ) ;
+
+  // El selector vive en el layout y no se remonta al cambiar de organización: el aviso que dejó otra
+  // pantalla (eliminar desde Configuración) se lee cuando cambia la organización activa.
+  useEffect( () => {
+    const pendiente = consumirAvisoOrganizacion() ;
+
+    if( pendiente ) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- se sincroniza con un almacenamiento externo
+      setAviso( pendiente ) ;
+    }
+  } , [ activaId ] ) ;
+
+  const motivoSinAbandonar = ( organizaciones.length === 1 )
+    ? dict.leave?.disabledOnlyOrg
+    : ( esUnicoOwner ? dict.leave?.disabledOnlyOwner : undefined ) ;
 
   const cerrar = () => {
     setAbierto( false ) ;
@@ -133,6 +163,16 @@ export function OrganizationSwitcher( { organizaciones , activaId , dict }: Orga
     }
   } ;
 
+  /**
+   * Tras abandonar: la sesión pasa a la organización siguiente y recién entonces se refresca el router.
+   * El aviso se muestra directo (el selector sigue montado) y no depende de `sessionStorage`.
+   */
+  const alAbandonar = async ( cambio: CambioDeOrganizacion ) => {
+    await update( { organizationId: cambio.organizationId } ) ;
+    setAviso( ( dict.leave?.notice ?? "" ).replace( "{nombre}" , cambio.nombreAnterior ) ) ;
+    router.refresh() ;
+  } ;
+
   return(
     <div className={styles.wrap}>
       <button
@@ -191,6 +231,27 @@ export function OrganizationSwitcher( { organizaciones , activaId , dict }: Orga
             {dict.createNew}
           </button>
 
+          {dict.leave && (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                className={ `${styles.item} ${styles.itemLeave}` }
+                aria-disabled={!!motivoSinAbandonar}
+                aria-describedby={motivoSinAbandonar ? "organizacion-abandonar-motivo" : undefined}
+                disabled={cambiando}
+                onClick={ () => {
+                  if( motivoSinAbandonar ) { return ; }
+                  setAbierto( false ) ;
+                  setAbandonando( true ) ;
+                } }
+              >
+                {dict.leave.menuLabel.replace( "{nombre}" , activa?.nombre ?? "" )}
+              </button>
+              {motivoSinAbandonar && <p id="organizacion-abandonar-motivo" className={styles.hint}>{motivoSinAbandonar}</p>}
+            </>
+          )}
+
           {error && <p className={styles.error} role="alert">{error}</p>}
         </div>
       </Popup>
@@ -201,6 +262,23 @@ export function OrganizationSwitcher( { organizaciones , activaId , dict }: Orga
         onCreated={alCrear}
         dict={dict.create}
       />
+
+      {dict.leave && (
+        <LeaveOrganizationModal
+          isOpen={abandonando}
+          onClose={ () => setAbandonando( false ) }
+          nombre={activa?.nombre ?? ""}
+          onLeft={alAbandonar}
+          dict={dict.leave}
+        />
+      )}
+
+      {aviso && (
+        <div className={styles.notice} role="status">
+          <span className={styles.noticeText}>{aviso}</span>
+          <button type="button" className={styles.noticeClose} aria-label={dict.leave?.dismiss} onClick={ () => setAviso( "" ) }>×</button>
+        </div>
+      )}
     </div>
   ) ;
 }

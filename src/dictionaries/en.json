@@ -483,7 +483,8 @@
       "errorNameInvalid": "Enter a valid name.",
       "errorColorInvalid": "The color must be a 6-character hexadecimal value (e.g. #3498db)."
     },
-    "tabMembers": "Members"
+    "tabMembers": "Members",
+    "tabOrganization": "Organization"
   },
   "transactionsPage": {
     "title": "General Ledger",
@@ -660,7 +661,35 @@
       "removeConfirmBody": "They lose access to this organization. The transactions they entered are kept.",
       "removeConfirmSubmit": "Remove",
       "loadError": "Could not refresh the member list.",
-      "genericError": "Could not complete the action."
+      "genericError": "Could not complete the action.",
+      "roleSelectLabel": "Role of {nombre}",
+      "roleDisabledOnlyOwner": "This is the only owner: name another owner before changing the role."
+    },
+    "leave": {
+      "menuLabel": "Leave “{nombre}”",
+      "disabledOnlyOrg": "This is your only organization: you can't leave it.",
+      "disabledOnlyOwner": "You are the only owner: name another owner before leaving.",
+      "title": "Leave “{nombre}”",
+      "subtitle": "You lose access to this organization. The transactions you recorded are kept and you can return if you are invited again.",
+      "cancel": "Cancel",
+      "submit": "Leave",
+      "genericError": "Could not leave the organization.",
+      "notice": "You left {nombre}",
+      "dismiss": "Dismiss notice"
+    },
+    "panel": {
+      "title": "Organization",
+      "subtitle": "The name this organization is shown with to its members.",
+      "renameLabel": "Name",
+      "renameSubmit": "Save",
+      "renameSuccess": "Name updated.",
+      "dangerZoneTitle": "Danger zone",
+      "dangerZoneBody": "Deleting the organization permanently erases its accounts, transactions, cards, loans and contacts. This cannot be undone.",
+      "dangerZoneConfirmLabel": "Type “{nombre}” to confirm",
+      "dangerZoneSubmit": "Delete organization",
+      "dangerZoneOnlyOrg": "This is your only organization: you can't delete it.",
+      "deleteNotice": "You deleted {nombre}",
+      "genericError": "The action could not be completed."
     }
   }
 }
