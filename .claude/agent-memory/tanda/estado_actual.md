@@ -20,3 +20,8 @@ metadata:
 - **Bóveda:** un archivo nuevo necesita `git add` antes del commit con pathspec.
 - **`git rebase --update-refs` mueve las ramas `respaldo/*`:** hacer los respaldos como tags.
 - **Contrastar con `git log`** antes de usar esto.
+
+- **2026-10-07 (plan 21b ejecutado):** `obra` dejó `f0407ac` (seed `db:seed:reparto`, org `reparto-demo`, juan/ana/vera `AdminPass123!`), sin hallazgos. Deuda §21 ya estaba al día, nada nuevo que escribir. Rama `feat/reparto-3-caja-comun` limpia. Falta: checklist manual del plan 21 (usuario), integrar a `master` y pushear (plan 20 también sin push).
+
+- **2026-10-07 (serie «Cuentas propias y compartidas»):** spec aprobada «sin leer» (bóveda `8686e18`, `Specs/Cuentas propias y compartidas/`) y **4 planes escritos** (bóveda `bc9ae19`): 22 (viewer fuera de «a nombre de», independiente), 23 (modelo: `owner_user_id` + `account_shares`, predicado `cuentaDeLaOrg`, migración 0040), 24 (usar en movimientos: motor, permiso, locks), 25 (UI + checklist [USUARIO]). Ninguno ejecutado. El antiguo «plan 22 Todas» pasa a ser el 26. Decisiones mías sin lectura del usuario: sólo `asset` es personal; personales sólo en el formulario de movimientos; reversa permitida a dueño/autor/owner de la org; «Ya no compartida» sólo en filas de movimientos; compartir desde el formulario pide confirmación. Plan 21 sin integrar a `master`; los planes 23-25 parten de master con el 21 adentro.
+- **Trampa hallada:** `createAccountForEntityAction` postea asiento de apertura contra patrimonio en el libro de la org; una cuenta personal no puede usar esa vía (plan 23 lo exige).
