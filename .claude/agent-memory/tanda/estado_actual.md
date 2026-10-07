@@ -1,24 +1,12 @@
 ---
 name: estado-actual
-description: 2026-10-07 integración de metas en pausa (plan 16); antes, 2026-10-06: nada corriendo; carriles A, C y D por verificar/integrar; 06b sin lanzar; contrastar con git log
+description: dónde quedó el repo al cerrar la ronda del 2026-10-07 (todo integrado a master, sin pushear)
 metadata:
   type: project
 ---
 
-**2026-10-07 — integración en PAUSA (plan 16, `Planes/16 - Integrar presupuestos y metas a master.md` + adenda):** `master` = `e2deaf6` (Presupuestos entró, batería verde, sin pushear). `feat/metas-pagina` rebasada en el worktree `-metas` (6 commits, `2cd6946..c9ff6a9`, árbol limpio; respaldo `respaldo/metas-pagina-pre-rebase` = `b3ceb97`; migración `0033_special_patriot` ok). **Falta:** §2.5 recrear `finanzas_db_metas_test` (el clasificador denegó el `DROP DATABASE`: lo corre el usuario con `podman exec postgres-dev psql -U postgres -c 'DROP DATABASE IF EXISTS "finanzas_db_metas_test"'`), batería §2.6, ff a master, limpieza §3 (3 worktrees + 6 ramas), informe/Estado, push [USUARIO]. El usuario frenó a propósito hasta que termine la `obra` de `autoria-1` (directorio principal); retomar después. Luego: rebase de acceso-3/4/autoria-1 con migraciones a `0034`/`0035`. Lección: un plan de rebase se verifica commit por commit (`ProgressBar` chocó en el intermedio aunque las puntas eran idénticas).
-
-**2026-10-06 tarde:** una sesión de `obra` murió a mitad del 06b. Verifiqué su WIP (627 tests, 80 suites, lint/tsc/build verdes) y lo commiteé: `070d1b9` (pasos 1-3 del 06b: repo, acciones, tests). Plan 06c ejecutado por `obra` (`b3ab9c1`) y verificado por mí (651 tests, 84 suites, lint/tsc/build verdes, sin migración); falta el checklist manual del usuario; hallazgos en Deuda §12c. **Spec «Cargar por otra persona» APROBADA «sin leer» el 2026-10-07; plan 15 (Autoría 1) escrito y rama `feat/autoria-1-titular` creada desde la punta de `feat/acceso-4-miembros-y-selector`; serie 16-20 (notificaciones, reparto, saldos, caja, «Todas») se escribe de a uno tras verificar el anterior; migración del 15 chocará con C y D al integrar. Antes: ESCRITA en `draft` (Specs/Cargar por otra persona/Spec…; sin tipos de org: acuerdo + plantillas; caja común incluida; S-A a S-J fijados por tanda sin pasar por el usuario; falta aprobarla y planificar; antes estaba EN PAUSA (Specs/Cargar por otra persona/Supuestos…: el usuario no quiere tipos fijos de organización; trabajo = caja común con participaciones; sin escribir la spec). Antes: escribí el plan [[06c]] (`Planes/06c - Acceso 4c interfaz (continuación del 06b).md`: pasos 4-5 + tests de componentes) y el usuario pidió lanzar `obra` sobre él (corriendo en segundo plano). Al terminar: leer `Informes/06c…`, delegar batería a `verificador`. Ver [[feedback-lanzar-obra]]: sólo se lanza con pedido explícito.
-
-- `master` = `cd86ad0` (planes 00-04, 09, 10). Sin pushear. Los tres carriles siguen sin integrar.
-- **Carril A** (checkout principal): rama `feat/acceso-4-miembros-y-selector` (`e68cb33`) incluye plan 05 y 06. **Plan 06 verificado por `verificador`**: 78 suites, 601 tests, lint 0, tsc 0, build verde. Falta checklist manual del usuario (dos cuentas de Google; AC-7). Árbol limpio (memorias commiteadas en `adaabb9`). Server :3000: si se porta raro, reiniciar (el build comparte `.next/`).
-- **Plan 06b** (abandonar/eliminar/renombrar/cambiar rol): escrito y ajustado a lo que dejó el 06 (`bloquearOwners` ya existe en `membershipRepository.ts:147`; `exigirOwner` en `organizations/services/exigirOwner.ts`). **Sin lanzar**: el usuario lo pedirá. Spec «Acceso con Google» rev. 2 (bóveda `565efc6`). El usuario quiere 06b **antes** de probar el acceso con Google.
-- **Carril C** (`/home/jcrod/Dev/finanzas/migracion-finanzas-mock-presupuestos`, `feat/presupuestos-pagina` `e2deaf6`): planes 11 y 12 hechos (653 tests según obra). **Sin verificar por mí**: el usuario canceló los `verificador`. Checklist manual pendiente (:3002, admin@ejemplo.com).
-- **Carril D** (`…-metas`, `feat/metas-pagina` `b3ceb97`): planes 13 y 14 hechos (647 tests según obra). Sin verificar por mí. Checklist manual pendiente; riesgo: barra móvil con 9 entradas a 360 px.
-- **Carril B** (`…-estadisticas`): integrado; falta el checklist manual del 10 y medir `getReportsAction`.
-- Sin escribir: planes 07 (viewer) y 08 (despliegue) ya existen sin ejecutar. No hay planes nuevos más allá del 14.
-
-**Al integrar** (de a uno, fast-forward, lo hace tanda): migración `0032` repetida en A (`0032_orange_queen_noir`), C (`0032_melted_paladin`), D (`0032_sour_old_lace`); `ProgressBar` idéntica en C y D (verificar merge limpio); tablas nuevas de presupuestos y metas deben sumarse a `TABLAS_CON_ORGANIZACION` (plan 06b); `usePuedeEscribir` y `actionPolicy` los cierra el 07/4b.
-
-**Trampas:** eliminar una organización no puede confiar en el cascade (FKs `RESTRICT`, borrar en el orden de `testCleanup.ts`); `postgres-dev` apagado frena al verificador (`podman start postgres-dev`).
-
-**Ideas y deuda:** [[idea-cargar-por-otro]] (Deuda §16). Deuda abierta nueva hoy: §12b (acceso 4), §14 (presupuestos), §15 (metas).
+- **2026-10-07:** `master` = `645d432` = `feat/autoria-1-titular`. Estadísticas, Presupuestos, Metas, acceso 3/4, ciclo de vida de organización y autoría (plan 15) integrados, 0 merges, **41 commits sin pushear**. Migraciones hasta `0035_sturdy_the_hood`. Batería verde: 118 suites, 933 tests.
+- **Pendiente del usuario (plan 17 §5):** recrear `finanzas_db` con dump/restore (si no, `budgets`/`goals` no existen en dev), pushear `master`, checklists manuales de los planes 15 y 06c, borrar `feat/metas-modelo` y los tres `respaldo/*`.
+- **Lo siguiente de producto:** plan de reparto de gastos (spec «Cargar por otra persona», sin plan; medir los `M-n` antes) y el de notificaciones (numerar 18+; el plan 15 lo llama «16» por error). Plan 07 (`actionPolicy`) sigue sin ejecutar.
+- **Lección:** `git rebase --update-refs` mueve también las ramas `respaldo/*`: hacer los respaldos como tags. Y verificar con `git log` que un `git revert` se hizo (con `-q` falló en silencio).
+- **Contrastar con `git log`** antes de usar esto.
