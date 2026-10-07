@@ -11,6 +11,9 @@ import dotenv      from "dotenv" ;
 // Shared
 import { obtenerEnv } from "@/shared/lib/env" ;
 
+// Shared: base de datos
+import { opcionesDeConexion } from "./connectionOptions" ;
+
 // Cargar variables de entorno locales
 dotenv.config( {path: ".env.local"} ) ;
 
@@ -23,7 +26,7 @@ const globalForDb = globalThis as unknown as {
 } ;
 
 // Solo crear el cliente si no existe en el scope global, limitando el pool en desarrollo
-const queryClient = globalForDb.conn || postgres( connectionString , {max: 5} ) ;
+const queryClient = globalForDb.conn || postgres( connectionString , opcionesDeConexion( connectionString ) ) ;
 
 if( process.env.NODE_ENV !== "production" ) {
   globalForDb.conn = queryClient ;

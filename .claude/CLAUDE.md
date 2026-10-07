@@ -91,6 +91,7 @@ Lo vivo y lo de trabajo están en la bóveda; la referencia del código y los RF
 | `~/Boveda/Archivo/migracion-finanzas-mock/` | Planes ejecutados, registros de cierre, diseños cerrados | Al cerrar una rama |
 | `docs/proposals/` | 28 RFC con estado `DRAFT`/`APPROVED`/`SUPERSEDED` (`ARCHITECTURE.md` §6 define los cuatro). **Se quedan en el repo**: son el contrato contra el que se escribe el código | Código sólo contra `APPROVED` |
 | `docs/patterns.md` · `docs/TESTING.md` · `docs/adr/` | Patrones vigentes (**contrastar acá toda decisión nueva**), testing, decisiones arquitectónicas | Al establecer un patrón |
+| `docs/DEPLOY.md` | Procedimiento de despliegue en Vercel + Neon (sin secretos): migrar, variables, credencial de Google, arranque de la organización, verificación y respaldo | Al cambiar el despliegue o sus variables |
 | `ARCHITECTURE.md` · `REVIEW_CHECKLIST.md` | Arquitectura feature-driven; checklist de revisión | Lectura |
 | `AGENTS.md` (raíz) | **Router neutral**, para cualquier agente de IA. Se autocarga | Al cambiar una regla dura |
 | `.agents/AGENTS.md` | §1 restricciones · §4 estilo · §7 flujo · §8 lo que el proyecto cobra caro. **NO se autocarga**: abrilo antes de escribir código | Lectura obligatoria |
