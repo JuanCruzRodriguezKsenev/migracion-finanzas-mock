@@ -29,3 +29,31 @@ export const invitarMiembroSchema = z.object( {
 } ) ;
 
 export type InvitarMiembroInput = z.infer< typeof invitarMiembroSchema > ;
+
+/**
+ * Esquema para renombrar la organización activa: nombre de 1 a 100 caracteres, recortado (RN-33).
+ */
+export const renombrarSchema = z.object( {
+  nombre: z.string().trim().min( 1 , "El nombre de la organización no puede estar vacío." ).max( 100 , "El nombre no puede superar los 100 caracteres." ) ,
+} ) ;
+
+export type RenombrarInput = z.infer< typeof renombrarSchema > ;
+
+/**
+ * Esquema para cambiar el rol de un miembro (RN-31).
+ */
+export const cambiarRolSchema = z.object( {
+  userId: z.string().uuid( "Miembro inválido." ) ,
+  rol:    z.enum( ROLES_INVITABLES , { error: "El rol debe ser 'owner', 'member' o 'viewer'." } ) ,
+} ) ;
+
+export type CambiarRolInput = z.infer< typeof cambiarRolSchema > ;
+
+/**
+ * Esquema para eliminar la organización: el texto de confirmación se compara exacto en la acción (RN-35).
+ */
+export const eliminarSchema = z.object( {
+  confirmacion: z.string() ,
+} ) ;
+
+export type EliminarInput = z.infer< typeof eliminarSchema > ;

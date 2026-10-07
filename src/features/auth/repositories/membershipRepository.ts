@@ -3,7 +3,7 @@
  * Repositorio para la gestión de membresías de usuarios en organizaciones (Capa DAL).
  */
 // Librerías externas
-import { eq , and , asc , desc } from "drizzle-orm" ;
+import { eq , and , asc , desc , count } from "drizzle-orm" ;
 
 // Shared
 import { db , DBOrTx } from "@/shared/db/client" ;
@@ -191,5 +191,71 @@ export const membershipRepository = {
       .returning( { userId: memberships.userId } ) ;
 
     return( borradas.length > 0 ) ;
+  } ,
+
+  /**
+   * Cambia el rol de un miembro dentro de una organización.
+   *
+   * @param userId - Identificador del usuario.
+   * @param organizationId - Identificador de la organización.
+   * @param rol - Rol nuevo (`owner` | `member` | `viewer`).
+   * @param tx - Instancia de transacción opcional.
+   * @returns Cantidad de filas afectadas (0 si no es miembro).
+   */
+  async cambiarRol(
+    userId:         string ,
+    organizationId: string ,
+    rol:            string ,
+    tx:             DBOrTx = db
+  ): Promise< number > {
+    const filas = await tx
+      .update( memberships )
+      .set( { role: rol } )
+      .where(
+        and(
+          eq( memberships.userId         , userId ) ,
+          eq( memberships.organizationId , organizationId )
+        )
+      )
+      .returning( { userId: memberships.userId } ) ;
+
+    return( filas.length ) ;
+  } ,
+
+  /**
+   * Cuenta las organizaciones a las que pertenece un usuario (RN-30: nadie se queda sin organización).
+   *
+   * @param userId - Identificador del usuario.
+   * @param tx - Instancia de transacción opcional.
+   * @returns Cantidad de membresías del usuario.
+   */
+  async contarPorUsuario( userId: string , tx: DBOrTx = db ): Promise< number > {
+    const [ fila ] = await tx
+      .select( { total: count() } )
+      .from( memberships )
+      .where( eq( memberships.userId , userId ) ) ;
+
+    return( Number( fila?.total ?? 0 ) ) ;
+  } ,
+
+  /**
+   * Cuenta los `owner` de una organización (lectura sin bloqueo, para la interfaz).
+   *
+   * @param organizationId - Identificador de la organización.
+   * @param tx - Instancia de transacción opcional.
+   * @returns Cantidad de `owner`.
+   */
+  async contarOwners( organizationId: string , tx: DBOrTx = db ): Promise< number > {
+    const [ fila ] = await tx
+      .select( { total: count() } )
+      .from( memberships )
+      .where(
+        and(
+          eq( memberships.organizationId , organizationId ) ,
+          eq( memberships.role           , "owner" )
+        )
+      ) ;
+
+    return( Number( fila?.total ?? 0 ) ) ;
   } ,
 } ;

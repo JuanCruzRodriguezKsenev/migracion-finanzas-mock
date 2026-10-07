@@ -2,12 +2,30 @@
  * @file testFixtures.ts
  * Utilidades y creadores de entidades base para la suite de pruebas automatizadas.
  */
+// Librerías externas
+import { sql } from "drizzle-orm" ;
+
 // Shared
 import { db , DBOrTx } from "./client" ;
 
 // Feature: Auth
-import { users , memberships } from "@/features/auth/schema.db" ;
-import type { User }           from "@/features/auth/repositories/userRepository" ;
+import { users , memberships , invitations } from "@/features/auth/schema.db" ;
+import type { User }                         from "@/features/auth/repositories/userRepository" ;
+
+// Feature: Accounting
+import { categories , financialEntities , accounts , categoryAccounts , ledgerTransactions , ledgerEntries , outboxEvents , monthlySummaries } from "@/features/accounting/schema.db" ;
+
+// Feature: Cards
+import { cards , cardAccounts , cardInstallmentPlans } from "@/features/cards/schema.db" ;
+
+// Feature: Loans
+import { loans , loanAccounts } from "@/features/loans/schema.db" ;
+
+// Feature: Contacts
+import { contacts , contactPaymentMethods } from "@/features/contacts/schema.db" ;
+
+// Feature: Subscriptions
+import { subscriptions } from "@/features/subscriptions/schema.db" ;
 
 
 export interface OpcionesCrearUsuarioConMembresia {
@@ -53,4 +71,129 @@ export async function crearUsuarioConMembresia(
     } ) ;
 
   return( usuario ) ;
+}
+
+/**
+ * Crea para una organización al menos una fila en **cada** tabla que `eliminarCompleta` borra, incluidas
+ * las que no tienen `organization_id` (asientos, `card_accounts`, `loan_accounts`, `category_accounts`,
+ * `contact_payment_methods`) y una categoría con padre e hijo. Sin esto, un test de borrado no ejercita
+ * las claves `RESTRICT` entre tablas hijas.
+ *
+ * @param organizationId - Organización a poblar (ya existente).
+ * @param tx - Instancia de transacción opcional.
+ */
+export async function crearOrganizacionRica( organizationId: string , tx: DBOrTx = db ): Promise< void > {
+  const [ entidad ] = await tx.insert( financialEntities ).values( { organizationId , name: "Banco de prueba" } ).returning() ;
+
+  const [ efectivo , deuda ] = await tx
+    .insert( accounts )
+    .values( [
+      { organizationId , code: "1.1.01" , name: "Efectivo"       , type: "asset"     , entityId: entidad.id } ,
+      { organizationId , code: "2.1.01" , name: "Deuda tarjeta"  , type: "liability" } ,
+    ] )
+    .returning() ;
+
+  const [ prestamoCuenta , tarjetaCuenta ] = await tx
+    .insert( accounts )
+    .values( [
+      { organizationId , code: "2.2.01" , name: "Préstamo" , type: "liability" } ,
+      { organizationId , code: "2.3.01" , name: "Tarjeta"  , type: "liability" } ,
+    ] )
+    .returning() ;
+
+  const [ padre ] = await tx
+    .insert( categories )
+    .values( { organizationId , name: "Gastos" , type: "expense" , accountCode: "5.1" } )
+    .returning() ;
+
+  const [ hija ] = await tx
+    .insert( categories )
+    .values( { organizationId , name: "Comida" , type: "expense" , accountCode: "5.1.01" , parentId: padre.id } )
+    .returning() ;
+
+  await tx.insert( categoryAccounts ).values( { categoryId: hija.id , accountId: efectivo.id , currency: "ARS" } ) ;
+
+  const [ transaccion ] = await tx
+    .insert( ledgerTransactions )
+    .values( { organizationId , description: "Compra de prueba" , categoryId: hija.id } )
+    .returning() ;
+
+  await tx.insert( ledgerEntries ).values( [
+    { transactionId: transaccion.id , accountId: efectivo.id , debit: 1000 , credit: 0    } ,
+    { transactionId: transaccion.id , accountId: deuda.id    , debit: 0    , credit: 1000 } ,
+  ] ) ;
+
+  const [ tarjeta ] = await tx
+    .insert( cards )
+    .values( {
+      organizationId , entityId: entidad.id , label: "Visa de prueba" , type: "credit" , network: "visa" ,
+      lastFour: "1234" , expiryMonth: 12 , expiryYear: 2030 ,
+    } )
+    .returning() ;
+
+  await tx.insert( cardAccounts ).values( { cardId: tarjeta.id , accountId: tarjetaCuenta.id , currency: "ARS" } ) ;
+
+  await tx.insert( cardInstallmentPlans ).values( {
+    organizationId , cardId: tarjeta.id , description: "Heladera" , installmentAmount: 500 ,
+    totalInstallments: 3 , purchasedAt: new Date() , firstInstallmentDate: "2030-01-01" ,
+  } ) ;
+
+  const [ contacto ] = await tx.insert( contacts ).values( { organizationId , name: "Contacto de prueba" } ).returning() ;
+
+  await tx.insert( contactPaymentMethods ).values( { contactId: contacto.id , financialEntityId: entidad.id } ) ;
+
+  const [ prestamo ] = await tx
+    .insert( loans )
+    .values( {
+      organizationId , name: "Préstamo de prueba" , direction: "borrowed" , contactId: contacto.id ,
+      principalAmount: 10000 , startDate: new Date() , firstInstallmentDate: "2030-01-01" ,
+    } )
+    .returning() ;
+
+  await tx.insert( loanAccounts ).values( { loanId: prestamo.id , accountId: prestamoCuenta.id , currency: "ARS" } ) ;
+
+  await tx.insert( subscriptions ).values( {
+    organizationId , name: "Suscripción de prueba" , amount: 100 , frequency: "monthly" ,
+    startDate: new Date() , nextPaymentDate: new Date() , accountId: efectivo.id , categoryId: hija.id ,
+  } ) ;
+
+  await tx.insert( outboxEvents ).values( { organizationId , eventType: "TRANSACTION_CREATED" , payload: {} } ) ;
+  await tx.insert( monthlySummaries ).values( { organizationId , year: 2030 , month: 0 } ) ;
+  await tx.insert( invitations ).values( {
+    organizationId , email: "pendiente@ejemplo.com" , role: "member" , expiresAt: new Date( Date.now() + 86400000 ) ,
+  } ) ;
+}
+
+/** Consultas de conteo por organización: una por cada tabla que `eliminarCompleta` borra. */
+const CONSULTAS: Record< string , ( id: string ) => ReturnType< typeof sql > > = {
+  accounts:                ( id ) => sql`select count(*) from accounts where organization_id = ${id}` ,
+  card_installment_plans:  ( id ) => sql`select count(*) from card_installment_plans where organization_id = ${id}` ,
+  cards:                   ( id ) => sql`select count(*) from cards where organization_id = ${id}` ,
+  categories:              ( id ) => sql`select count(*) from categories where organization_id = ${id}` ,
+  contacts:                ( id ) => sql`select count(*) from contacts where organization_id = ${id}` ,
+  financial_entities:      ( id ) => sql`select count(*) from financial_entities where organization_id = ${id}` ,
+  invitations:             ( id ) => sql`select count(*) from invitations where organization_id = ${id}` ,
+  ledger_transactions:     ( id ) => sql`select count(*) from ledger_transactions where organization_id = ${id}` ,
+  loans:                   ( id ) => sql`select count(*) from loans where organization_id = ${id}` ,
+  memberships:             ( id ) => sql`select count(*) from memberships where organization_id = ${id}` ,
+  monthly_summaries:       ( id ) => sql`select count(*) from monthly_summaries where organization_id = ${id}` ,
+  outbox_events:           ( id ) => sql`select count(*) from outbox_events where organization_id = ${id}` ,
+  subscriptions:           ( id ) => sql`select count(*) from subscriptions where organization_id = ${id}` ,
+  ledger_entries:          ( id ) => sql`select count(*) from ledger_entries where transaction_id in (select id from ledger_transactions where organization_id = ${id})` ,
+  card_accounts:           ( id ) => sql`select count(*) from card_accounts where card_id in (select id from cards where organization_id = ${id})` ,
+  loan_accounts:           ( id ) => sql`select count(*) from loan_accounts where loan_id in (select id from loans where organization_id = ${id})` ,
+  category_accounts:       ( id ) => sql`select count(*) from category_accounts where category_id in (select id from categories where organization_id = ${id})` ,
+  contact_payment_methods: ( id ) => sql`select count(*) from contact_payment_methods where contact_id in (select id from contacts where organization_id = ${id})` ,
+} ;
+
+/** Cantidad de filas de cada tabla del borrado para una organización. */
+export async function conteosDe( organizationId: string ): Promise< Record< string , number > > {
+  const resultado: Record< string , number > = {} ;
+
+  for( const [ tabla , consulta ] of Object.entries( CONSULTAS ) ) {
+    const filas = await db.execute( consulta( organizationId ) ) as unknown as { count: string }[] ;
+    resultado[tabla] = Number( filas[0].count ) ;
+  }
+
+  return( resultado ) ;
 }

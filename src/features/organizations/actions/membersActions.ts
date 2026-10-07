@@ -20,8 +20,8 @@ import { invitationRepository }  from "@/features/auth/repositories/invitationRe
 import { userRepository }        from "@/features/auth/repositories/userRepository" ;
 
 // Feature: Organizations
-import { invitarMiembroSchema , InvitarMiembroInput } from "../schemas/organization.schema" ;
-import { exigirOwner }                                from "../services/exigirOwner" ;
+import { invitarMiembroSchema , cambiarRolSchema , InvitarMiembroInput , CambiarRolInput } from "../schemas/organization.schema" ;
+import { exigirOwner }                                                                     from "../services/exigirOwner" ;
 
 
 /** Vigencia de una invitación: siete días. */
@@ -210,5 +210,61 @@ export async function quitarMiembroAction( userId: string ): Promise< Result< nu
   } catch( error ) {
     logger.error( "Error al quitar un miembro." , { organizationId , error: String( error ) } ) ;
     return( fail( "No se pudo quitar al miembro." ) ) ;
+  }
+}
+
+/**
+ * Cambia el rol de un miembro de la organización activa, incluido el propio (RN-31).
+ * No permite dejar la organización sin `owner` (RN-29); los `owner` se bloquean con `FOR UPDATE` (RN-38).
+ * No toca `last_organization_id`: la membresía sigue.
+ *
+ * @param rawInput - Miembro y rol nuevo.
+ * @returns Result vacío, o `fail` si no es miembro de esta organización o es el único `owner`.
+ */
+export async function cambiarRolAction( rawInput: CambiarRolInput ): Promise< Result< null , string > > {
+  const session = await getServerSession( authOptions ) ;
+  const owner   = await exigirOwner( session ) ;
+
+  if( !owner.success ) {
+    return( fail( owner.error ) ) ;
+  }
+
+  const validation = cambiarRolSchema.safeParse( rawInput ) ;
+
+  if( !validation.success ) {
+    return( fail( validation.error.issues[0]?.message || "Datos inválidos." ) ) ;
+  }
+
+  const { userId , rol }                           = validation.data ;
+  const { organizationId , userId: solicitanteId } = owner.value ;
+
+  try {
+    return( await db.transaction( async ( tx ) => {
+      const owners = await membershipRepository.bloquearOwners( organizationId , tx ) ;
+
+      // Quien llama pudo perder el rol mientras esperaba el bloqueo: se revalida acá.
+      if( !owners.includes( solicitanteId ) ) {
+        return( fail( "No autorizado." ) ) ;
+      }
+
+      const objetivo = await membershipRepository.findMembership( userId , organizationId , tx ) ;
+
+      if( !objetivo ) {
+        return( fail( "Esa persona no es miembro de la organización." ) ) ;
+      }
+
+      if( (objetivo.role === "owner") && (rol !== "owner") && (owners.length === 1) ) {
+        return( fail( "Es el único propietario: nombrá a otro antes de cambiarle el rol." ) ) ;
+      }
+
+      if( objetivo.role !== rol ) {
+        await membershipRepository.cambiarRol( userId , organizationId , rol , tx ) ;
+      }
+
+      return( ok( null ) ) ;
+    } ) ) ;
+  } catch( error ) {
+    logger.error( "Error al cambiar el rol de un miembro." , { organizationId , error: String( error ) } ) ;
+    return( fail( "No se pudo cambiar el rol." ) ) ;
   }
 }
