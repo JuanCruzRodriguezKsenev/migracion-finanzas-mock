@@ -28,6 +28,9 @@ import { membershipRepository }   from "@/features/auth/repositories/membershipR
 import { userRepository }         from "@/features/auth/repositories/userRepository" ;
 import { organizations }          from "@/features/auth/schema.db" ;
 
+// Feature: Notifications
+import { notificationRepository } from "@/features/notifications/repositories/notificationRepository" ;
+
 // Feature: Organizations
 import {
   crearOrganizacionSchema ,
@@ -224,6 +227,7 @@ export async function abandonarOrganizacionAction(): Promise< Result< CambioDeOr
       const nombreAnterior = await organizationRepository.findNombre( organizationId , tx ) ;
 
       await habilitacionRepository.eliminarDeUsuario( organizationId , userId , tx ) ;
+      await notificationRepository.eliminarDeUsuario( organizationId , userId , tx ) ;
       await membershipRepository.remove( userId , organizationId , tx ) ;
       await userRepository.limpiarUltimaOrganizacion( userId , organizationId , tx ) ;
 

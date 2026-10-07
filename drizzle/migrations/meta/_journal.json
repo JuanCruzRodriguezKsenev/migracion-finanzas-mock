@@ -253,6 +253,13 @@
       "when": 1791348809326,
       "tag": "0035_sturdy_the_hood",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791352222874,
+      "tag": "0036_powerful_leper_queen",
+      "breakpoints": true
     }
   ]
 }

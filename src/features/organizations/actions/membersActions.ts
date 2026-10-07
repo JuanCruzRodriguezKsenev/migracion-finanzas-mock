@@ -20,6 +20,9 @@ import { membershipRepository }    from "@/features/auth/repositories/membership
 import { invitationRepository }    from "@/features/auth/repositories/invitationRepository" ;
 import { userRepository }          from "@/features/auth/repositories/userRepository" ;
 
+// Feature: Notifications
+import { notificationRepository } from "@/features/notifications/repositories/notificationRepository" ;
+
 // Feature: Organizations
 import { invitarMiembroSchema , cambiarRolSchema , InvitarMiembroInput , CambiarRolInput } from "../schemas/organization.schema" ;
 import { exigirOwner }                                                                     from "../services/exigirOwner" ;
@@ -199,6 +202,7 @@ export async function quitarMiembroAction( userId: string ): Promise< Result< nu
       }
 
       await habilitacionRepository.eliminarDeUsuario( organizationId , userId , tx ) ;
+      await notificationRepository.eliminarDeUsuario( organizationId , userId , tx ) ;
 
       const quitado = await membershipRepository.remove( userId , organizationId , tx ) ;
 

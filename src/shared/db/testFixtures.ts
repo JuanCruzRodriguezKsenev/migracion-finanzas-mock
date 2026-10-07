@@ -33,6 +33,9 @@ import { budgets , budgetLimits } from "@/features/budgets/schema.db" ;
 // Feature: Goals
 import { goals , goalMovements } from "@/features/goals/schema.db" ;
 
+// Feature: Notifications
+import { notifications } from "@/features/notifications/schema.db" ;
+
 
 export interface OpcionesCrearUsuarioConMembresia {
   organizationId:      string ;
@@ -188,6 +191,11 @@ export async function crearOrganizacionRica( organizationId: string , tx: DBOrTx
     .returning() ;
 
   await tx.insert( holderAuthorizations ).values( { organizationId , grantorUserId: otorgante.id , granteeUserId: habilitado.id } ) ;
+
+  await tx.insert( notifications ).values( {
+    organizationId , recipientUserId: otorgante.id , type: "charged_to_holder" , actorUserId: habilitado.id ,
+    transactionId: transaccion.id , amountInCents: 1000 , currency: "ARS" ,
+  } ) ;
 }
 
 /** Consultas de conteo por organización: una por cada tabla que `eliminarCompleta` borra. */
@@ -207,6 +215,7 @@ const CONSULTAS: Record< string , ( id: string ) => ReturnType< typeof sql > > =
   loans:                   ( id ) => sql`select count(*) from loans where organization_id = ${id}` ,
   memberships:             ( id ) => sql`select count(*) from memberships where organization_id = ${id}` ,
   monthly_summaries:       ( id ) => sql`select count(*) from monthly_summaries where organization_id = ${id}` ,
+  notifications:           ( id ) => sql`select count(*) from notifications where organization_id = ${id}` ,
   outbox_events:           ( id ) => sql`select count(*) from outbox_events where organization_id = ${id}` ,
   subscriptions:           ( id ) => sql`select count(*) from subscriptions where organization_id = ${id}` ,
   budget_limits:           ( id ) => sql`select count(*) from budget_limits where budget_id in (select id from budgets where organization_id = ${id})` ,

@@ -7,6 +7,12 @@ import { Result , ok , fail } from "@/shared/lib/result" ;
 import { db , DBOrTx }        from "@/shared/db/client" ;
 import { logger }             from "@/shared/lib/logger" ;
 
+// Feature: Transactions
+import { calcularResumenTransaccion } from "@/features/transactions/utils/derivarTipo" ;
+
+// Feature: Notifications
+import { notificar , destinatariosDeCarga , destinatariosDeReverso } from "@/features/notifications/services/notificationService" ;
+
 // Feature: Accounting
 import { CreateTransactionParams , LedgerTransaction , InsertLedgerEntry } from "../types" ;
 import { accountRepository } from "../repositories/accountRepository" ;
@@ -143,6 +149,28 @@ export async function createLedgerTransaction(
 
       // E. Insertar asientos en lote
       await ledgerRepository.createEntries( entriesToInsert , tx ) ;
+
+      // E2. Avisar al titular si otra persona cargó a su nombre (RN-9a, RN-10). Los movimientos
+      //     generados por el sistema no traen titular, así que no emiten. Corre en la misma
+      //     transacción: si el aviso falla, falla la carga entera.
+      const destinatarios = destinatariosDeCarga( { autorId: createdByUserId , titularId: holderUserId } ) ;
+
+      if( destinatarios.length > 0 ) {
+        const resumen = calcularResumenTransaccion(
+          resueltos.map( ( r ) => ( { accountId: r.entry.accountId , debit: r.entry.debit , credit: r.entry.credit , currency: r.moneda } ) ) ,
+          new Map( resueltos.map( ( r ) => [ r.account.id , r.account ] ) )
+        ) ;
+
+        await notificar( {
+          organizationId ,
+          tipo:          "charged_to_holder" ,
+          actorId:       createdByUserId ,
+          transactionId: insertedTx.id ,
+          monto:         resumen.amountInCents ?? null ,
+          divisa:        resumen.currency ?? null ,
+          destinatarios ,
+        } , tx ) ;
+      }
 
       // F. Registrar evento en la tabla Outbox para webhooks
       await tx.insert( outboxEvents ).values( {
@@ -357,6 +385,8 @@ export async function reverseLedgerTransaction(
       }
 
       // 3. Revertir saldos en las cuentas (operación inversa)
+      const cuentasPorId = new Map< string , NonNullable< Awaited< ReturnType< typeof accountRepository.findByIdForUpdate > > > >() ;
+
       for( const entry of entries ){
         const account = await accountRepository.findByIdForUpdate( entry.accountId , organizationId , tx ) ;
         if( !account ){
@@ -375,6 +405,7 @@ export async function reverseLedgerTransaction(
         }
 
         await accountRepository.updateBalance( account.id , nuevoSaldo , tx ) ;
+        cuentasPorId.set( account.id , account ) ;
       }
 
       // 4. Crear la transacción espejo de reversión
@@ -422,6 +453,30 @@ export async function reverseLedgerTransaction(
           reason:                 reason || null ,
         } ,
       } ) ;
+
+      // 7. Avisar al titular y al autor de la original, no al actor (RN-9f, S-K). Mismo `tx`: atómico.
+      const destinatarios = destinatariosDeReverso( {
+        actorId:         actorUserId ,
+        titularId:       original.holderUserId ,
+        autorOriginalId: original.createdByUserId ,
+      } ) ;
+
+      if( destinatarios.length > 0 ) {
+        const resumen = calcularResumenTransaccion(
+          entries.map( ( e ) => ( { accountId: e.accountId , debit: e.debit , credit: e.credit , currency: e.currency } ) ) ,
+          cuentasPorId
+        ) ;
+
+        await notificar( {
+          organizationId ,
+          tipo:          "transaction_reversed" ,
+          actorId:       actorUserId ?? null ,
+          transactionId: original.id ,
+          monto:         resumen.amountInCents ?? null ,
+          divisa:        resumen.currency ?? null ,
+          destinatarios ,
+        } , tx ) ;
+      }
 
       return( ok(reversalTx) ) ;
     } ) ) ;

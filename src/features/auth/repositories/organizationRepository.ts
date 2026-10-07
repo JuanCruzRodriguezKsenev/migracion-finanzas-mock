@@ -30,7 +30,8 @@ import {
   budgets ,
   budgetLimits ,
   goals ,
-  goalMovements
+  goalMovements ,
+  notifications
 } from "@/shared/db/schema" ;
 
 // Feature: Auth
@@ -60,6 +61,7 @@ export const TABLAS_CON_ORGANIZACION = [
   "loans" ,
   "memberships" ,
   "monthly_summaries" ,
+  "notifications" ,
   "outbox_events" ,
   "subscriptions" ,
 ] as const ;
@@ -124,6 +126,9 @@ export const organizationRepository = {
     // 1. Sin dependientes
     await tx.delete( outboxEvents      ).where( eq( outboxEvents.organizationId      , organizationId ) ) ;
     await tx.delete( monthlySummaries  ).where( eq( monthlySummaries.organizationId  , organizationId ) ) ;
+
+    // 1b. Avisos (cuelgan de transacciones, usuarios y organización: antes que ledger_transactions)
+    await tx.delete( notifications ).where( eq( notifications.organizationId , organizationId ) ) ;
 
     // 2-3. Asientos antes que transacciones (restrict a accounts)
     await tx.delete( ledgerEntries      ).where( inArray( ledgerEntries.transactionId , transaccionesDeLaOrg ) ) ;
