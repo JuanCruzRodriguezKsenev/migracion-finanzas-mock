@@ -107,6 +107,34 @@
   color: var(--text-muted);
 }
 
+/* Titular del movimiento: va debajo de la descripción (en 360 px no compite con las demás columnas). */
+.holderChip {
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 0.1rem 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  border-radius: var(--radius-xl);
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-text);
+}
+
+.holderNote {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+/* FormSelect trae `width: 100%` y un margen inferior de formulario: se acota y se compensa en la barra. */
+.holderFilter {
+  flex: 0 0 auto;
+  width: clamp(9rem, 14vw, 12rem);
+  margin-bottom: -0.9375rem;
+}
+
 .accountCell {
   display: flex;
   align-items: center;

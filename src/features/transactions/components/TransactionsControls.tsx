@@ -10,6 +10,7 @@ import React , { useState , useRef , useEffect } from "react" ;
 // Shared
 import { SearchInput }              from "@/shared/ui/forms/SearchInput/SearchInput" ;
 import { Column , ColumnSelector }  from "@/shared/ui/display/Toolbar/ColumnSelector" ;
+import { FormSelect }               from "@/shared/ui/forms/Form/FormSelect" ;
 import styles                       from "./Transactions.module.css" ;
 
 
@@ -45,6 +46,11 @@ interface TransactionsControlsProps {
   onShowAllColumns:    () => void ;
   onHideAllColumns:    () => void ;
   onClear:             () => void ;
+  /** Miembros de la organización para el filtro por titular; el filtro se oculta si hay uno solo. */
+  holderOptions?:      { userId: string ; nombre: string }[] ;
+  selectedHolder?:     string ;
+  setSelectedHolder?:  ( val: string ) => void ;
+  holderDict?:         { holderFilterLabel: string ; holderFilterAll: string } ;
 }
 
 export function TransactionsControls( {
@@ -67,6 +73,10 @@ export function TransactionsControls( {
   onShowAllColumns ,
   onHideAllColumns ,
   onClear ,
+  holderOptions = [] ,
+  selectedHolder = "" ,
+  setSelectedHolder ,
+  holderDict ,
 }: TransactionsControlsProps ) {
   const [ isColSelectorOpen , setIsColSelectorOpen ] = useState( false ) ;
   const colSelectorRef                               = useRef< HTMLDivElement >( null ) ;
@@ -95,7 +105,8 @@ export function TransactionsControls( {
     selectedAccount ||
     selectedCategory ||
     selectedType ||
-    selectedCurrency
+    selectedCurrency ||
+    selectedHolder
   ) ;
 
   return(
@@ -155,6 +166,21 @@ export function TransactionsControls( {
             <option key={cur} value={cur}>{cur}</option>
           ) )}
         </select>
+
+        {( (holderOptions.length > 1) && setSelectedHolder && holderDict ) && (
+          <div className={styles.holderFilter}>
+            <FormSelect
+              value={selectedHolder}
+              onChange={ ( e ) => setSelectedHolder( e.target.value ) }
+              aria-label={holderDict.holderFilterLabel}
+            >
+              <option value="">{holderDict.holderFilterAll}</option>
+              {holderOptions.map( ( h ) => (
+                <option key={h.userId} value={h.userId}>{h.nombre}</option>
+              ) )}
+            </FormSelect>
+          </div>
+        )}
       </div>
 
       <div className={styles.filtersRight}>

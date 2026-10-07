@@ -31,6 +31,7 @@ interface TransactionsTableProps {
   financialEntities?:  FinancialEntity[] ;
   visibleColumns?:     string[] ;
   loading?:            boolean ;
+  holderDict?:         { holderChipLabel: string } ;
   onSelectTransaction: ( tx: TransactionWithEntries ) => void ;
 }
 
@@ -112,6 +113,7 @@ export function TransactionsTable( {
   financialEntities = [] ,
   visibleColumns ,
   loading = false ,
+  holderDict ,
   onSelectTransaction ,
 }: TransactionsTableProps ) {
   const { profile }   = useProfileContext() ;
@@ -161,6 +163,14 @@ export function TransactionsTable( {
               <span className={styles.descTitle}>{tx.description}</span>
               {tx.merchantName && (
                 <span className={styles.descMerchant}>{tx.merchantName}</span>
+              )}
+              {tx.holder && (
+                <span
+                  className={styles.holderChip}
+                  title={holderDict?.holderChipLabel.replace( "{nombre}" , tx.holder.nombre )}
+                >
+                  {tx.holder.nombre}
+                </span>
               )}
             </div>
           </div>

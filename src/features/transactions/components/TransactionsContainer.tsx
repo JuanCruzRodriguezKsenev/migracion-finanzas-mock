@@ -14,6 +14,9 @@ import { Column }              from "@/shared/ui/display/Toolbar/ColumnSelector"
 import { Button }              from "@/shared/ui/display/Button/Button" ;
 import type { getDictionary } from "@/shared/lib/dictionary" ;
 
+// Feature: Auth
+import type { TitularPosible } from "@/features/auth/services/titularService" ;
+
 // Feature: Accounting
 import { TransactionWithEntries }                                  from "@/features/accounting/repositories/ledgerRepository" ;
 import { Account , Category , FinancialEntity , CategoryTreeNode } from "@/features/accounting/types" ;
@@ -44,6 +47,10 @@ interface TransactionsContainerProps {
   lang?:               string ;
   currentMonthKey?:    string ;
   minKey?:             string ;
+  /** A nombre de quiénes puede cargar la sesión (uno mismo primero); alimenta el selector del formulario. */
+  titulares?:          TitularPosible[] ;
+  /** Miembros de la organización; alimentan el filtro por titular. */
+  miembros?:           TitularPosible[] ;
 }
 
 const ALL_COLUMNS: Column< TransactionTableColumns >[] = [
@@ -78,6 +85,8 @@ export function TransactionsContainer( {
   lang = "es" ,
   currentMonthKey ,
   minKey ,
+  titulares = [] ,
+  miembros = [] ,
 }: TransactionsContainerProps ) {
   const searchParams = useSearchParams() ;
   const monthParam   = searchParams?.get( "month" ) ;
@@ -95,6 +104,7 @@ export function TransactionsContainer( {
   const [ selectedCategory , setSelectedCategory ] = useState( "" ) ;
   const [ selectedType , setSelectedType ]         = useState( "" ) ;
   const [ selectedCurrency , setSelectedCurrency ] = useState( "" ) ;
+  const [ selectedHolder , setSelectedHolder ]     = useState( "" ) ;
 
   // Selector de columnas visibles
   const [ visibleColumns , setVisibleColumns ] = useState< TransactionColumnKey[] >( DEFAULT_COLUMNS ) ;
@@ -127,11 +137,12 @@ export function TransactionsContainer( {
 
     startTransition( async () => {
       const res = await getTransactionsPageAction( {
-        cursor:     cursorOverride !== undefined ? cursorOverride : (reset ? null : nextCursor) ,
-        limit:      20 ,
-        search:     searchTerm.trim() || undefined ,
-        categoryId: selectedCategory || undefined ,
-        accountId:  selectedAccount || undefined ,
+        cursor:       cursorOverride !== undefined ? cursorOverride : (reset ? null : nextCursor) ,
+        limit:        20 ,
+        search:       searchTerm.trim() || undefined ,
+        categoryId:   selectedCategory || undefined ,
+        accountId:    selectedAccount || undefined ,
+        holderUserId: selectedHolder || undefined ,
         fromDate ,
         toDate ,
       } ) ;
@@ -146,7 +157,7 @@ export function TransactionsContainer( {
         setHasMore( res.value.hasMore ) ;
       }
     } ) ;
-  } , [ getMonthDateRange , nextCursor , searchTerm , selectedCategory , selectedAccount ] ) ;
+  } , [ getMonthDateRange , nextCursor , searchTerm , selectedCategory , selectedAccount , selectedHolder ] ) ;
 
   // Reaccionar a cambios de mes o filtros con debounce básico
   useEffect( () => {
@@ -156,13 +167,14 @@ export function TransactionsContainer( {
 
     return( () => clearTimeout(timer) ) ;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  } , [ monthParam , searchTerm , selectedAccount , selectedCategory ] ) ;
+  } , [ monthParam , searchTerm , selectedAccount , selectedCategory , selectedHolder ] ) ;
 
   const handleClearFilters = () => {
     setSearchTerm( "" ) ;
     setSelectedAccount( "" ) ;
     setSelectedCategory( "" ) ;
     setSelectedType( "" ) ;
+    setSelectedHolder( "" ) ;
   } ;
 
   const handleLoadMore = async () => {
@@ -171,11 +183,12 @@ export function TransactionsContainer( {
 
     const { fromDate , toDate } = getMonthDateRange() ;
     const res = await getTransactionsPageAction( {
-      cursor:     nextCursor ,
-      limit:      20 ,
-      search:     searchTerm.trim() || undefined ,
-      categoryId: selectedCategory || undefined ,
-      accountId:  selectedAccount || undefined ,
+      cursor:       nextCursor ,
+      limit:        20 ,
+      search:       searchTerm.trim() || undefined ,
+      categoryId:   selectedCategory || undefined ,
+      accountId:    selectedAccount || undefined ,
+      holderUserId: selectedHolder || undefined ,
       fromDate ,
       toDate ,
     } ) ;
@@ -261,6 +274,10 @@ export function TransactionsContainer( {
         onShowAllColumns={handleShowAllColumns}
         onHideAllColumns={handleHideAllColumns}
         onClear={handleClearFilters}
+        holderOptions={miembros}
+        selectedHolder={selectedHolder}
+        setSelectedHolder={setSelectedHolder}
+        holderDict={dict.transactionsPage}
       />
 
       <TransactionsTable
@@ -270,6 +287,7 @@ export function TransactionsContainer( {
         financialEntities={financialEntities}
         visibleColumns={visibleColumns}
         loading={isPending}
+        holderDict={dict.transactionsPage}
         onSelectTransaction={ ( tx ) => setSelectedTxDetail( tx ) }
       />
 
@@ -293,6 +311,8 @@ export function TransactionsContainer( {
         accounts={accounts}
         categories={categories}
         categoryTree={categoryTree}
+        titulares={titulares}
+        holderDict={dict.transactionsPage}
       />
 
       {/* Modal de detalle, edición y reversión */}
@@ -303,6 +323,7 @@ export function TransactionsContainer( {
         onSuccess={handleDataMutated}
         accounts={accounts}
         categories={categories}
+        holderDict={dict.transactionsPage}
       />
     </div>
   ) ;

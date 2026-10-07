@@ -484,7 +484,8 @@
       "errorColorInvalid": "A cor deve ser um hexadecimal de 6 caracteres (ex: #3498db)."
     },
     "tabMembers": "Membros",
-    "tabOrganization": "Organização"
+    "tabOrganization": "Organização",
+    "tabHabilitaciones": "Permissões"
   },
   "transactionsPage": {
     "title": "Livro Diário",
@@ -497,7 +498,14 @@
     "typeIncome": "Receita",
     "typeExpense": "Despesa",
     "typeTransfer": "Transferência",
-    "emptyState": "Nenhuma transação encontrada."
+    "emptyState": "Nenhuma transação encontrada.",
+    "holderSelectLabel": "Em nome de",
+    "holderSelfOption": "{nombre} (você)",
+    "holderChipLabel": "Titular: {nombre}",
+    "holderDetailBy": "Lançado por {autor}",
+    "holderDetailByFor": "Lançado por {autor} em nome de {titular}",
+    "holderFilterLabel": "Titular",
+    "holderFilterAll": "Todos os titulares"
   },
   "contactsPage": {
     "title": "Agenda de Contatos",
@@ -691,5 +699,15 @@
       "deleteNotice": "Você excluiu {nombre}",
       "genericError": "Não foi possível concluir a ação."
     }
+  },
+  "habilitaciones": {
+    "title": "Quem pode lançar por mim",
+    "subtitle": "As pessoas autorizadas podem registrar movimentos em seu nome nesta organização. Você pode retirar a permissão quando quiser.",
+    "toggleLabel": "Permitir que {nombre} lance movimentos em meu nome",
+    "emptyCandidates": "Não há outros membros para autorizar.",
+    "receivedTitle": "Você pode lançar em nome de",
+    "receivedEmpty": "Ninguém autorizou você ainda.",
+    "saveError": "Não foi possível salvar a alteração.",
+    "loadError": "Não foi possível carregar as permissões."
   }
 }

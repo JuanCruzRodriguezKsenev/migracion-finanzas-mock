@@ -484,7 +484,8 @@
       "errorColorInvalid": "El color debe ser un hexadecimal de 6 caracteres (ej: #3498db)."
     },
     "tabMembers": "Miembros",
-    "tabOrganization": "Organización"
+    "tabOrganization": "Organización",
+    "tabHabilitaciones": "Habilitaciones"
   },
   "transactionsPage": {
     "title": "Libro Diario",
@@ -497,7 +498,14 @@
     "typeIncome": "Ingreso",
     "typeExpense": "Gasto",
     "typeTransfer": "Transferencia",
-    "emptyState": "No se encontraron transacciones."
+    "emptyState": "No se encontraron transacciones.",
+    "holderSelectLabel": "A nombre de",
+    "holderSelfOption": "{nombre} (vos)",
+    "holderChipLabel": "Titular: {nombre}",
+    "holderDetailBy": "Cargado por {autor}",
+    "holderDetailByFor": "Cargado por {autor} a nombre de {titular}",
+    "holderFilterLabel": "Titular",
+    "holderFilterAll": "Todos los titulares"
   },
   "contactsPage": {
     "title": "Agenda de Contactos",
@@ -691,5 +699,15 @@
       "deleteNotice": "Eliminaste {nombre}",
       "genericError": "No se pudo completar la acción."
     }
+  },
+  "habilitaciones": {
+    "title": "Quién puede cargar por mí",
+    "subtitle": "Las personas habilitadas pueden registrar movimientos a tu nombre en esta organización. Podés quitarles el permiso cuando quieras.",
+    "toggleLabel": "Permitir que {nombre} cargue movimientos a mi nombre",
+    "emptyCandidates": "No hay otros miembros para habilitar.",
+    "receivedTitle": "Podés cargar a nombre de",
+    "receivedEmpty": "Nadie te habilitó todavía.",
+    "saveError": "No se pudo guardar el cambio.",
+    "loadError": "No se pudieron cargar las habilitaciones."
   }
 }

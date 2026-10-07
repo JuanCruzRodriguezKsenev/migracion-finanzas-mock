@@ -14,9 +14,11 @@ import type { getDictionary } from "@/shared/lib/dictionary" ;
 import { Tabs }                from "@/shared/ui/display/Tabs/Tabs" ;
 
 // Feature: Organizations
-import type { ListadoMiembros } from "@/features/organizations/actions/membersActions" ;
-import { OrganizationPanel }    from "@/features/organizations/components/OrganizationPanel" ;
-import { MembersPanel }         from "@/features/organizations/components/MembersPanel" ;
+import type { HabilitacionesListadas } from "@/features/organizations/actions/habilitacionesActions" ;
+import type { ListadoMiembros }         from "@/features/organizations/actions/membersActions" ;
+import { HabilitacionesPanel }          from "@/features/organizations/components/HabilitacionesPanel" ;
+import { OrganizationPanel }            from "@/features/organizations/components/OrganizationPanel" ;
+import { MembersPanel }                 from "@/features/organizations/components/MembersPanel" ;
 
 // Feature: Accounting
 import { CategoriesSettingsContainer } from "@/features/accounting/components/CategoriesSettings/CategoriesSettingsContainer" ;
@@ -37,9 +39,13 @@ export interface SettingsContainerProps {
   currentUserId?: string ;
   /** Datos de la organización activa para la pestaña Organización (sólo `owner`). */
   organizacion?:  { nombre: string ; cantidadOrganizaciones: number } | null ;
+  /** Rol de quien mira, leído de la base. La pestaña Habilitaciones es para `owner` y `member`, no para `viewer`. */
+  rol?:            string ;
+  /** Habilitaciones de quien mira; `null` si no corresponde mostrarlas. */
+  habilitaciones?: HabilitacionesListadas | null ;
 }
 
-type PestanaConfiguracion = "categories" | "ledger" | "members" | "organization" ;
+type PestanaConfiguracion = "categories" | "ledger" | "members" | "organization" | "habilitaciones" ;
 
 /**
  * Shell principal de la pantalla de configuración.
@@ -53,17 +59,21 @@ export function SettingsContainer( {
   miembros = null ,
   currentUserId = "" ,
   organizacion = null ,
+  rol = "" ,
+  habilitaciones = null ,
 }: SettingsContainerProps ) {
   const [ activeTab , setActiveTab ] = useState< PestanaConfiguracion >( "categories" ) ;
 
-  const mostrarMiembros     = ( esOwner && !!miembros ) ;
-  const mostrarOrganizacion = ( esOwner && !!organizacion ) ;
+  const mostrarMiembros       = ( esOwner && !!miembros ) ;
+  const mostrarOrganizacion   = ( esOwner && !!organizacion ) ;
+  const mostrarHabilitaciones = ( ((rol === "owner") || (rol === "member")) && !!habilitaciones ) ;
 
   const settingsTabs = [
     { key: "categories"  , label: dict.settingsPage.tabCategories } ,
     { key: "ledger"      , label: dict.settingsPage.tabLedger } ,
     ...( mostrarMiembros ? [ { key: "members" , label: dict.settingsPage.tabMembers } ] : [] ) ,
     ...( mostrarOrganizacion ? [ { key: "organization" , label: dict.settingsPage.tabOrganization } ] : [] ) ,
+    ...( mostrarHabilitaciones ? [ { key: "habilitaciones" , label: dict.settingsPage.tabHabilitaciones } ] : [] ) ,
     { key: "profile"     , label: dict.settingsPage.tabProfile     , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
     { key: "preferences" , label: dict.settingsPage.tabPreferences , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
     { key: "security"    , label: dict.settingsPage.tabSecurity    , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
@@ -99,6 +109,11 @@ export function SettingsContainer( {
           nombre={organizacion.nombre}
           cantidadOrganizaciones={organizacion.cantidadOrganizaciones}
           dict={dict.organizations.panel}
+        />
+      ) : ( (activeTab === "habilitaciones") && mostrarHabilitaciones ) ? (
+        <HabilitacionesPanel
+          initialData={habilitaciones}
+          dict={dict.habilitaciones}
         />
       ) : (
         <LedgerAuditPanel accounts={accounts} dict={dict} />

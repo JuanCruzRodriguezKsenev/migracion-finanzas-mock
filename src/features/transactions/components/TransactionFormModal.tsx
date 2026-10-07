@@ -21,6 +21,9 @@ import { createCategoryAction } from "@/features/accounting/actions/categoryActi
 import { iconoDeCategoria }     from "@/features/accounting/utils/categoryIcons" ;
 import { Account , Category }   from "@/features/accounting/types" ;
 
+// Feature: Auth
+import type { TitularPosible } from "@/features/auth/services/titularService" ;
+
 // Feature: Transactions
 import { createTransactionFromFormAction } from "../actions/transactionsActions" ;
 import { TransactionType }                 from "../utils/derivarTipo" ;
@@ -34,6 +37,9 @@ interface TransactionFormModalProps {
   accounts:      Account[] ;
   categories?:   Category[] ;
   categoryTree?: CategoryTreeNode[] ;
+  /** A nombre de quiénes puede cargar quien abre el modal, con uno mismo primero (RN-2, RN-5, RN-6). */
+  titulares?:    TitularPosible[] ;
+  holderDict?:   { holderSelectLabel: string ; holderSelfOption: string } ;
 }
 
 /**
@@ -67,6 +73,8 @@ export function TransactionFormModal( {
   accounts ,
   categories ,
   categoryTree ,
+  titulares = [] ,
+  holderDict ,
 }: TransactionFormModalProps ) {
   const [ isPending , startTransition ]                           = useTransition() ;
   const [ isQuickCategoryPending , startQuickCategoryTransition ] = useTransition() ;
@@ -83,6 +91,7 @@ export function TransactionFormModal( {
   const [ categoryId , setCategoryId ]                     = useState( "" ) ;
   const [ merchantName , setMerchantName ]                 = useState( "" ) ;
   const [ occurredAt , setOccurredAt ]                     = useState( todayStr ) ;
+  const [ holderUserId , setHolderUserId ]                 = useState( "" ) ;
   const [ errorMessage , setErrorMessage ]                 = useState( "" ) ;
 
   // Estado para creación de categorías al vuelo (Paso 3)
@@ -119,6 +128,7 @@ export function TransactionFormModal( {
     setCategoryId( "" ) ;
     setMerchantName( "" ) ;
     setOccurredAt( todayStr ) ;
+    setHolderUserId( "" ) ;
     setErrorMessage( "" ) ;
     setType( "expense" ) ;
     setIsCreatingCategory( false ) ;
@@ -245,6 +255,7 @@ export function TransactionFormModal( {
         categoryId:           categoryId || null ,
         merchantName:         merchantName || null ,
         occurredAt:           new Date( occurredAt ) ,
+        holderUserId:         ( holderUserId && (holderUserId !== propio?.userId) ) ? holderUserId : undefined ,
       } ) ;
 
       if( !res.success ) {
@@ -257,6 +268,10 @@ export function TransactionFormModal( {
       onClose() ;
     } ) ;
   } ;
+
+  // El primero de la lista es uno mismo: el selector sólo aparece si hay a nombre de quién más cargar.
+  const propio           = titulares[0] ;
+  const mostrarTitulares = ( (titulares.length > 1) && !!holderDict ) ;
 
   const targetCategoryType = ( (type === "income") ? "revenue" : "expense" ) ;
   const currentTypeTree    = tree.filter( ( p ) => ( (p.type === targetCategoryType) && (!p.isSystemLeaf) ) ) ;
@@ -328,6 +343,20 @@ export function TransactionFormModal( {
             onChange={ () => {} }
           />
         </div>
+
+        {( mostrarTitulares && holderDict ) && (
+          <FormSelect
+            label={holderDict.holderSelectLabel}
+            value={holderUserId || propio.userId}
+            onChange={ ( e ) => setHolderUserId( e.target.value ) }
+          >
+            {titulares.map( ( t , i ) => (
+              <option key={t.userId} value={t.userId}>
+                {(i === 0) ? holderDict.holderSelfOption.replace( "{nombre}" , t.nombre ) : t.nombre}
+              </option>
+            ) )}
+          </FormSelect>
+        )}
 
         <FormInput
           label="Descripción"

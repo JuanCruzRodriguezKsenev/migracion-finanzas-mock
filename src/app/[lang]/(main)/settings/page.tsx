@@ -18,7 +18,8 @@ import { SettingsContainer } from "@/features/settings/components/SettingsContai
 import { membershipRepository } from "@/features/auth/repositories/membershipRepository" ;
 
 // Feature: Organizations
-import { listarMiembrosAction } from "@/features/organizations/actions/membersActions" ;
+import { listarHabilitacionesAction } from "@/features/organizations/actions/habilitacionesActions" ;
+import { listarMiembrosAction }        from "@/features/organizations/actions/membersActions" ;
 
 // Feature: Accounting
 import { getAccountsAction }     from "@/features/accounting/actions/accountingActions" ;
@@ -49,6 +50,11 @@ export default async function SettingsPage( {params}: SettingsPageProps ) {
   const activa       = membresias.find( ( m ) => m.organizationId === session?.user?.organizationId ) ;
   const organizacion = ( activa ? { nombre: activa.organizationName , cantidadOrganizaciones: membresias.length } : null ) ;
 
+  // El rol sale de la base, no del token (como el layout). La pestaña Habilitaciones no es para `viewer`.
+  const membresia         = ( (session?.user?.id && session.user.organizationId) ? await membershipRepository.findMembership( session.user.id , session.user.organizationId ) : null ) ;
+  const rol               = ( membresia?.role ?? "" ) ;
+  const habilitacionesRes = ( ((rol === "owner") || (rol === "member")) ? await listarHabilitacionesAction() : null ) ;
+
   return(
     <div className={styles.container}>
       <SettingsContainer
@@ -60,6 +66,8 @@ export default async function SettingsPage( {params}: SettingsPageProps ) {
         miembros={miembrosRes.success ? miembrosRes.value : null}
         currentUserId={session?.user?.id ?? ""}
         organizacion={organizacion}
+        rol={rol}
+        habilitaciones={habilitacionesRes?.success ? habilitacionesRes.value : null}
       />
     </div>
   ) ;

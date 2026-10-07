@@ -39,6 +39,7 @@ interface TransactionDetailModalProps {
   onSuccess:   () => void ;
   accounts:    Account[] ;
   categories:  Category[] ;
+  holderDict?: HolderDetailDict ;
 }
 
 interface TransactionDetailContentProps {
@@ -47,6 +48,30 @@ interface TransactionDetailContentProps {
   onSuccess:   () => void ;
   accounts:    Account[] ;
   categories:  Category[] ;
+  holderDict?: HolderDetailDict ;
+}
+
+/** Textos de la línea de autoría del detalle: `{autor}` y `{titular}` se reemplazan por los nombres. */
+export interface HolderDetailDict {
+  holderDetailBy:    string ;
+  holderDetailByFor: string ;
+}
+
+/**
+ * Línea de autoría del detalle: quién cargó el movimiento y, si es otra persona, a nombre de quién.
+ * Sin autor no hay nada que decir; si el titular es el propio autor, se omite el «a nombre de».
+ */
+function textoDeAutoria( transaction: TransactionWithEntries , dict?: HolderDetailDict ): string | null {
+  const autor   = transaction.createdBy ;
+  const titular = transaction.holder ;
+
+  if( !dict || !autor ) { return( null ) ; }
+
+  if( titular && (titular.id !== autor.id) ) {
+    return( dict.holderDetailByFor.replace( "{autor}" , autor.nombre ).replace( "{titular}" , titular.nombre ) ) ;
+  }
+
+  return( dict.holderDetailBy.replace( "{autor}" , autor.nombre ) ) ;
 }
 
 function TransactionDetailContent( {
@@ -55,6 +80,7 @@ function TransactionDetailContent( {
   onSuccess ,
   accounts ,
   categories ,
+  holderDict ,
 }: TransactionDetailContentProps ) {
   const { profile }                     = useProfileContext() ;
   const locale                          = ( profile?.numberFormat || "es-AR" ) ;
@@ -63,6 +89,8 @@ function TransactionDetailContent( {
   // Una transacción ya reversada no vuelve a reversarse: el servicio lo rechaza, y ofrecer el botón
   // sólo llevaría al usuario a un error evitable.
   const yaReversada = Boolean( transaction.reversedAt ) ;
+
+  const textoAutoria = textoDeAutoria( transaction , holderDict ) ;
 
   const [ description , setDescription ]       = useState( transaction.description ) ;
   const [ categoryId , setCategoryId ]         = useState( transaction.categoryId || "" ) ;
@@ -137,6 +165,8 @@ function TransactionDetailContent( {
   return(
     <form onSubmit={handleUpdateMetadata} className={styles.modalForm}>
       {errorMessage && <FormError error={errorMessage} />}
+
+      {textoAutoria && <p className={styles.holderNote}>{textoAutoria}</p>}
 
       <FormInput
         label="Descripción"
@@ -269,6 +299,7 @@ export function TransactionDetailModal( {
   onSuccess ,
   accounts ,
   categories ,
+  holderDict ,
 }: TransactionDetailModalProps ) {
   if( !transaction ) { return( null ) ; }
 
@@ -287,6 +318,7 @@ export function TransactionDetailModal( {
         onSuccess={onSuccess}
         accounts={accounts}
         categories={categories}
+        holderDict={holderDict}
       />
     </Modal>
   ) ;

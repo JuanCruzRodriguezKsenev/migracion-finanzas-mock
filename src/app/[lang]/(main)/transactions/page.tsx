@@ -3,9 +3,20 @@
  * Página de visualización y gestión del Libro Diario de Transacciones.
  * Server Component fino que compone datos de cuentas, categorías y transacciones iniciales.
  */
+// Librerías externas
+import { getServerSession } from "next-auth" ;
+
 // Shared
 import { getDictionary } from "@/shared/lib/dictionary" ;
+import { authOptions }   from "@/shared/lib/auth" ;
 import styles            from "./page.module.css" ;
+
+// Feature: Organizations
+import { listarTitularesPosiblesAction } from "@/features/organizations/actions/habilitacionesActions" ;
+
+// Feature: Auth
+import { membershipRepository } from "@/features/auth/repositories/membershipRepository" ;
+import { nombreVisible }        from "@/features/auth/utils/nombreVisible" ;
 
 // Feature: Accounting
 import {
@@ -43,7 +54,7 @@ export default async function TransactionsPage( {params , searchParams}: Transac
   }
 
   // Carga concurrente en el servidor
-  const [ dict , earliestMonthRes , accountsRes , categoryTreeRes , entitiesRes , transactionsPageRes ] = await Promise.all( [
+  const [ dict , earliestMonthRes , accountsRes , categoryTreeRes , entitiesRes , transactionsPageRes , titularesRes , session ] = await Promise.all( [
     getDictionary( lang ) ,
     getEarliestMonthKeyAction() ,
     getAccountsAction() ,
@@ -53,8 +64,16 @@ export default async function TransactionsPage( {params , searchParams}: Transac
       limit: 20 ,
       fromDate ,
       toDate ,
-    } )
+    } ) ,
+    listarTitularesPosiblesAction() ,
+    getServerSession( authOptions )
   ] ) ;
+
+  // Miembros de la organización para el filtro por titular (cualquier miembro puede filtrar la lista)
+  const organizationId = session?.user?.organizationId ;
+  const miembrosDeOrg  = ( organizationId ? await membershipRepository.findByOrganization( organizationId ) : [] ) ;
+  const miembros       = miembrosDeOrg.map( ( m ) => ( { userId: m.userId , nombre: nombreVisible( m.nombre , m.email ) } ) ) ;
+  const titulares      = ( titularesRes.success ? titularesRes.value : [] ) ;
 
   const ahora           = new Date() ;
   const currentMonthKey = `${ahora.getFullYear()}-${String( ahora.getMonth() + 1 ).padStart( 2 , "0" )}` ;
@@ -82,6 +101,8 @@ export default async function TransactionsPage( {params , searchParams}: Transac
         lang={lang}
         currentMonthKey={currentMonthKey}
         minKey={minKey}
+        titulares={titulares}
+        miembros={miembros}
       />
     </div>
   ) ;

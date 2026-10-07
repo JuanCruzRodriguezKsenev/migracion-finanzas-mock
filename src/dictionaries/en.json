@@ -484,7 +484,8 @@
       "errorColorInvalid": "The color must be a 6-character hexadecimal value (e.g. #3498db)."
     },
     "tabMembers": "Members",
-    "tabOrganization": "Organization"
+    "tabOrganization": "Organization",
+    "tabHabilitaciones": "Permissions"
   },
   "transactionsPage": {
     "title": "General Ledger",
@@ -497,7 +498,14 @@
     "typeIncome": "Income",
     "typeExpense": "Expense",
     "typeTransfer": "Transfer",
-    "emptyState": "No transactions found."
+    "emptyState": "No transactions found.",
+    "holderSelectLabel": "On behalf of",
+    "holderSelfOption": "{nombre} (you)",
+    "holderChipLabel": "Holder: {nombre}",
+    "holderDetailBy": "Entered by {autor}",
+    "holderDetailByFor": "Entered by {autor} on behalf of {titular}",
+    "holderFilterLabel": "Holder",
+    "holderFilterAll": "All holders"
   },
   "contactsPage": {
     "title": "Contacts Directory",
@@ -691,5 +699,15 @@
       "deleteNotice": "You deleted {nombre}",
       "genericError": "The action could not be completed."
     }
+  },
+  "habilitaciones": {
+    "title": "Who can enter entries for me",
+    "subtitle": "People you allow can record transactions on your behalf in this organization. You can withdraw the permission at any time.",
+    "toggleLabel": "Allow {nombre} to enter transactions on my behalf",
+    "emptyCandidates": "There are no other members to allow.",
+    "receivedTitle": "You can enter entries on behalf of",
+    "receivedEmpty": "Nobody has allowed you yet.",
+    "saveError": "The change could not be saved.",
+    "loadError": "Permissions could not be loaded."
   }
 }
