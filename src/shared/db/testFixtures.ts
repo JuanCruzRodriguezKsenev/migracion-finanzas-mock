@@ -27,6 +27,12 @@ import { contacts , contactPaymentMethods } from "@/features/contacts/schema.db"
 // Feature: Subscriptions
 import { subscriptions } from "@/features/subscriptions/schema.db" ;
 
+// Feature: Budgets
+import { budgets , budgetLimits } from "@/features/budgets/schema.db" ;
+
+// Feature: Goals
+import { goals , goalMovements } from "@/features/goals/schema.db" ;
+
 
 export interface OpcionesCrearUsuarioConMembresia {
   organizationId:      string ;
@@ -157,6 +163,14 @@ export async function crearOrganizacionRica( organizationId: string , tx: DBOrTx
     startDate: new Date() , nextPaymentDate: new Date() , accountId: efectivo.id , categoryId: hija.id ,
   } ) ;
 
+  const [ presupuesto ] = await tx.insert( budgets ).values( { organizationId , categoryId: hija.id , currency: "ARS" } ).returning() ;
+
+  await tx.insert( budgetLimits ).values( { budgetId: presupuesto.id , effectiveFrom: "2030-01" , amount: 100000 } ) ;
+
+  const [ meta ] = await tx.insert( goals ).values( { organizationId , name: "Meta de prueba" , currency: "ARS" , targetAmount: 100000 } ).returning() ;
+
+  await tx.insert( goalMovements ).values( { organizationId , goalId: meta.id , accountId: efectivo.id , kind: "contribution" , amount: 500 } ) ;
+
   await tx.insert( outboxEvents ).values( { organizationId , eventType: "TRANSACTION_CREATED" , payload: {} } ) ;
   await tx.insert( monthlySummaries ).values( { organizationId , year: 2030 , month: 0 } ) ;
   await tx.insert( invitations ).values( {
@@ -179,11 +193,14 @@ export async function crearOrganizacionRica( organizationId: string , tx: DBOrTx
 /** Consultas de conteo por organización: una por cada tabla que `eliminarCompleta` borra. */
 const CONSULTAS: Record< string , ( id: string ) => ReturnType< typeof sql > > = {
   accounts:                ( id ) => sql`select count(*) from accounts where organization_id = ${id}` ,
+  budgets:                 ( id ) => sql`select count(*) from budgets where organization_id = ${id}` ,
   card_installment_plans:  ( id ) => sql`select count(*) from card_installment_plans where organization_id = ${id}` ,
   cards:                   ( id ) => sql`select count(*) from cards where organization_id = ${id}` ,
   categories:              ( id ) => sql`select count(*) from categories where organization_id = ${id}` ,
   contacts:                ( id ) => sql`select count(*) from contacts where organization_id = ${id}` ,
   financial_entities:      ( id ) => sql`select count(*) from financial_entities where organization_id = ${id}` ,
+  goal_movements:          ( id ) => sql`select count(*) from goal_movements where organization_id = ${id}` ,
+  goals:                   ( id ) => sql`select count(*) from goals where organization_id = ${id}` ,
   holder_authorizations:   ( id ) => sql`select count(*) from holder_authorizations where organization_id = ${id}` ,
   invitations:             ( id ) => sql`select count(*) from invitations where organization_id = ${id}` ,
   ledger_transactions:     ( id ) => sql`select count(*) from ledger_transactions where organization_id = ${id}` ,
@@ -192,6 +209,7 @@ const CONSULTAS: Record< string , ( id: string ) => ReturnType< typeof sql > > =
   monthly_summaries:       ( id ) => sql`select count(*) from monthly_summaries where organization_id = ${id}` ,
   outbox_events:           ( id ) => sql`select count(*) from outbox_events where organization_id = ${id}` ,
   subscriptions:           ( id ) => sql`select count(*) from subscriptions where organization_id = ${id}` ,
+  budget_limits:           ( id ) => sql`select count(*) from budget_limits where budget_id in (select id from budgets where organization_id = ${id})` ,
   ledger_entries:          ( id ) => sql`select count(*) from ledger_entries where transaction_id in (select id from ledger_transactions where organization_id = ${id})` ,
   card_accounts:           ( id ) => sql`select count(*) from card_accounts where card_id in (select id from cards where organization_id = ${id})` ,
   loan_accounts:           ( id ) => sql`select count(*) from loan_accounts where loan_id in (select id from loans where organization_id = ${id})` ,

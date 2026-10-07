@@ -26,7 +26,11 @@ import {
   categories ,
   invitations ,
   holderAuthorizations ,
-  memberships
+  memberships ,
+  budgets ,
+  budgetLimits ,
+  goals ,
+  goalMovements
 } from "@/shared/db/schema" ;
 
 // Feature: Auth
@@ -37,16 +41,19 @@ import { organizations } from "../schema.db" ;
  * Tablas que tienen la columna `organization_id` y que `eliminarCompleta` borra explícitamente (NFR-6).
  * Una tabla nueva con `organization_id` debe sumarse acá **y** al borrado: un test compara esta lista
  * con `information_schema` y falla si falta alguna. Las tablas sin la columna que cuelgan de éstas
- * (`ledger_entries`, `card_accounts`, `loan_accounts`, `category_accounts`, `contact_payment_methods`)
+ * (`ledger_entries`, `card_accounts`, `loan_accounts`, `category_accounts`, `contact_payment_methods`, `budget_limits`)
  * se borran por subconsulta dentro del mismo borrado.
  */
 export const TABLAS_CON_ORGANIZACION = [
   "accounts" ,
+  "budgets" ,
   "card_installment_plans" ,
   "cards" ,
   "categories" ,
   "contacts" ,
   "financial_entities" ,
+  "goal_movements" ,
+  "goals" ,
   "holder_authorizations" ,
   "invitations" ,
   "ledger_transactions" ,
@@ -112,6 +119,7 @@ export const organizationRepository = {
     const prestamosDeLaOrg     = tx.select( { id: loans.id               } ).from( loans               ).where( eq( loans.organizationId               , organizationId ) ) ;
     const contactosDeLaOrg     = tx.select( { id: contacts.id            } ).from( contacts            ).where( eq( contacts.organizationId            , organizationId ) ) ;
     const categoriasDeLaOrg    = tx.select( { id: categories.id          } ).from( categories          ).where( eq( categories.organizationId          , organizationId ) ) ;
+    const presupuestosDeLaOrg  = tx.select( { id: budgets.id             } ).from( budgets             ).where( eq( budgets.organizationId             , organizationId ) ) ;
 
     // 1. Sin dependientes
     await tx.delete( outboxEvents      ).where( eq( outboxEvents.organizationId      , organizationId ) ) ;
@@ -138,6 +146,12 @@ export const organizationRepository = {
 
     // 8. Suscripciones (antes que accounts y categories)
     await tx.delete( subscriptions ).where( eq( subscriptions.organizationId , organizationId ) ) ;
+
+    // 8b. Metas y presupuestos (antes que accounts y categories: FK restrict a cuentas, metas y categorías)
+    await tx.delete( goalMovements ).where( eq( goalMovements.organizationId , organizationId ) ) ;
+    await tx.delete( goals         ).where( eq( goals.organizationId         , organizationId ) ) ;
+    await tx.delete( budgetLimits  ).where( inArray( budgetLimits.budgetId , presupuestosDeLaOrg ) ) ;
+    await tx.delete( budgets       ).where( eq( budgets.organizationId       , organizationId ) ) ;
 
     // 9. Vínculos categoría-cuenta (restrict a ambas)
     await tx.delete( categoryAccounts ).where( inArray( categoryAccounts.categoryId , categoriasDeLaOrg ) ) ;
