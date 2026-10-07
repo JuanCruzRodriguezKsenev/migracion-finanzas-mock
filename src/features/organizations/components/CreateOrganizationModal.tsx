@@ -34,20 +34,14 @@ export interface CreateOrganizationModalProps {
 }
 
 /**
- * Modal con el formulario de creación de una organización nueva.
+ * Contenido del formulario. El estado vive acá y no en el modal: así el `onClose` que recibe `Modal`
+ * es el de las props (estable) y escribir no reinicia su efecto de foco (mismo patrón que `ContactFormModal`).
  */
-export function CreateOrganizationModal( { isOpen , onClose , onCreated , dict }: CreateOrganizationModalProps ) {
+function CreateOrganizationContent( { onClose , onCreated , dict }: Omit< CreateOrganizationModalProps , "isOpen" > ) {
   const [ nombre , setNombre ]     = useState( "" ) ;
   const [ error , setError ]       = useState( "" ) ;
   const [ enviando , setEnviando ] = useState( false ) ;
   const inputRef                   = useRef< HTMLInputElement >( null ) ;
-
-  const handleClose = () => {
-    if( enviando ) { return ; }
-    setNombre( "" ) ;
-    setError( "" ) ;
-    onClose() ;
-  } ;
 
   const handleSubmit = async ( e: React.FormEvent ) => {
     e.preventDefault() ;
@@ -78,28 +72,37 @@ export function CreateOrganizationModal( { isOpen , onClose , onCreated , dict }
   } ;
 
   return(
-    <Modal isOpen={isOpen} onClose={handleClose} title={dict.title} subtitle={dict.subtitle}>
-      <form onSubmit={handleSubmit}>
-        <FormError error={error} />
+    <form onSubmit={handleSubmit}>
+      <FormError error={error} />
 
-        <FormInput
-          ref={inputRef}
-          label={dict.nameLabel}
-          value={nombre}
-          onChange={ ( e ) => setNombre( e.target.value ) }
-          placeholder={dict.namePlaceholder}
-          maxLength={100}
-          readOnly={enviando}
-          required
-        />
+      <FormInput
+        ref={inputRef}
+        label={dict.nameLabel}
+        value={nombre}
+        onChange={ ( e ) => setNombre( e.target.value ) }
+        placeholder={dict.namePlaceholder}
+        maxLength={100}
+        readOnly={enviando}
+        required
+      />
 
-        <FormActions
-          onCancel={handleClose}
-          cancelLabel={dict.cancel}
-          submitLabel={dict.submit}
-          submitting={enviando}
-        />
-      </form>
+      <FormActions
+        onCancel={onClose}
+        cancelLabel={dict.cancel}
+        submitLabel={dict.submit}
+        submitting={enviando}
+      />
+    </form>
+  ) ;
+}
+
+/**
+ * Modal con el formulario de creación de una organización nueva.
+ */
+export function CreateOrganizationModal( { isOpen , onClose , onCreated , dict }: CreateOrganizationModalProps ) {
+  return(
+    <Modal isOpen={isOpen} onClose={onClose} title={dict.title} subtitle={dict.subtitle}>
+      { isOpen && <CreateOrganizationContent onClose={onClose} onCreated={onCreated} dict={dict} /> }
     </Modal>
   ) ;
 }
