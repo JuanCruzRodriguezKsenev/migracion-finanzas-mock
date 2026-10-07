@@ -37,7 +37,7 @@ import { goals , goalMovements } from "@/features/goals/schema.db" ;
 import { notifications } from "@/features/notifications/schema.db" ;
 
 // Feature: Splits
-import { organizationAgreements , agreementPercentages , monthlyContributions , expenseSplits , memberPayments , paymentRequests } from "@/features/splits/schema.db" ;
+import { organizationAgreements , agreementPercentages , monthlyContributions , expenseSplits , memberPayments , paymentRequests , commonPotContributions } from "@/features/splits/schema.db" ;
 
 
 export interface OpcionesCrearUsuarioConMembresia {
@@ -209,40 +209,44 @@ export async function crearOrganizacionRica( organizationId: string , tx: DBOrTx
   // Pago y solicitud de pago entre los mismos dos usuarios sueltos
   await tx.insert( memberPayments ).values( { organizationId , fromUserId: habilitado.id , toUserId: otorgante.id , amountInCents: 200 , currency: "ARS" , registeredByUserId: otorgante.id } ) ;
   await tx.insert( paymentRequests ).values( { organizationId , fromUserId: otorgante.id , toUserId: habilitado.id , currency: "ARS" , dayKey: "2030-01-01" } ) ;
+
+  // Aporte a la caja común
+  await tx.insert( commonPotContributions ).values( { organizationId , userId: otorgante.id , amountInCents: 300 , currency: "ARS" , registeredByUserId: otorgante.id } ) ;
 }
 
 /** Consultas de conteo por organización: una por cada tabla que `eliminarCompleta` borra. */
 const CONSULTAS: Record< string , ( id: string ) => ReturnType< typeof sql > > = {
-  accounts:                ( id ) => sql`select count(*) from accounts where organization_id = ${id}` ,
-  agreement_percentages:   ( id ) => sql`select count(*) from agreement_percentages where organization_id = ${id}` ,
-  expense_splits:          ( id ) => sql`select count(*) from expense_splits where organization_id = ${id}` ,
-  member_payments:         ( id ) => sql`select count(*) from member_payments where organization_id = ${id}` ,
-  payment_requests:        ( id ) => sql`select count(*) from payment_requests where organization_id = ${id}` ,
-  monthly_contributions:   ( id ) => sql`select count(*) from monthly_contributions where organization_id = ${id}` ,
-  organization_agreements: ( id ) => sql`select count(*) from organization_agreements where organization_id = ${id}` ,
-  budgets:                 ( id ) => sql`select count(*) from budgets where organization_id = ${id}` ,
-  card_installment_plans:  ( id ) => sql`select count(*) from card_installment_plans where organization_id = ${id}` ,
-  cards:                   ( id ) => sql`select count(*) from cards where organization_id = ${id}` ,
-  categories:              ( id ) => sql`select count(*) from categories where organization_id = ${id}` ,
-  contacts:                ( id ) => sql`select count(*) from contacts where organization_id = ${id}` ,
-  financial_entities:      ( id ) => sql`select count(*) from financial_entities where organization_id = ${id}` ,
-  goal_movements:          ( id ) => sql`select count(*) from goal_movements where organization_id = ${id}` ,
-  goals:                   ( id ) => sql`select count(*) from goals where organization_id = ${id}` ,
-  holder_authorizations:   ( id ) => sql`select count(*) from holder_authorizations where organization_id = ${id}` ,
-  invitations:             ( id ) => sql`select count(*) from invitations where organization_id = ${id}` ,
-  ledger_transactions:     ( id ) => sql`select count(*) from ledger_transactions where organization_id = ${id}` ,
-  loans:                   ( id ) => sql`select count(*) from loans where organization_id = ${id}` ,
-  memberships:             ( id ) => sql`select count(*) from memberships where organization_id = ${id}` ,
-  monthly_summaries:       ( id ) => sql`select count(*) from monthly_summaries where organization_id = ${id}` ,
-  notifications:           ( id ) => sql`select count(*) from notifications where organization_id = ${id}` ,
-  outbox_events:           ( id ) => sql`select count(*) from outbox_events where organization_id = ${id}` ,
-  subscriptions:           ( id ) => sql`select count(*) from subscriptions where organization_id = ${id}` ,
-  budget_limits:           ( id ) => sql`select count(*) from budget_limits where budget_id in (select id from budgets where organization_id = ${id})` ,
-  ledger_entries:          ( id ) => sql`select count(*) from ledger_entries where transaction_id in (select id from ledger_transactions where organization_id = ${id})` ,
-  card_accounts:           ( id ) => sql`select count(*) from card_accounts where card_id in (select id from cards where organization_id = ${id})` ,
-  loan_accounts:           ( id ) => sql`select count(*) from loan_accounts where loan_id in (select id from loans where organization_id = ${id})` ,
-  category_accounts:       ( id ) => sql`select count(*) from category_accounts where category_id in (select id from categories where organization_id = ${id})` ,
-  contact_payment_methods: ( id ) => sql`select count(*) from contact_payment_methods where contact_id in (select id from contacts where organization_id = ${id})` ,
+  accounts:                 ( id ) => sql`select count(*) from accounts where organization_id = ${id}` ,
+  agreement_percentages:    ( id ) => sql`select count(*) from agreement_percentages where organization_id = ${id}` ,
+  expense_splits:           ( id ) => sql`select count(*) from expense_splits where organization_id = ${id}` ,
+  member_payments:          ( id ) => sql`select count(*) from member_payments where organization_id = ${id}` ,
+  payment_requests:         ( id ) => sql`select count(*) from payment_requests where organization_id = ${id}` ,
+  monthly_contributions:    ( id ) => sql`select count(*) from monthly_contributions where organization_id = ${id}` ,
+  organization_agreements:  ( id ) => sql`select count(*) from organization_agreements where organization_id = ${id}` ,
+  budgets:                  ( id ) => sql`select count(*) from budgets where organization_id = ${id}` ,
+  card_installment_plans:   ( id ) => sql`select count(*) from card_installment_plans where organization_id = ${id}` ,
+  cards:                    ( id ) => sql`select count(*) from cards where organization_id = ${id}` ,
+  categories:               ( id ) => sql`select count(*) from categories where organization_id = ${id}` ,
+  common_pot_contributions: ( id ) => sql`select count(*) from common_pot_contributions where organization_id = ${id}` ,
+  contacts:                 ( id ) => sql`select count(*) from contacts where organization_id = ${id}` ,
+  financial_entities:       ( id ) => sql`select count(*) from financial_entities where organization_id = ${id}` ,
+  goal_movements:           ( id ) => sql`select count(*) from goal_movements where organization_id = ${id}` ,
+  goals:                    ( id ) => sql`select count(*) from goals where organization_id = ${id}` ,
+  holder_authorizations:    ( id ) => sql`select count(*) from holder_authorizations where organization_id = ${id}` ,
+  invitations:              ( id ) => sql`select count(*) from invitations where organization_id = ${id}` ,
+  ledger_transactions:      ( id ) => sql`select count(*) from ledger_transactions where organization_id = ${id}` ,
+  loans:                    ( id ) => sql`select count(*) from loans where organization_id = ${id}` ,
+  memberships:              ( id ) => sql`select count(*) from memberships where organization_id = ${id}` ,
+  monthly_summaries:        ( id ) => sql`select count(*) from monthly_summaries where organization_id = ${id}` ,
+  notifications:            ( id ) => sql`select count(*) from notifications where organization_id = ${id}` ,
+  outbox_events:            ( id ) => sql`select count(*) from outbox_events where organization_id = ${id}` ,
+  subscriptions:            ( id ) => sql`select count(*) from subscriptions where organization_id = ${id}` ,
+  budget_limits:            ( id ) => sql`select count(*) from budget_limits where budget_id in (select id from budgets where organization_id = ${id})` ,
+  ledger_entries:           ( id ) => sql`select count(*) from ledger_entries where transaction_id in (select id from ledger_transactions where organization_id = ${id})` ,
+  card_accounts:            ( id ) => sql`select count(*) from card_accounts where card_id in (select id from cards where organization_id = ${id})` ,
+  loan_accounts:            ( id ) => sql`select count(*) from loan_accounts where loan_id in (select id from loans where organization_id = ${id})` ,
+  category_accounts:        ( id ) => sql`select count(*) from category_accounts where category_id in (select id from categories where organization_id = ${id})` ,
+  contact_payment_methods:  ( id ) => sql`select count(*) from contact_payment_methods where contact_id in (select id from contacts where organization_id = ${id})` ,
 } ;
 
 /** Cantidad de filas de cada tabla del borrado para una organización. */

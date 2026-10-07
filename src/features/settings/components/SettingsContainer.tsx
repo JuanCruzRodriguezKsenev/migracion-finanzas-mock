@@ -23,8 +23,10 @@ import { MembersPanel }                 from "@/features/organizations/component
 // Feature: Splits
 import type { VistaAcuerdo } from "@/features/splits/actions/acuerdoActions" ;
 import type { VistaSaldos }  from "@/features/splits/actions/saldosActions" ;
+import type { VistaCaja }    from "@/features/splits/actions/cajaActions" ;
 import { AcuerdoPanel }      from "@/features/splits/components/AcuerdoPanel" ;
 import { SaldosPanel }       from "@/features/splits/components/SaldosPanel" ;
+import { CajaPanel }         from "@/features/splits/components/CajaPanel" ;
 
 // Feature: Accounting
 import { CategoriesSettingsContainer } from "@/features/accounting/components/CategoriesSettings/CategoriesSettingsContainer" ;
@@ -53,9 +55,11 @@ export interface SettingsContainerProps {
   acuerdo?:        VistaAcuerdo | null ;
   /** Saldos entre miembros, para los tres roles; `null` si no hay nada que mostrar (S-X). */
   saldos?:         VistaSaldos | null ;
+  /** Caja común, para los tres roles; `null` si la caja no está activa (RN-25). */
+  caja?:           VistaCaja | null ;
 }
 
-type PestanaConfiguracion = "categories" | "ledger" | "members" | "organization" | "habilitaciones" | "acuerdo" | "saldos" ;
+type PestanaConfiguracion = "categories" | "ledger" | "members" | "organization" | "habilitaciones" | "acuerdo" | "saldos" | "caja" ;
 
 /**
  * Shell principal de la pantalla de configuración.
@@ -73,6 +77,7 @@ export function SettingsContainer( {
   habilitaciones = null ,
   acuerdo = null ,
   saldos = null ,
+  caja = null ,
 }: SettingsContainerProps ) {
   const [ activeTab , setActiveTab ] = useState< PestanaConfiguracion >( "categories" ) ;
 
@@ -81,6 +86,7 @@ export function SettingsContainer( {
   const mostrarHabilitaciones = ( ((rol === "owner") || (rol === "member")) && !!habilitaciones ) ;
   const mostrarAcuerdo        = ( ((rol === "owner") || (rol === "member")) && !!acuerdo ) ;
   const mostrarSaldos         = ( !!saldos && saldos.visible ) ;
+  const mostrarCaja           = ( !!caja && caja.visible ) ;
 
   const settingsTabs = [
     { key: "categories"  , label: dict.settingsPage.tabCategories } ,
@@ -90,6 +96,7 @@ export function SettingsContainer( {
     ...( mostrarHabilitaciones ? [ { key: "habilitaciones" , label: dict.settingsPage.tabHabilitaciones } ] : [] ) ,
     ...( mostrarAcuerdo ? [ { key: "acuerdo" , label: dict.settingsPage.tabAcuerdo } ] : [] ) ,
     ...( mostrarSaldos ? [ { key: "saldos" , label: dict.settingsPage.tabSaldos } ] : [] ) ,
+    ...( mostrarCaja ? [ { key: "caja" , label: dict.settingsPage.tabCaja } ] : [] ) ,
     { key: "profile"     , label: dict.settingsPage.tabProfile     , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
     { key: "preferences" , label: dict.settingsPage.tabPreferences , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
     { key: "security"    , label: dict.settingsPage.tabSecurity    , disabled: true , badge: dict.settingsPage.tabBadgeSoon } ,
@@ -140,6 +147,11 @@ export function SettingsContainer( {
         <SaldosPanel
           initialData={saldos}
           dict={dict.splits.balances}
+        />
+      ) : ( (activeTab === "caja") && mostrarCaja ) ? (
+        <CajaPanel
+          initialData={caja}
+          dict={dict.splits.pot}
         />
       ) : (
         <LedgerAuditPanel accounts={accounts} dict={dict} />

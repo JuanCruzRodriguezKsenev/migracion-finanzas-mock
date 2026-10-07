@@ -477,7 +477,8 @@
     "tabOrganization": "Organização",
     "tabHabilitaciones": "Permissões",
     "tabAcuerdo": "Acordo",
-    "tabSaldos": "Saldos"
+    "tabSaldos": "Saldos",
+    "tabCaja": "Caixa"
   },
   "transactionsPage": {
     "title": "Livro Diário",
@@ -727,7 +728,9 @@
     "contributionOf": "Aporte de {nombre}",
     "contributionInvalid": "Digite um valor válido (por exemplo 600000,50).",
     "commonPotLabel": "Usar caixa comum",
-    "commonPotNote": "Ativa na próxima versão",
+    "commonPotAccounts": "Contas do caixa comum",
+    "commonPotAccountOption": "{nombre} · {divisa}",
+    "commonPotNoAccounts": "Não há contas de ativo para usar como caixa.",
     "save": "Salvar acordo",
     "confirmTitle": "Salvar o acordo",
     "confirmBody": "Vale para os gastos novos. Os gastos já lançados não mudam.",
@@ -761,6 +764,31 @@
       "paySubmit": "Registrar pagamento",
       "cancel": "Cancelar",
       "loadError": "Não foi possível carregar os saldos.",
+      "genericError": "Não foi possível concluir a operação."
+    },
+    "pot": {
+      "title": "Caixa comum",
+      "subtitle": "Aportes e retiradas do caixa. É informativo: não move dinheiro nem cria lançamentos.",
+      "participationTitle": "Participação em {divisa}",
+      "share": "{porcentaje} %",
+      "noShare": "—",
+      "formerMember": "Membro anterior",
+      "empty": "Ainda não há aportes.",
+      "recentTitle": "Movimentos recentes",
+      "contribute": "Aportar",
+      "withdraw": "Retirar",
+      "contributeTitle": "Registrar um aporte",
+      "withdrawTitle": "Registrar uma retirada",
+      "kindContribution": "Aporte",
+      "kindWithdrawal": "Retirada",
+      "memberLabel": "Membro",
+      "currencyLabel": "Moeda",
+      "amountLabel": "Valor ({divisa})",
+      "amountInvalid": "Digite um valor válido, maior que zero (por exemplo 1500,50).",
+      "noteLabel": "Nota (opcional)",
+      "submit": "Registrar",
+      "cancel": "Cancelar",
+      "loadError": "Não foi possível carregar o caixa comum.",
       "genericError": "Não foi possível concluir a operação."
     }
   }

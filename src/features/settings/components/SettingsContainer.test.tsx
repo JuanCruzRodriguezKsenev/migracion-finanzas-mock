@@ -161,4 +161,27 @@ describe( "SettingsContainer - Shell de navegación" , () => {
 
     expect( screen.getByText( "juan@ejemplo.com" ) ).toBeTruthy() ;
   } ) ;
+
+  const cajaDe = ( visible: boolean ) => ( {
+    yoId: "u-1" , rol: "owner" , puedeEscribir: true , visible , divisas: [ "ARS" ] , participaciones: [] , aportes: [] , miembros: [] ,
+  } ) ;
+
+  it( "la pestaña Caja aparece sólo cuando la caja común está activa (visible)" , () => {
+    const montar = ( caja: ReturnType< typeof cajaDe > | null ) => render(
+      <NotificationsProvider>
+        <SettingsContainer initialTree={sampleTree} accounts={sampleAccounts} dict={dict} lang="es" caja={caja} />
+      </NotificationsProvider>
+    ) ;
+
+    const inactiva = montar( cajaDe( false ) ) ;
+    expect( screen.queryByRole( "tab" , { name: dict.settingsPage.tabCaja } ) ).toBeNull() ;
+    inactiva.unmount() ;
+
+    const sinDatos = montar( null ) ;
+    expect( screen.queryByRole( "tab" , { name: dict.settingsPage.tabCaja } ) ).toBeNull() ;
+    sinDatos.unmount() ;
+
+    montar( cajaDe( true ) ) ;
+    expect( screen.getByRole( "tab" , { name: dict.settingsPage.tabCaja } ) ).toBeTruthy() ;
+  } ) ;
 } ) ;

@@ -49,7 +49,9 @@ export interface AcuerdoPanelDict {
   contributionOf:         string ;
   contributionInvalid:    string ;
   commonPotLabel:         string ;
-  commonPotNote:          string ;
+  commonPotAccounts:      string ;
+  commonPotAccountOption: string ;
+  commonPotNoAccounts:    string ;
   save:                   string ;
   confirmTitle:           string ;
   confirmBody:            string ;
@@ -88,6 +90,11 @@ function aportesIniciales( data: VistaAcuerdo ): Record< string , string > {
   return( Object.fromEntries( data.miembros.map( ( m ) => [ m.userId , ( (m.aporteDelMes === null) ? "" : centavosComoTexto( m.aporteDelMes ) ) ] ) ) ) ;
 }
 
+/** Cuentas marcadas como caja común al cargar la vista. */
+function cuentasIniciales( data: VistaAcuerdo ): string[] {
+  return( data.cuentasMarcables.filter( ( c ) => c.esCaja ).map( ( c ) => c.id ) ) ;
+}
+
 /**
  * Panel del acuerdo de reparto de la organización activa.
  */
@@ -95,6 +102,7 @@ export function AcuerdoPanel( { initialData , dict }: AcuerdoPanelProps ) {
   const [ data , setData ]               = useState< VistaAcuerdo >( initialData ) ;
   const [ modo , setModo ]               = useState< ModoAcuerdo >( initialData.modo ) ;
   const [ usaCaja , setUsaCaja ]         = useState( initialData.usesCommonPot ) ;
+  const [ cuentasCaja , setCuentasCaja ] = useState< string[] >( () => cuentasIniciales( initialData ) ) ;
   const [ porcentajes , setPorcentajes ] = useState< Record< string , string > >( () => porcentajesIniciales( initialData ) ) ;
   const [ aportes , setAportes ]         = useState< Record< string , string > >( () => aportesIniciales( initialData ) ) ;
   const [ plantilla , setPlantilla ]     = useState< Plantilla >( "" ) ;
@@ -134,7 +142,17 @@ export function AcuerdoPanel( { initialData , dict }: AcuerdoPanelProps ) {
   } ;
   const hayAporteInvalido = data.miembros.some( ( m ) => aporteInvalido( m.userId ) ) ;
 
-  const puedeGuardar = ( esOwner && !guardando && !hayAporteInvalido && ((modo !== "fixed_percentages") || sumaOk) ) ;
+  // ── Caja común: sin cuentas de activo no puede quedar marcada, y activa exige al menos una cuenta ──
+  const hayMarcables    = ( data.cuentasMarcables.length > 0 ) ;
+  const usaCajaEfectiva = ( usaCaja && hayMarcables ) ;
+  const cuentasValidas  = cuentasCaja.filter( ( id ) => data.cuentasMarcables.some( ( c ) => (c.id === id) ) ) ;
+  const cajaIncompleta  = ( usaCajaEfectiva && (cuentasValidas.length === 0) ) ;
+
+  const alternarCuenta = ( id: string ) => {
+    setCuentasCaja( ( previas ) => ( previas.includes( id ) ? previas.filter( ( x ) => (x !== id) ) : [ ...previas , id ] ) ) ;
+  } ;
+
+  const puedeGuardar = ( esOwner && !guardando && !hayAporteInvalido && !cajaIncompleta && ((modo !== "fixed_percentages") || sumaOk) ) ;
 
   const aplicarPlantilla = ( valor: Plantilla ) => {
     setPlantilla( valor ) ;
@@ -168,6 +186,7 @@ export function AcuerdoPanel( { initialData , dict }: AcuerdoPanelProps ) {
     setData( res.value ) ;
     setModo( res.value.modo ) ;
     setUsaCaja( res.value.usesCommonPot ) ;
+    setCuentasCaja( cuentasIniciales( res.value ) ) ;
     setPorcentajes( porcentajesIniciales( res.value ) ) ;
     setAportes( aportesIniciales( res.value ) ) ;
   } ;
@@ -182,10 +201,11 @@ export function AcuerdoPanel( { initialData , dict }: AcuerdoPanelProps ) {
     try {
       const res = await guardarAcuerdoAction( {
         modo ,
-        usesCommonPot: usaCaja ,
+        usesCommonPot: usaCajaEfectiva ,
         porcentajes:   ( modo === "fixed_percentages" )
           ? data.miembros.map( ( m ) => ( { userId: m.userId , percentageBp: ( bpDe( m.userId ) ?? 0 ) } ) )
           : [] ,
+        cuentasCajaIds: ( usaCajaEfectiva ? cuentasValidas : [] ) ,
       } ) ;
 
       if( !res.success ) {
@@ -377,11 +397,25 @@ export function AcuerdoPanel( { initialData , dict }: AcuerdoPanelProps ) {
       <div className={styles.potBlock}>
         <Checkbox
           label={dict.commonPotLabel}
-          description={dict.commonPotNote}
-          checked={usaCaja}
-          disabled
-          onChange={ () => {} }
+          description={hayMarcables ? undefined : dict.commonPotNoAccounts}
+          checked={usaCajaEfectiva}
+          disabled={!hayMarcables}
+          onChange={ ( e ) => { setUsaCaja( e.target.checked ) ; setAviso( "" ) ; } }
         />
+
+        {usaCajaEfectiva && (
+          <fieldset className={styles.potAccounts}>
+            <legend className={styles.potLegend}>{dict.commonPotAccounts}</legend>
+            {data.cuentasMarcables.map( ( c ) => (
+              <Checkbox
+                key={c.id}
+                label={dict.commonPotAccountOption.replace( "{nombre}" , c.nombre ).replace( "{divisa}" , c.divisa )}
+                checked={cuentasCaja.includes( c.id )}
+                onChange={ () => alternarCuenta( c.id ) }
+              />
+            ) )}
+          </fieldset>
+        )}
       </div>
 
       <div className={styles.actions}>

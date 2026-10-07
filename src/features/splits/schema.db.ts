@@ -111,3 +111,23 @@ export const paymentRequests = pgTable( "payment_requests" , {
 } , ( table ) => { return( {
   uniqueDay: uniqueIndex( "payment_requests_day_unique" ).on( table.organizationId , table.fromUserId , table.toUserId , table.currency , table.dayKey ) ,
 } ) ; } ) ;
+
+/**
+ * Aporte o retiro de la caja común (RN-26): `amount_in_cents` lleva signo (positivo = aporte, negativo = retiro).
+ * Vive aparte del libro mayor: no genera asientos ni referencia un movimiento. `user_id` y `registered_by_user_id`
+ * quedan en `SET NULL`: quien sale de la organización deja su aporte visible como «Miembro anterior».
+ */
+export const commonPotContributions = pgTable( "common_pot_contributions" , {
+  id:                 uuid( "id"                    ).primaryKey().defaultRandom() ,
+  organizationId:     uuid( "organization_id"       ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
+  userId:             uuid( "user_id"               ).references( () => users.id         , {onDelete: "set null"} ) ,
+  amountInCents:      bigint( "amount_in_cents" , {mode: "number"} ).notNull() ,
+  currency:           varchar( "currency" , {length: 10} ).notNull() ,
+  note:               varchar( "note" , {length: 200} ) ,
+  registeredByUserId: uuid( "registered_by_user_id" ).references( () => users.id         , {onDelete: "set null"} ) ,
+  occurredAt:         timestamp( "occurred_at" , {withTimezone: true} ).defaultNow().notNull() ,
+  createdAt:          timestamp( "created_at"  , {withTimezone: true} ).defaultNow().notNull() ,
+} , ( table ) => { return( {
+  amountCheck:     check( "common_pot_contributions_amount_check" , sql`${table.amountInCents} <> 0` ) ,
+  orgCurrencyIdx:  index( "common_pot_contributions_org_currency_idx" ).on( table.organizationId , table.currency ) ,
+} ) ; } ) ;

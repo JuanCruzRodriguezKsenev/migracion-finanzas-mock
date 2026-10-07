@@ -37,7 +37,8 @@ import {
   monthlyContributions ,
   expenseSplits ,
   memberPayments ,
-  paymentRequests
+  paymentRequests ,
+  commonPotContributions
 } from "@/shared/db/schema" ;
 
 // Feature: Auth
@@ -58,6 +59,7 @@ export const TABLAS_CON_ORGANIZACION = [
   "card_installment_plans" ,
   "cards" ,
   "categories" ,
+  "common_pot_contributions" ,
   "contacts" ,
   "expense_splits" ,
   "financial_entities" ,
@@ -149,6 +151,7 @@ export const organizationRepository = {
     await tx.delete( monthlyContributions  ).where( eq( monthlyContributions.organizationId  , organizationId ) ) ;
     await tx.delete( memberPayments        ).where( eq( memberPayments.organizationId        , organizationId ) ) ;
     await tx.delete( paymentRequests       ).where( eq( paymentRequests.organizationId       , organizationId ) ) ;
+    await tx.delete( commonPotContributions ).where( eq( commonPotContributions.organizationId , organizationId ) ) ;
     await tx.delete( organizationAgreements ).where( eq( organizationAgreements.organizationId , organizationId ) ) ;
 
     // 2-3. Asientos antes que transacciones (restrict a accounts)

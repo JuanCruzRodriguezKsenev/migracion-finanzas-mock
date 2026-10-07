@@ -477,7 +477,8 @@
     "tabOrganization": "Organización",
     "tabHabilitaciones": "Habilitaciones",
     "tabAcuerdo": "Acuerdo",
-    "tabSaldos": "Saldos"
+    "tabSaldos": "Saldos",
+    "tabCaja": "Caja"
   },
   "transactionsPage": {
     "title": "Libro Diario",
@@ -727,7 +728,9 @@
     "contributionOf": "Aporte de {nombre}",
     "contributionInvalid": "Escribí un importe válido (por ejemplo 600000,50).",
     "commonPotLabel": "Usar caja común",
-    "commonPotNote": "Se activa en la próxima versión",
+    "commonPotAccounts": "Cuentas de la caja común",
+    "commonPotAccountOption": "{nombre} · {divisa}",
+    "commonPotNoAccounts": "No hay cuentas de activo para usar como caja.",
     "save": "Guardar acuerdo",
     "confirmTitle": "Guardar el acuerdo",
     "confirmBody": "Rige para los gastos nuevos. Los gastos ya cargados no cambian.",
@@ -761,6 +764,31 @@
       "paySubmit": "Registrar pago",
       "cancel": "Cancelar",
       "loadError": "No se pudieron cargar los saldos.",
+      "genericError": "No se pudo completar la operación."
+    },
+    "pot": {
+      "title": "Caja común",
+      "subtitle": "Aportes y retiros de la caja. Es informativa: no mueve plata ni crea asientos.",
+      "participationTitle": "Participación en {divisa}",
+      "share": "{porcentaje} %",
+      "noShare": "—",
+      "formerMember": "Miembro anterior",
+      "empty": "Todavía no hay aportes.",
+      "recentTitle": "Movimientos recientes",
+      "contribute": "Aportar",
+      "withdraw": "Retirar",
+      "contributeTitle": "Registrar un aporte",
+      "withdrawTitle": "Registrar un retiro",
+      "kindContribution": "Aporte",
+      "kindWithdrawal": "Retiro",
+      "memberLabel": "Miembro",
+      "currencyLabel": "Divisa",
+      "amountLabel": "Monto ({divisa})",
+      "amountInvalid": "Escribí un monto válido, mayor que cero (por ejemplo 1500,50).",
+      "noteLabel": "Nota (opcional)",
+      "submit": "Registrar",
+      "cancel": "Cancelar",
+      "loadError": "No se pudo cargar la caja común.",
       "genericError": "No se pudo completar la operación."
     }
   }

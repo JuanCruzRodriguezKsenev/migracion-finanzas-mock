@@ -79,6 +79,23 @@
     gap:            0.25rem ;
 }
 
+.potAccounts {
+    display:        flex ;
+    flex-direction: column ;
+    gap:            0.5rem ;
+    min-width:      0 ;
+    margin:         0.25rem 0 0 ;
+    padding:        0 0 0 1.75rem ;
+    border:         0 ;
+}
+
+.potLegend {
+    padding:   0 ;
+    margin:    0 0 0.25rem ;
+    font-size: var(--fs-sm) ;
+    color:     var(--text-muted) ;
+}
+
 .actions {
     display:         flex ;
     justify-content: flex-end ;

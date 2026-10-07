@@ -9,7 +9,7 @@ import { z } from "zod" ;
 /** Modos del acuerdo (RN-12): no hay tipos de organización, sólo un modo de reparto. */
 export const MODOS_ACUERDO = [ "none" , "fixed_percentages" , "monthly_contributions" ] as const ;
 
-/** Acuerdo que guarda un `owner`. Los porcentajes van en puntos básicos enteros (S-Q). */
+/** Acuerdo que guarda un `owner`. Los porcentajes van en puntos básicos enteros (S-Q); las cuentas de la caja común (S-AG), en ids. */
 export const guardarAcuerdoSchema = z.object( {
   modo:          z.enum( MODOS_ACUERDO , { error: "El modo de reparto no es válido." } ) ,
   usesCommonPot: z.boolean() ,
@@ -17,9 +17,11 @@ export const guardarAcuerdoSchema = z.object( {
     userId:       z.string().uuid( "Miembro inválido." ) ,
     percentageBp: z.number().int( "Cada porcentaje debe tener hasta dos decimales." ).min( 0 , "Cada porcentaje debe estar entre 0 y 100." ).max( 10000 , "Cada porcentaje debe estar entre 0 y 100." ) ,
   } ) ).max( 500 ) ,
+  cuentasCajaIds: z.array( z.string().uuid( "Cuenta inválida para la caja común." ) ).max( 50 ).default( [] ) ,
 } ) ;
 
-export type GuardarAcuerdoInput = z.infer< typeof guardarAcuerdoSchema > ;
+/** Entrada de `guardarAcuerdoAction`: `cuentasCajaIds` es opcional (por omisión, ninguna). */
+export type GuardarAcuerdoInput = z.input< typeof guardarAcuerdoSchema > ;
 
 /** Aporte mensual de un miembro, en centavos enteros `>= 0`. */
 export const declararAporteSchema = z.object( {

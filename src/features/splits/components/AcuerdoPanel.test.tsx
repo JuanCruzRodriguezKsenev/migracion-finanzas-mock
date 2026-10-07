@@ -42,6 +42,7 @@ describe( "AcuerdoPanel" , () => {
     usesCommonPot: false ,
     mes ,
     partesIguales: false ,
+    cuentasMarcables: [] ,
     miembros: [
       { userId: "u-ana"  , nombre: "Ana"  , porcentajeBp: 0 , aporteDelMes: null } ,
       { userId: "u-beto" , nombre: "Beto" , porcentajeBp: 0 , aporteDelMes: null } ,
@@ -104,15 +105,74 @@ describe( "AcuerdoPanel" , () => {
         { userId: "u-beto" , percentageBp: 3333 } ,
         { userId: "u-caro" , percentageBp: 3333 } ,
       ] ,
+      cuentasCajaIds: [] ,
     } ) ;
     await waitFor( () => expect( screen.getByText( dict.splits.saved ) ).toBeTruthy() ) ;
   } ) ;
 
-  it( "la casilla «Usar caja común» está visible pero deshabilitada, con su nota" , () => {
+  it( "sin cuentas de activo, la casilla «Usar caja común» queda deshabilitada y desmarcada, con su aviso" , () => {
     render( <AcuerdoPanel initialData={deOwner} dict={dict.splits} /> ) ;
 
-    expect( ( screen.getByLabelText( dict.splits.commonPotLabel ) as HTMLInputElement ).disabled ).toBe( true ) ;
-    expect( screen.getByText( dict.splits.commonPotNote ) ).toBeTruthy() ;
+    const casilla = screen.getByLabelText( dict.splits.commonPotLabel ) as HTMLInputElement ;
+
+    expect( casilla.disabled ).toBe( true ) ;
+    expect( casilla.checked ).toBe( false ) ;
+    expect( screen.getByText( dict.splits.commonPotNoAccounts ) ).toBeTruthy() ;
+  } ) ;
+
+  describe( "con cuentas de activo" , () => {
+    const conCuentas: VistaAcuerdo = {
+      ...deOwner ,
+      cuentasMarcables: [
+        { id: "c-caja" , nombre: "Caja" , divisa: "ARS" , esCaja: false } ,
+        { id: "c-usd"  , nombre: "Dólares" , divisa: "USD" , esCaja: false } ,
+      ] ,
+    } ;
+    const etiquetaCuenta = ( nombre: string , divisa: string ) => dict.splits.commonPotAccountOption.replace( "{nombre}" , nombre ).replace( "{divisa}" , divisa ) ;
+
+    it( "la casilla está habilitada; al marcarla aparece una casilla por cuenta y el guardado exige elegir al menos una" , () => {
+      render( <AcuerdoPanel initialData={conCuentas} dict={dict.splits} /> ) ;
+
+      expect( screen.queryByLabelText( etiquetaCuenta( "Caja" , "ARS" ) ) ).toBeNull() ;
+
+      fireEvent.click( screen.getByLabelText( dict.splits.commonPotLabel ) ) ;
+
+      expect( screen.getByLabelText( etiquetaCuenta( "Caja" , "ARS" ) ) ).toBeTruthy() ;
+      expect( screen.getByLabelText( etiquetaCuenta( "Dólares" , "USD" ) ) ).toBeTruthy() ;
+      expect( ( screen.getByRole( "button" , { name: dict.splits.save } ) as HTMLButtonElement ).disabled ).toBe( true ) ;
+
+      fireEvent.click( screen.getByLabelText( etiquetaCuenta( "Caja" , "ARS" ) ) ) ;
+
+      expect( ( screen.getByRole( "button" , { name: dict.splits.save } ) as HTMLButtonElement ).disabled ).toBe( false ) ;
+    } ) ;
+
+    it( "guarda la caja con las cuentas elegidas" , async () => {
+      vi.mocked( guardarAcuerdoAction ).mockResolvedValue( { success: true , value: null } ) ;
+      vi.mocked( obtenerAcuerdoAction ).mockResolvedValue( { success: true , value: conCuentas } ) ;
+      render( <AcuerdoPanel initialData={conCuentas} dict={dict.splits} /> ) ;
+
+      fireEvent.click( screen.getByLabelText( dict.splits.commonPotLabel ) ) ;
+      fireEvent.click( screen.getByLabelText( etiquetaCuenta( "Dólares" , "USD" ) ) ) ;
+      fireEvent.click( screen.getByRole( "button" , { name: dict.splits.save } ) ) ;
+      fireEvent.click( screen.getByRole( "button" , { name: dict.splits.confirmAccept } ) ) ;
+
+      await waitFor( () => expect( guardarAcuerdoAction ).toHaveBeenCalledWith( { modo: "none" , usesCommonPot: true , porcentajes: [] , cuentasCajaIds: [ "c-usd" ] } ) ) ;
+    } ) ;
+
+    it( "una cuenta ya marcada llega elegida y desactivar la caja envía la lista vacía" , async () => {
+      vi.mocked( guardarAcuerdoAction ).mockResolvedValue( { success: true , value: null } ) ;
+      const activa: VistaAcuerdo = { ...conCuentas , usesCommonPot: true , cuentasMarcables: [ { id: "c-caja" , nombre: "Caja" , divisa: "ARS" , esCaja: true } ] } ;
+      vi.mocked( obtenerAcuerdoAction ).mockResolvedValue( { success: true , value: activa } ) ;
+      render( <AcuerdoPanel initialData={activa} dict={dict.splits} /> ) ;
+
+      expect( ( screen.getByLabelText( etiquetaCuenta( "Caja" , "ARS" ) ) as HTMLInputElement ).checked ).toBe( true ) ;
+
+      fireEvent.click( screen.getByLabelText( dict.splits.commonPotLabel ) ) ;
+      fireEvent.click( screen.getByRole( "button" , { name: dict.splits.save } ) ) ;
+      fireEvent.click( screen.getByRole( "button" , { name: dict.splits.confirmAccept } ) ) ;
+
+      await waitFor( () => expect( guardarAcuerdoAction ).toHaveBeenCalledWith( { modo: "none" , usesCommonPot: false , porcentajes: [] , cuentasCajaIds: [] } ) ) ;
+    } ) ;
   } ) ;
 
   it( "en modo aportes muestra la grilla del mes y declara sólo lo que cambió" , async () => {

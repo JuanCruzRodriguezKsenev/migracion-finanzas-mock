@@ -477,7 +477,8 @@
     "tabOrganization": "Organization",
     "tabHabilitaciones": "Permissions",
     "tabAcuerdo": "Agreement",
-    "tabSaldos": "Balances"
+    "tabSaldos": "Balances",
+    "tabCaja": "Pot"
   },
   "transactionsPage": {
     "title": "General Ledger",
@@ -727,7 +728,9 @@
     "contributionOf": "{nombre}'s contribution",
     "contributionInvalid": "Enter a valid amount (for example 600000.50).",
     "commonPotLabel": "Use common pot",
-    "commonPotNote": "Available in the next version",
+    "commonPotAccounts": "Common pot accounts",
+    "commonPotAccountOption": "{nombre} · {divisa}",
+    "commonPotNoAccounts": "There are no asset accounts to use as the pot.",
     "save": "Save agreement",
     "confirmTitle": "Save the agreement",
     "confirmBody": "It applies to new expenses. Expenses already entered do not change.",
@@ -761,6 +764,31 @@
       "paySubmit": "Record payment",
       "cancel": "Cancel",
       "loadError": "The balances could not be loaded.",
+      "genericError": "The operation could not be completed."
+    },
+    "pot": {
+      "title": "Common pot",
+      "subtitle": "Contributions and withdrawals. It is informational: it moves no money and creates no entries.",
+      "participationTitle": "Share in {divisa}",
+      "share": "{porcentaje} %",
+      "noShare": "—",
+      "formerMember": "Former member",
+      "empty": "There are no contributions yet.",
+      "recentTitle": "Recent activity",
+      "contribute": "Contribute",
+      "withdraw": "Withdraw",
+      "contributeTitle": "Record a contribution",
+      "withdrawTitle": "Record a withdrawal",
+      "kindContribution": "Contribution",
+      "kindWithdrawal": "Withdrawal",
+      "memberLabel": "Member",
+      "currencyLabel": "Currency",
+      "amountLabel": "Amount ({divisa})",
+      "amountInvalid": "Enter a valid amount greater than zero (for example 1500.50).",
+      "noteLabel": "Note (optional)",
+      "submit": "Record",
+      "cancel": "Cancel",
+      "loadError": "The common pot could not be loaded.",
       "genericError": "The operation could not be completed."
     }
   }

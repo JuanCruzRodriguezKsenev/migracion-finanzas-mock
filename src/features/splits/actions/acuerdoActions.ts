@@ -31,6 +31,7 @@ import { notificar } from "@/features/notifications/services/notificationService
 import { guardarAcuerdoSchema , declararAporteSchema , previsualizarSchema , GuardarAcuerdoInput , DeclararAporteInput , PrevisualizarInput } from "../schemas/acuerdo.schema"
 import { validarAcuerdo , resolverReparto }                                                                                                   from "../services/acuerdoService"
 import { acuerdoRepository }                                                                                                                  from "../repositories/acuerdoRepository"
+import { cajaRepository }                                                                                                                    from "../repositories/cajaRepository"
 import { calcularPesos , type ModoAcuerdo , type MotivoReparto }                                                                              from "../utils/reparto"
 
 
@@ -54,6 +55,8 @@ export interface VistaAcuerdo {
   /** `owner`: todos los miembros no `viewer`. `member`: sólo él. */
   miembros:      MiembroDelAcuerdo[] ;
   partesIguales: boolean ;
+  /** Cuentas de activo que pueden marcarse como caja común. Vacía para el `member`: sólo el `owner` las edita. */
+  cuentasMarcables: { id: string ; nombre: string ; divisa: string ; esCaja: boolean }[] ;
 }
 
 /** Una parte de la vista previa. */
@@ -160,6 +163,7 @@ export async function obtenerAcuerdoAction(): Promise< Result< VistaAcuerdo , st
     } ;
 
     const visibles = ( rol === "owner" ) ? noViewer : noViewer.filter( ( m ) => (m.userId === userId) ) ;
+    const cuentas  = ( rol === "owner" ) ? await cajaRepository.cuentasMarcables( organizationId ) : [] ;
 
     return( ok( {
       rol:           ( rol === "owner" ) ? "owner" : "member" ,
@@ -167,6 +171,7 @@ export async function obtenerAcuerdoAction(): Promise< Result< VistaAcuerdo , st
       usesCommonPot: ( acuerdo?.usesCommonPot ?? false ) ,
       mes ,
       partesIguales: ( modo === "monthly_contributions" ) && partesIguales ,
+      cuentasMarcables: cuentas.map( ( c ) => ( { id: c.id , nombre: c.name , divisa: c.currency , esCaja: c.isCommonPot } ) ) ,
       miembros:      visibles.map( ( m ) => ( {
         userId:       m.userId ,
         nombre:       nombreVisible( m.nombre , m.email ) ,
@@ -180,12 +185,16 @@ export async function obtenerAcuerdoAction(): Promise< Result< VistaAcuerdo , st
   }
 }
 
-/** ¿El acuerdo nuevo es igual al guardado? Un acuerdo sin fila equivale a «sin reparto». */
-function esIgual( anterior: Awaited< ReturnType< typeof acuerdoRepository.obtener > > , nuevo: { modo: string ; usesCommonPot: boolean ; porcentajes: { userId: string ; percentageBp: number }[] } ): boolean {
+/** ¿El acuerdo nuevo es igual al guardado? Un acuerdo sin fila equivale a «sin reparto». Compara también las cuentas de la caja. */
+function esIgual( anterior: Awaited< ReturnType< typeof acuerdoRepository.obtener > > , nuevo: { modo: string ; usesCommonPot: boolean ; porcentajes: { userId: string ; percentageBp: number }[] } , cuentasAnteriores: string[] , cuentasNuevas: string[] ): boolean {
   const modoAnterior = ( anterior?.modo ?? "none" ) ;
   const potAnterior  = ( anterior?.usesCommonPot ?? false ) ;
 
   if( (modoAnterior !== nuevo.modo) || (potAnterior !== nuevo.usesCommonPot) ) {
+    return( false ) ;
+  }
+
+  if( (cuentasAnteriores.length !== cuentasNuevas.length) || !cuentasNuevas.every( ( id ) => cuentasAnteriores.includes( id ) ) ) {
     return( false ) ;
   }
 
@@ -237,12 +246,27 @@ export async function guardarAcuerdoAction( datos: GuardarAcuerdoInput ): Promis
         return( fail( valido.error ) ) ;
       }
 
-      const anterior = await acuerdoRepository.obtener( organizationId , tx ) ;
-      const nuevo    = { modo , usesCommonPot , porcentajes: valido.value } ;
+      // Las cuentas de la caja (S-AG): sólo activos de esta organización, y al menos una si la caja está activa
+      const cuentasCajaIds = [ ...new Set( usesCommonPot ? validation.data.cuentasCajaIds : [] ) ] ;
+
+      if( usesCommonPot && (cuentasCajaIds.length === 0) ) {
+        return( fail( "Elegí al menos una cuenta para la caja común." ) ) ;
+      }
+
+      const marcables = new Set( ( await cajaRepository.cuentasMarcables( organizationId , tx ) ).map( ( c ) => c.id ) ) ;
+
+      if( !cuentasCajaIds.every( ( id ) => marcables.has( id ) ) ) {
+        return( fail( "Cuenta inválida para la caja común." ) ) ;
+      }
+
+      const anterior          = await acuerdoRepository.obtener( organizationId , tx ) ;
+      const cuentasAnteriores = ( await cajaRepository.cuentasDeCaja( organizationId , tx ) ).map( ( c ) => c.id ) ;
+      const nuevo             = { modo , usesCommonPot , porcentajes: valido.value } ;
 
       await acuerdoRepository.guardar( organizationId , nuevo , userId , tx ) ;
+      await cajaRepository.marcarCuentas( organizationId , cuentasCajaIds , tx ) ;
 
-      if( !esIgual( anterior , nuevo ) ) {
+      if( !esIgual( anterior , nuevo , cuentasAnteriores , cuentasCajaIds ) ) {
         await notificar( {
           organizationId ,
           tipo:          "agreement_changed" ,
