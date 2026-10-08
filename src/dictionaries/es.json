@@ -653,7 +653,8 @@
       "createNew": "+ Crear organización",
       "viewerBadge": "Sólo lectura",
       "switchError": "No se pudo cambiar de organización. Probá de nuevo.",
-      "personalLabel": "Personal"
+      "personalLabel": "Personal",
+      "personalDe": "Personal de {dueno}"
     },
     "create": {
       "title": "Crear organización",

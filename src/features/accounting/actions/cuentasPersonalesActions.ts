@@ -262,6 +262,8 @@ export async function obtenerMisCuentasAction(): Promise< Result< CuentaPersonal
  * Cuentas de `/accounts` en la organización activa (RN-16): las de la organización más las personales que
  * sus dueños compartieron ahí. El saldo de una personal ajena **se omite acá, en el servidor** (RN-11), y la
  * etiqueta de una personal nombra sólo la organización activa: no revela en qué otras se comparte.
+ * Excepción (RN-12b): si la activa es un espacio Personal, las cuentas ancladas ahí se ven con saldo; una
+ * organización común sigue sin mostrar el saldo de una personal ajena.
  *
  * @returns Las cuentas visibles, cada una con su etiqueta.
  */
@@ -280,12 +282,16 @@ export async function obtenerCuentasDeListadoAction(): Promise< Result< CuentaDe
       membershipRepository.findByUser( userId ) ,
     ] ) ;
 
-    const nombreDeLaOrg = ( membresias.find( ( m ) => m.organizationId === organizationId )?.organizationName ?? "" ) ;
+    const activa           = membresias.find( ( m ) => m.organizationId === organizationId ) ;
+    const nombreDeLaOrg    = ( activa?.organizationName ?? "" ) ;
+    const activaEsPersonal = !!activa?.esPersonal ;
 
     return( ok( visibles.map( ( cuenta ) => {
-      const etiqueta = etiquetaDeCuenta( cuenta , [ {id: organizationId , nombre: nombreDeLaOrg} ] ) ;
+      // RN-12b: en un espacio Personal el `viewer` ve todo lo anclado ahí, con saldo y sin rótulo de «compartida»
+      const anclaEnPersonal  = ( activaEsPersonal && (cuenta.organizationId === organizationId) ) ;
+      const etiqueta         = etiquetaDeCuenta( cuenta , anclaEnPersonal ? [] : [ {id: organizationId , nombre: nombreDeLaOrg} ] ) ;
 
-      if( cuenta.ownerUserId && (cuenta.ownerUserId !== userId) ) {
+      if( cuenta.ownerUserId && (cuenta.ownerUserId !== userId) && !anclaEnPersonal ) {
         return( {...cuenta , balance: null , etiqueta} ) ;
       }
 
@@ -333,7 +339,8 @@ export async function obtenerCuentasParaMovimientoAction(): Promise< Result< Cue
 
 /**
  * Organizaciones con las que el usuario puede compartir una cuenta suya: aquellas donde es `owner` o `member`
- * (RN-3). Alimenta el botón «Compartir con…» de «Mis cuentas».
+ * (RN-3), sin los espacios Personal: compartir con el propio Personal no tiene sentido. Alimenta el botón
+ * «Compartir con…» de «Mis cuentas».
  *
  * @returns Las organizaciones elegibles.
  */
@@ -349,7 +356,7 @@ export async function listarOrganizacionesParaCompartirAction(): Promise< Result
 
     return( ok(
       membresias
-        .filter( ( m ) => ROLES_QUE_ESCRIBEN.includes( m.role ) )
+        .filter( ( m ) => ROLES_QUE_ESCRIBEN.includes( m.role ) && !m.esPersonal )
         .map( ( m ) => { return( {id: m.organizationId , nombre: m.organizationName} ) ; } )
     ) ) ;
   } catch( error ) {

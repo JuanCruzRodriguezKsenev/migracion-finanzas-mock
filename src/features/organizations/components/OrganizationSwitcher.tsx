@@ -29,6 +29,8 @@ export interface OrganizacionDelSelector {
   rol:         string ;
   /** Es un espacio Personal: va primero, con otro ícono y sin etiqueta de rol (RN-15). */
   esPersonal?: boolean ;
+  /** Nombre del dueño de un espacio Personal AJENO: se rotula «Personal de <nombre>» para no confundirlo con el propio. */
+  duenoNombre?: string | null ;
 }
 
 export interface OrganizationSwitcherProps {
@@ -44,6 +46,8 @@ export interface OrganizationSwitcherProps {
     switchError:   string ;
     /** Nombre con el que se muestra el espacio Personal; sin él, el guardado en la base. */
     personalLabel?: string ;
+    /** Rótulo de un espacio Personal ajeno; `{dueno}` se reemplaza por el nombre del dueño. */
+    personalDe?:    string ;
     create:        React.ComponentProps< typeof CreateOrganizationModal >[ "dict" ] ;
     /** Textos de «Abandonar»; sin ellos el selector no ofrece esa línea. */
     leave?: React.ComponentProps< typeof LeaveOrganizationModal >[ "dict" ] & {
@@ -74,7 +78,11 @@ export function OrganizationSwitcher( { organizaciones , activaId , esUnicoOwner
   const activa = organizaciones.find( ( o ) => o.id === activaId ) ;
 
   /** El espacio Personal se muestra con el nombre del diccionario, no con el guardado en la base. */
-  const nombreDe = ( org?: OrganizacionDelSelector ) => ( org?.esPersonal ? ( dict.personalLabel ?? org.nombre ) : ( org?.nombre ?? "" ) ) ;
+  const nombreDe = ( org?: OrganizacionDelSelector ) => {
+    if( !org?.esPersonal ) { return( org?.nombre ?? "" ) ; }
+    if( org.duenoNombre && dict.personalDe ) { return( dict.personalDe.replace( "{dueno}" , org.duenoNombre ) ) ; }
+    return( dict.personalLabel ?? org.nombre ) ;
+  } ;
 
   // El dueño no abandona su espacio Personal: la línea «Abandonar» no se ofrece (RN-3)
   const sinAbandonar = ( !!activa?.esPersonal && (activa.rol === "owner") ) ;

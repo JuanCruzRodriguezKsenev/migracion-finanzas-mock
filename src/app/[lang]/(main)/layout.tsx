@@ -43,7 +43,14 @@ export default async function MainLayout( {children , params}: MainLayoutProps )
     membershipRepository.contarOwners( session.user.organizationId ) ,
   ] ) ;
 
-  const organizaciones = membresias.map( ( m ) => ( { id: m.organizationId , nombre: m.organizationName , rol: m.role , esPersonal: m.esPersonal } ) ) ;
+  // Un espacio Personal ajeno (el usuario es `viewer` invitado) se rotula con el nombre del dueño; el propio, no
+  const organizaciones = membresias.map( ( m ) => ( {
+    id:          m.organizationId ,
+    nombre:      m.organizationName ,
+    rol:         m.role ,
+    esPersonal:  m.esPersonal ,
+    duenoNombre: ( (m.esPersonal && (m.role !== "owner")) ? m.duenoNombre : null ) ,
+  } ) ) ;
   const t              = dict.organizations ;
 
   // Es el único `owner` de la organización activa: no puede abandonarla sin nombrar a otro antes (RN-29).

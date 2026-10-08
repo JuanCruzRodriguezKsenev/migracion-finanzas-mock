@@ -97,4 +97,22 @@ describe( "OrganizationSwitcher — espacio Personal (RN-15, AC-9)" , () => {
     expect( boton.textContent ).toContain( dict.organizations.switcher.personalLabel ) ;
     expect( boton.querySelector( "svg" ) ).not.toBeNull() ;
   } ) ;
+
+  it( "plan 30: un Personal ajeno se rotula «Personal de <dueño>» y el propio sigue «Personal»" , () => {
+    const lista = [
+      { id: "p-1" , nombre: "Personal" , rol: "owner"  , esPersonal: true } ,
+      { id: "p-2" , nombre: "Personal" , rol: "viewer" , esPersonal: true , duenoNombre: "Juan" } ,
+      { id: "org-1" , nombre: "Casa"   , rol: "member" , esPersonal: false } ,
+    ] ;
+    renderizar( "p-2" , lista ) ;
+
+    const boton = screen.getByRole( "button" , { name: dict.organizations.switcher.ariaLabel } ) ;
+    expect( boton.textContent ).toContain( "Personal de Juan" ) ;
+
+    abrirMenu() ;
+    const items = screen.getAllByRole( "menuitemradio" ) ;
+    expect( items[0].textContent ).toContain( "Personal" ) ;
+    expect( items[0].textContent ).not.toContain( "Personal de" ) ;
+    expect( items[1].textContent ).toContain( "Personal de Juan" ) ;
+  } ) ;
 } ) ;

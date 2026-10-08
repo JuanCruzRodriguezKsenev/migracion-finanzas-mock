@@ -24,6 +24,7 @@ import { accounts }  from "./schema.db" ;
 // Feature: Auth
 import { organizations }        from "@/features/auth/schema.db" ;
 import { membershipRepository } from "@/features/auth/repositories/membershipRepository" ;
+import { crearEspacioPersonal }  from "@/features/auth/services/espacioPersonalService" ;
 
 
 vi.mock( "next-auth" , () => ( {
@@ -151,6 +152,16 @@ describe( "interfaz de cuentas propias y compartidas — datos (plan 25)" , () =
 
   describe( "listarOrganizacionesParaCompartirAction (RN-3)" , () => {
     it( "Ana puede compartir con las dos organizaciones donde es member" , async () => {
+      sesionDe( ana , orgA ) ;
+
+      const res = await listarOrganizacionesParaCompartirAction() ;
+      if( !res.success ) { throw new Error( res.error ) ; }
+
+      expect( res.value.map( ( o ) => o.nombre ).sort() ).toEqual( [ "Casa" , "Taller" ] ) ;
+    } ) ;
+
+    it( "plan 30: el propio espacio Personal no se ofrece como destino" , async () => {
+      await crearEspacioPersonal( ana , db ) ;
       sesionDe( ana , orgA ) ;
 
       const res = await listarOrganizacionesParaCompartirAction() ;

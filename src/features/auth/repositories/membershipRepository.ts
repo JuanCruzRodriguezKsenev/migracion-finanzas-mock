@@ -9,6 +9,7 @@ import { eq , and , asc , desc , count , sql } from "drizzle-orm" ;
 import { db , DBOrTx } from "@/shared/db/client" ;
 
 // Feature: Auth
+import { nombreVisible }                      from "../utils/nombreVisible" ;
 import { memberships , organizations , users } from "../schema.db" ;
 import { normalizarEmail }                      from "./userRepository" ;
 
@@ -25,6 +26,8 @@ export interface MembresiaConOrganizacion {
   createdAt:        Date ;
   /** `true` si la organización es el espacio Personal de alguien (el propio o uno al que se fue invitado). */
   esPersonal:       boolean ;
+  /** Nombre visible del dueño del espacio Personal; `null` si la organización no es un espacio Personal. */
+  duenoNombre:      string | null ;
 }
 
 /**
@@ -51,23 +54,29 @@ export const membershipRepository = {
    * @returns Lista de membresías con metadatos de la organización.
    */
   async findByUser( userId: string , tx: DBOrTx = db ): Promise< MembresiaConOrganizacion[] > {
-    return(
-      await tx
-        .select( {
-          organizationId:   memberships.organizationId ,
-          organizationName: organizations.name ,
-          role:             memberships.role ,
-          createdAt:        memberships.createdAt ,
-          esPersonal:       sql< boolean >`(${organizations.personalOwnerUserId} IS NOT NULL)` ,
-        } )
-        .from( memberships )
-        .innerJoin( organizations , eq(memberships.organizationId , organizations.id) )
-        .where( eq(memberships.userId , userId) )
-        .orderBy(
-          sql`CASE WHEN ${organizations.personalOwnerUserId} IS NULL THEN 1 ELSE 0 END` ,
-          desc( memberships.createdAt )
-        )
-    ) ;
+    const filas = await tx
+      .select( {
+        organizationId:   memberships.organizationId ,
+        organizationName: organizations.name ,
+        role:             memberships.role ,
+        createdAt:        memberships.createdAt ,
+        esPersonal:       sql< boolean >`(${organizations.personalOwnerUserId} IS NOT NULL)` ,
+        duenoNombre:      users.name ,
+        duenoEmail:       users.email ,
+      } )
+      .from( memberships )
+      .innerJoin( organizations , eq(memberships.organizationId , organizations.id) )
+      .leftJoin( users , eq(users.id , organizations.personalOwnerUserId) )
+      .where( eq(memberships.userId , userId) )
+      .orderBy(
+        sql`CASE WHEN ${organizations.personalOwnerUserId} IS NULL THEN 1 ELSE 0 END` ,
+        desc( memberships.createdAt )
+      ) ;
+
+    return( filas.map( ( { duenoNombre , duenoEmail , ...membresia } ) => ( {
+      ...membresia ,
+      duenoNombre: ( duenoEmail ? nombreVisible( duenoNombre , duenoEmail ) : null ) ,
+    } ) ) ) ;
   } ,
 
   /**

@@ -2,13 +2,14 @@
  * @file seedReparto.ts
  * Seed pequeño y aparte para probar a mano el reparto y la caja común.
  * Arma la organización `reparto-demo` con tres miembros, cuentas, contactos, un acuerdo de reparto
- * sin caja activada, los movimientos del mes en curso y «Banco Ana», una cuenta propia privada de Ana.
- * No toca ninguna otra organización.
- * Es idempotente: si la organización ya existe, la elimina por completo y la recrea.
+ * sin caja activada, los movimientos del mes en curso y «Banco Ana», una cuenta propia privada de Ana anclada en
+ * su espacio Personal (RN-9). Fuera de la organización demo sólo toca esa cuenta y su entidad en el Personal de Ana.
+ * Es idempotente: si la organización ya existe, la elimina por completo y la recrea; «Banco Ana» se reutiliza y se
+ * deja otra vez privada y con su saldo inicial.
  */
 // Librerías externas
 import * as dotenv from "dotenv" ;
-import { eq }      from "drizzle-orm" ;
+import { eq , and } from "drizzle-orm" ;
 
 // Carga las variables de entorno de .env.local antes de inicializar la conexión
 dotenv.config( {path: ".env.local"} ) ;
@@ -16,7 +17,7 @@ dotenv.config( {path: ".env.local"} ) ;
 // Feature: Accounting
 import { provisionarOrganizacion } from "@/features/accounting/services/organizationProvisioningService" ;
 import { createLedgerTransaction } from "@/features/accounting/services/accountingService" ;
-import { accounts , financialEntities } from "@/features/accounting/schema.db" ;
+import { accounts , accountShares , financialEntities } from "@/features/accounting/schema.db" ;
 
 // Feature: Contacts
 import { contacts } from "@/features/contacts/schema.db" ;
@@ -63,6 +64,7 @@ async function main() {
 
     // 2. Usuarios, membresías y perfiles
     const idPorEmail = new Map< string , string >() ;
+    const personalDe = new Map< string , string >() ;
 
     for( const miembro of MIEMBROS ) {
       const [ usuario ] = await db
@@ -93,7 +95,7 @@ async function main() {
       await db.insert( memberships ).values( {userId: usuario.id , organizationId: org.id , role: miembro.role} ) ;
 
       // Espacio Personal de cada uno (RN-2): idempotente, no se toca si ya existe
-      await asegurarEspacioPersonal( usuario.id , db ) ;
+      personalDe.set( miembro.email , await asegurarEspacioPersonal( usuario.id , db ) ) ;
 
       await db
         .insert( profiles )
@@ -141,20 +143,45 @@ async function main() {
       .insert( accounts )
       .values( {organizationId: org.id , code: "2.1.01.01" , name: "Tarjeta" , type: "liability" , balance: 0 , currency: "ARS" , entityId: entBanco.id} ) ;
 
-    // 3b. Cuenta propia de Ana: privada (sin comparticiones), anclada en la organización y con el saldo inicial
-    // guardado directo, sin asiento (RN-2 de la spec de cuentas). Nace sin compartir para poder probar «Compartir y usar».
-    await db
-      .insert( accounts )
-      .values( {
-        organizationId: org.id ,
-        ownerUserId:    idPorEmail.get( "ana@demo.test" )! ,
-        code:           "1.1.01.04" ,
-        name:           "Banco Ana" ,
-        type:           "asset" ,
-        balance:        50000000 ,
-        currency:       "ARS" ,
-        entityId:       entBanco.id ,
-      } ) ;
+    // 3b. Cuenta propia de Ana: privada (sin comparticiones), anclada en su espacio Personal (RN-9) y con el saldo
+    // inicial guardado directo, sin asiento (RN-2 de la spec de cuentas). Nace sin compartir para poder probar
+    // «Compartir y usar». La entidad es una entidad propia del Personal (RN-11). Como el Personal sobrevive a
+    // la organización demo, ambas se reutilizan si ya existen.
+    const anaId       = idPorEmail.get( "ana@demo.test" )! ;
+    const personalAna = personalDe.get( "ana@demo.test" )! ;
+
+    let [ entBancoAna ] = await db
+      .select()
+      .from( financialEntities )
+      .where( and( eq( financialEntities.organizationId , personalAna ) , eq( financialEntities.name , "Banco Demo" ) ) ) ;
+
+    if( !entBancoAna ) {
+      [ entBancoAna ] = await db
+        .insert( financialEntities )
+        .values( {organizationId: personalAna , name: "Banco Demo" , logo: "bank" , brandDomain: null , color: "#e67e22"} )
+        .returning() ;
+    }
+
+    const datosBancoAna = {
+      ownerUserId: anaId ,
+      name:        "Banco Ana" ,
+      type:        "asset" ,
+      balance:     50000000 ,
+      currency:    "ARS" ,
+      entityId:    entBancoAna.id ,
+    } ;
+
+    const [ previaBancoAna ] = await db
+      .select()
+      .from( accounts )
+      .where( and( eq( accounts.organizationId , personalAna ) , eq( accounts.code , "1.1.01.04" ) ) ) ;
+
+    if( previaBancoAna ) {
+      await db.update( accounts ).set( datosBancoAna ).where( eq( accounts.id , previaBancoAna.id ) ) ;
+      await db.delete( accountShares ).where( eq( accountShares.accountId , previaBancoAna.id ) ) ;
+    } else {
+      await db.insert( accounts ).values( {organizationId: personalAna , code: "1.1.01.04" , ...datosBancoAna} ) ;
+    }
 
     // 4. Contactos
     await db.insert( contacts ).values( [

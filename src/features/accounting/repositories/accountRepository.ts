@@ -3,7 +3,7 @@
  * Repositorio de Cuentas Financieras (Capa de Acceso a Datos - DAL).
  */
 // Librerías externas
-import { eq , and , or , isNull , exists , inArray , sql , SQL } from "drizzle-orm" ;
+import { eq , and , or , isNull , isNotNull , exists , inArray , sql , SQL } from "drizzle-orm" ;
 
 // Shared
 import { db , DBOrTx } from "@/shared/db/client" ;
@@ -29,7 +29,9 @@ export function cuentaDeLaOrg( orgId: string ): SQL {
 
 /**
  * Predicado de las cuentas VISIBLES en la organización: las suyas, las personales que el dueño
- * compartió con ella, o las personales del propio actor si se indica (RN-10).
+ * compartió con ella, las personales del propio actor si se indica (RN-10) y, **sólo si la organización es
+ * un espacio Personal**, todas las cuentas ancladas en ella (RN-12b): quien entra a un Personal ajeno es un
+ * `viewer` invitado y ve el espacio entero. En una organización común nada de esto cambia.
  *
  * @param orgId - ID de la organización.
  * @param actorUserId - ID del actor que escribe (opcional).
@@ -41,16 +43,30 @@ export function cuentaVisibleEn( orgId: string , actorUserId?: string | null ): 
       eq(accountShares.organizationId , orgId)
     ) )
   ) ;
+
+  // RN-12b: anclada en la organización, y la organización es un espacio Personal
+  const ancladaEnPersonal = and(
+    eq(accounts.organizationId , orgId) ,
+    exists(
+      db.select( {uno: sql`1`} ).from( organizations ).where( and(
+        eq(organizations.id , orgId) ,
+        isNotNull(organizations.personalOwnerUserId)
+      ) )
+    )
+  ) ;
+
   if( actorUserId ) {
     return( or(
       cuentaDeLaOrg( orgId ) ,
       compartida ,
+      ancladaEnPersonal ,
       eq(accounts.ownerUserId , actorUserId)
     ) as SQL ) ;
   }
   return( or(
     cuentaDeLaOrg( orgId ) ,
-    compartida
+    compartida ,
+    ancladaEnPersonal
   ) as SQL ) ;
 }
 

@@ -653,7 +653,8 @@
       "createNew": "+ Create organization",
       "viewerBadge": "Read-only",
       "switchError": "Could not switch organization. Please try again.",
-      "personalLabel": "Personal"
+      "personalLabel": "Personal",
+      "personalDe": "{dueno}'s Personal"
     },
     "create": {
       "title": "Create organization",

@@ -95,6 +95,24 @@ describe( "membershipRepository" , () => {
     expect( lista.slice( 1 ).map( ( m ) => m.organizationId ) ).toEqual( [ org2Id , org1Id ] ) ;
   } ) ;
 
+  it( "plan 30: findByUser trae el nombre del dueño del Personal (propio y ajeno) y null en una organización común" , async () => {
+    const propio  = await crearEspacioPersonal( userId , db ) ;
+    const otro    = await crearUsuarioConMembresia( { organizationId: org2Id , email: "juan@ejemplo.com" , name: "Juan Pérez" , role: "owner" } ) ;
+    const ajeno   = await crearEspacioPersonal( otro.id , db ) ;
+    const sinNombre = await crearUsuarioConMembresia( { organizationId: org2Id , email: "ana.gomez@ejemplo.com" , name: "" , role: "member" } ) ;
+    const deAna   = await crearEspacioPersonal( sinNombre.id , db ) ;
+    await membershipRepository.add( userId , ajeno , "viewer" ) ;
+    await membershipRepository.add( userId , deAna , "viewer" ) ;
+
+    const lista = await membershipRepository.findByUser( userId ) ;
+    const de    = ( id: string ) => lista.find( ( m ) => m.organizationId === id ) ;
+
+    expect( de( propio )?.duenoNombre ).toBe( "Miembro Test" ) ;
+    expect( de( ajeno )?.duenoNombre ).toBe( "Juan Pérez" ) ;
+    expect( de( deAna )?.duenoNombre ).toBe( "ana.gomez" ) ;
+    expect( de( org1Id )?.duenoNombre ).toBeNull() ;
+  } ) ;
+
   afterAll( async () => {
     await limpiarBase() ;
   } ) ;
