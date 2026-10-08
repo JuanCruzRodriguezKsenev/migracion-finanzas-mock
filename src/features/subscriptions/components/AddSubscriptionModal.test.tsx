@@ -476,4 +476,84 @@ describe( "AddSubscriptionModal — buscador de marcas y modal de suscripción" 
     await renderModal( { editingData: editingLocal } ) ;
     expect( fetchMock ).not.toHaveBeenCalled() ;
   } ) ;
+
+  it( "15. respuesta directa sin domain: se ignora la coincidencia directa y se muestran los resultados de Brandfetch con opción personalizada" , async () => {
+    fetchMock.mockImplementation( async ( input ) => {
+      const url = String( input ) ;
+      if( url.includes( "/api/brand?domain=bbva" ) ) {
+        return( {
+          ok:   true ,
+          json: async () => ( { name: "BBVA" } ) ,
+        } ) ;
+      }
+      if( url.includes( "api.brandfetch.io/v2/search/" ) ) {
+        return( {
+          ok:   true ,
+          json: async () => [
+            { name: "BBVA Francés"  , domain: "bbva.com.ar" , icon: "https://cdn.bbva.com/frances.png" } ,
+            { name: "BBVA Global"   , domain: "bbva.com"    , icon: "https://cdn.bbva.com/global.png" } ,
+            { name: "BBVA Bancomer" , domain: "bbva.mx"     , icon: "https://cdn.bbva.com/bancomer.png" } ,
+            { name: "BBVA Perú"     , domain: "bbva.pe"     , icon: "https://cdn.bbva.com/peru.png" } ,
+            { name: "BBVA Colombia" , domain: "bbva.co"     , icon: "https://cdn.bbva.com/colombia.png" } ,
+            { name: "BBVA España"   , domain: "bbva.es"     , icon: "https://cdn.bbva.com/espana.png" } ,
+          ] ,
+        } ) ;
+      }
+      return( { ok: false , json: async () => ( {} ) } ) ;
+    } ) ;
+
+    await renderModal() ;
+
+    fireEvent.change( screen.getByPlaceholderText( dict.searchPlaceholder ) , { target: { value: "bbva" } } ) ;
+
+    const searchOnlineBtn = within( screen.getByRole( "listbox" ) ).getAllByRole( "option" )[0] ;
+    await act( async () => {
+      fireEvent.click( searchOnlineBtn ) ;
+    } ) ;
+
+    const opciones = within( screen.getByRole( "listbox" ) ).getAllByRole( "option" ) ;
+    expect( opciones ).toHaveLength( 7 ) ;
+    expect( opciones[0] ).toHaveTextContent( "BBVA Francés" ) ;
+    expect( opciones[1] ).toHaveTextContent( "BBVA Global" ) ;
+    expect( opciones[2] ).toHaveTextContent( "BBVA Bancomer" ) ;
+    expect( opciones[3] ).toHaveTextContent( "BBVA Perú" ) ;
+    expect( opciones[4] ).toHaveTextContent( "BBVA Colombia" ) ;
+    expect( opciones[5] ).toHaveTextContent( "BBVA España" ) ;
+    expect( opciones[6] ).toHaveTextContent( `${dict.customOptionPrefix} "bbva"` ) ;
+  } ) ;
+
+  it( "16. respuesta directa sin name: no entra primero y el dominio sale una sola vez desde Brandfetch" , async () => {
+    fetchMock.mockImplementation( async ( input ) => {
+      const url = String( input ) ;
+      if( url.includes( "/api/brand?domain=bbva" ) ) {
+        return( {
+          ok:   true ,
+          json: async () => ( { domain: "bbva.com" } ) ,
+        } ) ;
+      }
+      if( url.includes( "api.brandfetch.io/v2/search/" ) ) {
+        return( {
+          ok:   true ,
+          json: async () => [
+            { name: "BBVA Global" , domain: "bbva.com" , icon: "https://cdn.bbva.com/global.png" } ,
+          ] ,
+        } ) ;
+      }
+      return( { ok: false , json: async () => ( {} ) } ) ;
+    } ) ;
+
+    await renderModal() ;
+
+    fireEvent.change( screen.getByPlaceholderText( dict.searchPlaceholder ) , { target: { value: "bbva" } } ) ;
+
+    const searchOnlineBtn = within( screen.getByRole( "listbox" ) ).getAllByRole( "option" )[0] ;
+    await act( async () => {
+      fireEvent.click( searchOnlineBtn ) ;
+    } ) ;
+
+    const opciones = within( screen.getByRole( "listbox" ) ).getAllByRole( "option" ) ;
+    expect( opciones ).toHaveLength( 2 ) ;
+    expect( opciones[0] ).toHaveTextContent( "BBVA Global" ) ;
+    expect( opciones[1] ).toHaveTextContent( `${dict.customOptionPrefix} "bbva"` ) ;
+  } ) ;
 } ) ;

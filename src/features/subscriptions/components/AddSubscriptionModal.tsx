@@ -12,13 +12,14 @@ import React , { useState , useMemo , useEffect } from "react" ;
 
 // Shared
 import { Autocomplete , AutocompleteOption } from "@/shared/ui/forms/Autocomplete/Autocomplete" ;
+import { buscarMarcas }                      from "@/shared/services/brand/brandSearch" ;
 import type { BrandMetadata }                from "@/shared/services/brand/brandService" ;
 import { FormSelect }                        from "@/shared/ui/forms/Form/FormSelect" ;
-import { Button }                            from "@/shared/ui/display/Button/Button" ;
-import { FormInput }                         from "@/shared/ui/forms/Form/FormInput" ;
-import { Modal }                             from "@/shared/ui/feedback/Modal/Modal" ;
 import { readStorage , writeStorage }        from "@/shared/lib/safeStorage" ;
+import { FormInput }                         from "@/shared/ui/forms/Form/FormInput" ;
+import { Button }                            from "@/shared/ui/display/Button/Button" ;
 import type { getDictionary }                from "@/shared/lib/dictionary" ;
+import { Modal }                             from "@/shared/ui/feedback/Modal/Modal" ;
 
 // Feature: Accounting
 import { Category , CategoryTreeNode } from "@/features/accounting/types" ;
@@ -370,40 +371,33 @@ export function AddSubscriptionModal( {
     setIsSearching( true ) ;
 
     try {
-      const clientId   = process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || "brandfetch" ;
       const cleanQuery = query.trim() ;
       const hasSpaces  = cleanQuery.includes( " " ) ;
 
-      // Variaciones de búsqueda: literal, .com y ccTLD del país seleccionado
-      const queries = [ cleanQuery ] ;
-      if( !cleanQuery.includes( "." ) ){
-        queries.push( `${cleanQuery}.com` ) ;
-        if( selectedCountry.tld && (selectedCountry.tld !== ".com") ){
-          queries.push( `${cleanQuery}${selectedCountry.tld}` ) ;
-        }
-      }
+      const sufijos = ( selectedCountry.tld && (selectedCountry.tld !== ".com") )
+        ? [ ".com" , selectedCountry.tld ]
+        : [ ".com" ] ;
 
-      interface SearchResult { name?: string ; domain?: string ; icon?: string }
-
-      const [ responses , directMatch ] = await Promise.all( [
-        Promise.all(
-          queries.map( ( q ) =>
-            fetch( `https://api.brandfetch.io/v2/search/${encodeURIComponent( q )}?c=${clientId}` )
-              .then( ( r ) => ( r.ok ? r.json() : [] ) )
-              .catch( () => [] )
-          )
-        ) ,
+      const [ marcasEncontradas , directMatch ] = await Promise.all( [
+        buscarMarcas( cleanQuery , { sufijos } ) ,
         hasSpaces
           ? Promise.resolve( null )
           : fetch( `/api/brand?domain=${encodeURIComponent( cleanQuery )}` )
-              .then( ( r ) => ( r.ok ? r.json() as Promise<BrandMetadata> : null ) )
+              .then( ( r ) => ( r.ok ? r.json() as Promise< BrandMetadata > : null ) )
               .catch( () => null ) ,
       ] ) ;
 
       const next: Suggestion[] = [] ;
+      const tieneDirecto       = Boolean(
+        directMatch &&
+        ( typeof directMatch.name === "string" ) &&
+        ( directMatch.name.trim() !== "" ) &&
+        ( typeof directMatch.domain === "string" ) &&
+        ( directMatch.domain.trim() !== "" )
+      ) ;
 
       // 1. Coincidencia directa de dominio primero (ej: "bbva" → bbva.com)
-      if( directMatch && directMatch.name ){
+      if( tieneDirecto && directMatch ){
         next.push( {
           kind:    "brand" ,
           name:    directMatch.name ,
@@ -413,17 +407,18 @@ export function AddSubscriptionModal( {
         } ) ;
       }
 
-      // 2. Resultados de búsqueda, evitando duplicados por dominio
-      const seen = new Set< string >( directMatch ? [ directMatch.domain.toLowerCase() ] : [] ) ;
+      // 2. Resultados de búsqueda compartida, excluyendo el dominio directo si existió
+      const dominioDirecto = ( tieneDirecto && directMatch?.domain )
+        ? directMatch.domain.toLowerCase()
+        : null ;
 
-      for( const result of (responses.flat() as SearchResult[]) ){
-        if( result && result.domain && !seen.has( result.domain.toLowerCase() ) ){
-          seen.add( result.domain.toLowerCase() ) ;
+      for( const marca of marcasEncontradas ){
+        if( !dominioDirecto || (marca.domain.toLowerCase() !== dominioDirecto) ){
           next.push( {
             kind:    "brand" ,
-            name:    result.name || result.domain ,
-            domain:  result.domain ,
-            logoKey: result.icon ,
+            name:    marca.name ,
+            domain:  marca.domain ,
+            logoKey: marca.icon ,
           } ) ;
         }
       }
