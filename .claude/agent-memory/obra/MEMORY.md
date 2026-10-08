@@ -34,3 +34,4 @@
 - [`solo-lectura-30.md`](solo-lectura-30.md): Plan 30 solo lectura: inventario del plan corto (21 archivos, reexportaciones), props con default permisivo, renderConPermisos y trampas de tests.
 - [`seed-31-cuentas-propias.md`](seed-31-cuentas-propias.md): Plan 31 seed con cuentas propias por usuario: ayudante sembrarCuentaPropia, orden estricto de scripts y verificación contra Postgres.
 - [`blindaje-marcas-32.md`](blindaje-marcas-32.md): Plan 32 blindaje de buscadores de marcas: 33 tests en 2 suites (CreateFinancialEntityForm y AddSubscriptionModal), fake timers vs waitFor, portales de Modal y 10 mutaciones comprobadas.
+- [`busqueda-marcas-33.md`](busqueda-marcas-33.md): Plan 33 extracción de búsqueda de marcas compartida a brandSearch.ts y CreateFinancialEntityForm: funciones puras, deduplicación case-insensitive, suite brandSearch.test.ts y 7 mutaciones.
