@@ -21,7 +21,8 @@ import { useProfileContext } from "@/features/profile/context/ProfileContext" ;
 
 // Feature: Accounting
 import { TransactionWithEntries } from "@/features/accounting/repositories/ledgerRepository" ;
-import { Account , Category }     from "@/features/accounting/types" ;
+import { CuentaReferenciada , Category } from "@/features/accounting/types" ;
+import { AccountLabel , AccountLabelDict } from "@/features/accounting/components/AccountLabel" ;
 
 // Feature: Transactions
 import {
@@ -37,18 +38,21 @@ interface TransactionDetailModalProps {
   isOpen:      boolean ;
   onClose:     () => void ;
   onSuccess:   () => void ;
-  accounts:    Account[] ;
+  accounts:    CuentaReferenciada[] ;
   categories:  Category[] ;
   holderDict?: HolderDetailDict ;
+  /** Textos de la etiqueta «Ya no compartida» (RN-13). Sin ellos el detalle no la muestra. */
+  cuentasDict?: AccountLabelDict ;
 }
 
 interface TransactionDetailContentProps {
   transaction: TransactionWithEntries ;
   onClose:     () => void ;
   onSuccess:   () => void ;
-  accounts:    Account[] ;
+  accounts:    CuentaReferenciada[] ;
   categories:  Category[] ;
   holderDict?: HolderDetailDict ;
+  cuentasDict?: AccountLabelDict ;
 }
 
 /** Textos de la línea de autoría del detalle: `{autor}` y `{titular}` se reemplazan por los nombres. */
@@ -81,6 +85,7 @@ function TransactionDetailContent( {
   accounts ,
   categories ,
   holderDict ,
+  cuentasDict ,
 }: TransactionDetailContentProps ) {
   const { profile }                     = useProfileContext() ;
   const locale                          = ( profile?.numberFormat || "es-AR" ) ;
@@ -215,7 +220,15 @@ function TransactionDetailContent( {
               const acc = accountsMap.get( entry.accountId ) ;
               return(
                 <tr key={entry.id || `entry-${index}`}>
-                  <td>{acc ? `${acc.name} (${acc.type})` : entry.accountId.slice( 0 , 8 )}</td>
+                  <td>
+                    {acc ? `${acc.name} (${acc.type})` : entry.accountId.slice( 0 , 8 )}
+                    {( cuentasDict && (acc?.compartida === false) ) && (
+                      <>
+                        {" "}
+                        <AccountLabel etiqueta={ {tipo: "yaNoCompartida"} } dict={cuentasDict} />
+                      </>
+                    )}
+                  </td>
                   <td className={styles.alignRight}>
                     {entry.debit > 0 ? formatCurrency( entry.debit , entry.currency || "ARS" , locale ) : "—"}
                   </td>
@@ -300,6 +313,7 @@ export function TransactionDetailModal( {
   accounts ,
   categories ,
   holderDict ,
+  cuentasDict ,
 }: TransactionDetailModalProps ) {
   if( !transaction ) { return( null ) ; }
 
@@ -319,6 +333,7 @@ export function TransactionDetailModal( {
         accounts={accounts}
         categories={categories}
         holderDict={holderDict}
+        cuentasDict={cuentasDict}
       />
     </Modal>
   ) ;

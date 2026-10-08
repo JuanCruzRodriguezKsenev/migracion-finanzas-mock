@@ -6,7 +6,7 @@
 
 // Librerías externas
 import React , { useState , useEffect , useTransition , useCallback } from "react" ;
-import { useSearchParams }                                             from "next/navigation" ;
+import { useSearchParams , useRouter }                                 from "next/navigation" ;
 
 // Shared
 import { PageHeader }          from "@/shared/ui/layout/PageHeader/PageHeader" ;
@@ -24,8 +24,9 @@ import { previsualizarRepartoAction } from "@/features/splits/actions/acuerdoAct
 import type { TitularPosible } from "@/features/auth/services/titularService" ;
 
 // Feature: Accounting
-import { TransactionWithEntries }                                  from "@/features/accounting/repositories/ledgerRepository" ;
-import { Account , Category , FinancialEntity , CategoryTreeNode } from "@/features/accounting/types" ;
+import type { TransactionWithEntries , CuentaPersonalReferenciada } from "@/features/accounting/repositories/ledgerRepository" ;
+import type { CuentaConEtiqueta }                                   from "@/features/accounting/repositories/accountRepository" ;
+import { Account , Category , FinancialEntity , CategoryTreeNode }  from "@/features/accounting/types" ;
 
 // Feature: Transactions
 import {
@@ -37,6 +38,7 @@ import { TransactionsTable }                                   from "./Transacti
 import { TransactionFormModal }                                from "./TransactionFormModal" ;
 import { TransactionDetailModal }                              from "./TransactionDetailModal" ;
 import { derivarTipoTransaccion , calcularResumenTransaccion } from "../utils/derivarTipo" ;
+import { fusionarPersonales , cuentasParaMovimientos }         from "../utils/cuentasDeMovimientos" ;
 import { getTransactionsPageAction }                           from "../actions/transactionsActions" ;
 import styles                                                  from "./Transactions.module.css" ;
 
@@ -57,6 +59,15 @@ interface TransactionsContainerProps {
   titulares?:          TitularPosible[] ;
   /** Miembros de la organización; alimentan el filtro por titular. */
   miembros?:           TitularPosible[] ;
+  /** Personales que nombran los asientos de la primera página, aunque ya no se compartan (RN-13). */
+  cuentasPersonales?:  CuentaPersonalReferenciada[] ;
+  /** Cuentas que ofrece el selector de origen (las de la organización y las personales compartidas del usuario, RN-10). Sin ellas, `accounts`. */
+  usables?:            CuentaConEtiqueta[] ;
+  /** Personales del usuario que aún no se compartieron con la organización («Compartir y usar»). */
+  compartibles?:       CuentaConEtiqueta[] ;
+  /** Organización activa: con su id se comparte y con su nombre se avisa. */
+  organizacionId?:     string ;
+  organizacionNombre?: string ;
 }
 
 const ALL_COLUMNS: Column< TransactionTableColumns >[] = [
@@ -93,7 +104,13 @@ export function TransactionsContainer( {
   minKey ,
   titulares = [] ,
   miembros = [] ,
+  cuentasPersonales = [] ,
+  usables ,
+  compartibles = [] ,
+  organizacionId = "" ,
+  organizacionNombre = "" ,
 }: TransactionsContainerProps ) {
+  const router       = useRouter() ;
   const searchParams = useSearchParams() ;
   const monthParam   = searchParams?.get( "month" ) ;
   const { profile }  = useProfileContext() ;
@@ -101,6 +118,12 @@ export function TransactionsContainer( {
   const [ transactions , setTransactions ] = useState< TransactionWithEntries[] >( initialTransactions ) ;
   const [ nextCursor , setNextCursor ]     = useState( initialNextCursor ) ;
   const [ hasMore , setHasMore ]           = useState( initialHasMore ) ;
+
+  // Personales que nombran los asientos de todas las páginas cargadas (la primera y cada «cargar más»)
+  const [ personales , setPersonales ] = useState< CuentaPersonalReferenciada[] >( cuentasPersonales ) ;
+
+  // El mapa que nombra y clasifica cada movimiento: la organización, las personales usables y las referenciadas
+  const cuentasDeMovimientos = cuentasParaMovimientos( [ ...(usables ?? []) , ...accounts ] , personales ) ;
 
   const [ isPending , startTransition ]    = useTransition() ;
   const [ loadingMore , setLoadingMore ]   = useState( false ) ;
@@ -118,7 +141,7 @@ export function TransactionsContainer( {
 
   // Lista de monedas disponibles
   const availableCurrencies = Array.from(
-    new Set( [ "ARS" , ...accounts.map( ( a ) => a.currency ).filter( Boolean ) ] )
+    new Set( [ "ARS" , ...cuentasDeMovimientos.map( ( a ) => a.currency ).filter( Boolean ) ] )
   ) ;
 
   // Modales
@@ -160,6 +183,7 @@ export function TransactionsContainer( {
         } else {
           setTransactions( ( prev ) => [ ...prev , ...res.value.items ] ) ;
         }
+        setPersonales( ( prev ) => fusionarPersonales( prev , res.value.cuentasPersonales ) ) ;
         setNextCursor( res.value.nextCursor ) ;
         setHasMore( res.value.hasMore ) ;
       }
@@ -202,6 +226,7 @@ export function TransactionsContainer( {
 
     if( res.success ) {
       setTransactions( ( prev ) => [ ...prev , ...res.value.items ] ) ;
+      setPersonales( ( prev ) => fusionarPersonales( prev , res.value.cuentasPersonales ) ) ;
       setNextCursor( res.value.nextCursor ) ;
       setHasMore( res.value.hasMore ) ;
     }
@@ -234,11 +259,11 @@ export function TransactionsContainer( {
   // Filtrado de tipo y moneda en memoria
   const displayedTransactions = transactions.filter( ( tx ) => {
     if( selectedType ) {
-      const derived = derivarTipoTransaccion( tx.entries , accounts ) ;
+      const derived = derivarTipoTransaccion( tx.entries , cuentasDeMovimientos ) ;
       if( derived !== selectedType ) { return( false ) ; }
     }
     if( selectedCurrency ) {
-      const resumen = calcularResumenTransaccion( tx.entries , accounts ) ;
+      const resumen = calcularResumenTransaccion( tx.entries , cuentasDeMovimientos ) ;
       if( (resumen.currency || "ARS") !== selectedCurrency ) { return( false ) ; }
     }
     return( true ) ;
@@ -273,7 +298,7 @@ export function TransactionsContainer( {
         selectedCurrency={selectedCurrency}
         setSelectedCurrency={setSelectedCurrency}
         currencies={availableCurrencies}
-        accounts={accounts}
+        accounts={cuentasDeMovimientos}
         categories={categories}
         columns={ALL_COLUMNS}
         visibleColumns={visibleColumns}
@@ -289,12 +314,13 @@ export function TransactionsContainer( {
 
       <TransactionsTable
         transactions={displayedTransactions}
-        accounts={accounts}
+        accounts={cuentasDeMovimientos}
         categories={categories}
         financialEntities={financialEntities}
         visibleColumns={visibleColumns}
         loading={isPending}
         holderDict={dict.transactionsPage}
+        cuentasDict={dict.accountsPage}
         onSelectTransaction={ ( tx ) => setSelectedTxDetail( tx ) }
       />
 
@@ -315,7 +341,12 @@ export function TransactionsContainer( {
         isOpen={isFormModalOpen}
         onClose={ () => setIsFormModalOpen(false) }
         onSuccess={handleDataMutated}
-        accounts={accounts}
+        accounts={usables ?? accounts}
+        compartibles={compartibles}
+        organizacionId={organizacionId}
+        organizacionNombre={organizacionNombre}
+        cuentasDict={dict.accountsPage}
+        onCuentaCompartida={ () => router.refresh() }
         categories={categories}
         categoryTree={categoryTree}
         titulares={titulares}
@@ -331,9 +362,10 @@ export function TransactionsContainer( {
         isOpen={Boolean(selectedTxDetail)}
         onClose={ () => setSelectedTxDetail(null) }
         onSuccess={handleDataMutated}
-        accounts={accounts}
+        accounts={cuentasDeMovimientos}
         categories={categories}
         holderDict={dict.transactionsPage}
+        cuentasDict={dict.accountsPage}
       />
     </div>
   ) ;

@@ -36,8 +36,11 @@ export interface CuentaPersonalVista {
 
 /** Cuentas que ofrece el formulario de movimientos: las usables ya y las que se pueden compartir y usar (RN-10). */
 export interface CuentasParaMovimiento {
-  usables:      CuentaConEtiqueta[] ;
-  compartibles: CuentaConEtiqueta[] ;
+  usables:            CuentaConEtiqueta[] ;
+  compartibles:       CuentaConEtiqueta[] ;
+  /** Organización activa: su id para compartir y su nombre para el aviso «Compartir X con <organización>». */
+  organizacionId:     string ;
+  organizacionNombre: string ;
 }
 
 /** Organización donde el usuario puede compartir una cuenta propia (es `owner` o `member`). */
@@ -293,13 +296,21 @@ export async function obtenerCuentasParaMovimientoAction(): Promise< Result< Cue
   const { userId , organizationId } = identidad ;
 
   try {
-    const [ usables , compartibles , puedeEscribir ] = await Promise.all( [
+    const [ usables , compartibles , membresias ] = await Promise.all( [
       accountRepository.findUsablesPara( organizationId , userId ) ,
       accountRepository.findCompartiblesPara( organizationId , userId ) ,
-      puedeEscribirEn( userId , organizationId ) ,
+      membershipRepository.findByUser( userId ) ,
     ] ) ;
 
-    return( ok( {usables , compartibles: ( puedeEscribir ? compartibles : [] )} ) ) ;
+    const membresia    = membresias.find( ( m ) => m.organizationId === organizationId ) ;
+    const puedeEscribir = ( !!membresia && ROLES_QUE_ESCRIBEN.includes( membresia.role ) ) ;
+
+    return( ok( {
+      usables ,
+      compartibles:       ( puedeEscribir ? compartibles : [] ) ,
+      organizacionId:     organizationId ,
+      organizacionNombre: ( membresia?.organizationName ?? "" ) ,
+    } ) ) ;
   } catch( error ) {
     logger.error( "Error al consultar cuentas en obtenerCuentasParaMovimientoAction." , {error: String( error )} ) ;
     return( fail( "Error al consultar las cuentas en el servidor." ) ) ;

@@ -135,6 +135,8 @@ describe( "interfaz de cuentas propias y compartidas — datos (plan 25)" , () =
 
       expect( res.value.usables.map( ( c ) => c.id ).sort() ).toEqual( [ efectivo , bancoAna ].sort() ) ;
       expect( res.value.compartibles.map( ( c ) => c.id ) ).toEqual( [ ahorros ] ) ;
+      expect( res.value.organizacionId ).toBe( orgA ) ;
+      expect( res.value.organizacionNombre ).toBe( "Casa" ) ;
       expect( res.value.compartibles[0].etiqueta ).toEqual( { tipo: "privada" } ) ;
     } ) ;
 

@@ -24,7 +24,8 @@ import {
   getFinancialEntitiesAction ,
   getEarliestMonthKeyAction
 } from "@/features/accounting/actions/accountingActions" ;
-import { getCategoryTreeAction } from "@/features/accounting/actions/categoryActions" ;
+import { getCategoryTreeAction }               from "@/features/accounting/actions/categoryActions" ;
+import { obtenerCuentasParaMovimientoAction } from "@/features/accounting/actions/cuentasPersonalesActions" ;
 
 // Feature: Transactions
 import { getTransactionsPageAction } from "@/features/transactions/actions/transactionsActions" ;
@@ -54,10 +55,11 @@ export default async function TransactionsPage( {params , searchParams}: Transac
   }
 
   // Carga concurrente en el servidor
-  const [ dict , earliestMonthRes , accountsRes , categoryTreeRes , entitiesRes , transactionsPageRes , titularesRes , session ] = await Promise.all( [
+  const [ dict , earliestMonthRes , accountsRes , cuentasMovimientoRes , categoryTreeRes , entitiesRes , transactionsPageRes , titularesRes , session ] = await Promise.all( [
     getDictionary( lang ) ,
     getEarliestMonthKeyAction() ,
     getAccountsAction() ,
+    obtenerCuentasParaMovimientoAction() ,
     getCategoryTreeAction() ,
     getFinancialEntitiesAction() ,
     getTransactionsPageAction( {
@@ -87,6 +89,11 @@ export default async function TransactionsPage( {params , searchParams}: Transac
   const initialNextCursor   = ( transactionsPageRes.success ? transactionsPageRes.value.nextCursor : null ) ;
   const initialHasMore      = ( transactionsPageRes.success ? transactionsPageRes.value.hasMore    : false ) ;
 
+  // Lo que ofrece el selector de origen lo decide el servidor (RN-10); las personales que nombran los asientos
+  // de la página viajan aparte y sin saldo (RN-13).
+  const cuentasMovimiento    = ( cuentasMovimientoRes.success ? cuentasMovimientoRes.value : undefined ) ;
+  const cuentasPersonales    = ( transactionsPageRes.success ? transactionsPageRes.value.cuentasPersonales : [] ) ;
+
   return(
     <div className={styles.container}>
       <TransactionsContainer
@@ -103,6 +110,11 @@ export default async function TransactionsPage( {params , searchParams}: Transac
         minKey={minKey}
         titulares={titulares}
         miembros={miembros}
+        cuentasPersonales={cuentasPersonales}
+        usables={cuentasMovimiento?.usables}
+        compartibles={cuentasMovimiento?.compartibles}
+        organizacionId={cuentasMovimiento?.organizacionId}
+        organizacionNombre={cuentasMovimiento?.organizacionNombre}
       />
     </div>
   ) ;

@@ -4,7 +4,7 @@
  * a partir de las cuentas contables involucradas en sus asientos de partida doble.
  */
 // Feature: Accounting
-import { Account , LedgerEntry } from "@/features/accounting/types" ;
+import { CuentaReferenciada , LedgerEntry } from "@/features/accounting/types" ;
 
 
 export type TransactionType = "income" | "expense" | "transfer" | "exchange" ;
@@ -24,12 +24,12 @@ export interface TransactionSummaryDerived {
  * Deriva el tipo comercial de una transacción a partir del plan de cuentas de sus entradas contables.
  * 
  * @param entries - Asientos contables de la transacción.
- * @param accounts - Cuentas de la organización.
+ * @param accounts - Cuentas de la organización y personales referenciadas por los asientos.
  * @returns 'income' | 'expense' | 'transfer'.
  */
 export function derivarTipoTransaccion(
   entries:  { accountId: string ; debit: number ; credit: number ; currency?: string }[] ,
-  accounts: Account[] | Map< string , Account >
+  accounts: CuentaReferenciada[] | Map< string , CuentaReferenciada >
 ): TransactionType {
   const accountsMap = ( accounts instanceof Map )
     ? accounts
@@ -70,12 +70,12 @@ export function derivarTipoTransaccion(
  * Calcula el resumen representativo para visualización (tipo comercial, importe principal y cuentas).
  * 
  * @param entries - Asientos de la transacción.
- * @param accounts - Cuentas de la organización.
+ * @param accounts - Cuentas de la organización y personales referenciadas por los asientos.
  * @returns Resumen con tipo, importe en centavos, cuenta principal y divisa.
  */
 export function calcularResumenTransaccion(
   entries:  LedgerEntry[] | { accountId: string ; debit: number ; credit: number ; currency?: string }[] ,
-  accounts: Account[] | Map< string , Account >
+  accounts: CuentaReferenciada[] | Map< string , CuentaReferenciada >
 ): TransactionSummaryDerived {
   const accountsMap = ( accounts instanceof Map )
     ? accounts

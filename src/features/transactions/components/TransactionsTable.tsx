@@ -13,8 +13,9 @@ import { InstitutionLogo }             from "@/shared/ui/display/InstitutionLogo
 import { formatCurrency }              from "@/shared/lib/currencyFormatter" ;
 
 // Feature: Accounting
-import { TransactionWithEntries }                      from "@/features/accounting/repositories/ledgerRepository" ;
-import { Account , Category , FinancialEntity }         from "@/features/accounting/types" ;
+import { TransactionWithEntries }                       from "@/features/accounting/repositories/ledgerRepository" ;
+import { CuentaReferenciada , Category , FinancialEntity } from "@/features/accounting/types" ;
+import { AccountLabel , AccountLabelDict }              from "@/features/accounting/components/AccountLabel" ;
 
 // Feature: Profile
 import { useProfileContext } from "@/features/profile/context/ProfileContext" ;
@@ -26,12 +27,15 @@ import styles                         from "./Transactions.module.css" ;
 
 interface TransactionsTableProps {
   transactions:        TransactionWithEntries[] ;
-  accounts:            Account[] ;
+  /** Cuentas de la organización más las personales que nombran los asientos (sin saldo). */
+  accounts:            CuentaReferenciada[] ;
   categories:          Category[] ;
   financialEntities?:  FinancialEntity[] ;
   visibleColumns?:     string[] ;
   loading?:            boolean ;
   holderDict?:         { holderChipLabel: string } ;
+  /** Textos de la etiqueta «Ya no compartida» (RN-13). Sin ellos la fila no la muestra. */
+  cuentasDict?:        AccountLabelDict ;
   onSelectTransaction: ( tx: TransactionWithEntries ) => void ;
 }
 
@@ -114,6 +118,7 @@ export function TransactionsTable( {
   visibleColumns ,
   loading = false ,
   holderDict ,
+  cuentasDict ,
   onSelectTransaction ,
 }: TransactionsTableProps ) {
   const { profile }   = useProfileContext() ;
@@ -206,7 +211,12 @@ export function TransactionsTable( {
               brandDomain={entity?.brandDomain}
               size={20}
             />
-            <span className={styles.accountName}>{acc ? acc.name : "—"}</span>
+            <div className={styles.accountTextGroup}>
+              <span className={styles.accountName}>{acc ? acc.name : "—"}</span>
+              {( cuentasDict && (acc?.compartida === false) ) && (
+                <AccountLabel etiqueta={ {tipo: "yaNoCompartida"} } dict={cuentasDict} />
+              )}
+            </div>
           </div>
         ) ;
       } ,
