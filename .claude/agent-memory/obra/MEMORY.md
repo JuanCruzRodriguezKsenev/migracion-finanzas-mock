@@ -32,3 +32,4 @@
 - [`cuentas-4-ajuste-26.md`](cuentas-4-ajuste-26.md): Plan 26 retomado con código ya escrito: commit sin tocar memorias ajenas, mutaciones con copia (no git), hallazgo de la reversa.
 - [`espacio-personal-29.md`](espacio-personal-29.md): Plan 29 espacio Personal: plan 07 inexistente (viewer sin guardas), AnyPgColumn, slugLibre movido, seeds y tests viejos rotos.
 - [`solo-lectura-30.md`](solo-lectura-30.md): Plan 30 solo lectura: inventario del plan corto (21 archivos, reexportaciones), props con default permisivo, renderConPermisos y trampas de tests.
+- [`seed-31-cuentas-propias.md`](seed-31-cuentas-propias.md): Plan 31 seed con cuentas propias por usuario: ayudante sembrarCuentaPropia, orden estricto de scripts y verificación contra Postgres.
