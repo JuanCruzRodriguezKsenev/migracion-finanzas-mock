@@ -13,6 +13,8 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 
 - [La bóveda de Obsidian, pendiente en los agentes](boveda_obsidian_pendiente_en_agentes.md) — diseño de forja decidido (2026-09-26), sin aplicar a tanda/obra; este repo sigue en `docs/`.
 
+- [Planes 33 y 34: búsqueda de marcas](marcas_planes_33_34.md) — módulo de funciones y no hook; misma rama; qué duplicación queda (2026-10-08).
+
 ## Antes de planificar
 
 - [Trampas del repo](trampas_del_repo.md) — verificación, migraciones que rompen fixtures, RFCs viejos con esquemas previos al core contable, signo de pasivos, y código que los docs dicen que existe y no.

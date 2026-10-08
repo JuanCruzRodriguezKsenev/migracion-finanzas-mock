@@ -33,3 +33,4 @@
 - [`espacio-personal-29.md`](espacio-personal-29.md): Plan 29 espacio Personal: plan 07 inexistente (viewer sin guardas), AnyPgColumn, slugLibre movido, seeds y tests viejos rotos.
 - [`solo-lectura-30.md`](solo-lectura-30.md): Plan 30 solo lectura: inventario del plan corto (21 archivos, reexportaciones), props con default permisivo, renderConPermisos y trampas de tests.
 - [`seed-31-cuentas-propias.md`](seed-31-cuentas-propias.md): Plan 31 seed con cuentas propias por usuario: ayudante sembrarCuentaPropia, orden estricto de scripts y verificación contra Postgres.
+- [`blindaje-marcas-32.md`](blindaje-marcas-32.md): Plan 32 blindaje de buscadores de marcas: 33 tests en 2 suites (CreateFinancialEntityForm y AddSubscriptionModal), fake timers vs waitFor, portales de Modal y 10 mutaciones comprobadas.
