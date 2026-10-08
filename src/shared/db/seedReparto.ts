@@ -2,22 +2,23 @@
  * @file seedReparto.ts
  * Seed pequeño y aparte para probar a mano el reparto y la caja común.
  * Arma la organización `reparto-demo` con tres miembros, cuentas, contactos, un acuerdo de reparto
- * sin caja activada, los movimientos del mes en curso y «Banco Ana», una cuenta propia privada de Ana anclada en
- * su espacio Personal (RN-9). Fuera de la organización demo sólo toca esa cuenta y su entidad en el Personal de Ana.
- * Es idempotente: si la organización ya existe, la elimina por completo y la recrea; «Banco Ana» se reutiliza y se
- * deja otra vez privada y con su saldo inicial.
+ * sin caja activada, los movimientos del mes en curso y cuentas propias para cada miembro ancladas en sus
+ * espacios Personales (RN-9): Banco Ana (privada), Banco Juan (compartida), Efectivo Juan (privada) y
+ * Billetera Vera (privada). Fuera de la organización demo sólo toca esas cuentas y sus entidades en el Personal de cada uno.
+ * Es idempotente: si la organización ya existe, la elimina por completo y la recrea; las cuentas propias se reutilizan y se
+ * restablecen a sus saldos y comparticiones iniciales.
  */
 // Librerías externas
 import * as dotenv from "dotenv" ;
-import { eq , and } from "drizzle-orm" ;
+import { eq }      from "drizzle-orm" ;
 
 // Carga las variables de entorno de .env.local antes de inicializar la conexión
 dotenv.config( {path: ".env.local"} ) ;
 
 // Feature: Accounting
-import { provisionarOrganizacion } from "@/features/accounting/services/organizationProvisioningService" ;
-import { createLedgerTransaction } from "@/features/accounting/services/accountingService" ;
-import { accounts , accountShares , financialEntities } from "@/features/accounting/schema.db" ;
+import { provisionarOrganizacion }      from "@/features/accounting/services/organizationProvisioningService" ;
+import { createLedgerTransaction }      from "@/features/accounting/services/accountingService" ;
+import { accounts , financialEntities } from "@/features/accounting/schema.db" ;
 
 // Feature: Contacts
 import { contacts } from "@/features/contacts/schema.db" ;
@@ -26,13 +27,16 @@ import { contacts } from "@/features/contacts/schema.db" ;
 import { organizationAgreements , agreementPercentages } from "@/features/splits/schema.db" ;
 
 // Feature: Auth
-import { organizationRepository } from "@/features/auth/repositories/organizationRepository" ;
-import { asegurarEspacioPersonal } from "@/features/auth/services/espacioPersonalService" ;
+import { organizationRepository }              from "@/features/auth/repositories/organizationRepository" ;
+import { asegurarEspacioPersonal }             from "@/features/auth/services/espacioPersonalService" ;
 import { organizations , users , memberships } from "@/features/auth/schema.db" ;
-import { hashPassword } from "@/features/auth/services/authService" ;
+import { hashPassword }                        from "@/features/auth/services/authService" ;
 
 // Feature: Profile
 import { profiles } from "@/features/profile/schema.db" ;
+
+// Shared: base de datos
+import { sembrarCuentaPropia } from "./seedCuentasPropias" ;
 
 /** Miembros de la organización demo: correo, nombre y rol. */
 const MIEMBROS = [
@@ -143,45 +147,53 @@ async function main() {
       .insert( accounts )
       .values( {organizationId: org.id , code: "2.1.01.01" , name: "Tarjeta" , type: "liability" , balance: 0 , currency: "ARS" , entityId: entBanco.id} ) ;
 
-    // 3b. Cuenta propia de Ana: privada (sin comparticiones), anclada en su espacio Personal (RN-9) y con el saldo
-    // inicial guardado directo, sin asiento (RN-2 de la spec de cuentas). Nace sin compartir para poder probar
-    // «Compartir y usar». La entidad es una entidad propia del Personal (RN-11). Como el Personal sobrevive a
-    // la organización demo, ambas se reutilizan si ya existen.
-    const anaId       = idPorEmail.get( "ana@demo.test" )! ;
-    const personalAna = personalDe.get( "ana@demo.test" )! ;
+    // 3b. Cuentas propias por usuario en sus espacios Personales (RN-9)
+    // - Banco Ana: privada, prueba «Compartir y usar»
+    // - Banco Juan: compartida con reparto-demo, prueba usar en nombre del dueño y pregunta de deuda
+    // - Efectivo Juan: privada
+    // - Billetera Vera: privada, Vera es viewer en reparto-demo pero owner en su Personal
+    const juanId       = idPorEmail.get( "juan@demo.test" )! ;
+    const anaId        = idPorEmail.get( "ana@demo.test"  )! ;
+    const veraId       = idPorEmail.get( "vera@demo.test" )! ;
+    const personalJuan = personalDe.get( "juan@demo.test" )! ;
+    const personalAna  = personalDe.get( "ana@demo.test"  )! ;
+    const personalVera = personalDe.get( "vera@demo.test" )! ;
 
-    let [ entBancoAna ] = await db
-      .select()
-      .from( financialEntities )
-      .where( and( eq( financialEntities.organizationId , personalAna ) , eq( financialEntities.name , "Banco Demo" ) ) ) ;
+    // Juan: Banco Juan (compartida con reparto-demo) y Efectivo Juan (privada)
+    await sembrarCuentaPropia( db , {
+      usuarioId:         juanId ,
+      personalOrgId:     personalJuan ,
+      nombre:            "Banco Juan" ,
+      entidad:           { nombre: "Banco Demo" , logo: "bank" , color: "#e67e22" } ,
+      saldo:             80000000 ,
+      compartirConOrgId: org.id ,
+    } ) ;
 
-    if( !entBancoAna ) {
-      [ entBancoAna ] = await db
-        .insert( financialEntities )
-        .values( {organizationId: personalAna , name: "Banco Demo" , logo: "bank" , brandDomain: null , color: "#e67e22"} )
-        .returning() ;
-    }
+    await sembrarCuentaPropia( db , {
+      usuarioId:     juanId ,
+      personalOrgId: personalJuan ,
+      nombre:        "Efectivo Juan" ,
+      entidad:       { nombre: "Efectivo" , logo: "cash" , color: "#2ecc71" } ,
+      saldo:         10000000 ,
+    } ) ;
 
-    const datosBancoAna = {
-      ownerUserId: anaId ,
-      name:        "Banco Ana" ,
-      type:        "asset" ,
-      balance:     50000000 ,
-      currency:    "ARS" ,
-      entityId:    entBancoAna.id ,
-    } ;
+    // Ana: Banco Ana (privada)
+    await sembrarCuentaPropia( db , {
+      usuarioId:     anaId ,
+      personalOrgId: personalAna ,
+      nombre:        "Banco Ana" ,
+      entidad:       { nombre: "Banco Demo" , logo: "bank" , color: "#e67e22" } ,
+      saldo:         50000000 ,
+    } ) ;
 
-    const [ previaBancoAna ] = await db
-      .select()
-      .from( accounts )
-      .where( and( eq( accounts.organizationId , personalAna ) , eq( accounts.code , "1.1.01.04" ) ) ) ;
-
-    if( previaBancoAna ) {
-      await db.update( accounts ).set( datosBancoAna ).where( eq( accounts.id , previaBancoAna.id ) ) ;
-      await db.delete( accountShares ).where( eq( accountShares.accountId , previaBancoAna.id ) ) ;
-    } else {
-      await db.insert( accounts ).values( {organizationId: personalAna , code: "1.1.01.04" , ...datosBancoAna} ) ;
-    }
+    // Vera: Billetera Vera (privada)
+    await sembrarCuentaPropia( db , {
+      usuarioId:     veraId ,
+      personalOrgId: personalVera ,
+      nombre:        "Billetera Vera" ,
+      entidad:       { nombre: "Efectivo" , logo: "cash" , color: "#2ecc71" } ,
+      saldo:         5000000 ,
+    } ) ;
 
     // 4. Contactos
     await db.insert( contacts ).values( [
@@ -278,8 +290,13 @@ async function main() {
 
     // 7. Salida para el checklist manual
     console.log( "Seed de reparto completado." ) ;
+    console.log( "Orden requerido: ejecutar siempre 'pnpm db:seed' antes de 'pnpm db:seed:reparto'." ) ;
     console.log( `Correos: ${MIEMBROS.map( ( m ) => `${m.email} (${m.role})` ).join( " , " )}` ) ;
     console.log( `Contraseña: ${CONTRASENIA}` ) ;
+    console.log( "Cuentas propias por usuario:" ) ;
+    console.log( "  - Juan (owner):  Banco Juan ($800.000, compartida con reparto-demo) , Efectivo Juan ($100.000, privada)" ) ;
+    console.log( "  - Ana (member):  Banco Ana ($500.000, privada)" ) ;
+    console.log( "  - Vera (viewer): Billetera Vera ($50.000, privada)" ) ;
     console.log( "Ruta del paso 1 del checklist: /es/settings" ) ;
 
     process.exit( 0 ) ;
