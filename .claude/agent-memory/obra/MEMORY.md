@@ -26,3 +26,4 @@
 - [`titulares-22.md`](titulares-22.md): Plan 22 viewers no titulares: radio de impacto corto (habilitaciones, AC-15 reparto), cobertura RN-24 solo unitaria.
 - [`cuentas-2-uso.md`](cuentas-2-uso.md): Plan 24 uso de personales en movimientos: rama no creada, `cuentasPersonales` en la página (sin saldo), bloqueo ordenado y mutaciones.
 - [`cuentas-1-modelo.md`](cuentas-1-modelo.md): Plan 23 cuentas personales: choque de códigos (hallazgo), fixtures rotos por campo nuevo, predicados no observables.
+- [`cuentas-3-interfaz.md`](cuentas-3-interfaz.md): Plan 25 interfaz de cuentas: rama ocupada, claves extra, tipos sin saldo, trampa de `git checkout` y fish.
