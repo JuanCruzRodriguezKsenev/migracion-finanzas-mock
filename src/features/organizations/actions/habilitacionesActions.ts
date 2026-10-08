@@ -19,6 +19,7 @@ import { titularesPosibles , TitularPosible } from "@/features/auth/services/tit
 import { habilitacionRepository }              from "@/features/auth/repositories/habilitacionRepository" ;
 import { membershipRepository }                from "@/features/auth/repositories/membershipRepository" ;
 import { nombreVisible }                       from "@/features/auth/utils/nombreVisible" ;
+import { obtenerSesionDeEscritura }             from "@/features/auth/services/authorizationService" ;
 
 // Feature: Organizations
 import { habilitacionSchema , HabilitacionInput } from "../schemas/organization.schema" ;
@@ -42,10 +43,10 @@ export interface HabilitacionesListadas {
  * @returns Result vacío, o `fail` con el motivo.
  */
 export async function otorgarHabilitacionAction( rawInput: HabilitacionInput ): Promise< Result< null , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.id || !session.user.organizationId ) {
-    return( fail( "No autorizado." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const validation = habilitacionSchema.safeParse( rawInput ) ;
@@ -55,8 +56,8 @@ export async function otorgarHabilitacionAction( rawInput: HabilitacionInput ): 
   }
 
   const { habilitadoUserId } = validation.data ;
-  const otorganteId          = session.user.id ;
-  const organizationId       = session.user.organizationId ;
+  const otorganteId          = sesion.value.userId ;
+  const organizationId       = sesion.value.organizationId ;
 
   if( habilitadoUserId === otorganteId ) {
     return( fail( "No podés habilitarte a vos mismo." ) ) ;
@@ -97,10 +98,10 @@ export async function otorgarHabilitacionAction( rawInput: HabilitacionInput ): 
  * @returns Result vacío, o `fail` con el motivo.
  */
 export async function revocarHabilitacionAction( rawInput: HabilitacionInput ): Promise< Result< null , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.id || !session.user.organizationId ) {
-    return( fail( "No autorizado." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const validation = habilitacionSchema.safeParse( rawInput ) ;
@@ -109,10 +110,10 @@ export async function revocarHabilitacionAction( rawInput: HabilitacionInput ): 
     return( fail( validation.error.issues[0]?.message || "Datos inválidos." ) ) ;
   }
 
-  const organizationId = session.user.organizationId ;
+  const organizationId = sesion.value.organizationId ;
 
   try {
-    await habilitacionRepository.revocar( organizationId , session.user.id , validation.data.habilitadoUserId ) ;
+    await habilitacionRepository.revocar( organizationId , sesion.value.userId , validation.data.habilitadoUserId ) ;
 
     return( ok( null ) ) ;
   } catch( error ) {

@@ -24,7 +24,6 @@ vi.mock( "next/navigation" , () => ( {
 vi.mock( "../actions/accountingActions" , () => ( {
   createAccountAction:            vi.fn() ,
   createFinancialEntityAction:    vi.fn() ,
-  createAccountForEntityAction:   vi.fn() ,
 } ) ) ;
 
 vi.mock( "../actions/cuentasPersonalesActions" , () => ( {

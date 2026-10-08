@@ -10,6 +10,7 @@ import type { Session }                              from "next-auth" ;
 // Shared
 import { db }          from "@/shared/db/client" ;
 import { limpiarBase } from "@/shared/db/testCleanup" ;
+import { crearUsuarioConMembresia } from "@/shared/db/testFixtures" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -38,9 +39,12 @@ describe( "goalsActions - sesión y validación" , () => {
   let org2Id: string ;
   let cuenta: string ;
 
-  const loguear = ( organizationId: string | null ) => {
+  /** Inicia sesión como un `member` real de la organización (la guarda de escritura consulta la base). */
+  const loguear = async ( organizationId: string | null ) => {
+    const usuario = organizationId ? await crearUsuarioConMembresia( { organizationId , role: "member" } ) : null ;
+
     vi.mocked( getServerSession ).mockResolvedValue(
-      organizationId ? ( { user: { id: "22222222-2222-4222-8222-222222222222" , organizationId } } as unknown as Session ) : null
+      usuario ? ( { user: { id: usuario.id , organizationId } } as unknown as Session ) : null
     ) ;
   } ;
 
@@ -56,7 +60,7 @@ describe( "goalsActions - sesión y validación" , () => {
   } ) ;
 
   it( "sin sesión, todas las acciones rechazan" , async () => {
-    loguear( null ) ;
+    await loguear( null ) ;
     const uuid = "11111111-1111-4111-8111-111111111111" ;
     const rs = await Promise.all( [
       createGoalAction( { name: "X" , currency: "ARS" , targetAmount: 100 } ) ,
@@ -73,14 +77,14 @@ describe( "goalsActions - sesión y validación" , () => {
   } ) ;
 
   it( "valida con Zod antes de tocar la base" , async () => {
-    loguear( orgId ) ;
+    await loguear( orgId ) ;
     expect( ( await createGoalAction( { name: "" , currency: "ARS" , targetAmount: 100 } ) ).success ).toBe( false ) ;
     expect( ( await createGoalAction( { name: "X" , currency: "ARS" , targetAmount: 1.5 } ) ).success ).toBe( false ) ;
     expect( ( await contributeToGoalAction( { goalId: "no" , accountId: cuenta , amount: 1 } ) ).success ).toBe( false ) ;
   } ) ;
 
   it( "flujo completo con la organización de la sesión; otra organización no toca la meta" , async () => {
-    loguear( orgId ) ;
+    await loguear( orgId ) ;
     const creada = await createGoalAction( { name: "Auto" , currency: "ARS" , targetAmount: 500000 } ) ;
     expect( creada.success ).toBe( true ) ;
     const goalId = creada.value!.id ;
@@ -92,12 +96,12 @@ describe( "goalsActions - sesión y validación" , () => {
     const vista = await getGoalsAction( { currency: "ARS" } ) ;
     expect( vista.value!.metas[ 0 ].ahorrado ).toBe( 200000 ) ;
 
-    loguear( org2Id ) ;
+    await loguear( org2Id ) ;
     expect( ( await contributeToGoalAction( { goalId , accountId: cuenta , amount: 1 } ) ).success ).toBe( false ) ;
     expect( ( await abandonGoalAction( { goalId } ) ).success ).toBe( false ) ;
     expect( ( await getGoalsAction() ).value!.metas.length ).toBe( 0 ) ;
 
-    loguear( orgId ) ;
+    await loguear( orgId ) ;
     expect( ( await withdrawFromGoalAction( { goalId , accountId: cuenta , amount: 200000 } ) ).success ).toBe( true ) ;
     expect( ( await abandonGoalAction( { goalId } ) ).success ).toBe( true ) ;
   } ) ;

@@ -10,6 +10,7 @@ import type { Session }                             from "next-auth" ;
 // Shared
 import { db }          from "@/shared/db/client" ;
 import { limpiarBase } from "@/shared/db/testCleanup" ;
+import { crearUsuarioConMembresia } from "@/shared/db/testFixtures" ;
 
 // Feature: Accounting & Auth
 import { financialEntities } from "@/features/accounting/schema.db" ;
@@ -72,9 +73,11 @@ describe( "contactsActions.ts — Server Actions" , () => {
       .returning() ;
     entityId = entity.id ;
 
-    // Mock de sesión por defecto para orgId
+    // Mock de sesión por defecto para orgId: un `member` real (la guarda de escritura consulta la base)
+    const autor = await crearUsuarioConMembresia( { organizationId: orgId , role: "member" } ) ;
+
     vi.mocked( getServerSession ).mockResolvedValue( {
-      user: { id: "user-1" , organizationId: orgId , name: "Test User" } ,
+      user: { id: autor.id , organizationId: orgId , name: "Test User" } ,
       expires: "9999-12-31" ,
     } as unknown as Session ) ;
   } ) ;

@@ -13,8 +13,8 @@ import { FormInput }                         from "@/shared/ui/forms/Form/FormIn
 import { FormError }                         from "@/shared/ui/forms/Form/FormError" ;
 
 // Feature: Accounting
-import { createFinancialEntityAction , createAccountForEntityAction } from "../actions/accountingActions" ;
-import styles                                                        from "./CreateAccountForm.module.css" ;
+import { createFinancialEntityAction } from "../actions/accountingActions" ;
+import styles                          from "./CreateAccountForm.module.css" ;
 
 
 /** Entidad recién creada, tal como se la devuelve a quien abrió el formulario. */
@@ -27,11 +27,6 @@ interface CreateFinancialEntityFormProps {
   dict:            Awaited< ReturnType< typeof getDictionary > >["accountsPage"] ;
   /** Se llama con la entidad creada; quien no la necesita puede ignorarla. */
   onSuccess?:      ( entidad: EntidadCreada ) => void ;
-  /**
-   * Determina si se crea atómicamente la cuenta propia asociada con saldo inicial (flujo /accounts)
-   * o si se realiza un alta pura de la entidad financiera (flujo /contacts). Por defecto true.
-   */
-  withOwnAccount?: boolean ;
 }
 
 const COUNTRIES = [
@@ -105,7 +100,7 @@ function getDomainCountryFlag( domain: string ): string {
   return( "🌐" ) ;
 }
 
-export function CreateFinancialEntityForm( { dict , onSuccess , withOwnAccount = true }: CreateFinancialEntityFormProps ) {
+export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancialEntityFormProps ) {
   const router                           = useRouter() ;
   const [ isTransitioning , startTrans ] = useTransition() ;
   const [ error , setError ]             = useState< string | null >( null ) ;
@@ -114,7 +109,6 @@ export function CreateFinancialEntityForm( { dict , onSuccess , withOwnAccount =
   const [ logo , setLogo ]               = useState( "bank" ) ;
   const [ brandDomain , setBrandDomain ] = useState< string | null >( null ) ;
   const [ color , setColor ]             = useState( "#6366f1" ) ;
-  const [ balance , setBalance ]         = useState( "" ) ;
   const [ notice , setNotice ]           = useState< string | null >( null ) ;
 
   const [ selectedCountry , setSelectedCountry ] = useState( () => detectUserCountry() ) ;
@@ -240,7 +234,6 @@ export function CreateFinancialEntityForm( { dict , onSuccess , withOwnAccount =
     setBrandDomain( null ) ;
     setLogo( "bank" ) ;
     setColor( "#6366f1" ) ;
-    setBalance( "" ) ;
     setNotice( null ) ;
     setSuggestions( [] ) ;
     setShowDropdown( false ) ;
@@ -273,7 +266,6 @@ export function CreateFinancialEntityForm( { dict , onSuccess , withOwnAccount =
     }
 
     startTrans( async () => {
-      const rawCents = Math.floor( ( Number( balance ) || 0 ) * 100 ) ;
       const res = await createFinancialEntityAction( {
         name:        name.trim() ,
         logo:        isBrandFromApi ? "bank" : logo ,
@@ -286,24 +278,10 @@ export function CreateFinancialEntityForm( { dict , onSuccess , withOwnAccount =
         return ;
       }
 
-      // Si se requiere crear la cuenta propia asociada (flujo /accounts)
-      if( withOwnAccount ) {
-        const accountRes = await createAccountForEntityAction( {
-          entityId: res.value.id ,
-          balance:  rawCents ,
-        } ) ;
-
-        if( !accountRes.success ) {
-          setError( accountRes.error ) ;
-          return ;
-        }
-      }
-
       setName( "" ) ;
       setBrandDomain( null ) ;
       setLogo( "bank" ) ;
       setColor( "#6366f1" ) ;
-      setBalance( "" ) ;
       setIsBrandFromApi( false ) ;
       setSuggestions( [] ) ;
       setShowDropdown( false ) ;
@@ -371,21 +349,6 @@ export function CreateFinancialEntityForm( { dict , onSuccess , withOwnAccount =
       {notice && (
         <div className={styles.notice}>
           ⚠️ {notice}
-        </div>
-      )}
-
-      {withOwnAccount && (
-        <div className={styles.row}>
-          <FormInput
-            label="Saldo Inicial de la Cuenta por Defecto"
-            type="number"
-            step="0.01"
-            placeholder="0.00"
-            value={balance}
-            onChange={ ( e ) => setBalance( e.target.value ) }
-            disabled={isTransitioning}
-            required
-          />
         </div>
       )}
 

@@ -8,14 +8,15 @@
 "use server" ;
 
 // Librerías externas
-import { getServerSession } from "next-auth" ;
-import { revalidatePath }   from "next/cache" ;
+import { revalidatePath } from "next/cache" ;
 
 // Shared
 import { ok , fail , Result } from "@/shared/lib/result" ;
-import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
 import { db }                 from "@/shared/db/client" ;
+
+// Feature: Auth
+import { obtenerSesionDeEscritura } from "@/features/auth/services/authorizationService" ;
 
 // Feature: Profile
 import { profileRepository } from "@/features/profile/repositories/profileRepository" ;
@@ -76,13 +77,13 @@ export interface ResolveSubscriptionResult {
 export async function resolveSubscriptionAction(
   params: ResolveSubscriptionParams
 ): Promise< Result< ResolveSubscriptionResult , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para resolver transacciones propuestas." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
-  const organizationId = session.user.organizationId ;
+  const organizationId = sesion.value.organizationId ;
 
   // 1. Obtener la suscripción y validar pertenencia
   const subscription = await subscriptionRepository.findById( params.subscriptionId , organizationId ) ;
@@ -91,7 +92,7 @@ export async function resolveSubscriptionAction(
   }
 
   // 2. Guarda de idempotencia y secuencia: debe ser la más antigua pendiente
-  const profile    = ( session.user.id ? await profileRepository.findByUserId( session.user.id ) : null ) ;
+  const profile    = ( sesion.value.userId ? await profileRepository.findByUserId( sesion.value.userId ) : null ) ;
   const timeZone   = ( profile?.timezone || "America/Argentina/Buenos_Aires" ) ;
   const hoyCivil   = obtenerHoyCivil( timeZone ) ;
   const pendientes = pendientesDe( subscription , hoyCivil ) ;
@@ -172,7 +173,7 @@ export async function resolveSubscriptionAction(
 
         const ledgerResult = await createLedgerTransaction( {
           organizationId ,
-          createdByUserId: session.user.id ?? null ,
+          createdByUserId: sesion.value.userId ,
           categoryId:     targetCat.id ,
           description:    freshSub.name ,
           occurredAt ,

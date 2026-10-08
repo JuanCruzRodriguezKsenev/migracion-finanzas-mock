@@ -16,6 +16,9 @@ import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
 import { db }                 from "@/shared/db/client" ;
 
+// Feature: Auth
+import { obtenerSesionDeEscritura } from "@/features/auth/services/authorizationService" ;
+
 // Feature: Profile
 import { profileRepository } from "@/features/profile/repositories/profileRepository" ;
 
@@ -76,13 +79,13 @@ export interface ResolveInstallmentResult {
 export async function createInstallmentPlanAction(
   params: CreateInstallmentPlanInput
 ): Promise< Result< CardInstallmentPlan , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para registrar planes de cuotas." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
-  const organizationId = session.user.organizationId ;
+  const organizationId = sesion.value.organizationId ;
 
   const validation = createInstallmentPlanSchema.safeParse( params ) ;
   if( !validation.success ) {
@@ -129,7 +132,7 @@ export async function createInstallmentPlanAction(
     }
 
     // 3. Determinar puntero inicial resolvedThrough
-    const profile   = ( session.user.id ? await profileRepository.findByUserId( session.user.id ) : null ) ;
+    const profile   = ( sesion.value.userId ? await profileRepository.findByUserId( sesion.value.userId ) : null ) ;
     const timeZone  = ( profile?.timezone || "America/Argentina/Buenos_Aires" ) ;
     const hoyCivil  = obtenerHoyCivil( timeZone ) ;
     const punteroIn = calcularPunteroInicial( data.firstInstallmentDate , "monthly" , 1 , hoyCivil ) ;
@@ -169,13 +172,13 @@ export async function createInstallmentPlanAction(
 export async function resolveInstallmentAction(
   params: ResolveInstallmentParams
 ): Promise< Result< ResolveInstallmentResult , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para resolver cuotas de tarjeta." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
-  const organizationId = session.user.organizationId ;
+  const organizationId = sesion.value.organizationId ;
 
   // 1. Obtener plan y validar pertenencia
   const plan = await installmentPlansRepository.findById( params.planId , organizationId ) ;
@@ -184,7 +187,7 @@ export async function resolveInstallmentAction(
   }
 
   // 2. Guarda de idempotencia y secuencia previa a la transacción
-  const profile    = ( session.user.id ? await profileRepository.findByUserId( session.user.id ) : null ) ;
+  const profile    = ( sesion.value.userId ? await profileRepository.findByUserId( sesion.value.userId ) : null ) ;
   const timeZone   = ( profile?.timezone || "America/Argentina/Buenos_Aires" ) ;
   const hoyCivil   = obtenerHoyCivil( timeZone ) ;
   const pendientes = pendientesDeCuotas( plan , hoyCivil ) ;
@@ -258,7 +261,7 @@ export async function resolveInstallmentAction(
 
         const ledgerResult = await createLedgerTransaction( {
           organizationId ,
-          createdByUserId: session.user.id ?? null ,
+          createdByUserId: sesion.value.userId ,
           categoryId:     targetCat.id ,
           description:    ordinalDescripcion ,
           occurredAt ,
@@ -322,13 +325,13 @@ export async function resolveInstallmentAction(
 export async function archiveInstallmentPlanAction(
   planId: string
 ): Promise< Result< CardInstallmentPlan , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para archivar planes de cuotas." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
-  const organizationId = session.user.organizationId ;
+  const organizationId = sesion.value.organizationId ;
 
   const updated = await installmentPlansRepository.archive( planId , organizationId ) ;
   if( !updated ) {

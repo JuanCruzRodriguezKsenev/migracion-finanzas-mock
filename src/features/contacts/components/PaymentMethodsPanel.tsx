@@ -414,7 +414,6 @@ export function PaymentMethodsPanel( {
         {dict?.accountsPage && (
           <CreateFinancialEntityForm
             dict={dict.accountsPage}
-            withOwnAccount={false}
             onSuccess={ () => {
               setIsEntityModalOpen( false ) ;
               onRefresh() ;

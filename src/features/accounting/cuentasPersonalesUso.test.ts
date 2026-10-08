@@ -11,7 +11,7 @@ import { db }                                             from "@/shared/db/clie
 
 // Feature: Accounting
 import { financialEntities , accounts , ledgerTransactions , categories }                                                                                                  from "./schema.db" ;
-import { createAccountAction , createAccountForEntityAction , createLedgerTransactionAction , reverseLedgerTransactionAction , deleteLedgerTransactionAction , getAccountsAction , getTransactionsPageAction } from "./actions/accountingActions" ;
+import { createAccountAction , createLedgerTransactionAction , reverseLedgerTransactionAction , deleteLedgerTransactionAction , getAccountsAction , getTransactionsPageAction } from "./actions/accountingActions" ;
 import { obtenerMisCuentasAction , dejarDeCompartirAction }                                                                         from "./actions/cuentasPersonalesActions" ;
 import { createLedgerTransaction }                                                                                                                          from "./services/accountingService" ;
 import { derivarResumenDeMes }                                                                                                                              from "./services/monthlySummaryService" ;
@@ -63,7 +63,7 @@ describe( "cuentas personales — códigos contables sin choque (plan 24, paso 0
     await limpiarBase() ;
   } ) ;
 
-  it( "con una personal en el último código libre de asset, cuenta, cuenta por entidad y préstamo de activo obtienen códigos distintos" , async () => {
+  it( "con una personal en el último código libre de asset, cuenta y préstamo de activo obtienen códigos distintos" , async () => {
     await db.insert( accounts ).values( { organizationId: orgA , code: "3.1.01.01" , name: "Patrimonio Neto" , type: "equity" } ) ;
     await crearCuentaPersonal( { ownerUserId: ana , organizationId: orgA , name: "Ahorros de Ana" , code: "1.1.01.01" } ) ;
     const [ entidad ] = await db.insert( financialEntities ).values( { organizationId: orgA , name: "Banco Uno" , brandDomain: "uno.com" , logo: "bank" } ).returning() ;
@@ -71,9 +71,6 @@ describe( "cuentas personales — códigos contables sin choque (plan 24, paso 0
 
     const cuenta = await createAccountAction( { name: "Caja" , type: "asset" } ) ;
     expect( cuenta.success ).toBe( true ) ;
-
-    const porEntidad = await createAccountForEntityAction( { entityId: entidad.id } ) ;
-    expect( porEntidad.success ).toBe( true ) ;
 
     const prestamo = await createLoanAction( {
       name:                 "Préstamo a Pedro" ,
@@ -92,8 +89,8 @@ describe( "cuentas personales — códigos contables sin choque (plan 24, paso 0
     expect( prestamo.success ).toBe( true ) ;
 
     const codigos = ( await db.select( { code: accounts.code , type: accounts.type } ).from( accounts ) ).filter( ( c ) => c.type === "asset" ).map( ( c ) => c.code ) ;
-    expect( codigos ).toHaveLength( 4 ) ;
-    expect( new Set( codigos ).size ).toBe( 4 ) ;
+    expect( codigos ).toHaveLength( 3 ) ;
+    expect( new Set( codigos ).size ).toBe( 3 ) ;
   } ) ;
 } ) ;
 

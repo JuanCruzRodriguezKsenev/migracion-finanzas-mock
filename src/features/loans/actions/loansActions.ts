@@ -15,6 +15,9 @@ import { Result , ok , fail } from "@/shared/lib/result" ;
 import { logger }             from "@/shared/lib/logger" ;
 
 // Feature: Auth
+import { obtenerSesionDeEscritura } from "@/features/auth/services/authorizationService" ;
+
+// Feature: Auth
 import { authOptions } from "@/shared/lib/auth" ;
 
 // Feature: Profile
@@ -58,13 +61,13 @@ import type { Loan , LoanConResumen }      from "../types" ;
  * @returns Result con el préstamo creado o mensaje de error.
  */
 export async function createLoanAction( params: CreateLoanInput ): Promise< Result< Loan , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para registrar préstamos." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
-  const organizationId = session.user.organizationId ;
+  const organizationId = sesion.value.organizationId ;
 
   // 1. Validación de esquema
   const validation = createLoanSchema.safeParse( params ) ;
@@ -195,7 +198,7 @@ export async function createLoanAction( params: CreateLoanInput ): Promise< Resu
 
     const txResult = await createLedgerTransaction( {
       organizationId ,
-      createdByUserId: session.user.id ?? null ,
+      createdByUserId: sesion.value.userId ,
       description: `Alta préstamo ${loanCreado.name}` ,
       occurredAt:  data.startDate ,
       entries
@@ -237,13 +240,13 @@ export async function createLoanAction( params: CreateLoanInput ): Promise< Resu
 export async function payLoanInstallmentAction(
   params: PayLoanInstallmentInput
 ): Promise< Result< { loan: Loan ; transactionId: string } , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para registrar pagos de cuotas." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
-  const organizationId = session.user.organizationId ;
+  const organizationId = sesion.value.organizationId ;
 
   // 1. Validación de esquema
   const validation = payLoanInstallmentSchema.safeParse( params ) ;
@@ -257,7 +260,7 @@ export async function payLoanInstallmentAction(
   // 2. Determinar fecha civil actual
   let hoyCivil = data.hoyCivil ;
   if( !hoyCivil ) {
-    const profile  = ( session.user.id ? await profileRepository.findByUserId( session.user.id ) : null ) ;
+    const profile  = ( sesion.value.userId ? await profileRepository.findByUserId( sesion.value.userId ) : null ) ;
     const timeZone = ( profile?.timezone || "America/Argentina/Buenos_Aires" ) ;
     hoyCivil       = obtenerHoyCivil( timeZone ) ;
   }
@@ -366,7 +369,7 @@ export async function payLoanInstallmentAction(
 
       const txResult = await createLedgerTransaction( {
         organizationId ,
-        createdByUserId: session.user.id ?? null ,
+        createdByUserId: sesion.value.userId ,
         categoryId ,
         description: `Cuota ${cuotaPendiente.n}/${freshLoan.totalInstallments} ${freshLoan.name}` ,
         occurredAt ,
@@ -441,14 +444,14 @@ export async function getLoansAction(): Promise< Result< LoanConResumen[] , stri
  * @returns Result con el préstamo archivado o mensaje de error.
  */
 export async function archiveLoanAction( id: string ): Promise< Result< Loan , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   try {
-    const loan = await loansRepository.archive( id , session.user.organizationId ) ;
+    const loan = await loansRepository.archive( id , sesion.value.organizationId ) ;
     if( !loan ) {
       return( fail( "Préstamo no encontrado." ) ) ;
     }

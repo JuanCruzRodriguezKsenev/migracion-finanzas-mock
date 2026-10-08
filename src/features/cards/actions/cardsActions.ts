@@ -14,6 +14,9 @@ import { ok , fail , Result } from "@/shared/lib/result" ;
 import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
 
+// Feature: Auth
+import { obtenerSesionDeEscritura } from "@/features/auth/services/authorizationService" ;
+
 // Feature: Accounting
 import { financialEntityRepository } from "@/features/accounting/repositories/financialEntityRepository" ;
 import { createLedgerTransaction }    from "@/features/accounting/services/accountingService" ;
@@ -40,13 +43,13 @@ import { Card , CardWithAccountsAndEntity }    from "../types" ;
  * @returns Result con la tarjeta creada o mensaje de error.
  */
 export async function createCardAction( params: CreateCardInput ): Promise< Result<Card , string> > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para registrar tarjetas." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
-  const organizationId = session.user.organizationId ;
+  const organizationId = sesion.value.organizationId ;
 
   // 1. Validación estricta con Zod en runtime (defensa PCI)
   const validation = createCardSchema.safeParse( params ) ;
@@ -160,7 +163,7 @@ export async function createCardAction( params: CreateCardInput ): Promise< Resu
     if( (deuda > 0) && ctaPatrimonio ) {
       const txResult = await createLedgerTransaction( {
         organizationId ,
-        createdByUserId: session.user.id ?? null ,
+        createdByUserId: sesion.value.userId ,
         description:    `Apertura ${tarjetaCreada.label}` ,
         occurredAt:     new Date() ,
         entries: [
@@ -240,14 +243,14 @@ export async function getCardsAction(): Promise< Result<CardWithAccountsAndEntit
  * @param id - ID de la tarjeta a archivar.
  */
 export async function archiveCardAction( id: string ): Promise< Result<Card , string> > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   try {
-    const tarjeta = await cardsRepository.archive( id , session.user.organizationId ) ;
+    const tarjeta = await cardsRepository.archive( id , sesion.value.organizationId ) ;
     if( !tarjeta ) {
       return( fail( "Tarjeta no encontrada." ) ) ;
     }

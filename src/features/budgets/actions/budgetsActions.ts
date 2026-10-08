@@ -15,6 +15,9 @@ import { logger }             from "@/shared/lib/logger" ;
 import { claveDeMesActual }   from "@/shared/lib/monthKey" ;
 import { authOptions }        from "@/shared/lib/auth" ;
 
+// Feature: Auth
+import { obtenerSesionDeEscritura } from "@/features/auth/services/authorizationService" ;
+
 // Feature: Accounting
 import { categoryRepository } from "@/features/accounting/repositories/categoryRepository" ;
 
@@ -82,10 +85,10 @@ export async function getBudgetsAction( params: GetBudgetsInput = {} ): Promise<
  * @returns Result con el presupuesto creado.
  */
 export async function createBudgetAction( params: CreateBudgetInput ): Promise< Result< Budget , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para crear presupuestos." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const validation = createBudgetSchema.safeParse( params ) ;
@@ -93,11 +96,11 @@ export async function createBudgetAction( params: CreateBudgetInput ): Promise< 
     return( fail( validation.error.issues[ 0 ]?.message || "Datos de presupuesto inválidos." ) ) ;
   }
 
-  const orgId = session.user.organizationId ;
+  const orgId = sesion.value.organizationId ;
   const data  = validation.data ;
 
   try {
-    const { zona } = await budgetsService.preferenciasDe( session.user.id ) ;
+    const { zona } = await budgetsService.preferenciasDe( sesion.value.userId ) ;
     const monthKey = claveDeMesActual( zona ) ;
 
     const resultado = await db.transaction( async ( tx ) => {
@@ -144,10 +147,10 @@ export async function createBudgetAction( params: CreateBudgetInput ): Promise< 
  * @returns Result con el presupuesto actualizado.
  */
 export async function updateBudgetLimitAction( params: UpdateBudgetLimitInput ): Promise< Result< Budget , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para modificar presupuestos." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const validation = updateBudgetLimitSchema.safeParse( params ) ;
@@ -155,11 +158,11 @@ export async function updateBudgetLimitAction( params: UpdateBudgetLimitInput ):
     return( fail( validation.error.issues[ 0 ]?.message || "Datos de presupuesto inválidos." ) ) ;
   }
 
-  const orgId = session.user.organizationId ;
+  const orgId = sesion.value.organizationId ;
   const data  = validation.data ;
 
   try {
-    const { zona } = await budgetsService.preferenciasDe( session.user.id ) ;
+    const { zona } = await budgetsService.preferenciasDe( sesion.value.userId ) ;
     const monthKey = claveDeMesActual( zona ) ;
 
     return( await db.transaction( async ( tx ) => {
@@ -186,10 +189,10 @@ export async function updateBudgetLimitAction( params: UpdateBudgetLimitInput ):
  * @returns Result con el presupuesto finalizado.
  */
 export async function deleteBudgetAction( params: DeleteBudgetInput ): Promise< Result< Budget , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para eliminar presupuestos." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const validation = deleteBudgetSchema.safeParse( params ) ;
@@ -198,8 +201,8 @@ export async function deleteBudgetAction( params: DeleteBudgetInput ): Promise< 
   }
 
   try {
-    const { zona } = await budgetsService.preferenciasDe( session.user.id ) ;
-    const finalizado = await budgetsRepository.end( validation.data.budgetId , claveDeMesActual( zona ) , session.user.organizationId ) ;
+    const { zona } = await budgetsService.preferenciasDe( sesion.value.userId ) ;
+    const finalizado = await budgetsRepository.end( validation.data.budgetId , claveDeMesActual( zona ) , sesion.value.organizationId ) ;
 
     if( !finalizado ) {
       return( fail( "Presupuesto no encontrado o ya finalizado." ) ) ;

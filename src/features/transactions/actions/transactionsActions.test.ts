@@ -15,7 +15,8 @@ import { organizations } from "@/features/auth/schema.db" ;
 import { accounts , categories , ledgerEntries } from "@/features/accounting/schema.db" ;
 
 // Feature: Transactions
-import { createTransactionFromFormAction , obtenerCuentaPorMoneda } from "./transactionsActions" ;
+import { createTransactionFromFormAction } from "./transactionsActions" ;
+import { obtenerCuentaPorMoneda }          from "../services/accountResolver" ;
 
 vi.mock( "next-auth" , () => ( {
   getServerSession: vi.fn() ,

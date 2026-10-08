@@ -16,6 +16,9 @@ import { logger }              from "@/shared/lib/logger" ;
 import { db , DBOrTx }         from "@/shared/db/client" ;
 import { claveDeDia }          from "@/shared/lib/monthKey" ;
 
+// Feature: Auth
+import { obtenerSesionDeEscritura } from "@/features/auth/services/authorizationService" ;
+
 // Feature: Budgets
 import { budgetsService } from "@/features/budgets/services/budgetsService" ;
 
@@ -136,10 +139,10 @@ export async function obtenerSaldosAction(): Promise< Result< VistaSaldos , stri
  * @returns Éxito, o `fail` con el motivo.
  */
 export async function registrarPagoAction( datos: RegistrarPagoInput ): Promise< Result< null , string > > {
-  const contexto = await contextoDeSesion() ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !contexto || (contexto.rol === "viewer") ) {
-    return( fail( "No autorizado." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const validation = registrarPagoSchema.safeParse( datos ) ;
@@ -148,7 +151,7 @@ export async function registrarPagoAction( datos: RegistrarPagoInput ): Promise<
     return( fail( validation.error.issues[ 0 ]?.message || "Datos del pago inválidos." ) ) ;
   }
 
-  const { userId , organizationId }                  = contexto ;
+  const { userId , organizationId }                  = sesion.value ;
   const { contraparteId , divisa , montoEnCentavos } = validation.data ;
 
   if( contraparteId === userId ) {
@@ -197,10 +200,10 @@ export async function registrarPagoAction( datos: RegistrarPagoInput ): Promise<
  * @returns Éxito, o `fail` con el motivo (p. ej. ya se solicitó hoy).
  */
 export async function solicitarPagoAction( datos: SolicitarPagoInput ): Promise< Result< null , string > > {
-  const contexto = await contextoDeSesion() ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !contexto || (contexto.rol === "viewer") ) {
-    return( fail( "No autorizado." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const validation = solicitarPagoSchema.safeParse( datos ) ;
@@ -209,7 +212,7 @@ export async function solicitarPagoAction( datos: SolicitarPagoInput ): Promise<
     return( fail( validation.error.issues[ 0 ]?.message || "Datos de la solicitud inválidos." ) ) ;
   }
 
-  const { userId , organizationId } = contexto ;
+  const { userId , organizationId } = sesion.value ;
   const { contraparteId , divisa }  = validation.data ;
 
   if( contraparteId === userId ) {

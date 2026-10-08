@@ -12,6 +12,9 @@ import { ok , fail , Result } from "@/shared/lib/result" ;
 import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
 
+// Feature: Auth
+import { obtenerSesionDeEscritura } from "@/features/auth/services/authorizationService" ;
+
 // Feature: Accounting
 import {
   createLedgerTransactionAction ,
@@ -22,13 +25,14 @@ import {
 } from "@/features/accounting/actions/accountingActions" ;
 import { categoryRepository }        from "@/features/accounting/repositories/categoryRepository" ;
 import { accountRepository }         from "@/features/accounting/repositories/accountRepository" ;
-import { Account , Category , LedgerTransaction } from "@/features/accounting/types" ;
+import { Category , LedgerTransaction } from "@/features/accounting/types" ;
 
 // Feature: Transactions
 import {
   createTransactionFormSchema ,
   CreateTransactionFormData
 } from "../schemas/transactions.schema" ;
+import { obtenerCuentaPorMoneda } from "../services/accountResolver" ;
 
 
 export {
@@ -58,54 +62,19 @@ export async function getCategoriesAction(): Promise< Result<Category[] , string
 }
 
 /**
- * Obtiene —o crea— la cuenta del plan contable que corresponde a un tipo y una moneda.
- *
- * Existe una cuenta por divisa a propósito: el saldo de una cuenta es un entero en su propia
- * moneda, así que "Gastos Generales" en pesos y en dólares no pueden ser la misma fila. El código
- * contable lleva la moneda como sufijo porque `(organization_id, code)` es único.
- *
- * @param params - Cuentas ya cargadas, organización, moneda, tipo contable y código/nombre base.
- * @returns La cuenta existente para esa moneda, o la recién creada.
- */
-export async function obtenerCuentaPorMoneda( params: {
-  allAccounts:    Account[] ;
-  organizationId: string ;
-  currency:       string ;
-  type:           "expense" | "revenue" | "equity" ;
-  codigoBase:     string ;
-  nombreBase:     string ;
-} ): Promise< Account > {
-  const { allAccounts , organizationId , currency , type , codigoBase , nombreBase } = params ;
-
-  const targetCode = `${codigoBase}-${currency}` ;
-  const existente  = allAccounts.find( ( a ) => (a.code === targetCode) && (a.type === type) ) ;
-
-  if( existente ) { return( existente ) ; }
-
-  return( await accountRepository.create( {
-    organizationId ,
-    code:    targetCode ,
-    name:    `${nombreBase} (${currency})` ,
-    type ,
-    balance: 0 ,
-    currency ,
-  } ) ) ;
-}
-
-/**
  * Crea una transacción contable a partir de los datos del formulario de UI,
  * generando automáticamente las partidas contables balanceadas (Debe = Haber).
  */
 export async function createTransactionFromFormAction(
   rawData: CreateTransactionFormData
 ): Promise< Result<LedgerTransaction , string> > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail("No autorizado para registrar transacciones.") ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
-  const organizationId = session.user.organizationId ;
+  const organizationId = sesion.value.organizationId ;
 
   // Validar con Zod
   const validation = createTransactionFormSchema.safeParse( rawData ) ;
@@ -121,7 +90,7 @@ export async function createTransactionFromFormAction(
   try {
     // Las de la organización más las personales del autor compartidas con ella (plan 24). El permiso
     // fino lo aplica el motor en cada escritura.
-    const allAccounts = await accountRepository.findUsablesPara( organizationId , session.user.id ) ;
+    const allAccounts = await accountRepository.findUsablesPara( organizationId , sesion.value.userId ) ;
     const sourceAcc   = allAccounts.find( ( a ) => a.id === data.sourceAccountId ) ;
 
     if( !sourceAcc ) {

@@ -14,6 +14,9 @@ import { ok , fail , Result } from "@/shared/lib/result" ;
 import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
 
+// Feature: Auth
+import { obtenerSesionDeEscritura } from "@/features/auth/services/authorizationService" ;
+
 // Feature: Profile
 import { profileRepository } from "@/features/profile/repositories/profileRepository" ;
 
@@ -58,10 +61,10 @@ export async function getSubscriptionsAction(): Promise< Result<Subscription[] ,
  * @returns Un objeto Result con la suscripción creada.
  */
 export async function createSubscriptionAction( params: unknown ): Promise< Result<Subscription , string> > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ){
-    return( fail("No autorizado para crear suscripciones.") ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const validation = createSubscriptionSchema.safeParse( params ) ;
@@ -73,7 +76,7 @@ export async function createSubscriptionAction( params: unknown ): Promise< Resu
 
   try {
     const startDate       = new Date() ;
-    const sessionUserId   = session.user.id ;
+    const sessionUserId   = sesion.value.userId ;
     const profile         = ( sessionUserId ? await profileRepository.findByUserId( sessionUserId ) : null ) ;
     const timeZone        = ( profile?.timezone || "America/Argentina/Buenos_Aires" ) ;
     const hoyCivil        = obtenerHoyCivil( timeZone , startDate ) ;
@@ -82,7 +85,7 @@ export async function createSubscriptionAction( params: unknown ): Promise< Resu
 
     const creada = await subscriptionRepository.create( {
       ...validation.data ,
-      organizationId:  session.user.organizationId ,
+      organizationId:  sesion.value.organizationId ,
       startDate ,
       nextPaymentDate ,
       resolvedThrough ,
@@ -111,10 +114,10 @@ export async function createSubscriptionAction( params: unknown ): Promise< Resu
  * @returns Un objeto Result con la suscripción actualizada.
  */
 export async function updateSubscriptionAction( id: string , params: unknown ): Promise< Result<Subscription , string> > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ){
-    return( fail("No autorizado para actualizar suscripciones.") ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   if( !id || (typeof id !== "string") ){
@@ -131,7 +134,7 @@ export async function updateSubscriptionAction( id: string , params: unknown ): 
   try {
     const actualizada = await subscriptionRepository.update(
       id ,
-      session.user.organizationId ,
+      sesion.value.organizationId ,
       validation.data
     ) ;
 
@@ -156,10 +159,10 @@ export async function updateSubscriptionAction( id: string , params: unknown ): 
  * @returns Un objeto Result indicando el resultado de la operación.
  */
 export async function deleteSubscriptionAction( id: string ): Promise< Result<boolean , string> > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ){
-    return( fail("No autorizado para eliminar suscripciones.") ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   if( !id || (typeof id !== "string") ){
@@ -167,7 +170,7 @@ export async function deleteSubscriptionAction( id: string ): Promise< Result<bo
   }
 
   try {
-    const eliminada = await subscriptionRepository.remove( id , session.user.organizationId ) ;
+    const eliminada = await subscriptionRepository.remove( id , sesion.value.organizationId ) ;
 
     if( !eliminada ){
       return( fail("La suscripción no existe o no pertenece a la organización.") ) ;

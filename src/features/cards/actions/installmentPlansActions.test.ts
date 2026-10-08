@@ -14,7 +14,7 @@ import { db }                       from "@/shared/db/client" ;
 import { limpiarBase }              from "@/shared/db/testCleanup" ;
 
 // Feature: Auth
-import { organizations } from "@/features/auth/schema.db" ;
+import { organizations , memberships } from "@/features/auth/schema.db" ;
 
 // Feature: Profile
 import { profiles } from "@/features/profile/schema.db" ;
@@ -474,7 +474,8 @@ describe( "installmentPlansActions (RFC 025 Integration Suite)" , () => {
     const activosB = await installmentPlansRepository.findActiveByOrganization( orgB.id ) ;
     expect( activosB ).toHaveLength( 0 ) ;
 
-    // Intentar resolver desde una sesión de Org B
+    // Intentar resolver desde una sesión de Org B (el usuario es `member` real de B: la guarda de escritura lo exige)
+    await db.insert( memberships ).values( { userId , organizationId: orgB.id , role: "member" } ) ;
     activeSessionUser = { id: userId , organizationId: orgB.id } ;
 
     const resolveDesdeB = await resolveInstallmentAction( {

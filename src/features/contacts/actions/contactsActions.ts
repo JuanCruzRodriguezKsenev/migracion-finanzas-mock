@@ -14,6 +14,9 @@ import { ok , fail , Result } from "@/shared/lib/result" ;
 import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
 
+// Feature: Auth
+import { obtenerSesionDeEscritura } from "@/features/auth/services/authorizationService" ;
+
 // Feature: Contacts
 import {
   contactFormSchema ,
@@ -93,10 +96,10 @@ export async function getContactByIdAction(
 export async function createContactAction(
   rawData: ContactFormData
 ): Promise< Result< Contact , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para crear contactos." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const parsed = contactFormSchema.safeParse( rawData ) ;
@@ -106,7 +109,7 @@ export async function createContactAction(
 
   try {
     const nuevo = await contactsRepository.create( {
-      organizationId: session.user.organizationId ,
+      organizationId: sesion.value.organizationId ,
       name:           parsed.data.name ,
       email:          parsed.data.email || undefined ,
       phone:          parsed.data.phone || undefined ,
@@ -132,10 +135,10 @@ export async function updateContactAction(
   id:      string ,
   rawData: ContactFormData
 ): Promise< Result< Contact , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para modificar contactos." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const parsed = contactFormSchema.safeParse( rawData ) ;
@@ -144,7 +147,7 @@ export async function updateContactAction(
   }
 
   try {
-    const actualizado = await contactsRepository.update( id , session.user.organizationId , {
+    const actualizado = await contactsRepository.update( id , sesion.value.organizationId , {
       name:  parsed.data.name ,
       email: parsed.data.email || undefined ,
       phone: parsed.data.phone || undefined ,
@@ -172,14 +175,14 @@ export async function updateContactAction(
 export async function archiveContactAction(
   id: string
 ): Promise< Result< Contact , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para archivar contactos." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   try {
-    const archivado = await contactsRepository.archive( id , session.user.organizationId ) ;
+    const archivado = await contactsRepository.archive( id , sesion.value.organizationId ) ;
 
     if( !archivado ) {
       return( fail( "El contacto no existe o no pertenece a tu organización." ) ) ;
@@ -202,14 +205,14 @@ export async function archiveContactAction(
 export async function unarchiveContactAction(
   id: string
 ): Promise< Result< Contact , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para restaurar contactos." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   try {
-    const restaurado = await contactsRepository.unarchive( id , session.user.organizationId ) ;
+    const restaurado = await contactsRepository.unarchive( id , sesion.value.organizationId ) ;
 
     if( !restaurado ) {
       return( fail( "El contacto no existe o no pertenece a tu organización." ) ) ;
@@ -234,10 +237,10 @@ export async function addPaymentMethodAction(
   contactId: string ,
   rawData:   PaymentMethodFormInput
 ): Promise< Result< ContactPaymentMethodWithEntity , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para agregar métodos de cobro." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const parsed = paymentMethodFormSchema.safeParse( rawData ) ;
@@ -248,7 +251,7 @@ export async function addPaymentMethodAction(
   try {
     const creado = await contactsRepository.addPaymentMethod(
       contactId ,
-      session.user.organizationId ,
+      sesion.value.organizationId ,
       {
         financialEntityId: parsed.data.financialEntityId ,
         type:              parsed.data.type ,
@@ -281,16 +284,16 @@ export async function addPaymentMethodAction(
 export async function deletePaymentMethodAction(
   paymentMethodId: string
 ): Promise< Result< boolean , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para eliminar métodos de cobro." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   try {
     const eliminado = await contactsRepository.deletePaymentMethod(
       paymentMethodId ,
-      session.user.organizationId
+      sesion.value.organizationId
     ) ;
 
     if( !eliminado ) {
@@ -314,16 +317,16 @@ export async function deletePaymentMethodAction(
 export async function setDefaultPaymentMethodAction(
   paymentMethodId: string
 ): Promise< Result< ContactPaymentMethod , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para modificar métodos de cobro." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   try {
     const actualizado = await contactsRepository.setDefaultPaymentMethod(
       paymentMethodId ,
-      session.user.organizationId
+      sesion.value.organizationId
     ) ;
 
     if( !actualizado ) {

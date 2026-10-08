@@ -11,6 +11,7 @@ import type { Session }                                        from "next-auth" 
 // Shared
 import { db }               from "@/shared/db/client" ;
 import { limpiarBase }      from "@/shared/db/testCleanup" ;
+import { crearUsuarioConMembresia } from "@/shared/db/testFixtures" ;
 import { claveDeMesActual } from "@/shared/lib/monthKey" ;
 
 // Feature: Accounting
@@ -28,9 +29,12 @@ vi.mock( "next/cache" , () => ( { revalidatePath: vi.fn() } ) ) ;
 
 const ZONA = "America/Argentina/Buenos_Aires" ;
 
-const comoOrg = ( orgId: string ) => {
+/** Inicia sesión como un `member` real de la organización: la guarda de escritura consulta la membresía en la base. */
+const comoOrg = async ( orgId: string ) => {
+  const usuario = await crearUsuarioConMembresia( { organizationId: orgId , role: "member" } ) ;
+
   vi.mocked( getServerSession ).mockResolvedValue( {
-    user: { organizationId: orgId , id: "11111111-1111-4111-8111-111111111111" } ,
+    user: { organizationId: orgId , id: usuario.id } ,
   } as unknown as Session ) ;
 } ;
 
@@ -41,7 +45,7 @@ describe( "budgetsActions — integración (RFC 028)" , () => {
     vi.restoreAllMocks() ;
     await limpiarBase() ;
     e = await crearEscenario( "org-bud-actions" ) ;
-    comoOrg( e.orgId ) ;
+    await comoOrg( e.orgId ) ;
   } ) ;
 
   afterEach( async () => {
@@ -157,7 +161,7 @@ describe( "budgetsActions — integración (RFC 028)" , () => {
   it( "aislamiento: otra organización no ve, cambia ni elimina lo ajeno (NFR-2)" , async () => {
     const c    = await createBudgetAction( { categoryId: e.hoja , currency: "ARS" , amount: 100 } ) ;
     const otra = await crearEscenario( "org-bud-aislada" ) ;
-    comoOrg( otra.orgId ) ;
+    await comoOrg( otra.orgId ) ;
 
     const lista = await getBudgetsAction( { currency: "ARS" } ) ;
     const upd   = await updateBudgetLimitAction( { budgetId: c.value!.id , amount: 999 } ) ;

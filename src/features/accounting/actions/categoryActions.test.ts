@@ -7,6 +7,7 @@ import { eq }                                                 from "drizzle-orm"
 // Shared
 import { db }          from "@/shared/db/client" ;
 import { limpiarBase } from "@/shared/db/testCleanup" ;
+import { crearUsuarioConMembresia } from "@/shared/db/testFixtures" ;
 
 // Feature: Auth
 import { organizations } from "@/features/auth/schema.db" ;
@@ -49,6 +50,8 @@ describe( "categoryActions — Reglas del RFC 022 (R3, R4, R5)" , () => {
 
     orgId = org.id ;
 
+    const autor = await crearUsuarioConMembresia( { organizationId: orgId , role: "owner" } ) ;
+
     const [ cajaArs ] = await db
       .insert( accounts )
       .values( {
@@ -64,7 +67,7 @@ describe( "categoryActions — Reglas del RFC 022 (R3, R4, R5)" , () => {
     cajaArsId = cajaArs.id ;
 
     vi.mocked( getServerSession ).mockResolvedValue( {
-      user:    { id: "user-cat-1" , organizationId: orgId , role: "owner" } ,
+      user:    { id: autor.id , organizationId: orgId , role: "owner" } ,
       expires: new Date().toISOString() ,
     } as unknown as Session ) ;
   } ) ;

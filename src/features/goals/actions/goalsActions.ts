@@ -13,6 +13,9 @@ import { Result , ok , fail } from "@/shared/lib/result" ;
 import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
 
+// Feature: Auth
+import { obtenerSesionDeEscritura } from "@/features/auth/services/authorizationService" ;
+
 // Feature: Goals
 import { goalsService } from "../services/goalsService" ;
 import {
@@ -92,9 +95,10 @@ export async function getReservedByAccountAction(): Promise< Result< Record< str
  * @param params - Datos validados por createGoalSchema.
  */
 export async function createGoalAction( params: CreateGoalInput ): Promise< Result< Goal , string > > {
-  const session = await getServerSession( authOptions ) ;
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para crear metas." ) ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
+
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const parsed = createGoalSchema.safeParse( params ) ;
@@ -103,7 +107,7 @@ export async function createGoalAction( params: CreateGoalInput ): Promise< Resu
   }
 
   try {
-    const result = await goalsService.crear( { orgId: session.user.organizationId , ...parsed.data } ) ;
+    const result = await goalsService.crear( { orgId: sesion.value.organizationId , ...parsed.data } ) ;
     if( result.success ) {
       revalidatePath( "/[lang]/(main)/goals" , "page" ) ;
     }
@@ -120,9 +124,10 @@ export async function createGoalAction( params: CreateGoalInput ): Promise< Resu
  * @param params - Datos validados por updateGoalSchema.
  */
 export async function updateGoalAction( params: UpdateGoalInput ): Promise< Result< Goal , string > > {
-  const session = await getServerSession( authOptions ) ;
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para editar metas." ) ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
+
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const parsed = updateGoalSchema.safeParse( params ) ;
@@ -131,7 +136,7 @@ export async function updateGoalAction( params: UpdateGoalInput ): Promise< Resu
   }
 
   try {
-    const result = await goalsService.editar( { orgId: session.user.organizationId , ...parsed.data } ) ;
+    const result = await goalsService.editar( { orgId: sesion.value.organizationId , ...parsed.data } ) ;
     if( result.success ) {
       revalidatePath( "/[lang]/(main)/goals" , "page" ) ;
     }
@@ -148,9 +153,10 @@ export async function updateGoalAction( params: UpdateGoalInput ): Promise< Resu
  * @param params - Meta, cuenta y monto en centavos.
  */
 export async function contributeToGoalAction( params: GoalMovementInput ): Promise< Result< GoalMovementOutcome , string > > {
-  const session = await getServerSession( authOptions ) ;
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para aportar a metas." ) ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
+
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const parsed = goalMovementSchema.safeParse( params ) ;
@@ -159,7 +165,7 @@ export async function contributeToGoalAction( params: GoalMovementInput ): Promi
   }
 
   try {
-    const result = await goalsService.aportar( { orgId: session.user.organizationId , amount: parsed.data.amount , goalId: parsed.data.goalId , accountId: parsed.data.accountId } ) ;
+    const result = await goalsService.aportar( { orgId: sesion.value.organizationId , amount: parsed.data.amount , goalId: parsed.data.goalId , accountId: parsed.data.accountId } ) ;
     if( result.success ) {
       revalidatePath( "/[lang]/(main)/goals" , "page" ) ;
       revalidatePath( "/[lang]/(main)/accounts" , "page" ) ;
@@ -177,9 +183,10 @@ export async function contributeToGoalAction( params: GoalMovementInput ): Promi
  * @param params - Meta, cuenta y monto en centavos.
  */
 export async function withdrawFromGoalAction( params: GoalMovementInput ): Promise< Result< GoalMovementOutcome , string > > {
-  const session = await getServerSession( authOptions ) ;
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para retirar de metas." ) ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
+
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const parsed = goalMovementSchema.safeParse( params ) ;
@@ -188,7 +195,7 @@ export async function withdrawFromGoalAction( params: GoalMovementInput ): Promi
   }
 
   try {
-    const result = await goalsService.retirar( { orgId: session.user.organizationId , amount: parsed.data.amount , goalId: parsed.data.goalId , accountId: parsed.data.accountId } ) ;
+    const result = await goalsService.retirar( { orgId: sesion.value.organizationId , amount: parsed.data.amount , goalId: parsed.data.goalId , accountId: parsed.data.accountId } ) ;
     if( result.success ) {
       revalidatePath( "/[lang]/(main)/goals" , "page" ) ;
       revalidatePath( "/[lang]/(main)/accounts" , "page" ) ;
@@ -206,9 +213,10 @@ export async function withdrawFromGoalAction( params: GoalMovementInput ): Promi
  * @param params - ID de la meta.
  */
 export async function abandonGoalAction( params: { goalId: string } ): Promise< Result< Goal , string > > {
-  const session = await getServerSession( authOptions ) ;
-  if( !session?.user?.organizationId ) {
-    return( fail( "No autorizado para abandonar metas." ) ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
+
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const parsed = abandonGoalSchema.safeParse( params ) ;
@@ -217,7 +225,7 @@ export async function abandonGoalAction( params: { goalId: string } ): Promise< 
   }
 
   try {
-    const result = await goalsService.abandonar( { orgId: session.user.organizationId , goalId: parsed.data.goalId } ) ;
+    const result = await goalsService.abandonar( { orgId: sesion.value.organizationId , goalId: parsed.data.goalId } ) ;
     if( result.success ) {
       revalidatePath( "/[lang]/(main)/goals" , "page" ) ;
       revalidatePath( "/[lang]/(main)/accounts" , "page" ) ;

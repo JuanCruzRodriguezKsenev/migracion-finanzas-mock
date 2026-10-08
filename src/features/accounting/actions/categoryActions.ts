@@ -12,6 +12,9 @@ import { ok , fail , Result } from "@/shared/lib/result" ;
 import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
 
+// Feature: Auth
+import { obtenerSesionDeEscritura } from "@/features/auth/services/authorizationService" ;
+
 // Feature: Accounting
 import {
   createCategorySchema ,
@@ -39,13 +42,13 @@ import { Category }                              from "../types" ;
 export async function createCategoryAction(
   rawInput: CreateCategoryInput
 ): Promise< Result< Category , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail("No autorizado para crear categorías.") ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
-  const organizationId = session.user.organizationId ;
+  const organizationId = sesion.value.organizationId ;
   const validation     = createCategorySchema.safeParse( rawInput ) ;
 
   if( !validation.success ) {
@@ -127,13 +130,13 @@ export async function createCategoryAction(
 export async function updateCategoryAction(
   rawInput: UpdateCategoryInput
 ): Promise< Result< Category , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail("No autorizado para modificar categorías.") ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
-  const organizationId = session.user.organizationId ;
+  const organizationId = sesion.value.organizationId ;
   const validation     = updateCategorySchema.safeParse( rawInput ) ;
 
   if( !validation.success ) {
@@ -166,13 +169,13 @@ export async function updateCategoryAction(
 export async function archiveCategoryAction(
   rawInput: ArchiveCategoryInput
 ): Promise< Result< Category , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail("No autorizado para archivar categorías.") ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
-  const organizationId = session.user.organizationId ;
+  const organizationId = sesion.value.organizationId ;
   const validation     = archiveCategorySchema.safeParse( rawInput ) ;
 
   if( !validation.success ) {
@@ -202,13 +205,13 @@ export async function archiveCategoryAction(
 export async function unarchiveCategoryAction(
   rawInput: UnarchiveCategoryInput
 ): Promise< Result< Category , string > > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail("No autorizado para desarchivar categorías.") ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
-  const organizationId = session.user.organizationId ;
+  const organizationId = sesion.value.organizationId ;
   const validation     = unarchiveCategorySchema.safeParse( rawInput ) ;
 
   if( !validation.success ) {

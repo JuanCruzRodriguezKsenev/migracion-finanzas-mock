@@ -18,8 +18,9 @@ import { logger }             from "@/shared/lib/logger" ;
 import { db }                 from "@/shared/db/client" ;
 
 // Feature: Auth
-import { organizationRepository } from "@/features/auth/repositories/organizationRepository" ;
-import { membershipRepository }   from "@/features/auth/repositories/membershipRepository" ;
+import { organizationRepository }   from "@/features/auth/repositories/organizationRepository" ;
+import { membershipRepository }     from "@/features/auth/repositories/membershipRepository" ;
+import { obtenerSesionDeEscritura } from "@/features/auth/services/authorizationService" ;
 
 // Feature: Accounting
 import { createPersonalAccountSchema , compartirCuentaSchema , CreateAccountInput } from "../schemas/accounting.schema" ;
@@ -77,13 +78,13 @@ async function puedeEscribirEn( userId: string , organizationId: string ): Promi
  * @returns La cuenta creada.
  */
 export async function crearCuentaPersonalAction( input: Omit< CreateAccountInput , "type" | "code" > ): Promise< Result< Account , string > > {
-  const identidad = await identidadDeSesion() ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !identidad ) {
-    return( fail( "No autorizado para crear cuentas." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
-  const { userId , organizationId } = identidad ;
+  const { userId , organizationId } = sesion.value ;
 
   const validation = createPersonalAccountSchema.safeParse( input ) ;
   if( !validation.success ) {

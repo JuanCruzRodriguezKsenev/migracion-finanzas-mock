@@ -187,7 +187,6 @@ export function CreateAccountForm( {
     >
       <CreateFinancialEntityForm
         dict={dict}
-        withOwnAccount={false}
         onSuccess={handleEntidadCreada}
       />
     </Modal>

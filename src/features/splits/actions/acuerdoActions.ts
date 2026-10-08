@@ -16,6 +16,9 @@ import { logger }                            from "@/shared/lib/logger" ;
 import { db }                                from "@/shared/db/client" ;
 import { claveDeMesActual }                  from "@/shared/lib/monthKey" ;
 
+// Feature: Auth
+import { obtenerSesionDeEscritura } from "@/features/auth/services/authorizationService" ;
+
 // Feature: Budgets
 import { budgetsService } from "@/features/budgets/services/budgetsService" ;
 
@@ -213,6 +216,12 @@ function esIgual( anterior: Awaited< ReturnType< typeof acuerdoRepository.obtene
  * @returns Éxito, o `fail` con el motivo (p. ej. «Suman 90 %: faltan 10»).
  */
 export async function guardarAcuerdoAction( datos: GuardarAcuerdoInput ): Promise< Result< null , string > > {
+  const sesion = await obtenerSesionDeEscritura() ;
+
+  if( !sesion.success ) {
+    return( sesion ) ;
+  }
+
   const contexto = await contextoDe( await getServerSession( authOptions ) ) ;
 
   if( !contexto || (contexto.rol !== "owner") ) {
@@ -291,6 +300,12 @@ export async function guardarAcuerdoAction( datos: GuardarAcuerdoInput ): Promis
  * @returns Éxito, o `fail` con el motivo.
  */
 export async function declararAporteAction( datos: DeclararAporteInput ): Promise< Result< null , string > > {
+  const sesion = await obtenerSesionDeEscritura() ;
+
+  if( !sesion.success ) {
+    return( sesion ) ;
+  }
+
   const contexto = await contextoNoViewer() ;
 
   if( !contexto ) {

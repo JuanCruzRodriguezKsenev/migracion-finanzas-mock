@@ -14,6 +14,9 @@ import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
 
 // Feature: Auth
+import { obtenerSesionDeEscritura } from "@/features/auth/services/authorizationService" ;
+
+// Feature: Auth
 import { autorizarTitularPorCuenta } from "@/features/auth/services/titularService" ;
 
 // Feature: Accounting
@@ -21,8 +24,7 @@ import {
   createTransactionSchema ,
   holderUserIdFiltroSchema ,
   createAccountSchema ,
-  createFinancialEntitySchema ,
-  createAccountForEntitySchema
+  createFinancialEntitySchema
 } from "../schemas/accounting.schema" ;
 import {
   createLedgerTransaction ,
@@ -79,10 +81,10 @@ export async function createAccountAction( params: {
   currency?:    string ;
   entityId?:    string ;
 } ): Promise< Result<Account , string> > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ){
-    return( fail("No autorizado para crear cuentas.") ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   // 1. Validar parámetros con Zod en runtime
@@ -97,7 +99,7 @@ export async function createAccountAction( params: {
   try {
     // 2. Obtener cuentas para autogeneración del código contable correlativo
     // El código se calcula sobre todas las ancladas (personales incluidas): el índice único las cuenta
-    const ancladas        = await accountRepository.findTodasEnAncla( session.user.organizationId ) ;
+    const ancladas        = await accountRepository.findTodasEnAncla( sesion.value.organizationId ) ;
     const codigoGenerado  = ( code || getNextCode( type , ancladas ) ) ;
 
     // 3. Opción B: Invertir signo automáticamente para cuentas de pasivo (liability)
@@ -107,7 +109,7 @@ export async function createAccountAction( params: {
     }
 
     const nuevaCuenta = await accountRepository.create( {
-      organizationId: session.user.organizationId ,
+      organizationId: sesion.value.organizationId ,
       code:           codigoGenerado ,
       name ,
       type ,
@@ -142,10 +144,10 @@ export async function createFinancialEntityAction( params: {
   brandDomain?: string | null ;
   color?:       string | null ;
 } ): Promise< Result<FinancialEntity , string> > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ) {
-    return( fail("No autorizado para registrar entidades financieras.") ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   // 1. Validar parámetros con Zod en runtime
@@ -158,7 +160,7 @@ export async function createFinancialEntityAction( params: {
   const { name , logo , brandDomain , color } = validation.data ;
 
   logger.info( "[createFinancialEntityAction] Iniciando registro de entidad financiera..." , {
-    orgId: session.user.organizationId ,
+    orgId: sesion.value.organizationId ,
     name ,
     logo ,
     brandDomain ,
@@ -167,7 +169,7 @@ export async function createFinancialEntityAction( params: {
 
   try {
     const nuevaEntidad = await financialEntityRepository.create( {
-      organizationId: session.user.organizationId ,
+      organizationId: sesion.value.organizationId ,
       name ,
       logo:           logo || null ,
       brandDomain:    brandDomain || null ,
@@ -182,103 +184,6 @@ export async function createFinancialEntityAction( params: {
     }
     logger.error( "Error al registrar entidad en createFinancialEntityAction." , {error: String(error)} ) ;
     return( fail("Error al registrar la entidad financiera en el servidor.") ) ;
-  }
-}
-
-/**
- * Registra una cuenta contable principal de activo para una entidad financiera dada
- * y, si se especifica un saldo inicial mayor a cero, emite el asiento contable de apertura
- * garantizando la partida doble contra Patrimonio Neto.
- * 
- * @param params - Identificador de la entidad financiera y saldo inicial opcional en centavos.
- * @returns Un objeto Result con la cuenta creada o mensaje de error.
- */
-export async function createAccountForEntityAction( params: {
-  entityId: string ;
-  balance?: number ;
-} ): Promise< Result<Account , string> > {
-  const session = await getServerSession( authOptions ) ;
-
-  if( !session?.user?.organizationId ) {
-    return( fail("No autorizado para registrar cuentas.") ) ;
-  }
-
-  // 1. Validar parámetros con Zod en runtime
-  const validation = createAccountForEntitySchema.safeParse( params ) ;
-  if( !validation.success ) {
-    const errorMsg = validation.error.issues[0]?.message || "Parámetros de cuenta inválidos." ;
-    return( fail(errorMsg) ) ;
-  }
-
-  const { entityId } = validation.data ;
-  const balance      = validation.data.balance || 0 ;
-
-  try {
-    // 2. Verificar que la entidad pertenezca a la organización (aislamiento multi-tenant estricto)
-    const entidad = await financialEntityRepository.findById( entityId , session.user.organizationId ) ;
-    if( !entidad ) {
-      return( fail("Entidad financiera no encontrada o no pertenece a la organización.") ) ;
-    }
-
-    // 3. Consultar cuentas de la organización una sola vez
-    const todasLasCuentas = await accountRepository.findAll( session.user.organizationId ) ;
-
-    // 4. Si hay saldo inicial, localizar cuenta de patrimonio antes de crear nada
-    let ctaPatrimonio: Account | undefined ;
-    if( balance > 0 ) {
-      ctaPatrimonio = todasLasCuentas.find( ( c ) => c.code === "3.1.01.01" ) || todasLasCuentas.find( ( c ) => c.type === "equity" ) ;
-      if( !ctaPatrimonio ) {
-        return( fail("No se encontró una cuenta de patrimonio neto para registrar el asiento de apertura.") ) ;
-      }
-    }
-
-    const ancladas       = await accountRepository.findTodasEnAncla( session.user.organizationId ) ;
-    const codigoGenerado = getNextCode( "asset" , ancladas ) ;
-
-    // 5. Crear la cuenta con saldo 0 siempre dentro de su propia persistencia
-    const cuentaCreada = await accountRepository.create( {
-      organizationId: session.user.organizationId ,
-      code:           codigoGenerado ,
-      name:           `Cuenta Principal ${entidad.name}` ,
-      type:           "asset" ,
-      balance:        0 ,
-      currency:       "ARS" ,
-      entityId:       entidad.id ,
-    } ) ;
-
-    logger.info( `[createAccountForEntityAction] Cuenta principal creada con ID: ${cuentaCreada.id} para entidad: ${entidad.name}` ) ;
-
-    // 6. Asiento de apertura sólo si balance > 0 (createLedgerTransaction abre su propia transacción)
-    if( (balance > 0) && ctaPatrimonio ) {
-      const txResult = await createLedgerTransaction( {
-        organizationId:  session.user.organizationId ,
-        createdByUserId: session.user.id ?? null ,
-        description:     `Apertura ${cuentaCreada.name}` ,
-        occurredAt:     new Date() ,
-        entries: [
-          { accountId: cuentaCreada.id  , debit: balance , credit: 0       } ,
-          { accountId: ctaPatrimonio.id , debit: 0       , credit: balance } ,
-        ] ,
-      } ) ;
-
-      if( !txResult.success ) {
-        logger.error( `[createAccountForEntityAction] Falló asiento de apertura para cuenta ${cuentaCreada.id}: ${txResult.error}` ) ;
-        return( fail(`La cuenta fue creada con saldo cero, pero falló el asiento de apertura: ${txResult.error}`) ) ;
-      }
-
-      cuentaCreada.balance = balance ;
-    }
-
-    return( ok(cuentaCreada) ) ;
-  } catch( error ) {
-    if( (error as {code?: string})?.code === "23505" ) {
-      return( fail("Conflicto al generar el código contable. Por favor, intente de nuevo.") ) ;
-    }
-    if( (error as {code?: string})?.code === "23503" ) {
-      return( fail("Tu sesión referencia una organización inexistente. Cerrá sesión y volvé a ingresar.") ) ;
-    }
-    logger.error( "Error en createAccountForEntityAction." , {error: String(error)} ) ;
-    return( fail("Error al crear la cuenta contable para la entidad.") ) ;
   }
 }
 
@@ -330,14 +235,14 @@ export async function createLedgerTransactionAction(
   } ,
   idempotencyKey?: string
 ): Promise< Result<LedgerTransaction , string> > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ){
-    return( fail("No autorizado para registrar transacciones.") ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
-  const organizationId = session.user.organizationId ;
-  const autorUserId    = session.user.id ?? null ;
+  const organizationId = sesion.value.organizationId ;
+  const autorUserId    = sesion.value.userId ;
 
   // 1. Validar parámetros en runtime con Zod
   const validation = createTransactionSchema.safeParse( params ) ;
@@ -399,14 +304,14 @@ export async function createLedgerTransactionAction(
  * @returns Un objeto indicando el resultado de la operación.
  */
 export async function deleteLedgerTransactionAction( transactionId: string ): Promise< Result<boolean , string> > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ){
-    return( fail("No autorizado para eliminar transacciones.") ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   try {
-    const res = await deleteLedgerTransaction( transactionId , session.user.organizationId ) ;
+    const res = await deleteLedgerTransaction( transactionId , sesion.value.organizationId ) ;
 
     if( !res.success ){ return( fail(res.error) ) ; }
 
@@ -528,16 +433,16 @@ export async function updateLedgerTransactionMetadataAction( params: {
   merchantDomain?: string | null ;
   occurredAt?:     Date | string ;
 } ): Promise< Result<LedgerTransaction , string> > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ){
-    return( fail("No autorizado para editar transacciones.") ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   try {
     const res = await updateLedgerTransactionMetadata( {
       ...params ,
-      organizationId: session.user.organizationId ,
+      organizationId: sesion.value.organizationId ,
     } ) ;
 
     return( res ) ;
@@ -560,18 +465,18 @@ export async function reverseLedgerTransactionAction( params: {
   transactionId: string ;
   reason?:       string ;
 } ): Promise< Result<LedgerTransaction , string> > {
-  const session = await getServerSession( authOptions ) ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !session?.user?.organizationId ){
-    return( fail("No autorizado para reversar transacciones.") ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   try {
     const res = await reverseLedgerTransaction(
       params.transactionId ,
-      session.user.organizationId ,
+      sesion.value.organizationId ,
       params.reason ,
-      session.user.id ?? null
+      sesion.value.userId
     ) ;
 
     return( res ) ;

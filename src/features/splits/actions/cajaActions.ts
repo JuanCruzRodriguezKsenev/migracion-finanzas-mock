@@ -17,6 +17,9 @@ import { logger }             from "@/shared/lib/logger" ;
 import { db }                 from "@/shared/db/client" ;
 
 // Feature: Auth
+import { obtenerSesionDeEscritura } from "@/features/auth/services/authorizationService" ;
+
+// Feature: Auth
 import { membershipRepository } from "@/features/auth/repositories/membershipRepository" ;
 import { nombreVisible }        from "@/features/auth/utils/nombreVisible" ;
 
@@ -168,10 +171,10 @@ export async function obtenerCajaAction(): Promise< Result< VistaCaja , string >
  * @returns Éxito, o `fail` con el motivo.
  */
 export async function registrarAporteCajaAction( datos: RegistrarAporteCajaInput ): Promise< Result< null , string > > {
-  const contexto = await contextoDeSesion() ;
+  const sesion = await obtenerSesionDeEscritura() ;
 
-  if( !contexto || (contexto.rol === "viewer") ) {
-    return( fail( "No autorizado." ) ) ;
+  if( !sesion.success ) {
+    return( sesion ) ;
   }
 
   const validation = registrarAporteCajaSchema.safeParse( datos ) ;
@@ -180,7 +183,7 @@ export async function registrarAporteCajaAction( datos: RegistrarAporteCajaInput
     return( fail( validation.error.issues[ 0 ]?.message || "Datos del aporte inválidos." ) ) ;
   }
 
-  const { userId , organizationId }         = contexto ;
+  const { userId , organizationId }         = sesion.value ;
   const { currency , amountInCents , note } = validation.data ;
   const objetivoId                          = ( validation.data.userId ?? userId ) ;
 
