@@ -95,3 +95,30 @@ export function etiquetaDeCuenta( cuenta: Pick< Account , "ownerUserId" > , shar
   }
   return( {tipo: "compartida" , organizaciones: shares} ) ;
 }
+
+/**
+ * Etiqueta que la interfaz sabe dibujar: las de {@link EtiquetaCuenta} más «Ya no compartida» (RN-13),
+ * que sólo existe en las filas de movimientos.
+ */
+export type EtiquetaVisible = EtiquetaCuenta | { tipo: "yaNoCompartida" } ;
+
+/**
+ * Cuenta tal como la necesitan la lista y el detalle de movimientos: lo justo para nombrarla y clasificar
+ * el asiento, **sin saldo**. Una {@link Account} cabe en este tipo; una personal ajena (`compartida` informado)
+ * llega así, sin fabricar un `Account` con saldo 0.
+ */
+export type CuentaReferenciada = Pick< Account , "id" | "code" | "name" | "type" | "currency" > & {
+  entityId?:   string | null ;
+  /** `false` si el dueño ya dejó de compartirla con la organización (RN-13). Ausente en las cuentas de la organización. */
+  compartida?: boolean ;
+} ;
+
+/**
+ * Cuenta de la lista de `/accounts` (RN-16): de la organización o personal compartida ahí. El `balance` es
+ * `null` en una personal ajena: el saldo se omite en el servidor (RN-11).
+ */
+export type CuentaDeListado = Omit< Account , "balance" > & {
+  balance:   number | null ;
+  etiqueta?: EtiquetaCuenta ;
+  entity?:   { name: string ; logo: string | null ; color: string | null } | null ;
+} ;

@@ -310,6 +310,37 @@ export const accountRepository = {
   } ,
 
   /**
+   * Cuentas visibles en una organización (RN-16): las suyas más las personales compartidas con ella, con su
+   * entidad. Alimenta la lista de `/accounts`; el saldo de las ajenas lo omite quien la llama.
+   *
+   * @param organizationId - ID de la organización desde la que se mira.
+   * @param tx - Instancia de transacción opcional.
+   */
+  async findVisiblesEn(
+    organizationId: string ,
+    tx: DBOrTx = db
+  ): Promise< (Account & { entity?: { name: string ; logo: string | null ; color: string | null } | null })[] > {
+    const results = await tx
+      .select( {
+        account: accounts ,
+        entity: {
+          name:  financialEntities.name ,
+          logo:  financialEntities.logo ,
+          color: financialEntities.color ,
+        } ,
+      } )
+      .from( accounts )
+      .leftJoin( financialEntities , eq(accounts.entityId , financialEntities.id) )
+      .where( cuentaVisibleEn( organizationId ) )
+      .orderBy( accounts.code ) ;
+
+    return( results.map( ( r ) => ( {
+      ...r.account ,
+      entity: r.entity?.name ? r.entity : null ,
+    } ) ) ) ;
+  } ,
+
+  /**
    * Obtiene **todas** las cuentas ancladas en una organización, personales incluidas. Sólo para reservar
    * códigos contables: el índice único `(organization_id, code)` los comparte. No usar para mostrar cuentas.
    *

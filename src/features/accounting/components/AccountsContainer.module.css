@@ -290,3 +290,45 @@
   color: var(--color-success) ;
 }
 
+
+/* Selector de vista: Organización | Mis cuentas. Sólo cambia de color en :hover, nunca de tamaño. */
+.viewSwitch {
+  display: inline-flex ;
+  align-self: flex-start ;
+  max-width: 100% ;
+  padding: 0.2rem ;
+  gap: 0.2rem ;
+  background-color: var(--bg-inset) ;
+  border: 1px solid var(--border-card) ;
+  border-radius: var(--radius-md) ;
+}
+
+.viewBtn {
+  padding: 0.4rem 0.9rem ;
+  border: none ;
+  border-radius: var(--radius-sm) ;
+  background-color: transparent ;
+  color: var(--text-muted) ;
+  font-size: var(--fs-sm) ;
+  font-weight: 600 ;
+  cursor: pointer ;
+  transition: background-color 0.2s ease, color 0.2s ease ;
+}
+
+.viewBtn:hover {
+  color: var(--text-main) ;
+}
+
+.viewBtnActive {
+  background-color: var(--bg-card) ;
+  color: var(--color-primary-text) ;
+}
+
+.viewBtnActive:hover {
+  color: var(--color-primary-text) ;
+}
+
+/* La etiqueta de la cuenta va debajo del nombre, sin estirarse a todo el ancho */
+.accountLabelRow {
+  align-self: flex-start ;
+}

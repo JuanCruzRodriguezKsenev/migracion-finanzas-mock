@@ -1,0 +1,31 @@
+.label {
+  display: inline-flex ;
+  align-items: center ;
+  max-width: 100% ;
+  padding: 0.125rem 0.4rem ;
+  border-radius: var(--radius-sm) ;
+  font-size: var(--fs-xs) ;
+  font-weight: 600 ;
+  line-height: 1.3 ;
+  overflow-wrap: anywhere ;
+}
+
+.organization {
+  background-color: var(--color-primary-light) ;
+  color: var(--color-primary-text) ;
+}
+
+.private {
+  background-color: var(--bg-inset) ;
+  color: var(--text-muted) ;
+}
+
+.shared {
+  background-color: var(--color-success-light) ;
+  color: var(--color-success-text) ;
+}
+
+.noLongerShared {
+  background-color: var(--color-warning-light) ;
+  color: var(--color-warning-text) ;
+}

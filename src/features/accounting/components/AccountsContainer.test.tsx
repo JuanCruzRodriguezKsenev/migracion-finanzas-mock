@@ -6,7 +6,7 @@
  */
 // Librerías externas
 import { describe , it , expect , vi , beforeAll } from "vitest" ;
-import { render , screen , fireEvent , within }    from "@testing-library/react" ;
+import { render , screen , fireEvent , within , waitFor } from "@testing-library/react" ;
 import React                                       from "react" ;
 
 // Shared
@@ -17,8 +17,9 @@ import { getDictionary }            from "@/shared/lib/dictionary" ;
 import { NotificationsProvider } from "@/features/notifications/context/NotificationsContext" ;
 
 // Feature: Accounting
-import { AccountsContainer } from "./AccountsContainer" ;
-import type { Account }      from "../types" ;
+import { AccountsContainer }                                                                                                  from "./AccountsContainer" ;
+import type { Account , CuentaDeListado }                                                                                         from "../types" ;
+import { obtenerMisCuentasAction , compartirCuentaAction , dejarDeCompartirAction , listarOrganizacionesParaCompartirAction }     from "../actions/cuentasPersonalesActions" ;
 
 
 vi.mock( "next/navigation" , () => ( {
@@ -31,6 +32,14 @@ vi.mock( "next/navigation" , () => ( {
 vi.mock( "../actions/accountingActions" , () => ( {
   createAccountAction:         vi.fn() ,
   createFinancialEntityAction: vi.fn()
+} ) ) ;
+
+vi.mock( "../actions/cuentasPersonalesActions" , () => ( {
+  crearCuentaPersonalAction:               vi.fn() ,
+  obtenerMisCuentasAction:                 vi.fn() ,
+  compartirCuentaAction:                   vi.fn() ,
+  dejarDeCompartirAction:                  vi.fn() ,
+  listarOrganizacionesParaCompartirAction: vi.fn() ,
 } ) ) ;
 
 const idA = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" ;
@@ -121,5 +130,138 @@ describe( "AccountsContainer — saldo libre de Metas" , () => {
     const dialog = renderAccounts( { [ idA ]: { reservado: 200000 , libre: 800000 } } , false ) ;
     expect( within( dialog ).queryByText( /8\.000,00/ ) ).toBeNull() ;
     expect( within( dialog ).queryByText( /10\.000,00/ ) ).toBeNull() ;
+  } ) ;
+} ) ;
+
+const idAna = "cccccccc-cccc-4ccc-8ccc-cccccccccccc" ;
+const idDeAna = "dddddddd-dddd-4ddd-8ddd-dddddddddddd" ;
+
+function personalAjena( id: string , name: string ): CuentaDeListado {
+  return( {
+    id , name , balance: null ,
+    organizationId: "org" , code: `1.9.${name}` , type: "asset" , currency: "ARS" ,
+    entityId: null , ownerUserId: idDeAna , createdAt: new Date() , updatedAt: new Date() ,
+    etiqueta: { tipo: "compartida" , organizaciones: [ {id: "org" , nombre: "reparto-demo"} ] } ,
+    entity: { name: "Banco X" , logo: null , color: null }
+  } as unknown as CuentaDeListado ) ;
+}
+
+describe( "AccountsContainer — etiquetas y personales compartidas (plan 25, RN-15, RN-16)" , () => {
+  it( "una personal ajena se lista con su etiqueta y sin saldo, y no entra en los totales (AC-3)" , () => {
+    render(
+      <NotificationsProvider>
+        <AccountsContainer
+          accounts={[ makeAccount( idA , "Caja A" , 1000000 ) , personalAjena( idAna , "Banco Ana" ) ]}
+          cards={[]} loans={[]} financialEntities={[]} summaries={[]} dict={dict} lang="es"
+        />
+      </NotificationsProvider>
+    ) ;
+
+    fireEvent.click( screen.getByText( "Banco X" ) ) ;
+    const dialog = screen.getByRole( "dialog" ) ;
+
+    expect( within( dialog ).getByText( "Banco Ana" ) ).toBeDefined() ;
+    expect( within( dialog ).getByText( "Compartida · reparto-demo" ) ).toBeDefined() ;
+    expect( within( dialog ).getByText( dict.accountsPage.balanceHidden ) ).toBeDefined() ;
+
+    const total = screen.getByText( "Total Activos" ).closest( "div" )!.parentElement!.textContent ;
+    expect( total ).toMatch( /10\.000,00/ ) ;
+  } ) ;
+} ) ;
+
+describe( "AccountsContainer — vista «Mis cuentas» (plan 25, RN-16)" , () => {
+  const miCuenta = ( id: string , name: string , comp: string[] ) => ( {
+    cuenta: {
+      id , name , balance: 250000 ,
+      organizationId: "org" , code: `1.9.${name}` , type: "asset" , currency: "ARS" ,
+      entityId: null , ownerUserId: idDeAna , createdAt: new Date() , updatedAt: new Date() ,
+    } as unknown as Account ,
+    etiqueta: ( comp.length === 0
+      ? { tipo: "privada" as const }
+      : { tipo: "compartida" as const , organizaciones: comp.map( ( n ) => ( {id: `id-${n}` , nombre: n} ) ) } ) ,
+    organizacionesIds: comp.map( ( n ) => `id-${n}` ) ,
+  } ) ;
+
+  function abrirMisCuentas() {
+    render(
+      <NotificationsProvider>
+        <AccountsContainer accounts={[ makeAccount( idA , "Caja A" , 1000000 ) ]} cards={[]} loans={[]} financialEntities={[]} summaries={[]} dict={dict} lang="es" />
+      </NotificationsProvider>
+    ) ;
+    fireEvent.click( screen.getByRole( "button" , {name: dict.accountsPage.viewMine} ) ) ;
+  }
+
+  function preparar() {
+    vi.clearAllMocks() ;
+    vi.mocked( obtenerMisCuentasAction ).mockResolvedValue( { success: true , value: [
+      miCuenta( "ca1" , "Banco Ana" , [] ) ,
+      miCuenta( "ca2" , "Cuenta DNI" , [ "reparto-demo" ] ) ,
+    ] } as never ) ;
+    vi.mocked( listarOrganizacionesParaCompartirAction ).mockResolvedValue( { success: true , value: [
+      {id: "id-reparto-demo" , nombre: "reparto-demo"} , {id: "id-taller" , nombre: "Taller"} ,
+    ] } as never ) ;
+    vi.mocked( compartirCuentaAction ).mockResolvedValue( { success: true , value: null } as never ) ;
+    vi.mocked( dejarDeCompartirAction ).mockResolvedValue( { success: true , value: null } as never ) ;
+  }
+
+  it( "muestra todas las cuentas del usuario con su etiqueta y deja de mostrar la lista de la organización" , async () => {
+    preparar() ;
+    abrirMisCuentas() ;
+
+    expect( await screen.findByText( "Banco Ana" ) ).toBeDefined() ;
+    expect( screen.getByText( "Privada" ) ).toBeDefined() ;
+    expect( screen.getByText( "Compartida · reparto-demo" ) ).toBeDefined() ;
+    expect( screen.queryByText( "Total Activos" ) ).toBeNull() ;
+
+    fireEvent.click( screen.getByRole( "button" , {name: dict.accountsPage.viewOrganization} ) ) ;
+    expect( screen.getByText( "Total Activos" ) ).toBeDefined() ;
+  } ) ;
+
+  it( "compartir con… llama a la acción con la cuenta y la organización elegida" , async () => {
+    preparar() ;
+    abrirMisCuentas() ;
+    await screen.findByText( "Banco Ana" ) ;
+
+    const selector = screen.getByLabelText( `${dict.accountsPage.btnShareWith} Banco Ana` ) ;
+    fireEvent.change( selector , {target: {value: "id-taller"}} ) ;
+    fireEvent.click( screen.getAllByRole( "button" , {name: dict.accountsPage.btnShareWith} )[0] ) ;
+
+    await waitFor( () => expect( compartirCuentaAction ).toHaveBeenCalledWith( {accountId: "ca1" , organizationId: "id-taller"} ) ) ;
+  } ) ;
+
+  it( "dejar de compartir llama a la acción y no ofrece la opción en una privada" , async () => {
+    preparar() ;
+    abrirMisCuentas() ;
+    await screen.findByText( "Banco Ana" ) ;
+
+    const dejar = screen.getAllByRole( "button" , {name: dict.accountsPage.btnStopSharing} ) ;
+    expect( dejar ).toHaveLength( 1 ) ;
+    fireEvent.click( dejar[0] ) ;
+
+    await waitFor( () => expect( dejarDeCompartirAction ).toHaveBeenCalledWith( {accountId: "ca2" , organizationId: "id-reparto-demo"} ) ) ;
+  } ) ;
+
+  it( "un fallo al compartir se muestra y no rompe la vista" , async () => {
+    preparar() ;
+    vi.mocked( compartirCuentaAction ).mockResolvedValue( {success: false , error: "No autorizado."} as never ) ;
+    abrirMisCuentas() ;
+    await screen.findByText( "Banco Ana" ) ;
+
+    fireEvent.change( screen.getByLabelText( `${dict.accountsPage.btnShareWith} Banco Ana` ) , {target: {value: "id-taller"}} ) ;
+    fireEvent.click( screen.getAllByRole( "button" , {name: dict.accountsPage.btnShareWith} )[0] ) ;
+
+    expect( await screen.findByText( "No autorizado." ) ).toBeDefined() ;
+  } ) ;
+
+  it( "«Nueva cuenta propia» abre el formulario en modo personal (sin selector de tipo)" , async () => {
+    preparar() ;
+    abrirMisCuentas() ;
+    await screen.findByText( "Banco Ana" ) ;
+
+    fireEvent.click( screen.getByRole( "button" , {name: new RegExp( dict.accountsPage.btnNewPersonal )} ) ) ;
+
+    const dialog = await screen.findByRole( "dialog" ) ;
+    expect( within( dialog ).queryByLabelText( new RegExp( dict.accountsPage.formType ) ) ).toBeNull() ;
+    expect( within( dialog ).getByLabelText( new RegExp( dict.accountsPage.formName ) ) ).toBeDefined() ;
   } ) ;
 } ) ;

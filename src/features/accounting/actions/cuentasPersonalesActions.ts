@@ -22,8 +22,8 @@ import { membershipRepository } from "@/features/auth/repositories/membershipRep
 
 // Feature: Accounting
 import { createPersonalAccountSchema , compartirCuentaSchema , CreateAccountInput } from "../schemas/accounting.schema" ;
-import { accountRepository }                                                         from "../repositories/accountRepository" ;
-import { Account , EtiquetaCuenta , etiquetaDeCuenta }                               from "../types" ;
+import { Account , CuentaDeListado , EtiquetaCuenta , etiquetaDeCuenta }             from "../types" ;
+import { accountRepository , CuentaConEtiqueta }                                     from "../repositories/accountRepository" ;
 import { getNextCode }                                                               from "../utils/accountCodes" ;
 
 
@@ -32,6 +32,18 @@ export interface CuentaPersonalVista {
   cuenta:            Account ;
   etiqueta:          EtiquetaCuenta ;
   organizacionesIds: string[] ;
+}
+
+/** Cuentas que ofrece el formulario de movimientos: las usables ya y las que se pueden compartir y usar (RN-10). */
+export interface CuentasParaMovimiento {
+  usables:      CuentaConEtiqueta[] ;
+  compartibles: CuentaConEtiqueta[] ;
+}
+
+/** Organización donde el usuario puede compartir una cuenta propia (es `owner` o `member`). */
+export interface OrganizacionParaCompartir {
+  id:     string ;
+  nombre: string ;
 }
 
 /** Roles que pueden crear y compartir cuentas personales (el `viewer` no, RN-3). */
@@ -222,5 +234,101 @@ export async function obtenerMisCuentasAction(): Promise< Result< CuentaPersonal
   } catch( error ) {
     logger.error( "Error al consultar cuentas en obtenerMisCuentasAction." , {error: String( error )} ) ;
     return( fail( "Error al consultar las cuentas en el servidor." ) ) ;
+  }
+}
+
+/**
+ * Cuentas de `/accounts` en la organización activa (RN-16): las de la organización más las personales que
+ * sus dueños compartieron ahí. El saldo de una personal ajena **se omite acá, en el servidor** (RN-11), y la
+ * etiqueta de una personal nombra sólo la organización activa: no revela en qué otras se comparte.
+ *
+ * @returns Las cuentas visibles, cada una con su etiqueta.
+ */
+export async function obtenerCuentasDeListadoAction(): Promise< Result< CuentaDeListado[] , string > > {
+  const identidad = await identidadDeSesion() ;
+
+  if( !identidad ) {
+    return( fail( "No autorizado para consultar las cuentas." ) ) ;
+  }
+
+  const { userId , organizationId } = identidad ;
+
+  try {
+    const [ visibles , membresias ] = await Promise.all( [
+      accountRepository.findVisiblesEn( organizationId ) ,
+      membershipRepository.findByUser( userId ) ,
+    ] ) ;
+
+    const nombreDeLaOrg = ( membresias.find( ( m ) => m.organizationId === organizationId )?.organizationName ?? "" ) ;
+
+    return( ok( visibles.map( ( cuenta ) => {
+      const etiqueta = etiquetaDeCuenta( cuenta , [ {id: organizationId , nombre: nombreDeLaOrg} ] ) ;
+
+      if( cuenta.ownerUserId && (cuenta.ownerUserId !== userId) ) {
+        return( {...cuenta , balance: null , etiqueta} ) ;
+      }
+
+      return( {...cuenta , etiqueta} ) ;
+    } ) ) ) ;
+  } catch( error ) {
+    logger.error( "Error al consultar cuentas en obtenerCuentasDeListadoAction." , {error: String( error )} ) ;
+    return( fail( "Error al consultar las cuentas en el servidor." ) ) ;
+  }
+}
+
+/**
+ * Cuentas que ofrece el formulario de movimientos al usuario de la sesión (RN-10): `usables` (las de la
+ * organización y sus personales ya compartidas) y `compartibles` (sus personales que aún no se compartieron
+ * ahí). Quien no puede escribir (`viewer`) no recibe compartibles: el servidor rechazaría compartir.
+ *
+ * @returns Usables y compartibles, con su etiqueta.
+ */
+export async function obtenerCuentasParaMovimientoAction(): Promise< Result< CuentasParaMovimiento , string > > {
+  const identidad = await identidadDeSesion() ;
+
+  if( !identidad ) {
+    return( fail( "No autorizado para consultar las cuentas." ) ) ;
+  }
+
+  const { userId , organizationId } = identidad ;
+
+  try {
+    const [ usables , compartibles , puedeEscribir ] = await Promise.all( [
+      accountRepository.findUsablesPara( organizationId , userId ) ,
+      accountRepository.findCompartiblesPara( organizationId , userId ) ,
+      puedeEscribirEn( userId , organizationId ) ,
+    ] ) ;
+
+    return( ok( {usables , compartibles: ( puedeEscribir ? compartibles : [] )} ) ) ;
+  } catch( error ) {
+    logger.error( "Error al consultar cuentas en obtenerCuentasParaMovimientoAction." , {error: String( error )} ) ;
+    return( fail( "Error al consultar las cuentas en el servidor." ) ) ;
+  }
+}
+
+/**
+ * Organizaciones con las que el usuario puede compartir una cuenta suya: aquellas donde es `owner` o `member`
+ * (RN-3). Alimenta el botón «Compartir con…» de «Mis cuentas».
+ *
+ * @returns Las organizaciones elegibles.
+ */
+export async function listarOrganizacionesParaCompartirAction(): Promise< Result< OrganizacionParaCompartir[] , string > > {
+  const identidad = await identidadDeSesion() ;
+
+  if( !identidad ) {
+    return( fail( "No autorizado." ) ) ;
+  }
+
+  try {
+    const membresias = await membershipRepository.findByUser( identidad.userId ) ;
+
+    return( ok(
+      membresias
+        .filter( ( m ) => ROLES_QUE_ESCRIBEN.includes( m.role ) )
+        .map( ( m ) => { return( {id: m.organizationId , nombre: m.organizationName} ) ; } )
+    ) ) ;
+  } catch( error ) {
+    logger.error( "Error al listar organizaciones en listarOrganizacionesParaCompartirAction." , {error: String( error )} ) ;
+    return( fail( "No se pudieron cargar las organizaciones." ) ) ;
   }
 }

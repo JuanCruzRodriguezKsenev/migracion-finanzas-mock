@@ -30,9 +30,11 @@ import {
   calcularTendenciaDesdeSparkline
 } from "../utils/dashboardMetrics" ;
 import { CreateFinancialEntityForm }                             from "./CreateFinancialEntityForm" ;
+import { CuentaDeListado , FinancialEntity , MonthlySummary }   from "../types" ;
 import styles                                                   from "./AccountsContainer.module.css" ;
 import { CreateAccountForm }                                    from "./CreateAccountForm" ;
-import { Account , FinancialEntity , MonthlySummary }           from "../types" ;
+import { MyAccountsPanel }                                      from "./MyAccountsPanel" ;
+import { AccountLabel }                                         from "./AccountLabel" ;
 
 // Feature: Cards
 import { CardWithAccountsAndEntity } from "@/features/cards/types" ;
@@ -47,7 +49,7 @@ import type { ReservedByAccount } from "@/features/goals/types" ;
 
 
 interface AccountsContainerProps {
-  accounts:          (Account & { entity?: { name: string ; logo: string | null ; color: string | null } | null })[] ;
+  accounts:          CuentaDeListado[] ;
   cards:             CardWithAccountsAndEntity[] ;
   loans:             LoanConResumen[] ;
   financialEntities: FinancialEntity[] ;
@@ -73,11 +75,16 @@ export function AccountsContainer( {
   const [ isEntityModalOpen , setIsEntityModalOpen ] = useState( false ) ;
   const [ selectedEntity , setSelectedEntity ]       = useState< string | null >( null ) ;
   const [ preselectedEntityId , setPreselectedEntityId ] = useState< string | null >( null ) ;
+  const [ vista , setVista ]                         = useState< "organizacion" | "mias" >( "organizacion" ) ;
 
   const accountsPageDict = ( dict.accountsPage || {} ) ;
 
   // Separar cuentas de balance
   const walletAccounts = accounts.filter( ( a ) => (a.type === "asset") || (a.type === "liability") ) ;
+
+  // Las personales compartidas se listan con su etiqueta, pero no entran en los totales ni en el saldo neto
+  // de la entidad: ésos son de la organización (RN-16), y el saldo de una ajena ni siquiera llega (RN-11).
+  const cuentasDeLaOrg = walletAccounts.filter( ( a ) => !a.ownerUserId ) ;
 
   // Agrupar cuentas financieras por Entidad/Institución
   const groupedWallets = walletAccounts.reduce( ( acc , val ) => {
@@ -87,7 +94,7 @@ export function AccountsContainer( {
     }
     acc[key].push( val ) ;
     return( acc ) ;
-  } , {} as Record< string , Account[] > ) ;
+  } , {} as Record< string , CuentaDeListado[] > ) ;
 
   // Conjunto de IDs de cuentas contables vinculadas a tarjetas (evita duplicar la deuda en el listado de cuentas)
   const cardAccountIds = new Set(
@@ -100,8 +107,8 @@ export function AccountsContainer( {
   ) ;
 
   // Calcular métricas
-  const totalAssets = walletAccounts.filter( ( a ) => a.type === "asset" ).reduce( ( sum , a ) => (sum + a.balance) , 0 ) ;
-  const totalLiabs  = walletAccounts.filter( ( a ) => a.type === "liability" ).reduce( ( sum , a ) => (sum + a.balance) , 0 ) ;
+  const totalAssets = cuentasDeLaOrg.filter( ( a ) => a.type === "asset" ).reduce( ( sum , a ) => (sum + (a.balance ?? 0)) , 0 ) ;
+  const totalLiabs  = cuentasDeLaOrg.filter( ( a ) => a.type === "liability" ).reduce( ( sum , a ) => (sum + (a.balance ?? 0)) , 0 ) ;
 
   // Procesar series temporales reales para Activos y Pasivos
   const sparklinePointsAssets: SparklinePoint[] = summaries.map( ( s ) => ( {
@@ -151,6 +158,30 @@ export function AccountsContainer( {
         lang={lang}
       />
 
+      {/* Selector de vista: la lista de la organización o «Mis cuentas» (RN-16). No es una ruta. */}
+      <div className={styles.viewSwitch} role="group" aria-label={accountsPageDict.viewSelectorLabel}>
+        <button
+          type="button"
+          className={ `${styles.viewBtn} ${(vista === "organizacion") ? styles.viewBtnActive : ""}` }
+          aria-pressed={vista === "organizacion"}
+          onClick={ () => setVista( "organizacion" ) }
+        >
+          {accountsPageDict.viewOrganization}
+        </button>
+        <button
+          type="button"
+          className={ `${styles.viewBtn} ${(vista === "mias") ? styles.viewBtnActive : ""}` }
+          aria-pressed={vista === "mias"}
+          onClick={ () => setVista( "mias" ) }
+        >
+          {accountsPageDict.viewMine}
+        </button>
+      </div>
+
+      {(vista === "mias") ? (
+        <MyAccountsPanel dict={accountsPageDict} financialEntities={financialEntities} />
+      ) : (
+      <>
       {/* Indicadores de Balance Superior utilizando MetricsSection en modo simpleGrid */}
       <MetricsSection
         allowVisibilityToggle={true}
@@ -210,7 +241,7 @@ export function AccountsContainer( {
         ) : (
           <div className={styles.cardsGrid}>
             {Object.entries( groupedWallets ).map( ( [ institution , list ] ) => {
-              const netBalance = list.reduce( ( sum , a ) => sum + a.balance , 0 ) ;
+              const netBalance = list.filter( ( a ) => !a.ownerUserId ).reduce( ( sum , a ) => (sum + (a.balance ?? 0)) , 0 ) ;
               const totalLiabsCount  = list.filter( ( a ) => a.type === "liability" ).length ;
               const totalAssetsCount = list.filter( ( a ) => a.type === "asset" ).length ;
 
@@ -257,6 +288,9 @@ export function AccountsContainer( {
           </div>
         )}
       </div>
+
+      </>
+      )}
 
       {/* Modal para Registrar Entidad */}
       <Modal
@@ -398,7 +432,7 @@ export function AccountsContainer( {
                     <div className={styles.detailedCardsGrid}>
                       {entityAccounts.map( ( a ) => {
                         const isLiability    = ( a.type === "liability" ) ;
-                        const balanceDisplay = isLiability ? deudaDe( a ) : a.balance ;
+                        const balanceDisplay = isLiability ? deudaDe( {balance: (a.balance ?? 0)} ) : (a.balance ?? 0) ;
 
                         return(
                           <Card key={a.id} className={styles.accountCardDetailed}>
@@ -406,12 +440,17 @@ export function AccountsContainer( {
                               <span className={styles.accountNameDetailed}>{ a.name }</span>
                               <span className={styles.accountCode}>{ a.code }</span>
                             </div>
+                            { a.etiqueta ? (
+                              <AccountLabel etiqueta={a.etiqueta} dict={accountsPageDict} className={styles.accountLabelRow} />
+                            ) : null }
                             <div className={styles.cardFooterDetailed}>
                               <span className={styles.accountType}>
                                 {isLiability ? accountsPageDict.typeLiability.split( " " )[0] : accountsPageDict.typeAsset.split( " " )[0]}
                               </span>
                               <span className={ `${styles.accountBalanceDetailed} ${isLiability ? styles.redText : styles.greenText}` }>
-                                {isContentVisible ? formatCents( balanceDisplay ) : ""}
+                                { (a.balance === null)
+                                  ? accountsPageDict.balanceHidden
+                                  : ( isContentVisible ? formatCents( balanceDisplay ) : "" ) }
                               </span>
                             </div>
                             { reservado?.[ a.id ] ? (

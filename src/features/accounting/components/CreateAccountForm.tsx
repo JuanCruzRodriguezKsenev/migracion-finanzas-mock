@@ -12,14 +12,17 @@ import { FormInput }          from "@/shared/ui/forms/Form/FormInput" ;
 import { FormError }          from "@/shared/ui/forms/Form/FormError" ;
 
 // Feature: Accounting
-import { createAccountAction } from "../actions/accountingActions" ;
-import styles                  from "./CreateAccountForm.module.css" ;
+import { crearCuentaPersonalAction } from "../actions/cuentasPersonalesActions" ;
+import { createAccountAction }       from "../actions/accountingActions" ;
+import styles                        from "./CreateAccountForm.module.css" ;
 
 
 interface CreateAccountFormProps {
   dict:              Awaited< ReturnType< typeof getDictionary > >["accountsPage"] ;
   financialEntities: { id: string ; name: string }[] ;
   defaultEntityId?:  string ;
+  /** Crea una cuenta personal (siempre de activo, nace privada) en vez de una de la organización. */
+  personal?:         boolean ;
   onSuccess?:        () => void ;
 }
 
@@ -27,6 +30,7 @@ export function CreateAccountForm( {
   dict ,
   financialEntities ,
   defaultEntityId ,
+  personal = false ,
   onSuccess
 }: CreateAccountFormProps ) {
   const router                           = useRouter() ;
@@ -63,13 +67,16 @@ export function CreateAccountForm( {
     startTrans( async () => {
       const rawCents = Math.floor( ( Number( balance ) || 0 ) * 100 ) ;
 
-      const res = await createAccountAction( {
+      const datos = {
         name ,
-        type ,
         balance:  rawCents ,
         entityId: ( selectedEntityId || undefined ) ,
         currency: "ARS"
-      } ) ;
+      } ;
+
+      const res = personal
+        ? await crearCuentaPersonalAction( datos )
+        : await createAccountAction( {...datos , type} ) ;
 
       if( res.success ) {
         setName( "" ) ;
@@ -102,16 +109,18 @@ export function CreateAccountForm( {
       />
 
       <div className={styles.row}>
-        <FormSelect
-          label={dict.formType || "Tipo de Cuenta"}
-          value={type}
-          onChange={ ( e ) => setType( e.target.value ) }
-          disabled={isTransitioning}
-          required
-        >
-          <option value="asset">{ dict.typeAsset || "Activo (Dinero/Bienes)" }</option>
-          <option value="liability">{ dict.typeLiability || "Pasivo (Deudas/Tarjetas)" }</option>
-        </FormSelect>
+        {!personal && (
+          <FormSelect
+            label={dict.formType || "Tipo de Cuenta"}
+            value={type}
+            onChange={ ( e ) => setType( e.target.value ) }
+            disabled={isTransitioning}
+            required
+          >
+            <option value="asset">{ dict.typeAsset || "Activo (Dinero/Bienes)" }</option>
+            <option value="liability">{ dict.typeLiability || "Pasivo (Deudas/Tarjetas)" }</option>
+          </FormSelect>
+        )}
 
         <FormSelect
           label={dict.formInstitution || "Entidad Financiera"}

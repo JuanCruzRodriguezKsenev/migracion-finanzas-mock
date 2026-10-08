@@ -7,8 +7,9 @@ import { getDictionary }  from "@/shared/lib/dictionary" ;
 import styles             from "./page.module.css" ;
 
 // Feature: Accounting
-import { getAccountsAction , getMonthlySummariesAction , getFinancialEntitiesAction } from "@/features/accounting/actions/accountingActions" ;
-import { AccountsContainer }                                                          from "@/features/accounting/components/AccountsContainer" ;
+import { getMonthlySummariesAction , getFinancialEntitiesAction } from "@/features/accounting/actions/accountingActions" ;
+import { obtenerCuentasDeListadoAction }                           from "@/features/accounting/actions/cuentasPersonalesActions" ;
+import { AccountsContainer }                                       from "@/features/accounting/components/AccountsContainer" ;
 
 // Feature: Cards
 import { getCardsAction } from "@/features/cards/actions/cardsActions" ;
@@ -30,7 +31,7 @@ export default async function AccountsPage( {params}: AccountsPageProps ) {
 
   // Consultar cuentas, históricos, entidades, tarjetas y préstamos concurrentemente de la DB
   const [ accountsRes , summariesRes , entitiesRes , cardsRes , loansRes , reservedRes ] = await Promise.all( [
-    getAccountsAction() ,
+    obtenerCuentasDeListadoAction() ,
     getMonthlySummariesAction() ,
     getFinancialEntitiesAction() ,
     getCardsAction() ,
