@@ -70,6 +70,17 @@ describe( "OrganizationSwitcher" , () => {
     expect( otra.textContent ).toContain( dict.organizations.switcher.viewerBadge ) ;
   } ) ;
 
+  it( "RN-27: si la activa es de solo lectura, el botón dice «Sólo lectura»; si no, no" , () => {
+    const { unmount } = renderizar( dosOrgs , "org-2" ) ;
+    const botonViewer = screen.getByRole( "button" , { name: dict.organizations.switcher.ariaLabel } ) ;
+    expect( botonViewer.textContent ).toContain( dict.organizations.switcher.viewerBadge ) ;
+    unmount() ;
+
+    renderizar( dosOrgs , "org-1" ) ;
+    const botonOwner = screen.getByRole( "button" , { name: dict.organizations.switcher.ariaLabel } ) ;
+    expect( botonOwner.textContent ).not.toContain( dict.organizations.switcher.viewerBadge ) ;
+  } ) ;
+
   it( "con una sola organización igual ofrece «Crear organización»" , () => {
     renderizar( [ dosOrgs[0] ] ) ;
 

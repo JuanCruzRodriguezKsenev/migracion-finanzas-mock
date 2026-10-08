@@ -50,10 +50,14 @@ export default async function MainLayout( {children , params}: MainLayoutProps )
   const rolActivo      = membresias.find( ( m ) => m.organizationId === session.user.organizationId )?.role ;
   const esUnicoOwner   = ( (rolActivo === "owner") && (owners === 1) ) ;
 
+  // Un `viewer` ve todo y no modifica nada: la interfaz oculta los controles de escritura (RN-22)
+  const puedeEscribir  = ( (rolActivo === "owner") || (rolActivo === "member") ) ;
+
   return(
     <MetricsVisibilityProvider>
       <AppShell
         dict={dict}
+        puedeEscribir={puedeEscribir}
         selector={
           <OrganizationSwitcher
             organizaciones={organizaciones}

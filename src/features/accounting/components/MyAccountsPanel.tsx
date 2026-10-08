@@ -10,6 +10,7 @@
 import React , { useEffect , useState , useTransition } from "react" ;
 
 // Shared
+import { usePuedeEscribir }     from "@/shared/providers/PermissionsProvider" ;
 import { useMetricsVisibility } from "@/shared/ui/layout/MetricsSection/MetricsVisibilityContext" ;
 import { FormSelect }           from "@/shared/ui/forms/Form/FormSelect" ;
 import { FormError }            from "@/shared/ui/forms/Form/FormError" ;
@@ -42,6 +43,7 @@ interface MyAccountsPanelProps {
 }
 
 export function MyAccountsPanel( {dict , financialEntities , esPersonal = false}: MyAccountsPanelProps ) {
+  const puedeEscribir = usePuedeEscribir() ;
   const { isContentVisible }                   = useMetricsVisibility() ;
   const [ isPending , startTransition ]        = useTransition() ;
   const [ cuentas , setCuentas ]               = useState< CuentaPersonalVista[] | null >( null ) ;
@@ -94,7 +96,7 @@ export function MyAccountsPanel( {dict , financialEntities , esPersonal = false}
 
   return(
     <section className={styles.panel} aria-label={dict.viewMine}>
-      {esPersonal && (
+      {esPersonal && puedeEscribir && (
         <div className={styles.toolbar}>
           <Button onClick={ () => setIsCreateOpen( true ) }>
             + {dict.btnNewPersonal}
@@ -127,7 +129,7 @@ export function MyAccountsPanel( {dict , financialEntities , esPersonal = false}
                   </span>
                 </div>
 
-                {compartidas.length > 0 && (
+                {puedeEscribir && (compartidas.length > 0) && (
                   <ul className={styles.sharedList} aria-label={dict.sharedInLabel}>
                     {compartidas.map( ( org ) => (
                       <li key={org.id} className={styles.sharedRow}>
@@ -144,7 +146,7 @@ export function MyAccountsPanel( {dict , financialEntities , esPersonal = false}
                   </ul>
                 )}
 
-                {candidatas.length > 0 && (
+                {puedeEscribir && (candidatas.length > 0) && (
                   <div className={styles.shareBlock}>
                     {dict.shareHelp && <p className={styles.shareHelp}>{dict.shareHelp}</p>}
                     <div className={styles.shareRow}>
@@ -175,7 +177,7 @@ export function MyAccountsPanel( {dict , financialEntities , esPersonal = false}
         </div>
       )}
 
-      {esPersonal && (
+      {esPersonal && puedeEscribir && (
         <Modal
           isOpen={isCreateOpen}
           onClose={ () => setIsCreateOpen( false ) }

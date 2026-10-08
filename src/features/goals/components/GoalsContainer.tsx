@@ -11,6 +11,7 @@ import { useRouter }                        from "next/navigation" ;
 
 // Shared
 import { useMetricsVisibility } from "@/shared/ui/layout/MetricsSection/MetricsVisibilityContext" ;
+import { usePuedeEscribir }     from "@/shared/providers/PermissionsProvider" ;
 import { MetricsSection }       from "@/shared/ui/layout/MetricsSection/MetricsSection" ;
 import { EmptyState }           from "@/shared/ui/feedback/EmptyState/EmptyState" ;
 import { MetricCard }           from "@/shared/ui/MetricCard/MetricCard" ;
@@ -39,11 +40,6 @@ export interface GoalsContainerProps {
   filter:         GoalFilter ;
   dict:           Awaited< ReturnType< typeof getDictionary > > ;
   lang?:          string ;
-  /**
-   * Permiso de escritura. Hasta que el plan 4b del acceso lo cablee (`usePuedeEscribir()`),
-   * llega por props y vale `true` por omisión.
-   */
-  puedeEscribir?: boolean ;
 }
 
 type ModalState =
@@ -55,8 +51,9 @@ type ModalState =
 /**
  * Pantalla de Metas.
  */
-export function GoalsContainer( { data , filter , dict , lang = "es" , puedeEscribir = true }: GoalsContainerProps ) {
+export function GoalsContainer( { data , filter , dict , lang = "es" }: GoalsContainerProps ) {
   const router               = useRouter() ;
+  const puedeEscribir        = usePuedeEscribir() ;
   const { isContentVisible } = useMetricsVisibility() ;
   const gDict                = dict.goalsPage ;
   const locale               = localeDe( lang ) ;

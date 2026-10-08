@@ -13,6 +13,7 @@ import { PageHeader }         from "@/shared/ui/layout/PageHeader/PageHeader" ;
 import { SearchInput }        from "@/shared/ui/forms/SearchInput/SearchInput" ;
 import { Button }             from "@/shared/ui/display/Button/Button" ;
 import type { getDictionary } from "@/shared/lib/dictionary" ;
+import { usePuedeEscribir }   from "@/shared/providers/PermissionsProvider" ;
 
 // Feature: Accounting
 import { FinancialEntity } from "@/features/accounting/types" ;
@@ -39,6 +40,7 @@ export function ContactsContainer( {
   dict ,
   lang = "es" ,
 }: ContactsContainerProps ) {
+  const puedeEscribir                                    = usePuedeEscribir() ;
   const [ contacts , setContacts ]                         = useState< ContactWithPaymentMethods[] >( initialContacts ) ;
   const [ search , setSearch ]                             = useState( "" ) ;
   const [ selectedContactId , setSelectedContactId ]       = useState< string | null >( null ) ;
@@ -123,9 +125,11 @@ export function ContactsContainer( {
             <span className={styles.countBadge}>
               {contacts.length} {contacts.length === 1 ? "contacto" : "contactos"}
             </span>
-            <Button variant="primary" onClick={handleOpenCreate}>
-              {pageDict?.btnNew || "Nuevo Contacto"}
-            </Button>
+            {puedeEscribir && (
+              <Button variant="primary" onClick={handleOpenCreate}>
+                {pageDict?.btnNew || "Nuevo Contacto"}
+              </Button>
+            )}
           </>
         }
         showMonthSelector={false}

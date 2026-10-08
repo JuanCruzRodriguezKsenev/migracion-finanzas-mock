@@ -15,6 +15,7 @@ import { EmptyState }         from "@/shared/ui/feedback/EmptyState/EmptyState" 
 import { Button }             from "@/shared/ui/display/Button/Button" ;
 import { IconAccounts }       from "@/shared/ui/display/Icons/Icons" ;
 import type { getDictionary } from "@/shared/lib/dictionary" ;
+import { usePuedeEscribir }   from "@/shared/providers/PermissionsProvider" ;
 
 // Feature: Profile
 import { useProfileContext } from "@/features/profile/context/ProfileContext" ;
@@ -53,6 +54,7 @@ export function CardsContainer( {
 }: CardsContainerProps ) {
   const router      = useRouter() ;
   const { profile } = useProfileContext() ;
+  const puedeEscribir = usePuedeEscribir() ;
   const locale      = ( profile.numberFormat || "es-AR" ) ;
 
   const [ activeTab , setActiveTab ]                 = useState< "all" | "credit" | "debit" >( "all" ) ;
@@ -93,11 +95,11 @@ export function CardsContainer( {
       <PageHeader
         title={ dict.cardsPage?.title || "Tarjetas" }
         subtitle={ dict.cardsPage?.subtitle || "Administrá tus plásticos de crédito y débito, límites y cuentas de pasivo." }
-        actions={
+        actions={ puedeEscribir ? (
           <Button variant="primary" onClick={ () => setIsModalOpen( true ) }>
             { dict.cardsPage?.newCard || "Nueva tarjeta" }
           </Button>
-        }
+        ) : undefined }
         showMonthSelector={false}
         dict={dict}
         lang={lang}
@@ -142,11 +144,11 @@ export function CardsContainer( {
             dict.cardsPage?.emptyDescription ||
             "Agregá tu primera tarjeta de crédito o débito para organizar tus instrumentos de pago."
           }
-          action={
+          action={ puedeEscribir ? (
             <Button variant="primary" onClick={ () => setIsModalOpen( true ) }>
               { dict.cardsPage?.emptyAction || "Agregar tarjeta" }
             </Button>
-          }
+          ) : undefined }
         />
       ) : (
         <div className={styles.grid}>
@@ -156,7 +158,7 @@ export function CardsContainer( {
               card={c}
               locale={locale}
               dict={dict}
-              onArchive={handleArchive}
+              onArchive={ puedeEscribir ? handleArchive : undefined }
               onViewPlans={ ( card ) => setPlansModalCard( card ) }
             />
           ) ) }

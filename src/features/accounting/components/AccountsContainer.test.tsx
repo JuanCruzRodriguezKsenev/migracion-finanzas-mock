@@ -6,10 +6,11 @@
  */
 // Librerías externas
 import { describe , it , expect , vi , beforeAll } from "vitest" ;
-import { render , screen , fireEvent , within , waitFor } from "@testing-library/react" ;
+import { screen , fireEvent , within , waitFor } from "@testing-library/react" ;
 import React                                       from "react" ;
 
 // Shared
+import { renderConPermisos as render } from "@/shared/lib/renderConPermisos" ;
 import { MetricsVisibilityContext } from "@/shared/ui/layout/MetricsSection/MetricsVisibilityContext" ;
 import { getDictionary }            from "@/shared/lib/dictionary" ;
 
@@ -306,5 +307,33 @@ describe( "AccountsContainer — ya no hay formulario de entidad suelto (plan 29
     expect( screen.queryByRole( "button" , {name: /Nueva Entidad/} ) ).toBeNull() ;
     expect( screen.getByRole( "button" , {name: /Nueva Cuenta/} ) ).toBeDefined() ;
     expect( screen.queryByText( "Registrar Entidad Financiera" ) ).toBeNull() ;
+  } ) ;
+} ) ;
+
+describe( "AccountsContainer — solo lectura (RN-22)" , () => {
+  const montar = ( puedeEscribir: boolean ) => render(
+    <NotificationsProvider>
+      <AccountsContainer
+        accounts={[ makeAccount( idA , "Caja A" , 1000000 ) ]} cards={[]} loans={[]} financialEntities={[]} summaries={[]} dict={dict} lang="es"
+      />
+    </NotificationsProvider> ,
+    { puedeEscribir }
+  ) ;
+
+  it( "con permiso, el encabezado ofrece «Nueva Cuenta» y el detalle de la entidad «Agregar Cuenta»" , () => {
+    montar( true ) ;
+
+    expect( screen.getByText( "+ Nueva Cuenta" ) ).toBeDefined() ;
+    fireEvent.click( screen.getByText( "Banco X" ) ) ;
+    expect( screen.getByText( /Agregar Cuenta a/ ) ).toBeDefined() ;
+  } ) ;
+
+  it( "sin permiso, no hay ningún botón de alta, ni en el encabezado ni en el detalle de la entidad" , () => {
+    montar( false ) ;
+
+    expect( screen.queryByText( "+ Nueva Cuenta" ) ).toBeNull() ;
+    fireEvent.click( screen.getByText( "Banco X" ) ) ;
+    expect( screen.getByRole( "dialog" ) ).toBeDefined() ;
+    expect( screen.queryByText( /Agregar Cuenta a/ ) ).toBeNull() ;
   } ) ;
 } ) ;

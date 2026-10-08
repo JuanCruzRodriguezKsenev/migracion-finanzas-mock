@@ -11,8 +11,9 @@ import React , { useState } from "react" ;
 
 // Shared
 import type { getDictionary } from "@/shared/lib/dictionary" ;
-import { BottomNav }          from "@/shared/ui/layout/BottomNav/BottomNav" ;
-import { Navbar }             from "@/shared/ui/layout/Navbar/Navbar" ;
+import { PermissionsProvider } from "@/shared/providers/PermissionsProvider" ;
+import { BottomNav }           from "@/shared/ui/layout/BottomNav/BottomNav" ;
+import { Navbar }              from "@/shared/ui/layout/Navbar/Navbar" ;
 import styles from "./AppShell.module.css" ;
 
 interface AppShellProps {
@@ -20,44 +21,48 @@ interface AppShellProps {
   dict:     Awaited< ReturnType< typeof getDictionary > > ;
   /** Selector de organización ya armado por el layout; si no llega, el Navbar no lo muestra. */
   selector?: React.ReactNode ;
+  /** El rol de la membresía activa permite escribir (`owner` o `member`). Sin él, la interfaz es de solo lectura. */
+  puedeEscribir?: boolean ;
 }
 
 /**
  * App Shell unificado para la aplicación.
  * Maneja el estado de visibilidad del sidebar en móvil (Drawer).
  */
-export function AppShell( {children , dict , selector}: AppShellProps ) {
+export function AppShell( {children , dict , selector , puedeEscribir = false}: AppShellProps ) {
   const [ isDrawerOpen , setIsDrawerOpen ] = useState( false ) ;
 
   const openDrawer  = () => setIsDrawerOpen( true ) ;
   const closeDrawer = () => setIsDrawerOpen( false ) ;
 
   return(
-    <div className={styles.appContainer}>
-      {/* Overlay oscuro de fondo en móvil */}
-      {isDrawerOpen ? (
-        <div className={ `${styles.drawerOverlay} ${styles.open}` } onClick={closeDrawer} />
-      ) : null}
+    <PermissionsProvider puedeEscribir={puedeEscribir}>
+      <div className={styles.appContainer}>
+        {/* Overlay oscuro de fondo en móvil */}
+        {isDrawerOpen ? (
+          <div className={ `${styles.drawerOverlay} ${styles.open}` } onClick={closeDrawer} />
+        ) : null}
 
-      {/* Navbar (Desktop / Mobile Drawer) */}
-      <Navbar
-        dict={dict.sidebar}
-        isOpen={isDrawerOpen}
-        onClose={closeDrawer}
-        selector={selector}
-      />
+        {/* Navbar (Desktop / Mobile Drawer) */}
+        <Navbar
+          dict={dict.sidebar}
+          isOpen={isDrawerOpen}
+          onClose={closeDrawer}
+          selector={selector}
+        />
 
-      <div className={styles.mainWrapper}>
-        <main className={styles.contentContainer}>
-          {children}
-        </main>
+        <div className={styles.mainWrapper}>
+          <main className={styles.contentContainer}>
+            {children}
+          </main>
+        </div>
+
+        {/* Bottom Nav móvil */}
+        <BottomNav
+          dict={dict.sidebar}
+          onMenuClick={openDrawer}
+        />
       </div>
-
-      {/* Bottom Nav móvil */}
-      <BottomNav
-        dict={dict.sidebar}
-        onMenuClick={openDrawer}
-      />
-    </div>
+    </PermissionsProvider>
   ) ;
 }

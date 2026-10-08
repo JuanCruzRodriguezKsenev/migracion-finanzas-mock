@@ -16,6 +16,7 @@ import { EmptyState }         from "@/shared/ui/feedback/EmptyState/EmptyState" 
 import { Button }             from "@/shared/ui/display/Button/Button" ;
 import { FormError }          from "@/shared/ui/forms/Form/FormError" ;
 import type { getDictionary } from "@/shared/lib/dictionary" ;
+import { usePuedeEscribir }   from "@/shared/providers/PermissionsProvider" ;
 
 // Feature: Profile
 import { useProfileContext } from "@/features/profile/context/ProfileContext" ;
@@ -72,7 +73,8 @@ export function SubscriptionDashboard( {
   dict ,
   lang = "es" ,
 }: SubscriptionDashboardProps ) {
-  const pageDict = dict.subscriptionsPage ;
+  const pageDict      = dict.subscriptionsPage ;
+  const puedeEscribir = usePuedeEscribir() ;
   const { profile }                                 = useProfileContext() ;
   const locale                                      = ( profile?.numberFormat || "es-AR" ) ;
   const { summary , error , add , update , remove } = useSubscriptions( initialData ) ;
@@ -156,9 +158,11 @@ export function SubscriptionDashboard( {
             <span className={styles.countLabel}>
               { summary.count } { pageDict.activeServices }
             </span>
-            <Button variant="primary" icon={PLUS_ICON} onClick={handleOpenModal}>
-              { pageDict.addBtn }
-            </Button>
+            {puedeEscribir && (
+              <Button variant="primary" icon={PLUS_ICON} onClick={handleOpenModal}>
+                { pageDict.addBtn }
+              </Button>
+            )}
           </>
         }
         showMonthSelector={false}
@@ -183,11 +187,11 @@ export function SubscriptionDashboard( {
         <EmptyState
           title={pageDict.emptyStateTitle}
           description={pageDict.emptyStateDescription}
-          action={
+          action={ puedeEscribir ? (
             <Button variant="primary" icon={PLUS_ICON} onClick={handleOpenModal}>
               { pageDict.addBtn }
             </Button>
-          }
+          ) : undefined }
         />
       ) : (
         <div ref={containerRef} className={styles.treemapContainer}>
@@ -225,8 +229,8 @@ export function SubscriptionDashboard( {
                   yearlySuffix={pageDict.perYearSuffix}
                   editTitle={pageDict.editTitle}
                   deleteTitle={pageDict.deleteTitle}
-                  onEdit={handleEdit}
-                  onDelete={remove}
+                  onEdit={ puedeEscribir ? handleEdit : undefined }
+                  onDelete={ puedeEscribir ? remove : undefined }
                 />
               </div>
             ) ;

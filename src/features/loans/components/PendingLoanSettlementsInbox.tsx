@@ -12,6 +12,7 @@ import { useRouter }                         from "next/navigation" ;
 // Shared
 import { formatCurrency }   from "@/shared/lib/currencyFormatter" ;
 import type { getDictionary } from "@/shared/lib/dictionary" ;
+import { usePuedeEscribir }   from "@/shared/providers/PermissionsProvider" ;
 import { FormSelect }       from "@/shared/ui/forms/Form/FormSelect" ;
 import { FormError }        from "@/shared/ui/forms/Form/FormError" ;
 import { Button }           from "@/shared/ui/display/Button/Button" ;
@@ -61,7 +62,8 @@ export function PendingLoanSettlementsInbox( {
   dict ,
   locale = "es-AR"
 }: PendingLoanSettlementsInboxProps ) {
-  const router = useRouter() ;
+  const router        = useRouter() ;
+  const puedeEscribir = usePuedeEscribir() ;
 
   const [ pendingItems , setPendingItems ] = useState< PendienteCuota[] >( initialPending ) ;
   const [ selectedItem , setSelectedItem ] = useState< PendienteCuota | null >( null ) ;
@@ -169,12 +171,14 @@ export function PendingLoanSettlementsInbox( {
                   ) : null }
                 </div>
 
-                <Button
-                  variant="secondary"
-                  onClick={ () => handleOpenModal( firstItem ) }
-                >
-                  {dict.loansPage.settlement.settle}
-                </Button>
+                {puedeEscribir && (
+                  <Button
+                    variant="secondary"
+                    onClick={ () => handleOpenModal( firstItem ) }
+                  >
+                    {dict.loansPage.settlement.settle}
+                  </Button>
+                )}
               </div>
             </div>
           ) ;

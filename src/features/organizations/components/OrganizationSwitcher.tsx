@@ -197,6 +197,7 @@ export function OrganizationSwitcher( { organizaciones , activaId , esUnicoOwner
       >
         {activa?.esPersonal && <IconUser size={12} className={styles.personalIcon} />}
         <span className={styles.name}>{nombreDe( activa )}</span>
+        {(activa?.rol === "viewer") && <span className={styles.badge}>{dict.viewerBadge}</span>}
         <IconChevronDown size={12} className={styles.chevron} />
       </button>
 

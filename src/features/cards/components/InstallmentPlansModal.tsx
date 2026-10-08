@@ -16,6 +16,7 @@ import { Button }             from "@/shared/ui/display/Button/Button" ;
 import { Modal }              from "@/shared/ui/feedback/Modal/Modal" ;
 import { formatCurrency }     from "@/shared/lib/currencyFormatter" ;
 import type { getDictionary } from "@/shared/lib/dictionary" ;
+import { usePuedeEscribir }   from "@/shared/providers/PermissionsProvider" ;
 
 // Feature: Accounting
 import { CategoryTreeNode } from "@/features/accounting/types" ;
@@ -64,6 +65,7 @@ export function InstallmentPlansModal( {
   locale ,
   onChanged ,
 }: InstallmentPlansModalProps ) {
+  const puedeEscribir                   = usePuedeEscribir() ;
   const [ isFormOpen , setIsFormOpen ] = useState( false ) ;
   const [ isPending , startTransition ]  = useTransition() ;
   const [ actionError , setActionError ] = useState< string | null >( null ) ;
@@ -116,12 +118,14 @@ export function InstallmentPlansModal( {
             >
               { dict.cardsPage?.installments?.cancel || "Cancelar" }
             </Button>
-            <Button
-              variant="primary"
-              onClick={ () => setIsFormOpen( true ) }
-            >
-              { dict.cardsPage?.installments?.newPlan || "Nueva compra en cuotas" }
-            </Button>
+            {puedeEscribir && (
+              <Button
+                variant="primary"
+                onClick={ () => setIsFormOpen( true ) }
+              >
+                { dict.cardsPage?.installments?.newPlan || "Nueva compra en cuotas" }
+              </Button>
+            )}
           </div>
         }
       >
@@ -200,14 +204,16 @@ export function InstallmentPlansModal( {
                         ) : null }
                       </div>
 
-                      <button
-                        type="button"
-                        className={styles.archiveButton}
-                        disabled={isPending}
-                        onClick={ () => handleArchive( plan.id ) }
-                      >
-                        { dict.cardsPage?.installments?.archivePlan || "Dar de baja" }
-                      </button>
+                      {puedeEscribir && (
+                        <button
+                          type="button"
+                          className={styles.archiveButton}
+                          disabled={isPending}
+                          onClick={ () => handleArchive( plan.id ) }
+                        >
+                          { dict.cardsPage?.installments?.archivePlan || "Dar de baja" }
+                        </button>
+                      )}
                     </div>
                   </div>
                 ) ;

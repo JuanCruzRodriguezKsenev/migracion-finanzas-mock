@@ -11,6 +11,7 @@ import React from "react" ;
 // Shared
 import { DataTable , DataTableColumn } from "@/shared/ui/display/DataTable/DataTable" ;
 import { InstitutionLogo }             from "@/shared/ui/display/InstitutionLogo/InstitutionLogo" ;
+import { usePuedeEscribir }            from "@/shared/providers/PermissionsProvider" ;
 
 // Feature: Contacts
 import { ContactWithPaymentMethods } from "../types" ;
@@ -44,6 +45,8 @@ export function ContactsTable( {
   onArchiveContact ,
   dict ,
 }: ContactsTableProps ) {
+  const puedeEscribir = usePuedeEscribir() ;
+
   const columns: DataTableColumn< ContactWithPaymentMethods >[] = [
     {
       key:    "name" ,
@@ -126,20 +129,24 @@ export function ContactsTable( {
             {dict?.btnViewAccounts || "Cuentas"}
             {row.paymentMethods && ( row.paymentMethods.length > 0 ) && ` (${row.paymentMethods.length})`}
           </button>
-          <button
-            type="button"
-            className={styles.actionBtn}
-            onClick={ () => onEditContact( row ) }
-          >
-            {dict?.btnEdit || "Editar"}
-          </button>
-          <button
-            type="button"
-            className={ `${styles.actionBtn} ${styles.actionBtnDanger}` }
-            onClick={ () => onArchiveContact( row ) }
-          >
-            {dict?.btnArchive || "Archivar"}
-          </button>
+          {puedeEscribir && (
+            <button
+              type="button"
+              className={styles.actionBtn}
+              onClick={ () => onEditContact( row ) }
+            >
+              {dict?.btnEdit || "Editar"}
+            </button>
+          )}
+          {puedeEscribir && (
+            <button
+              type="button"
+              className={ `${styles.actionBtn} ${styles.actionBtnDanger}` }
+              onClick={ () => onArchiveContact( row ) }
+            >
+              {dict?.btnArchive || "Archivar"}
+            </button>
+          )}
         </div>
       ) ,
     } ,

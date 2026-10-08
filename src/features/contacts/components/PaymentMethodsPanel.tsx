@@ -10,6 +10,7 @@ import React , { useState , useTransition } from "react" ;
 
 // Shared
 import type { getDictionary } from "@/shared/lib/dictionary" ;
+import { usePuedeEscribir }   from "@/shared/providers/PermissionsProvider" ;
 import { InstitutionLogo }    from "@/shared/ui/display/InstitutionLogo/InstitutionLogo" ;
 import { Modal }              from "@/shared/ui/feedback/Modal/Modal" ;
 import { Button }             from "@/shared/ui/display/Button/Button" ;
@@ -71,6 +72,7 @@ export function PaymentMethodsPanel( {
   onRefresh ,
   dict ,
 }: PaymentMethodsPanelProps ) {
+  const puedeEscribir                               = usePuedeEscribir() ;
   const [ isEntityModalOpen , setIsEntityModalOpen ] = useState( false ) ;
   const [ isPending , startTransition ]               = useTransition() ;
 
@@ -257,150 +259,154 @@ export function PaymentMethodsPanel( {
                     </div>
                   </div>
 
-                  <div className={styles.methodActions}>
-                    {!pm.isDefault && (
+                  {puedeEscribir && (
+                    <div className={styles.methodActions}>
+                      {!pm.isDefault && (
+                        <button
+                          type="button"
+                          className={styles.actionBtn}
+                          onClick={ () => handleSetDefault( pm.id ) }
+                          disabled={isPending}
+                        >
+                          {dict?.btnSetDefault || "Hacer default"}
+                        </button>
+                      )}
                       <button
                         type="button"
-                        className={styles.actionBtn}
-                        onClick={ () => handleSetDefault( pm.id ) }
+                        className={ `${styles.actionBtn} ${styles.actionBtnDanger}` }
+                        onClick={ () => handleDeleteMethod( pm.id ) }
                         disabled={isPending}
                       >
-                        {dict?.btnSetDefault || "Hacer default"}
+                        {dict?.btnDelete || "Eliminar"}
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      className={ `${styles.actionBtn} ${styles.actionBtnDanger}` }
-                      onClick={ () => handleDeleteMethod( pm.id ) }
-                      disabled={isPending}
-                    >
-                      {dict?.btnDelete || "Eliminar"}
-                    </button>
-                  </div>
+                    </div>
+                  )}
                 </div>
               ) )
             )}
           </div>
 
           {/* Formulario para agregar nuevo método */}
-          <form onSubmit={handleAddMethod} className={styles.addMethodSection}>
-            <div className={styles.sectionHeader}>
-              <h4 className={styles.sectionTitle}>
-                {dict?.btnAddAccount || "Agregar Cuenta de Cobro"}
-              </h4>
-              <button
-                type="button"
-                className={styles.actionBtn}
-                onClick={ () => setIsEntityModalOpen( true ) }
-              >
-                {dict?.btnNewEntity || "+ Nueva Entidad..."}
-              </button>
-            </div>
-
-            <div className={styles.formGrid}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>
-                  {dict?.fieldEntity || "Entidad Financiera"} *
-                </label>
-                <select
-                  className={styles.formSelect}
-                  value={selectedEntityId}
-                  onChange={ ( e ) => setSelectedEntityId( e.target.value ) }
-                  required
+          {puedeEscribir && (
+            <form onSubmit={handleAddMethod} className={styles.addMethodSection}>
+              <div className={styles.sectionHeader}>
+                <h4 className={styles.sectionTitle}>
+                  {dict?.btnAddAccount || "Agregar Cuenta de Cobro"}
+                </h4>
+                <button
+                  type="button"
+                  className={styles.actionBtn}
+                  onClick={ () => setIsEntityModalOpen( true ) }
                 >
-                  <option value="">Seleccionar entidad...</option>
-                  {financialEntities.map( ( fe ) => (
-                    <option key={fe.id} value={fe.id}>
-                      {fe.name}
-                    </option>
-                  ) )}
-                </select>
+                  {dict?.btnNewEntity || "+ Nueva Entidad..."}
+                </button>
               </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>
-                  {dict?.fieldType || "Tipo de Cuenta"}
-                </label>
-                <select
-                  className={styles.formSelect}
-                  value={type}
-                  onChange={ ( e ) => setType( e.target.value as "wallet" | "bank_account" ) }
-                >
-                  <option value="wallet">{dict?.typeWallet || "Billetera Virtual"}</option>
-                  <option value="bank_account">{dict?.typeBank || "Cuenta Bancaria"}</option>
-                </select>
+              <div className={styles.formGrid}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>
+                    {dict?.fieldEntity || "Entidad Financiera"} *
+                  </label>
+                  <select
+                    className={styles.formSelect}
+                    value={selectedEntityId}
+                    onChange={ ( e ) => setSelectedEntityId( e.target.value ) }
+                    required
+                  >
+                    <option value="">Seleccionar entidad...</option>
+                    {financialEntities.map( ( fe ) => (
+                      <option key={fe.id} value={fe.id}>
+                        {fe.name}
+                      </option>
+                    ) )}
+                  </select>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>
+                    {dict?.fieldType || "Tipo de Cuenta"}
+                  </label>
+                  <select
+                    className={styles.formSelect}
+                    value={type}
+                    onChange={ ( e ) => setType( e.target.value as "wallet" | "bank_account" ) }
+                  >
+                    <option value="wallet">{dict?.typeWallet || "Billetera Virtual"}</option>
+                    <option value="bank_account">{dict?.typeBank || "Cuenta Bancaria"}</option>
+                  </select>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>
+                    {dict?.fieldCbu || "CBU / CVU"} (22 dígitos)
+                  </label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={cbuCvu}
+                    onChange={ ( e ) => setCbuCvu( e.target.value ) }
+                    placeholder="0110002040000000000015"
+                    maxLength={26}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>
+                    {dict?.fieldAlias || "Alias"} (6 a 20 caracteres)
+                  </label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={alias}
+                    onChange={ ( e ) => setAlias( e.target.value ) }
+                    placeholder="ejemplo.mp"
+                    maxLength={20}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>
+                    {dict?.fieldHolderName || "Titular"}
+                  </label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={holderName}
+                    onChange={ ( e ) => setHolderName( e.target.value ) }
+                    placeholder="Nombre del titular"
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>
+                    {dict?.fieldHolderTaxId || "CUIT / CUIL"}
+                  </label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={holderTaxId}
+                    onChange={ ( e ) => setHolderTaxId( e.target.value ) }
+                    placeholder="20-12345678-9"
+                  />
+                </div>
               </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>
-                  {dict?.fieldCbu || "CBU / CVU"} (22 dígitos)
-                </label>
+              <label className={styles.checkboxLabel}>
                 <input
-                  type="text"
-                  className={styles.formInput}
-                  value={cbuCvu}
-                  onChange={ ( e ) => setCbuCvu( e.target.value ) }
-                  placeholder="0110002040000000000015"
-                  maxLength={26}
+                  type="checkbox"
+                  checked={isDefault}
+                  onChange={ ( e ) => setIsDefault( e.target.checked ) }
                 />
+                <span>{dict?.fieldDefault || "Marcar como cuenta predeterminada para este contacto"}</span>
+              </label>
+
+              <div className={styles.modalActions}>
+                <Button type="submit" variant="primary" disabled={isPending}>
+                  {isPending ? "Guardando..." : ( dict?.btnAddAccount || "Agregar Cuenta" )}
+                </Button>
               </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>
-                  {dict?.fieldAlias || "Alias"} (6 a 20 caracteres)
-                </label>
-                <input
-                  type="text"
-                  className={styles.formInput}
-                  value={alias}
-                  onChange={ ( e ) => setAlias( e.target.value ) }
-                  placeholder="ejemplo.mp"
-                  maxLength={20}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>
-                  {dict?.fieldHolderName || "Titular"}
-                </label>
-                <input
-                  type="text"
-                  className={styles.formInput}
-                  value={holderName}
-                  onChange={ ( e ) => setHolderName( e.target.value ) }
-                  placeholder="Nombre del titular"
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>
-                  {dict?.fieldHolderTaxId || "CUIT / CUIL"}
-                </label>
-                <input
-                  type="text"
-                  className={styles.formInput}
-                  value={holderTaxId}
-                  onChange={ ( e ) => setHolderTaxId( e.target.value ) }
-                  placeholder="20-12345678-9"
-                />
-              </div>
-            </div>
-
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={isDefault}
-                onChange={ ( e ) => setIsDefault( e.target.checked ) }
-              />
-              <span>{dict?.fieldDefault || "Marcar como cuenta predeterminada para este contacto"}</span>
-            </label>
-
-            <div className={styles.modalActions}>
-              <Button type="submit" variant="primary" disabled={isPending}>
-                {isPending ? "Guardando..." : ( dict?.btnAddAccount || "Agregar Cuenta" )}
-              </Button>
-            </div>
-          </form>
+            </form>
+          )}
         </div>
       </Modal>
 

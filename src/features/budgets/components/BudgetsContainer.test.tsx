@@ -5,10 +5,11 @@
  */
 // Librerías externas
 import { describe , it , expect , vi , beforeAll , beforeEach } from "vitest" ;
-import { render , screen , fireEvent , within , waitFor }       from "@testing-library/react" ;
+import { screen , fireEvent , within , waitFor } from "@testing-library/react" ;
 import React                                                    from "react" ;
 
 // Shared
+import { renderConPermisos as render } from "@/shared/lib/renderConPermisos" ;
 import { MetricsVisibilityContext } from "@/shared/ui/layout/MetricsSection/MetricsVisibilityContext" ;
 import { getDictionary }            from "@/shared/lib/dictionary" ;
 
@@ -75,9 +76,9 @@ describe( "BudgetsContainer" , () => {
           categoryTree={arbol}
           dict={dict}
           lang="es"
-          puedeEscribir={opciones.puedeEscribir}
         />
-      </MetricsVisibilityContext.Provider>
+      </MetricsVisibilityContext.Provider> ,
+      { puedeEscribir: ( opciones.puedeEscribir ?? true ) }
     ) ) ;
   }
 

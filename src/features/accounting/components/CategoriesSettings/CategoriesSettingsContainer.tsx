@@ -18,6 +18,7 @@ import { FormError }          from "@/shared/ui/forms/Form/FormError" ;
 import { Button }             from "@/shared/ui/display/Button/Button" ;
 import { Modal }              from "@/shared/ui/feedback/Modal/Modal" ;
 import type { getDictionary } from "@/shared/lib/dictionary" ;
+import { usePuedeEscribir }   from "@/shared/providers/PermissionsProvider" ;
 
 // Feature: Accounting
 import { getCategoryTreeAction , createCategoryAction , updateCategoryAction , archiveCategoryAction , unarchiveCategoryAction , getCategoryMovementsCountAction } from "../../actions/categoryActions" ;
@@ -39,6 +40,7 @@ export function CategoriesSettingsContainer( {
   dict ,
 }: CategoriesSettingsContainerProps ) {
   const t = dict.settingsPage.categories ;
+  const puedeEscribir = usePuedeEscribir() ;
   const [ tree , setTree ]                                 = useState< CategoryTreeNode[] >( initialTree ) ;
   const [ isActionLoading , setIsActionLoading ]           = useState( false ) ;
   const [ actionError , setActionError ]                   = useState< string | null >( null ) ;
@@ -340,21 +342,23 @@ export function CategoriesSettingsContainer( {
           </label>
         </div>
 
-        <div className={styles.toolbarRight}>
-          <Button
-            variant="primary"
-            onClick={ () => {
-              setFormName( "" ) ;
-              setFormType( "expense" ) ;
-              setFormIcon( "" ) ;
-              setFormColor( "" ) ;
-              setFormError( "" ) ;
-              setIsCreateParentOpen( true ) ;
-            } }
-          >
-            {t.newParent}
-          </Button>
-        </div>
+        {puedeEscribir && (
+          <div className={styles.toolbarRight}>
+            <Button
+              variant="primary"
+              onClick={ () => {
+                setFormName( "" ) ;
+                setFormType( "expense" ) ;
+                setFormIcon( "" ) ;
+                setFormColor( "" ) ;
+                setFormError( "" ) ;
+                setIsCreateParentOpen( true ) ;
+              } }
+            >
+              {t.newParent}
+            </Button>
+          </div>
+        )}
       </div>
 
       {actionError && <FormError error={actionError} />}
@@ -461,103 +465,109 @@ export function CategoriesSettingsContainer( {
                   </div>
                 </div>
 
-                <div className={styles.headerActions}>
-                  <Button
-                    variant="secondary"
-                    onClick={ () => {
-                      setEditCategoryModal( activeParent ) ;
-                      setFormName( activeParent.name ) ;
-                      setFormError( "" ) ;
-                    } }
-                  >
-                    {t.rename}
-                  </Button>
+                {puedeEscribir && (
+                  <div className={styles.headerActions}>
+                    <Button
+                      variant="secondary"
+                      onClick={ () => {
+                        setEditCategoryModal( activeParent ) ;
+                        setFormName( activeParent.name ) ;
+                        setFormError( "" ) ;
+                      } }
+                    >
+                      {t.rename}
+                    </Button>
 
-                  {activeParent.archivedAt ? (
-                    <Button
-                      variant="secondary"
-                      onClick={ () => handleUnarchive( activeParent.id ) }
-                      isLoading={isActionLoading}
-                    >
-                      {t.unarchive}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="secondary"
-                      onClick={ () => handleOpenArchiveModal( activeParent.id , activeParent.name , true ) }
-                    >
-                      {t.archive}
-                    </Button>
-                  )}
-                </div>
+                    {activeParent.archivedAt ? (
+                      <Button
+                        variant="secondary"
+                        onClick={ () => handleUnarchive( activeParent.id ) }
+                        isLoading={isActionLoading}
+                      >
+                        {t.unarchive}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        onClick={ () => handleOpenArchiveModal( activeParent.id , activeParent.name , true ) }
+                      >
+                        {t.archive}
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Controles de Ícono y Color a la vista */}
-              <div className={styles.customizationRow}>
-                <div className={styles.controlField}>
-                  <label className={styles.controlLabel}>{t.iconLabel}</label>
-                  <div className={styles.iconInputRow}>
-                    <FormInput
-                      value={quickIcon}
-                      onChange={ ( e ) => {
-                        if( activeParent ){
-                          setCustomVisuals( { parentId: activeParent.id , icon: e.target.value , color: quickColor } ) ;
-                        }
-                      } }
-                      placeholder={t.iconPlaceholder}
-                    />
+              {puedeEscribir && (
+                <div className={styles.customizationRow}>
+                  <div className={styles.controlField}>
+                    <label className={styles.controlLabel}>{t.iconLabel}</label>
+                    <div className={styles.iconInputRow}>
+                      <FormInput
+                        value={quickIcon}
+                        onChange={ ( e ) => {
+                          if( activeParent ){
+                            setCustomVisuals( { parentId: activeParent.id , icon: e.target.value , color: quickColor } ) ;
+                          }
+                        } }
+                        placeholder={t.iconPlaceholder}
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className={styles.controlField}>
-                  <label className={styles.controlLabel}>{t.colorLabel}</label>
-                  <div className={styles.colorInputRow}>
-                    <input
-                      type="color"
-                      value={quickColor.startsWith("#") ? quickColor : "#3498db"}
-                      onChange={ ( e ) => {
-                        if( activeParent ){
-                          setCustomVisuals( { parentId: activeParent.id , icon: quickIcon , color: e.target.value } ) ;
-                        }
-                      } }
-                      className={styles.colorPickerBox}
-                    />
-                    <FormInput
-                      value={quickColor}
-                      onChange={ ( e ) => {
-                        if( activeParent ){
-                          setCustomVisuals( { parentId: activeParent.id , icon: quickIcon , color: e.target.value } ) ;
-                        }
-                      } }
-                      placeholder="#3498db"
-                    />
-                    <Button
-                      variant="secondary"
-                      onClick={handleApplyVisualChanges}
-                      isLoading={isActionLoading}
-                    >
-                      {t.save}
-                    </Button>
+                  <div className={styles.controlField}>
+                    <label className={styles.controlLabel}>{t.colorLabel}</label>
+                    <div className={styles.colorInputRow}>
+                      <input
+                        type="color"
+                        value={quickColor.startsWith("#") ? quickColor : "#3498db"}
+                        onChange={ ( e ) => {
+                          if( activeParent ){
+                            setCustomVisuals( { parentId: activeParent.id , icon: quickIcon , color: e.target.value } ) ;
+                          }
+                        } }
+                        className={styles.colorPickerBox}
+                      />
+                      <FormInput
+                        value={quickColor}
+                        onChange={ ( e ) => {
+                          if( activeParent ){
+                            setCustomVisuals( { parentId: activeParent.id , icon: quickIcon , color: e.target.value } ) ;
+                          }
+                        } }
+                        placeholder="#3498db"
+                      />
+                      <Button
+                        variant="secondary"
+                        onClick={handleApplyVisualChanges}
+                        isLoading={isActionLoading}
+                      >
+                        {t.save}
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Sección de Subcategorías */}
               <div className={styles.subcategoriesSection}>
                 <div className={styles.subcategoriesHeader}>
                   <h3 className={styles.subcategoriesTitle}>{t.subcategoriesTitle}</h3>
-                  <Button
-                    variant="secondary"
-                    onClick={ () => {
-                      setFormName( "" ) ;
-                      setFormIcon( "" ) ;
-                      setFormColor( "" ) ;
-                      setFormError( "" ) ;
-                      setIsCreateChildOpen( true ) ;
-                    } }
-                  >
-                    {t.addChild}
-                  </Button>
+                  {puedeEscribir && (
+                    <Button
+                      variant="secondary"
+                      onClick={ () => {
+                        setFormName( "" ) ;
+                        setFormIcon( "" ) ;
+                        setFormColor( "" ) ;
+                        setFormError( "" ) ;
+                        setIsCreateChildOpen( true ) ;
+                      } }
+                    >
+                      {t.addChild}
+                    </Button>
+                  )}
                 </div>
 
                 <ul className={styles.subcategoriesList}>
@@ -575,37 +585,39 @@ export function CategoriesSettingsContainer( {
                           )}
                         </div>
 
-                        <div className={styles.subcatActions}>
-                          <button
-                            type="button"
-                            className={styles.actionBtnText}
-                            onClick={ () => {
-                              setEditCategoryModal( child ) ;
-                              setFormName( child.name ) ;
-                              setFormError( "" ) ;
-                            } }
-                          >
-                            {t.rename}
-                          </button>
-
-                          {child.archivedAt ? (
+                        {puedeEscribir && (
+                          <div className={styles.subcatActions}>
                             <button
                               type="button"
                               className={styles.actionBtnText}
-                              onClick={ () => handleUnarchive( child.id ) }
+                              onClick={ () => {
+                                setEditCategoryModal( child ) ;
+                                setFormName( child.name ) ;
+                                setFormError( "" ) ;
+                              } }
                             >
-                              {t.unarchive}
+                              {t.rename}
                             </button>
-                          ) : (
-                            <button
-                              type="button"
-                              className={ `${styles.actionBtnText} ${styles.actionBtnDanger}` }
-                              onClick={ () => handleOpenArchiveModal( child.id , child.name , false ) }
-                            >
-                              {t.archive}
-                            </button>
-                          )}
-                        </div>
+
+                            {child.archivedAt ? (
+                              <button
+                                type="button"
+                                className={styles.actionBtnText}
+                                onClick={ () => handleUnarchive( child.id ) }
+                              >
+                                {t.unarchive}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className={ `${styles.actionBtnText} ${styles.actionBtnDanger}` }
+                                onClick={ () => handleOpenArchiveModal( child.id , child.name , false ) }
+                              >
+                                {t.archive}
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </li>
                     ) )}
 

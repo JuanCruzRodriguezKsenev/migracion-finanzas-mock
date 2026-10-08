@@ -12,6 +12,7 @@ import { useRouter }                from "next/navigation" ;
 // Shared
 import { formatCurrency }       from "@/shared/lib/currencyFormatter" ;
 import type { getDictionary }   from "@/shared/lib/dictionary" ;
+import { usePuedeEscribir }     from "@/shared/providers/PermissionsProvider" ;
 import { DataTable }            from "@/shared/ui/display/DataTable/DataTable" ;
 import type { DataTableColumn } from "@/shared/ui/display/DataTable/DataTable" ;
 import { MetricsSection }       from "@/shared/ui/layout/MetricsSection/MetricsSection" ;
@@ -70,6 +71,7 @@ export function LoansContainer( {
 }: LoansContainerProps ) {
   const router      = useRouter() ;
   const { profile } = useProfileContext() ;
+  const puedeEscribir = usePuedeEscribir() ;
   const locale      = ( profile.numberFormat || "es-AR" ) ;
 
   const [ activeTab , setActiveTab ]       = useState< "all" | "borrowed" | "lent" >( "all" ) ;
@@ -97,11 +99,11 @@ export function LoansContainer( {
         <PageHeader
           title={dict.loansPage.title}
           subtitle={dict.loansPage.subtitle}
-          actions={
+          actions={ puedeEscribir ? (
             <Button variant="primary" onClick={ () => setIsModalOpen( true ) }>
               {dict.loansPage.newLoan}
             </Button>
-          }
+          ) : undefined }
           showMonthSelector={false}
           dict={dict}
           lang={lang}
@@ -111,11 +113,11 @@ export function LoansContainer( {
           title={dict.loansPage.emptyTitle}
           description={dict.loansPage.emptyDescription}
           icon={<IconLoan size={32} />}
-          action={
+          action={ puedeEscribir ? (
             <Button variant="primary" onClick={ () => setIsModalOpen( true ) }>
               {dict.loansPage.emptyAction}
             </Button>
-          }
+          ) : undefined }
         />
 
         { isModalOpen ? (
@@ -189,7 +191,7 @@ export function LoansContainer( {
   ] ;
 
   // 7.4 Columnas del DataTable
-  const columns: DataTableColumn< LoanConResumen >[] = [
+  const todasLasColumnas: DataTableColumn< LoanConResumen >[] = [
     {
       key:    "name" ,
       header: dict.loansPage.columnLoan ,
@@ -296,16 +298,19 @@ export function LoansContainer( {
     }
   ] ;
 
+  // Un `viewer` no archiva: sin la columna de acciones (RN-22)
+  const columns = todasLasColumnas.filter( ( c ) => puedeEscribir || (c.key !== "actions") ) ;
+
   return(
     <div className={styles.container}>
       <PageHeader
         title={dict.loansPage.title}
         subtitle={dict.loansPage.subtitle}
-        actions={
+        actions={ puedeEscribir ? (
           <Button variant="primary" onClick={ () => setIsModalOpen( true ) }>
             {dict.loansPage.newLoan}
           </Button>
-        }
+        ) : undefined }
         showMonthSelector={false}
         dict={dict}
         lang={lang}

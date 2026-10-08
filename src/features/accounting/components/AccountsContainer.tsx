@@ -10,6 +10,7 @@ import React , { useState } from "react" ;
 
 // Shared
 import { useMetricsVisibility } from "@/shared/ui/layout/MetricsSection/MetricsVisibilityContext" ;
+import { usePuedeEscribir }     from "@/shared/providers/PermissionsProvider" ;
 import { InstitutionLogo }      from "@/shared/ui/display/InstitutionLogo/InstitutionLogo" ;
 import { MetricsSection }       from "@/shared/ui/layout/MetricsSection/MetricsSection" ;
 import { Sparkline }            from "@/shared/ui/display/RechartsSparkline/Sparkline" ;
@@ -73,6 +74,7 @@ export function AccountsContainer( {
   esPersonal = false
 }: AccountsContainerProps ) {
   const { isContentVisible }                         = useMetricsVisibility() ;
+  const puedeEscribir                                = usePuedeEscribir() ;
   const [ isModalOpen , setIsModalOpen ]             = useState( false ) ;
   const [ selectedEntity , setSelectedEntity ]       = useState< string | null >( null ) ;
   const [ preselectedEntityId , setPreselectedEntityId ] = useState< string | null >( null ) ;
@@ -137,7 +139,7 @@ export function AccountsContainer( {
       <PageHeader
         title={accountsPageDict.title}
         subtitle={accountsPageDict.subtitle}
-        actions={ esPersonal ? undefined : (
+        actions={ (esPersonal || !puedeEscribir) ? undefined : (
           <div className={styles.actionBarButtons}>
             <Button
               className={styles.createBtn}
@@ -320,19 +322,21 @@ export function AccountsContainer( {
         subtitle="Listado de cuentas e instrumentos financieros asociados"
       >
         <div className={styles.modalScrollBody}>
-          <div className={styles.modalActionBar}>
-            <Button
-              variant="outline"
-              onClick={ () => {
-                const entityObj = financialEntities.find( ( e ) => e.name === selectedEntity ) ;
-                setSelectedEntity( null ) ;
-                setPreselectedEntityId( entityObj?.id || null ) ;
-                setIsModalOpen( true ) ;
-              } }
-            >
-              + Agregar Cuenta a { selectedEntity }
-            </Button>
-          </div>
+          {puedeEscribir && (
+            <div className={styles.modalActionBar}>
+              <Button
+                variant="outline"
+                onClick={ () => {
+                  const entityObj = financialEntities.find( ( e ) => e.name === selectedEntity ) ;
+                  setSelectedEntity( null ) ;
+                  setPreselectedEntityId( entityObj?.id || null ) ;
+                  setIsModalOpen( true ) ;
+                } }
+              >
+                + Agregar Cuenta a { selectedEntity }
+              </Button>
+            </div>
+          )}
 
           { ( () => {
             const selectedEntityObj = financialEntities.find( ( e ) => e.name === selectedEntity ) ;

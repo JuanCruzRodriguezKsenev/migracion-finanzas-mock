@@ -7,6 +7,7 @@ import { getServerSession } from "next-auth" ;
 import Link                 from "next/link" ;
 
 // Shared
+import { SoloConPermiso } from "@/shared/providers/PermissionsProvider" ;
 import { MetricsSection } from "@/shared/ui/layout/MetricsSection/MetricsSection" ;
 import { Sparkline }      from "@/shared/ui/display/RechartsSparkline/Sparkline" ;
 import { PageHeader }     from "@/shared/ui/layout/PageHeader/PageHeader" ;
@@ -208,9 +209,11 @@ export default async function HomePage( {params , searchParams}: HomePageProps )
           title={dict.dashboard.emptyStateTitle}
           description={dict.dashboard.emptyStateDescription}
           action={
-            <Link href={`/${lang}/accounts`}>
-              <Button variant="primary">{ dict.accountsPage.btnCreate }</Button>
-            </Link>
+            <SoloConPermiso>
+              <Link href={`/${lang}/accounts`}>
+                <Button variant="primary">{ dict.accountsPage.btnCreate }</Button>
+              </Link>
+            </SoloConPermiso>
           }
         />
       </div>

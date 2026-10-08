@@ -2,9 +2,10 @@
 
 // Librerías externas
 import { describe , it , expect , vi , beforeAll , beforeEach } from "vitest" ;
-import { render , screen , fireEvent , waitFor }                from "@testing-library/react" ;
+import { screen , fireEvent , waitFor } from "@testing-library/react" ;
 
 // Shared
+import { renderConPermisos as render } from "@/shared/lib/renderConPermisos" ;
 import { getDictionary } from "@/shared/lib/dictionary" ;
 import { ok , fail }     from "@/shared/lib/result" ;
 
@@ -177,5 +178,24 @@ describe( "PendingInstallmentsInbox" , () => {
       expect( screen.getByText( "Error al registrar en el libro mayor" ) ).toBeDefined() ;
       expect( screen.getByText( "Heladera Samsung" ) ).toBeDefined() ;
     } ) ;
+  } ) ;
+
+  it( "solo lectura: la bandeja lista lo propuesto pero sin «Confirmar», «Otro importe» ni «Descartar» (RN-22)" , () => {
+    const plan1 = makeInstallmentPlan( { id: "plan-1" , cardId: "card-1" , description: "Heladera Samsung" } ) ;
+    const items: PendienteCuota[] = [
+      { planId: "plan-1" , numeroCuota: 3 , fechaCuota: "2026-10-10" , plan: plan1 } ,
+    ] ;
+
+    render(
+      <PendingInstallmentsInbox
+        initialPending={items}
+        cards={mockCards}
+        dict={dict}
+      /> ,
+      { puedeEscribir: false }
+    ) ;
+
+    expect( screen.getByText( "Heladera Samsung" ) ).toBeDefined() ;
+    expect( screen.queryByRole( "button" ) ).toBeNull() ;
   } ) ;
 } ) ;

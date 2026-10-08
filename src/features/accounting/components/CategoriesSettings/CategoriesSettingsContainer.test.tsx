@@ -2,9 +2,10 @@
 
 // Librerías externas
 import { describe , it , expect , vi , beforeEach , beforeAll } from "vitest" ;
-import { render , screen , fireEvent , waitFor }                from "@testing-library/react" ;
+import { screen , fireEvent , waitFor } from "@testing-library/react" ;
 
 // Shared
+import { renderConPermisos as render } from "@/shared/lib/renderConPermisos" ;
 import { getDictionary } from "@/shared/lib/dictionary" ;
 
 // Feature: Notifications
@@ -327,5 +328,33 @@ describe( "CategoriesSettingsContainer - Dos columnas y gestión de categorías"
     } ) ;
 
     expect( screen.getByText( ERROR_SERVIDOR ) ).toBeTruthy() ;
+  } ) ;
+
+  it( "solo lectura: ni «nueva categoría», ni renombrar, archivar, ícono/color ni subcategorías nuevas (RN-22)" , () => {
+    render(
+      <NotificationsProvider>
+        <CategoriesSettingsContainer initialTree={sampleTree} dict={dict} />
+      </NotificationsProvider> ,
+      { puedeEscribir: false }
+    ) ;
+
+    const t = dict.settingsPage.categories ;
+
+    expect( screen.getByRole( "heading" , { name: "Vivienda" , level: 2 } ) ).toBeTruthy() ;
+    expect( screen.getByText( "Alquiler" ) ).toBeTruthy() ;
+    expect( screen.queryByText( t.newParent ) ).toBeNull() ;
+    expect( screen.queryByText( t.rename ) ).toBeNull() ;
+    expect( screen.queryByText( t.archive ) ).toBeNull() ;
+    expect( screen.queryByText( t.addChild ) ).toBeNull() ;
+    expect( screen.queryByText( t.save ) ).toBeNull() ;
+  } ) ;
+
+  it( "con permiso están los controles de escritura (contraparte del anterior)" , () => {
+    renderContainer( sampleTree ) ;
+
+    const t = dict.settingsPage.categories ;
+
+    expect( screen.getByText( t.newParent ) ).toBeTruthy() ;
+    expect( screen.getByText( t.addChild ) ).toBeTruthy() ;
   } ) ;
 } ) ;

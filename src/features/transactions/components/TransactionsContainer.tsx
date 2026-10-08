@@ -13,6 +13,7 @@ import { PageHeader }          from "@/shared/ui/layout/PageHeader/PageHeader" ;
 import { Column }              from "@/shared/ui/display/Toolbar/ColumnSelector" ;
 import { Button }              from "@/shared/ui/display/Button/Button" ;
 import type { getDictionary } from "@/shared/lib/dictionary" ;
+import { usePuedeEscribir }   from "@/shared/providers/PermissionsProvider" ;
 
 // Feature: Profile
 import { useProfileContext } from "@/features/profile/context/ProfileContext" ;
@@ -105,6 +106,7 @@ export function TransactionsContainer( {
   const searchParams = useSearchParams() ;
   const monthParam   = searchParams?.get( "month" ) ;
   const { profile }  = useProfileContext() ;
+  const puedeEscribir = usePuedeEscribir() ;
 
   const [ transactions , setTransactions ] = useState< TransactionWithEntries[] >( initialTransactions ) ;
   const [ nextCursor , setNextCursor ]     = useState( initialNextCursor ) ;
@@ -265,11 +267,11 @@ export function TransactionsContainer( {
       <PageHeader
         title={dict.transactionsPage?.title || "Libro Diario"}
         subtitle={dict.transactionsPage?.subtitle || "Historial de movimientos y asientos contables de partida doble."}
-        actions={
+        actions={ puedeEscribir ? (
           <Button variant="primary" onClick={ () => setIsFormModalOpen( true ) }>
             + Nueva Transacción
           </Button>
-        }
+        ) : undefined }
         showMonthSelector={true}
         dict={dict}
         lang={lang}

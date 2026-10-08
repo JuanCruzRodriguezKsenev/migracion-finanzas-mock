@@ -2,7 +2,10 @@
 
 // Librerías externas
 import { describe , it , expect , vi } from "vitest" ;
-import { render , screen , fireEvent } from "@testing-library/react" ;
+import { screen , fireEvent } from "@testing-library/react" ;
+
+// Shared
+import { renderConPermisos as render } from "@/shared/lib/renderConPermisos" ;
 
 // Feature: Contacts
 import { ContactWithPaymentMethods } from "../types" ;
@@ -89,5 +92,21 @@ describe( "ContactsTable" , () => {
 
     fireEvent.click( screen.getByRole( "button" , { name: "Archivar" } ) ) ;
     expect( handleArchive ).toHaveBeenCalledTimes( 1 ) ;
+  } ) ;
+
+  it( "solo lectura: un viewer ve «Cuentas» pero no «Editar» ni «Archivar» (RN-22)" , () => {
+    render(
+      <ContactsTable
+        contacts={sampleContacts}
+        onSelectContact={vi.fn()}
+        onEditContact={vi.fn()}
+        onArchiveContact={vi.fn()}
+      /> ,
+      { puedeEscribir: false }
+    ) ;
+
+    expect( screen.getByRole( "button" , { name: /Cuentas/ } ) ).toBeInTheDocument() ;
+    expect( screen.queryByText( "Editar" ) ).toBeNull() ;
+    expect( screen.queryByText( "Archivar" ) ).toBeNull() ;
   } ) ;
 } ) ;

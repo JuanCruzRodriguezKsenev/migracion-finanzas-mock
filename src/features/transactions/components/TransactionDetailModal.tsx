@@ -15,6 +15,7 @@ import { FormError }   from "@/shared/ui/forms/Form/FormError" ;
 import { FormActions }  from "@/shared/ui/forms/Form/FormActions" ;
 import { Button }       from "@/shared/ui/display/Button/Button" ;
 import { formatCurrency } from "@/shared/lib/currencyFormatter" ;
+import { usePuedeEscribir } from "@/shared/providers/PermissionsProvider" ;
 
 // Feature: Profile
 import { useProfileContext } from "@/features/profile/context/ProfileContext" ;
@@ -100,6 +101,7 @@ function TransactionDetailContent( {
   cuentasDict ,
 }: TransactionDetailContentProps ) {
   const { profile }                     = useProfileContext() ;
+  const puedeEscribir                   = usePuedeEscribir() ;
   const locale                          = ( profile?.numberFormat || "es-AR" ) ;
   const [ isPending , startTransition ] = useTransition() ;
 
@@ -189,6 +191,7 @@ function TransactionDetailContent( {
         label="Descripción"
         value={description}
         onChange={ ( e ) => setDescription( e.target.value ) }
+        readOnly={!puedeEscribir}
         required
       />
 
@@ -197,6 +200,7 @@ function TransactionDetailContent( {
         type="date"
         value={occurredAt}
         onChange={ ( e ) => setOccurredAt( e.target.value ) }
+        readOnly={!puedeEscribir}
         required
       />
 
@@ -204,6 +208,7 @@ function TransactionDetailContent( {
         label="Categoría"
         value={categoryId}
         onChange={ ( e ) => setCategoryId( e.target.value ) }
+        disabled={!puedeEscribir}
       >
         <option value="">Sin categoría</option>
         {categories.map( ( c ) => (
@@ -215,6 +220,7 @@ function TransactionDetailContent( {
         label="Comercio"
         value={merchantName}
         onChange={ ( e ) => setMerchantName( e.target.value ) }
+        readOnly={!puedeEscribir}
       />
 
       {/* Tabla del asiento de partida doble */}
@@ -277,16 +283,18 @@ function TransactionDetailContent( {
             Asiento reversado el { new Intl.DateTimeFormat( "es-AR" , {dateStyle: "medium" , timeStyle: "short"} ).format( new Date( transaction.reversedAt as Date ) ) }.
             El contra-asiento ya devolvió los importes a sus cuentas.
           </span>
-          <Button
-            variant="danger"
-            type="button"
-            onClick={handleDelete}
-            disabled={isPending}
-          >
-            Eliminar
-          </Button>
+          {puedeEscribir && (
+            <Button
+              variant="danger"
+              type="button"
+              onClick={handleDelete}
+              disabled={isPending}
+            >
+              Eliminar
+            </Button>
+          )}
         </div>
-      ) : (
+      ) : puedeEscribir ? (
         <div className={styles.dangerActions}>
           <Button
             variant="outline"
@@ -305,13 +313,14 @@ function TransactionDetailContent( {
             Eliminar
           </Button>
         </div>
-      )}
+      ) : null}
 
       <FormActions
         onCancel={onClose}
         cancelLabel="Cerrar"
         submitLabel="Guardar Cambios"
         submitting={isPending}
+        hideSubmit={!puedeEscribir}
       />
     </form>
   ) ;

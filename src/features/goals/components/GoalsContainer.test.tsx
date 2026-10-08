@@ -6,10 +6,11 @@
  */
 // Librerías externas
 import { describe , it , expect , vi , beforeAll , beforeEach } from "vitest" ;
-import { render , screen , fireEvent , waitFor , within }       from "@testing-library/react" ;
+import { screen , fireEvent , waitFor , within } from "@testing-library/react" ;
 import React                                                   from "react" ;
 
 // Shared
+import { renderConPermisos as render } from "@/shared/lib/renderConPermisos" ;
 import { MetricsVisibilityContext } from "@/shared/ui/layout/MetricsSection/MetricsVisibilityContext" ;
 import { getDictionary }            from "@/shared/lib/dictionary" ;
 
@@ -78,11 +79,11 @@ function renderContainer( props?: { data?: ReturnType< typeof makeViewData > ; f
             filter={props?.filter ?? "all"}
             dict={dict}
             lang="es"
-            puedeEscribir={props?.puedeEscribir}
           />
         </MetricsVisibilityContext.Provider>
       </NotificationsProvider>
-    </ProfileProvider>
+    </ProfileProvider> ,
+    { puedeEscribir: ( props?.puedeEscribir ?? true ) }
   ) ) ;
 }
 

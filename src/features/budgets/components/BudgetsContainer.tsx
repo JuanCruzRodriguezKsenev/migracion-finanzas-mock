@@ -13,6 +13,7 @@ import { useRouter }                                  from "next/navigation" ;
 // Shared
 import { formatMonthKeyLabel }  from "@/shared/ui/display/RechartsSparkline/sparklineUtils" ;
 import { useMetricsVisibility } from "@/shared/ui/layout/MetricsSection/MetricsVisibilityContext" ;
+import { usePuedeEscribir }     from "@/shared/providers/PermissionsProvider" ;
 import { MetricsSection }       from "@/shared/ui/layout/MetricsSection/MetricsSection" ;
 import { formatCurrency }       from "@/shared/lib/currencyFormatter" ;
 import type { getDictionary }   from "@/shared/lib/dictionary" ;
@@ -46,8 +47,6 @@ export interface BudgetsContainerProps {
   categoryTree:   CategoryTreeNode[] ;
   dict:           Awaited< ReturnType< typeof getDictionary > > ;
   lang?:          string ;
-  /** Si puede crear, editar y eliminar. El plan 4b del acceso lo cablea desde el provider; hasta entonces llega por props. */
-  puedeEscribir?: boolean ;
 }
 
 type Modal = { tipo: "alta" } | { tipo: "edicion" ; presupuesto: PresupuestoEvaluado } | null ;
@@ -60,10 +59,10 @@ export function BudgetsContainer( {
   currency ,
   categoryTree ,
   dict ,
-  lang = "es" ,
-  puedeEscribir = true
+  lang = "es"
 }: BudgetsContainerProps ) {
   const router               = useRouter() ;
+  const puedeEscribir        = usePuedeEscribir() ;
   const { isContentVisible } = useMetricsVisibility() ;
   const t                    = dict.budgetsPage ;
   const locale               = localeDe( lang ) ;

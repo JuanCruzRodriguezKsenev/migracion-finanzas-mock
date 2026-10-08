@@ -20,6 +20,8 @@ interface FormActionsProps {
   submitting?:    boolean ;
   /** Deshabilita sólo el botón de enviar (por ejemplo, mientras el formulario no se puede guardar). */
   submitDisabled?: boolean ;
+  /** Oculta el botón de enviar: formularios de solo lectura (un `viewer` no guarda nada). */
+  hideSubmit?:    boolean ;
   cancelVariant?: "primary" | "secondary" | "outline" ;
   submitVariant?: "primary" | "secondary" | "outline" ;
   className?:     string ;
@@ -34,6 +36,7 @@ export function FormActions( {
   submitLabel = "Guardar" ,
   submitting = false ,
   submitDisabled = false ,
+  hideSubmit = false ,
   cancelVariant = "secondary" ,
   submitVariant = "primary" ,
   className = ""
@@ -48,14 +51,16 @@ export function FormActions( {
       >
         { cancelLabel }
       </Button>
-      <Button 
-        type="submit" 
-        variant={submitVariant}
-        isLoading={submitting}
-        disabled={submitDisabled}
-      >
-        { submitLabel }
-      </Button>
+      {!hideSubmit && (
+        <Button 
+          type="submit" 
+          variant={submitVariant}
+          isLoading={submitting}
+          disabled={submitDisabled}
+        >
+          { submitLabel }
+        </Button>
+      )}
     </div>
   ) ;
 }

@@ -17,6 +17,7 @@ import { FormError }     from "@/shared/ui/forms/Form/FormError" ;
 import { Button }        from "@/shared/ui/display/Button/Button" ;
 import { Modal }         from "@/shared/ui/feedback/Modal/Modal" ;
 import { formatCurrency } from "@/shared/lib/currencyFormatter" ;
+import { usePuedeEscribir } from "@/shared/providers/PermissionsProvider" ;
 
 // Feature: Accounting
 import { Account } from "@/features/accounting/types" ;
@@ -60,6 +61,7 @@ export function PendingOccurrencesInbox( {
   accounts ,
   locale = "es-AR" ,
 }: PendingOccurrencesInboxProps ) {
+  const puedeEscribir                      = usePuedeEscribir() ;
   const [ pendingItems , setPendingItems ] = useState< PendienteRecurrencia[] >( initialPending ) ;
   const [ isPending , startTransition ]    = useTransition() ;
   const [ actionError , setActionError ]   = useState< string | null >( null ) ;
@@ -239,36 +241,38 @@ export function PendingOccurrencesInbox( {
                 </span>
               </div>
 
-              <div className={styles.actionsGroup}>
-                <Button
-                  variant="primary"
-                  isLoading={isPending}
-                  onClick={ () => handleConfirmClick( item ) }
-                >
-                  Confirmar
-                </Button>
-                <Button
-                  variant="outline"
-                  isLoading={isPending}
-                  onClick={ () => handleCustomAmountClick( item ) }
-                >
-                  Otro monto
-                </Button>
-                <Button
-                  variant="outline"
-                  isLoading={isPending}
-                  onClick={ () => handleNotChargedClick( item ) }
-                >
-                  No me lo cobraron
-                </Button>
-                <Button
-                  variant="danger"
-                  isLoading={isPending}
-                  onClick={ () => handleCancelClick( item ) }
-                >
-                  Dar de baja
-                </Button>
-              </div>
+              {puedeEscribir && (
+                <div className={styles.actionsGroup}>
+                  <Button
+                    variant="primary"
+                    isLoading={isPending}
+                    onClick={ () => handleConfirmClick( item ) }
+                  >
+                    Confirmar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    isLoading={isPending}
+                    onClick={ () => handleCustomAmountClick( item ) }
+                  >
+                    Otro monto
+                  </Button>
+                  <Button
+                    variant="outline"
+                    isLoading={isPending}
+                    onClick={ () => handleNotChargedClick( item ) }
+                  >
+                    No me lo cobraron
+                  </Button>
+                  <Button
+                    variant="danger"
+                    isLoading={isPending}
+                    onClick={ () => handleCancelClick( item ) }
+                  >
+                    Dar de baja
+                  </Button>
+                </div>
+              )}
             </div>
           ) ;
         } )}

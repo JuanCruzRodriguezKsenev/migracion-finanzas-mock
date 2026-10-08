@@ -2,9 +2,10 @@
 
 // Librerías externas
 import { describe , it , expect , vi , beforeAll , beforeEach } from "vitest" ;
-import { render , screen , fireEvent , waitFor }                from "@testing-library/react" ;
+import { screen , fireEvent , waitFor } from "@testing-library/react" ;
 
 // Shared
+import { renderConPermisos as render } from "@/shared/lib/renderConPermisos" ;
 import { getDictionary } from "@/shared/lib/dictionary" ;
 import { ok }            from "@/shared/lib/result" ;
 
@@ -174,5 +175,21 @@ describe( "PendingLoanSettlementsInbox" , () => {
     // Botón de confirmar disabled
     const confirmBtn = screen.getByText( dict.loansPage.settlement.confirmPayment ) ;
     expect( confirmBtn.closest( "button" )?.disabled ).toBe( true ) ;
+  } ) ;
+
+  it( "solo lectura: la bandeja lista la cuota pendiente pero sin «Liquidar» (RN-22)" , () => {
+    const loan = makeLoan( { id: "loan-ro-1" , name: "Préstamo Solo Lectura" } ) ;
+
+    render(
+      <PendingLoanSettlementsInbox
+        initialPending={[ makePendiente( 1 , loan ) ]}
+        accounts={[ mockAccountARS ]}
+        dict={dict}
+      /> ,
+      { puedeEscribir: false }
+    ) ;
+
+    expect( screen.getByText( "Préstamo Solo Lectura" ) ).toBeDefined() ;
+    expect( screen.queryByText( dict.loansPage.settlement.settle ) ).toBeNull() ;
   } ) ;
 } ) ;

@@ -16,6 +16,7 @@ import { Button }             from "@/shared/ui/display/Button/Button" ;
 import { Modal }              from "@/shared/ui/feedback/Modal/Modal" ;
 import { formatCurrency }     from "@/shared/lib/currencyFormatter" ;
 import type { getDictionary } from "@/shared/lib/dictionary" ;
+import { usePuedeEscribir }   from "@/shared/providers/PermissionsProvider" ;
 
 // Feature: Cards
 import {
@@ -57,6 +58,7 @@ export function PendingInstallmentsInbox( {
   dict ,
   locale = "es-AR" ,
 }: PendingInstallmentsInboxProps ) {
+  const puedeEscribir                      = usePuedeEscribir() ;
   const [ pendingItems , setPendingItems ] = useState< PendienteCuota[] >( initialPending ) ;
   const [ isPending , startTransition ]    = useTransition() ;
   const [ actionError , setActionError ]   = useState< string | null >( null ) ;
@@ -181,30 +183,32 @@ export function PendingInstallmentsInbox( {
                   { formatCurrency( item.plan.installmentAmount , item.plan.currency , locale ) }
                 </span>
 
-                <div className={styles.itemActions}>
-                  <Button
-                    variant="primary"
-                    disabled={isPending}
-                    onClick={ () => handleConfirmClick( item ) }
-                  >
-                    { dict.cardsPage?.installments?.confirm || "Confirmar" }
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    disabled={isPending}
-                    onClick={ () => handleCustomAmountClick( item ) }
-                  >
-                    { dict.cardsPage?.installments?.confirmOther || "Otro importe" }
-                  </Button>
-                  <button
-                    type="button"
-                    className={styles.skipButton}
-                    disabled={isPending}
-                    onClick={ () => handleSkipClick( item ) }
-                  >
-                    { dict.cardsPage?.installments?.skip || "Descartar" }
-                  </button>
-                </div>
+                {puedeEscribir && (
+                  <div className={styles.itemActions}>
+                    <Button
+                      variant="primary"
+                      disabled={isPending}
+                      onClick={ () => handleConfirmClick( item ) }
+                    >
+                      { dict.cardsPage?.installments?.confirm || "Confirmar" }
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      disabled={isPending}
+                      onClick={ () => handleCustomAmountClick( item ) }
+                    >
+                      { dict.cardsPage?.installments?.confirmOther || "Otro importe" }
+                    </Button>
+                    <button
+                      type="button"
+                      className={styles.skipButton}
+                      disabled={isPending}
+                      onClick={ () => handleSkipClick( item ) }
+                    >
+                      { dict.cardsPage?.installments?.skip || "Descartar" }
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ) ;
