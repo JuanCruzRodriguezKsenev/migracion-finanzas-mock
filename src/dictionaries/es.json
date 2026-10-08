@@ -175,7 +175,10 @@
     "debtQuestion": "¿Los demás te deben su parte?",
     "debtYes": "Sí, según el acuerdo",
     "debtNo": "No, lo absorbo yo",
-    "holderFixedOwner": "Una cuenta propia se carga siempre a tu nombre."
+    "holderFixedOwner": "Una cuenta propia se carga siempre a tu nombre.",
+    "createEntityOption": "＋ Crear entidad nueva…",
+    "titleCreateEntityModal": "Nueva entidad",
+    "subtitleCreateEntityModal": "Queda entre tus entidades y se elige en la cuenta."
   },
   "cardsPage": {
     "title": "Tarjetas",
@@ -649,7 +652,8 @@
       "listLabel": "Tus organizaciones",
       "createNew": "+ Crear organización",
       "viewerBadge": "Sólo lectura",
-      "switchError": "No se pudo cambiar de organización. Probá de nuevo."
+      "switchError": "No se pudo cambiar de organización. Probá de nuevo.",
+      "personalLabel": "Personal"
     },
     "create": {
       "title": "Crear organización",
@@ -687,7 +691,8 @@
       "loadError": "No se pudo actualizar la lista de miembros.",
       "genericError": "No se pudo completar la acción.",
       "roleSelectLabel": "Rol de {nombre}",
-      "roleDisabledOnlyOwner": "Es el único propietario: nombrá a otro antes de cambiarle el rol."
+      "roleDisabledOnlyOwner": "Es el único propietario: nombrá a otro antes de cambiarle el rol.",
+      "personalOnlyViewer": "En tu espacio Personal sólo se invita como visualizador."
     },
     "leave": {
       "menuLabel": "Abandonar «{nombre}»",

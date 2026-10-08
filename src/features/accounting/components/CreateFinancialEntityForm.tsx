@@ -17,9 +17,16 @@ import { createFinancialEntityAction , createAccountForEntityAction } from "../a
 import styles                                                        from "./CreateAccountForm.module.css" ;
 
 
+/** Entidad recién creada, tal como se la devuelve a quien abrió el formulario. */
+export interface EntidadCreada {
+  id:   string ;
+  name: string ;
+}
+
 interface CreateFinancialEntityFormProps {
   dict:            Awaited< ReturnType< typeof getDictionary > >["accountsPage"] ;
-  onSuccess?:      () => void ;
+  /** Se llama con la entidad creada; quien no la necesita puede ignorarla. */
+  onSuccess?:      ( entidad: EntidadCreada ) => void ;
   /**
    * Determina si se crea atómicamente la cuenta propia asociada con saldo inicial (flujo /accounts)
    * o si se realiza un alta pura de la entidad financiera (flujo /contacts). Por defecto true.
@@ -302,7 +309,7 @@ export function CreateFinancialEntityForm( { dict , onSuccess , withOwnAccount =
       setShowDropdown( false ) ;
       router.refresh() ;
       if( onSuccess ) {
-        onSuccess() ;
+        onSuccess( {id: res.value.id , name: res.value.name} ) ;
       }
     } ) ;
   } ;

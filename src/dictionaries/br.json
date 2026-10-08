@@ -175,7 +175,10 @@
     "debtQuestion": "Os outros devem a você a parte deles?",
     "debtYes": "Sim, de acordo com o acordo",
     "debtNo": "Não, eu assumo",
-    "holderFixedOwner": "Uma conta própria é sempre lançada em seu nome."
+    "holderFixedOwner": "Uma conta própria é sempre lançada em seu nome.",
+    "createEntityOption": "＋ Criar nova entidade…",
+    "titleCreateEntityModal": "Nova entidade",
+    "subtitleCreateEntityModal": "Fica entre as suas entidades e é escolhida na conta."
   },
   "cardsPage": {
     "title": "Cartões",
@@ -649,7 +652,8 @@
       "listLabel": "Suas organizações",
       "createNew": "+ Criar organização",
       "viewerBadge": "Somente leitura",
-      "switchError": "Não foi possível trocar de organização. Tente novamente."
+      "switchError": "Não foi possível trocar de organização. Tente novamente.",
+      "personalLabel": "Pessoal"
     },
     "create": {
       "title": "Criar organização",
@@ -687,7 +691,8 @@
       "loadError": "Não foi possível atualizar a lista de membros.",
       "genericError": "Não foi possível concluir a ação.",
       "roleSelectLabel": "Papel de {nombre}",
-      "roleDisabledOnlyOwner": "É o único proprietário: nomeie outro antes de alterar o papel."
+      "roleDisabledOnlyOwner": "É o único proprietário: nomeie outro antes de alterar o papel.",
+      "personalOnlyViewer": "No seu espaço Pessoal só é possível convidar como visualizador."
     },
     "leave": {
       "menuLabel": "Sair de «{nombre}»",

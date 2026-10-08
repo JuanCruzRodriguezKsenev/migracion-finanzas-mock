@@ -16,6 +16,7 @@ import { accounts , ledgerTransactions } from "@/features/accounting/schema.db" 
 // Feature: Auth
 import { membershipRepository }                 from "@/features/auth/repositories/membershipRepository" ;
 import { userRepository }                       from "@/features/auth/repositories/userRepository" ;
+import { crearEspacioPersonal }                 from "@/features/auth/services/espacioPersonalService" ;
 import { organizations , memberships , users } from "@/features/auth/schema.db" ;
 
 // Feature: Organizations
@@ -390,5 +391,79 @@ describe( "ciclo de vida de la organización" , () => {
       const owners = await db.select().from( memberships ).where( and( eq( memberships.organizationId , orgA ) , eq( memberships.role , "owner" ) ) ) ;
       expect( owners ).toHaveLength( 1 ) ;
     } ) ;
+  } ) ;
+} ) ;
+
+describe( "ciclo de vida — espacio Personal (AC-9, AC-10, A6, A7)" , () => {
+  let casaId:     string ;
+  let duenoId:    string ;
+  let personalId: string ;
+
+  beforeEach( async () => {
+    vi.restoreAllMocks() ;
+    vi.clearAllMocks() ;
+    await limpiarBase() ;
+
+    const [ casa ] = await db.insert( organizations ).values( { name: "Casa" , slug: "casa-vida-personal" } ).returning() ;
+    casaId     = casa.id ;
+    duenoId    = ( await crearUsuarioConMembresia( { organizationId: casaId , email: "dueno-vida@ejemplo.com" , role: "member" } ) ).id ;
+    personalId = await db.transaction( ( tx ) => crearEspacioPersonal( duenoId , tx ) ) ;
+  } ) ;
+
+  afterAll( async () => {
+    await limpiarBase() ;
+  } ) ;
+
+  it( "AC-9 / A6: el dueño no abandona, no elimina y no renombra su Personal" , async () => {
+    sesionDe( duenoId , personalId ) ;
+
+    const abandonar = await abandonarOrganizacionAction() ;
+    const eliminar  = await eliminarOrganizacionAction( { confirmacion: "Personal" } ) ;
+    const renombrar = await renombrarOrganizacionAction( { nombre: "Mi plata" } ) ;
+
+    expect( abandonar.success ).toBe( false ) ;
+    expect( eliminar.success ).toBe( false ) ;
+    expect( renombrar.success ).toBe( false ) ;
+
+    const [ org ] = await db.select().from( organizations ).where( eq( organizations.id , personalId ) ) ;
+    expect( org.name ).toBe( "Personal" ) ;
+    expect( await membershipRepository.findMembership( duenoId , personalId ) ).not.toBeNull() ;
+  } ) ;
+
+  it( "AC-10 / A7: con Personal y una sola organización real, abandonar la real se permite y cae en Personal" , async () => {
+    sesionDe( duenoId , casaId , "member" ) ;
+
+    const res = await abandonarOrganizacionAction() ;
+
+    expect( res.success ).toBe( true ) ;
+    if( res.success ) {
+      expect( res.value.organizationId ).toBe( personalId ) ;
+    }
+    expect( await membershipRepository.findMembership( duenoId , casaId ) ).toBeNull() ;
+  } ) ;
+
+  it( "RN-8: el owner único de la última organización real puede eliminarla y cae en Personal" , async () => {
+    await membershipRepository.cambiarRol( duenoId , casaId , "owner" ) ;
+    sesionDe( duenoId , casaId ) ;
+
+    const res = await eliminarOrganizacionAction( { confirmacion: "Casa" } ) ;
+
+    expect( res.success ).toBe( true ) ;
+    if( res.success ) {
+      expect( res.value.organizationId ).toBe( personalId ) ;
+    }
+  } ) ;
+
+  it( "A6: un viewer invitado a un Personal ajeno sí lo abandona, y el espacio sigue" , async () => {
+    const [ otraOrg ] = await db.insert( organizations ).values( { name: "Taller" , slug: "taller-vida-personal" } ).returning() ;
+    const contador    = await crearUsuarioConMembresia( { organizationId: otraOrg.id , email: "contador-vida@ejemplo.com" , role: "member" } ) ;
+    await membershipRepository.add( contador.id , personalId , "viewer" ) ;
+    sesionDe( contador.id , personalId , "viewer" ) ;
+
+    const res = await abandonarOrganizacionAction() ;
+
+    expect( res.success ).toBe( true ) ;
+    expect( await membershipRepository.findMembership( contador.id , personalId ) ).toBeNull() ;
+    expect( await membershipRepository.findMembership( duenoId , personalId ) ).not.toBeNull() ;
   } ) ;
 } ) ;

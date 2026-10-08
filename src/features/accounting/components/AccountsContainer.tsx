@@ -29,7 +29,6 @@ import {
   SparklinePoint ,
   calcularTendenciaDesdeSparkline
 } from "../utils/dashboardMetrics" ;
-import { CreateFinancialEntityForm }                             from "./CreateFinancialEntityForm" ;
 import { CuentaDeListado , FinancialEntity , MonthlySummary }   from "../types" ;
 import styles                                                   from "./AccountsContainer.module.css" ;
 import { CreateAccountForm }                                    from "./CreateAccountForm" ;
@@ -58,6 +57,8 @@ interface AccountsContainerProps {
   lang:              string ;
   /** Reservado y libre por cuenta de activo (Metas, RFC 011). Opcional: sin él, nada cambia. */
   reservado?:        Record< string , ReservedByAccount > ;
+  /** La organización activa es el espacio Personal de quien mira: la vista única es «Mis cuentas» (RN-16). */
+  esPersonal?:       boolean ;
 }
 
 export function AccountsContainer( {
@@ -68,14 +69,17 @@ export function AccountsContainer( {
   summaries ,
   dict ,
   lang ,
-  reservado
+  reservado ,
+  esPersonal = false
 }: AccountsContainerProps ) {
   const { isContentVisible }                         = useMetricsVisibility() ;
   const [ isModalOpen , setIsModalOpen ]             = useState( false ) ;
-  const [ isEntityModalOpen , setIsEntityModalOpen ] = useState( false ) ;
   const [ selectedEntity , setSelectedEntity ]       = useState< string | null >( null ) ;
   const [ preselectedEntityId , setPreselectedEntityId ] = useState< string | null >( null ) ;
-  const [ vista , setVista ]                         = useState< "organizacion" | "mias" >( "organizacion" ) ;
+  const [ vistaElegida , setVista ]                  = useState< "organizacion" | "mias" >( "organizacion" ) ;
+
+  // En Personal no hay elección: «Mis cuentas» es la única vista
+  const vista = ( esPersonal ? "mias" : vistaElegida ) ;
 
   const accountsPageDict = ( dict.accountsPage || {} ) ;
 
@@ -133,15 +137,8 @@ export function AccountsContainer( {
       <PageHeader
         title={accountsPageDict.title}
         subtitle={accountsPageDict.subtitle}
-        actions={
+        actions={ esPersonal ? undefined : (
           <div className={styles.actionBarButtons}>
-            <Button
-              variant="outline"
-              className={styles.createBtn}
-              onClick={ () => setIsEntityModalOpen( true ) }
-            >
-              + Nueva Entidad
-            </Button>
             <Button
               className={styles.createBtn}
               onClick={ () => {
@@ -152,13 +149,14 @@ export function AccountsContainer( {
               + Nueva Cuenta
             </Button>
           </div>
-        }
+        ) }
         showMonthSelector={false}
         dict={dict}
         lang={lang}
       />
 
       {/* Selector de vista: la lista de la organización o «Mis cuentas» (RN-16). No es una ruta. */}
+      {!esPersonal && (
       <div className={styles.viewSwitch} role="group" aria-label={accountsPageDict.viewSelectorLabel}>
         <button
           type="button"
@@ -177,9 +175,10 @@ export function AccountsContainer( {
           {accountsPageDict.viewMine}
         </button>
       </div>
+      )}
 
       {(vista === "mias") ? (
-        <MyAccountsPanel dict={accountsPageDict} financialEntities={financialEntities} />
+        <MyAccountsPanel dict={accountsPageDict} financialEntities={financialEntities} esPersonal={esPersonal} />
       ) : (
       <>
       {/* Indicadores de Balance Superior utilizando MetricsSection en modo simpleGrid */}
@@ -291,19 +290,6 @@ export function AccountsContainer( {
 
       </>
       )}
-
-      {/* Modal para Registrar Entidad */}
-      <Modal
-        isOpen={isEntityModalOpen}
-        onClose={ () => setIsEntityModalOpen( false ) }
-        title="Registrar Entidad Financiera"
-        subtitle="Agrega un banco, billetera o caja de efectivo a tu panel."
-      >
-        <CreateFinancialEntityForm
-          dict={accountsPageDict}
-          onSuccess={ () => setIsEntityModalOpen( false ) }
-        />
-      </Modal>
 
       {/* Modal para Crear Cuenta */}
       <Modal

@@ -175,7 +175,10 @@
     "debtQuestion": "Do the others owe you their share?",
     "debtYes": "Yes, according to the agreement",
     "debtNo": "No, I'll absorb it",
-    "holderFixedOwner": "A personal account is always recorded in your name."
+    "holderFixedOwner": "A personal account is always recorded in your name.",
+    "createEntityOption": "＋ Create new entity…",
+    "titleCreateEntityModal": "New entity",
+    "subtitleCreateEntityModal": "It is added to your entities and selected in the account."
   },
   "cardsPage": {
     "title": "Cards",
@@ -649,7 +652,8 @@
       "listLabel": "Your organizations",
       "createNew": "+ Create organization",
       "viewerBadge": "Read-only",
-      "switchError": "Could not switch organization. Please try again."
+      "switchError": "Could not switch organization. Please try again.",
+      "personalLabel": "Personal"
     },
     "create": {
       "title": "Create organization",
@@ -687,7 +691,8 @@
       "loadError": "Could not refresh the member list.",
       "genericError": "Could not complete the action.",
       "roleSelectLabel": "Role of {nombre}",
-      "roleDisabledOnlyOwner": "This is the only owner: name another owner before changing the role."
+      "roleDisabledOnlyOwner": "This is the only owner: name another owner before changing the role.",
+      "personalOnlyViewer": "Only viewers can be invited to your Personal space."
     },
     "leave": {
       "menuLabel": "Leave “{nombre}”",

@@ -122,6 +122,40 @@ export const organizationRepository = {
   } ,
 
   /**
+   * Busca el espacio Personal de un usuario.
+   *
+   * @param userId - Identificador del dueño.
+   * @param tx - Instancia de transacción opcional.
+   * @returns El id de su organización personal, o `null` si todavía no la tiene.
+   */
+  async findPersonalDe( userId: string , tx: DBOrTx = db ): Promise< string | null > {
+    const [ fila ] = await tx
+      .select( { id: organizations.id } )
+      .from( organizations )
+      .where( eq( organizations.personalOwnerUserId , userId ) )
+      .limit( 1 ) ;
+
+    return( fila?.id ?? null ) ;
+  } ,
+
+  /**
+   * Indica si una organización es el espacio Personal de alguien.
+   *
+   * @param organizationId - Identificador de la organización.
+   * @param tx - Instancia de transacción opcional.
+   * @returns `true` si está marcada como personal.
+   */
+  async esPersonal( organizationId: string , tx: DBOrTx = db ): Promise< boolean > {
+    const [ fila ] = await tx
+      .select( { dueno: organizations.personalOwnerUserId } )
+      .from( organizations )
+      .where( eq( organizations.id , organizationId ) )
+      .limit( 1 ) ;
+
+    return( !!fila?.dueno ) ;
+  } ,
+
+  /**
    * Borra una organización con todos sus datos (RN-34), tabla por tabla y en el orden de `limpiarBase()`.
    *
    * No confía en el `ON DELETE CASCADE`: entre las tablas hijas hay claves `RESTRICT` y el orden en que

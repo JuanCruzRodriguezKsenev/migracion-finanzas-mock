@@ -12,8 +12,8 @@ import { useSession }                from "next-auth/react" ;
 import { useRouter }                 from "next/navigation" ;
 
 // Shared
-import { IconChevronDown , IconCheck } from "@/shared/ui/display/Icons/Icons" ;
-import { Popup }                       from "@/shared/ui/feedback/Popup/Popup" ;
+import { IconChevronDown , IconCheck , IconUser } from "@/shared/ui/display/Icons/Icons" ;
+import { Popup }                                   from "@/shared/ui/feedback/Popup/Popup" ;
 
 // Feature: Organizations
 import { consumirAvisoOrganizacion } from "./avisoOrganizacion" ;
@@ -24,9 +24,11 @@ import styles                         from "./OrganizationSwitcher.module.css" ;
 
 
 export interface OrganizacionDelSelector {
-  id:     string ;
-  nombre: string ;
-  rol:    string ;
+  id:          string ;
+  nombre:      string ;
+  rol:         string ;
+  /** Es un espacio Personal: va primero, con otro ícono y sin etiqueta de rol (RN-15). */
+  esPersonal?: boolean ;
 }
 
 export interface OrganizationSwitcherProps {
@@ -35,12 +37,14 @@ export interface OrganizationSwitcherProps {
   /** La persona es el único `owner` de la organización activa: no puede abandonarla (RN-29). */
   esUnicoOwner?:  boolean ;
   dict: {
-    ariaLabel:    string ;
-    listLabel:    string ;
-    createNew:    string ;
-    viewerBadge:  string ;
-    switchError:  string ;
-    create:       React.ComponentProps< typeof CreateOrganizationModal >[ "dict" ] ;
+    ariaLabel:     string ;
+    listLabel:     string ;
+    createNew:     string ;
+    viewerBadge:   string ;
+    switchError:   string ;
+    /** Nombre con el que se muestra el espacio Personal; sin él, el guardado en la base. */
+    personalLabel?: string ;
+    create:        React.ComponentProps< typeof CreateOrganizationModal >[ "dict" ] ;
     /** Textos de «Abandonar»; sin ellos el selector no ofrece esa línea. */
     leave?: React.ComponentProps< typeof LeaveOrganizationModal >[ "dict" ] & {
       menuLabel:         string ;
@@ -68,6 +72,12 @@ export function OrganizationSwitcher( { organizaciones , activaId , esUnicoOwner
   const [ error , setError ]          = useState( "" ) ;
 
   const activa = organizaciones.find( ( o ) => o.id === activaId ) ;
+
+  /** El espacio Personal se muestra con el nombre del diccionario, no con el guardado en la base. */
+  const nombreDe = ( org?: OrganizacionDelSelector ) => ( org?.esPersonal ? ( dict.personalLabel ?? org.nombre ) : ( org?.nombre ?? "" ) ) ;
+
+  // El dueño no abandona su espacio Personal: la línea «Abandonar» no se ofrece (RN-3)
+  const sinAbandonar = ( !!activa?.esPersonal && (activa.rol === "owner") ) ;
 
   // El selector vive en el layout y no se remonta al cambiar de organización: el aviso que dejó otra
   // pantalla (eliminar desde Configuración) se lee cuando cambia la organización activa.
@@ -185,7 +195,8 @@ export function OrganizationSwitcher( { organizaciones , activaId , esUnicoOwner
         aria-expanded={abierto}
         aria-label={dict.ariaLabel}
       >
-        <span className={styles.name}>{activa?.nombre ?? ""}</span>
+        {activa?.esPersonal && <IconUser size={12} className={styles.personalIcon} />}
+        <span className={styles.name}>{nombreDe( activa )}</span>
         <IconChevronDown size={12} className={styles.chevron} />
       </button>
 
@@ -210,7 +221,8 @@ export function OrganizationSwitcher( { organizaciones , activaId , esUnicoOwner
                 onClick={ () => cambiarA( org.id ) }
               >
                 <span className={styles.check}>{esActiva ? <IconCheck size={12} /> : null}</span>
-                <span className={styles.itemName}>{org.nombre}</span>
+                {org.esPersonal && <IconUser size={12} className={styles.personalIcon} />}
+                <span className={styles.itemName}>{nombreDe( org )}</span>
                 {(org.rol === "viewer") && <span className={styles.badge}>{dict.viewerBadge}</span>}
               </button>
             ) ;
@@ -231,7 +243,7 @@ export function OrganizationSwitcher( { organizaciones , activaId , esUnicoOwner
             {dict.createNew}
           </button>
 
-          {dict.leave && (
+          {dict.leave && !sinAbandonar && (
             <>
               <button
                 type="button"
@@ -246,7 +258,7 @@ export function OrganizationSwitcher( { organizaciones , activaId , esUnicoOwner
                   setAbandonando( true ) ;
                 } }
               >
-                {dict.leave.menuLabel.replace( "{nombre}" , activa?.nombre ?? "" )}
+                {dict.leave.menuLabel.replace( "{nombre}" , nombreDe( activa ) )}
               </button>
               {motivoSinAbandonar && <p id="organizacion-abandonar-motivo" className={styles.hint}>{motivoSinAbandonar}</p>}
             </>
@@ -267,7 +279,7 @@ export function OrganizationSwitcher( { organizaciones , activaId , esUnicoOwner
         <LeaveOrganizationModal
           isOpen={abandonando}
           onClose={ () => setAbandonando( false ) }
-          nombre={activa?.nombre ?? ""}
+          nombre={nombreDe( activa )}
           onLeft={alAbandonar}
           dict={dict.leave}
         />

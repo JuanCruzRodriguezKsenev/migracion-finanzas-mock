@@ -43,7 +43,7 @@ export default async function MainLayout( {children , params}: MainLayoutProps )
     membershipRepository.contarOwners( session.user.organizationId ) ,
   ] ) ;
 
-  const organizaciones = membresias.map( ( m ) => ( { id: m.organizationId , nombre: m.organizationName , rol: m.role } ) ) ;
+  const organizaciones = membresias.map( ( m ) => ( { id: m.organizationId , nombre: m.organizationName , rol: m.role , esPersonal: m.esPersonal } ) ) ;
   const t              = dict.organizations ;
 
   // Es el único `owner` de la organización activa: no puede abandonarla sin nombrar a otro antes (RN-29).

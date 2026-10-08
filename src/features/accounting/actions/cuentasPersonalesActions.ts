@@ -18,12 +18,14 @@ import { logger }             from "@/shared/lib/logger" ;
 import { db }                 from "@/shared/db/client" ;
 
 // Feature: Auth
-import { membershipRepository } from "@/features/auth/repositories/membershipRepository" ;
+import { organizationRepository } from "@/features/auth/repositories/organizationRepository" ;
+import { membershipRepository }   from "@/features/auth/repositories/membershipRepository" ;
 
 // Feature: Accounting
 import { createPersonalAccountSchema , compartirCuentaSchema , CreateAccountInput } from "../schemas/accounting.schema" ;
 import { Account , CuentaDeListado , EtiquetaCuenta , etiquetaDeCuenta }             from "../types" ;
 import { accountRepository , CuentaConEtiqueta }                                     from "../repositories/accountRepository" ;
+import { financialEntityRepository }                                                 from "../repositories/financialEntityRepository" ;
 import { getNextCode }                                                               from "../utils/accountCodes" ;
 
 
@@ -67,8 +69,9 @@ async function puedeEscribirEn( userId: string , organizationId: string ): Promi
 }
 
 /**
- * Crea una cuenta personal anclada en la organización activa. Nace privada (RN-2, RN-6) y siempre es de
- * activo. El saldo inicial se guarda directo, sin asiento.
+ * Crea una cuenta personal anclada en el espacio Personal del usuario (RN-9), y sólo se puede crear estando en
+ * él (A3). Nace privada (RN-2, RN-6) y siempre es de activo. El saldo inicial se guarda directo, sin asiento.
+ * Si trae `entityId`, la entidad tiene que ser del espacio Personal (RN-11).
  *
  * @param input - Nombre, divisa, saldo inicial en centavos y entidad opcional.
  * @returns La cuenta creada.
@@ -90,8 +93,24 @@ export async function crearCuentaPersonalAction( input: Omit< CreateAccountInput
   const { name , balance , currency , entityId } = validation.data ;
 
   try {
-    if( !(await puedeEscribirEn( userId , organizationId )) ) {
-      return( fail( "No tenés permiso para crear cuentas en esta organización." ) ) ;
+    const personalOrgId = await organizationRepository.findPersonalDe( userId ) ;
+
+    if( !personalOrgId ) {
+      return( fail( "Todavía no tenés un espacio Personal. Volvé a iniciar sesión." ) ) ;
+    }
+
+    // A3: las cuentas personales se crean desde el espacio Personal, no desde una organización real
+    if( organizationId !== personalOrgId ) {
+      return( fail( "Las cuentas personales se crean desde tu espacio Personal." ) ) ;
+    }
+
+    if( !(await puedeEscribirEn( userId , personalOrgId )) ) {
+      return( fail( "No tenés permiso para crear cuentas en tu espacio Personal." ) ) ;
+    }
+
+    // RN-11: la entidad elegida tiene que ser una entidad propia (del espacio Personal)
+    if( entityId && !(await financialEntityRepository.findById( entityId , personalOrgId )) ) {
+      return( fail( "La entidad elegida no es una de tus entidades propias." ) ) ;
     }
 
     // Dos intentos: si otra creación simultánea tomó el mismo código (23505) se recalcula una vez.
@@ -99,16 +118,16 @@ export async function crearCuentaPersonalAction( input: Omit< CreateAccountInput
       try {
         const cuenta = await db.transaction( async ( tx ) => {
           // El código se calcula contra TODAS las cuentas ancladas (de la organización y personales): comparten índice único.
-          const ancladas = await accountRepository.findTodasEnAncla( organizationId , tx ) ;
+          const ancladas = await accountRepository.findTodasEnAncla( personalOrgId , tx ) ;
 
           return( await accountRepository.crearPersonal( {
-            organizationId ,
-            ownerUserId: userId ,
-            code:        getNextCode( "asset" , ancladas ) ,
+            organizationId: personalOrgId ,
+            ownerUserId:    userId ,
+            code:           getNextCode( "asset" , ancladas ) ,
             name ,
-            balance:     ( balance || 0 ) ,
-            currency:    ( currency || "ARS" ) ,
-            entityId:    ( entityId || null ) ,
+            balance:        ( balance || 0 ) ,
+            currency:       ( currency || "ARS" ) ,
+            entityId:       ( entityId || null ) ,
           } , tx ) ) ;
         } ) ;
 

@@ -16,6 +16,7 @@ import { accounts , ledgerTransactions } from "@/features/accounting/schema.db" 
 // Feature: Auth
 import { membershipRepository }  from "@/features/auth/repositories/membershipRepository" ;
 import { googleSignInService }   from "@/features/auth/services/googleSignInService" ;
+import { crearEspacioPersonal }  from "@/features/auth/services/espacioPersonalService" ;
 import { userRepository }        from "@/features/auth/repositories/userRepository" ;
 import { organizations , memberships , users , invitations } from "@/features/auth/schema.db" ;
 
@@ -24,7 +25,8 @@ import {
   listarMiembrosAction ,
   invitarMiembroAction ,
   revocarInvitacionAction ,
-  quitarMiembroAction
+  quitarMiembroAction ,
+  cambiarRolAction
 } from "./membersActions" ;
 
 
@@ -119,7 +121,8 @@ describe( "membersActions — gestión de miembros e invitaciones" , () => {
       } ) ;
 
       expect( login.success ).toBe( true ) ;
-      const orgs = await membershipRepository.findByUser( ana.id ) ;
+      // Las dos organizaciones reales; además, al entrar se le asegura su espacio Personal (que va primero)
+      const orgs = ( await membershipRepository.findByUser( ana.id ) ).filter( ( o ) => !o.esPersonal ) ;
       expect( orgs.map( ( o ) => o.organizationId ).sort() ).toEqual( [ orgA , orgB ].sort() ) ;
     } ) ;
 
@@ -279,5 +282,65 @@ describe( "membersActions — gestión de miembros e invitaciones" , () => {
       expect( (await quitarMiembroAction( ownerA )).success ).toBe( false ) ;
       expect( await membershipRepository.findMembership( ownerA , orgA ) ).not.toBeNull() ;
     } ) ;
+  } ) ;
+} ) ;
+
+describe( "membersActions — espacio Personal (AC-7, A5)" , () => {
+  let personalId: string ;
+  let duenoId:    string ;
+
+  beforeEach( async () => {
+    vi.clearAllMocks() ;
+    await limpiarBase() ;
+
+    const [ casa ] = await db.insert( organizations ).values( { name: "Casa" , slug: "casa-miembros-personal" } ).returning() ;
+    duenoId        = ( await crearUsuarioConMembresia( { organizationId: casa.id , email: "dueno-personal@ejemplo.com" , role: "owner" } ) ).id ;
+    personalId     = await db.transaction( ( tx ) => crearEspacioPersonal( duenoId , tx ) ) ;
+    sesionDe( duenoId , personalId ) ;
+  } ) ;
+
+  afterAll( async () => {
+    await limpiarBase() ;
+  } ) ;
+
+  it( "AC-7: invitar como member u owner a Personal es rechazado; como viewer es aceptado" , async () => {
+    const comoMember = await invitarMiembroAction( { email: "contador@x.com" , rol: "member" } ) ;
+    const comoOwner  = await invitarMiembroAction( { email: "contador@x.com" , rol: "owner" } ) ;
+
+    expect( comoMember.success ).toBe( false ) ;
+    expect( comoOwner.success ).toBe( false ) ;
+    if( !comoMember.success ) {
+      expect( comoMember.error ).toBe( "Al espacio Personal sólo se invita como visualizador." ) ;
+    }
+    expect( await db.select().from( invitations ).where( eq( invitations.organizationId , personalId ) ) ).toHaveLength( 0 ) ;
+
+    const comoViewer = await invitarMiembroAction( { email: "contador@x.com" , rol: "viewer" } ) ;
+    expect( comoViewer.success ).toBe( true ) ;
+    expect( await db.select().from( invitations ).where( eq( invitations.organizationId , personalId ) ) ).toHaveLength( 1 ) ;
+  } ) ;
+
+  it( "A5: cambiar el rol de un viewer de Personal a member u owner es rechazado" , async () => {
+    const viewer = await crearUsuarioConMembresia( { organizationId: personalId , email: "viewer-personal@ejemplo.com" , role: "viewer" } ) ;
+
+    const aMember = await cambiarRolAction( { userId: viewer.id , rol: "member" } ) ;
+    const aOwner  = await cambiarRolAction( { userId: viewer.id , rol: "owner" } ) ;
+
+    expect( aMember.success ).toBe( false ) ;
+    expect( aOwner.success ).toBe( false ) ;
+    expect( (await membershipRepository.findMembership( viewer.id , personalId ))?.role ).toBe( "viewer" ) ;
+  } ) ;
+
+  it( "una organización común sigue admitiendo member y owner (la guarda es sólo del espacio)" , async () => {
+    const [ otra ] = await db.insert( organizations ).values( { name: "Otra" , slug: "otra-miembros-personal" } ).returning() ;
+    await membershipRepository.add( duenoId , otra.id , "owner" ) ;
+    sesionDe( duenoId , otra.id ) ;
+
+    expect( (await invitarMiembroAction( { email: "alguien@x.com" , rol: "member" } )).success ).toBe( true ) ;
+  } ) ;
+
+  it( "el dueño no puede quitarse ni dejar de ser owner de su espacio" , async () => {
+    expect( (await quitarMiembroAction( duenoId )).success ).toBe( false ) ;
+    expect( (await cambiarRolAction( { userId: duenoId , rol: "viewer" } )).success ).toBe( false ) ;
+    expect( (await membershipRepository.findMembership( duenoId , personalId ))?.role ).toBe( "owner" ) ;
   } ) ;
 } ) ;

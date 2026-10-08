@@ -8,6 +8,7 @@ import { limpiarBase }              from "@/shared/db/testCleanup" ;
 
 // Feature: Auth
 import { membershipRepository }        from "./membershipRepository" ;
+import { crearEspacioPersonal }        from "../services/espacioPersonalService" ;
 import { organizations , memberships } from "../schema.db" ;
 
 
@@ -76,6 +77,22 @@ describe( "membershipRepository" , () => {
     const nombres = lista.map( ( m ) => m.organizationName ) ;
     expect( nombres ).toContain( "Org Primaria" ) ;
     expect( nombres ).toContain( "Org Secundaria" ) ;
+  } ) ;
+
+  it( "RN-15: findByUser trae esPersonal y lista el espacio Personal primero aunque sea el más nuevo" , async () => {
+    await membershipRepository.add( userId , org2Id , "member" ) ;
+    const personalId = await crearEspacioPersonal( userId , db ) ;
+
+    const lista = await membershipRepository.findByUser( userId ) ;
+
+    expect( lista.length ).toBe( 3 ) ;
+    expect( lista[0].organizationId ).toBe( personalId ) ;
+    expect( lista[0].esPersonal ).toBe( true ) ;
+    expect( lista[0].role ).toBe( "owner" ) ;
+    expect( lista.slice( 1 ).every( ( m ) => !m.esPersonal ) ).toBe( true ) ;
+
+    // El resto conserva el orden de siempre: la membresía más reciente primero
+    expect( lista.slice( 1 ).map( ( m ) => m.organizationId ) ).toEqual( [ org2Id , org1Id ] ) ;
   } ) ;
 
   afterAll( async () => {

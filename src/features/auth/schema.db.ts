@@ -1,6 +1,6 @@
 // Librerías externas
-import { pgTable , uuid , varchar , text , integer , timestamp , uniqueIndex , index , check } from "drizzle-orm/pg-core" ;
-import { sql }                                                                                  from "drizzle-orm" ;
+import { pgTable , uuid , varchar , text , integer , timestamp , uniqueIndex , index , check , type AnyPgColumn } from "drizzle-orm/pg-core" ;
+import { sql }                                                                                                     from "drizzle-orm" ;
 
 
 /**
@@ -8,11 +8,15 @@ import { sql }                                                                  
  * Actúa como la entidad raíz para la delimitación lógica de datos de cada cliente.
  */
 export const organizations = pgTable( "organizations" , {
-  id:        uuid( "id" ).primaryKey().defaultRandom() , // Identificador único (UUID v7 generado por DB)
-  name:      varchar( "name" , {length: 255} ).notNull() ,
-  slug:      varchar( "slug" , {length: 255} ).notNull().unique() ,
-  createdAt: timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull()
-} ) ;
+  id:                  uuid( "id" ).primaryKey().defaultRandom() , // Identificador único (UUID v7 generado por DB)
+  name:                varchar( "name" , {length: 255} ).notNull() ,
+  slug:                varchar( "slug" , {length: 255} ).notNull().unique() ,
+  // Dueño del espacio «Personal»: nulo en las organizaciones reales. Un usuario tiene a lo sumo un espacio.
+  personalOwnerUserId: uuid( "personal_owner_user_id" ).references( (): AnyPgColumn => users.id , {onDelete: "cascade"} ) ,
+  createdAt:           timestamp( "created_at" , {withTimezone: true} ).defaultNow().notNull()
+} , ( table ) => { return( {
+  personalOwnerUnique: uniqueIndex( "organizations_personal_owner_unique" ).on( table.personalOwnerUserId ) ,
+} ) ; } ) ;
 
 /**
  * Definición del esquema para la tabla de Usuarios.

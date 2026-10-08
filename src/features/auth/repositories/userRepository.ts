@@ -165,7 +165,8 @@ export const userRepository = {
    * siga existiendo) y con `users`, y elige una fila según este orden de preferencia:
    * 1. La membresía de la organización `preferida` si existe;
    * 2. La de `users.lastOrganizationId`;
-   * 3. La más reciente (`memberships.createdAt` descendente).
+   * 3. Una organización real antes que el espacio Personal;
+   * 4. La más reciente (`memberships.createdAt` descendente).
    *
    * @param id - Identificador del usuario tal como viaja en el JWT.
    * @param preferida - Identificador opcional de organización preferida a priorizar.
@@ -187,6 +188,11 @@ export const userRepository = {
 
     orden.push(
       sql`CASE WHEN ${memberships.organizationId} = ${users.lastOrganizationId} THEN 0 ELSE 1 END`
+    ) ;
+
+    // Las organizaciones personales van al final: el destino por defecto nunca es «Personal» (RN-7)
+    orden.push(
+      sql`CASE WHEN ${organizations.personalOwnerUserId} IS NULL THEN 0 ELSE 1 END`
     ) ;
 
     orden.push( desc( memberships.createdAt ) ) ;

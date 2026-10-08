@@ -5,7 +5,7 @@
  */
 // Librerías externas
 import { describe , it , expect , beforeEach , afterEach } from "vitest" ;
-import { eq }                                              from "drizzle-orm" ;
+import { eq , and , isNotNull }                             from "drizzle-orm" ;
 
 // Shared
 import { crearUsuarioConMembresia } from "@/shared/db/testFixtures" ;
@@ -105,8 +105,9 @@ describe( "googleSignInService.resolverIdentidadGoogle" , () => {
     }
 
     // Comprobar membresías en ambas organizaciones
+    // Las dos organizaciones y el espacio Personal que se le asegura al entrar
     const m = await db.select().from( memberships ).where( eq( memberships.userId , usr.id ) ) ;
-    expect( m.length ).toBe( 2 ) ;
+    expect( m.length ).toBe( 3 ) ;
 
     const [ inv ] = await db.select().from( invitations ).where( eq( invitations.organizationId , orgId2 ) ) ;
     expect( inv.status ).toBe( "accepted" ) ;
@@ -209,7 +210,7 @@ describe( "googleSignInService.resolverIdentidadGoogle" , () => {
     expect( perfil.userId ).toBe( nuevoUserId ) ;
 
     // Verificar membresía
-    const [ m ] = await db.select().from( memberships ).where( eq( memberships.userId , nuevoUserId ) ) ;
+    const [ m ] = await db.select().from( memberships ).where( and( eq( memberships.userId , nuevoUserId ) , eq( memberships.organizationId , orgId1 ) ) ) ;
     expect( m.organizationId ).toBe( orgId1 ) ;
     expect( m.role ).toBe( "member" ) ;
 
@@ -370,10 +371,108 @@ describe( "googleSignInService.resolverIdentidadGoogle" , () => {
     }
 
     const userMembresias = await db.select().from( memberships ).where( eq( memberships.userId , userId ) ) ;
-    expect( userMembresias.length ).toBe( 2 ) ;
+    expect( userMembresias.length ).toBe( 3 ) ; // las dos invitaciones y su Personal
 
     const [ u ] = await db.select().from( users ).where( eq( users.id , userId ) ) ;
     // RN-14: lastOrganizationId fijado a la primera aceptada
     expect( [ orgId1 , orgId2 ] ).toContain( u.lastOrganizationId ) ;
+  } ) ;
+} ) ;
+
+describe( "googleSignInService — espacio Personal (AC-1, AC-2, A8)" , () => {
+  let orgId: string ;
+
+  beforeEach( async () => {
+    await limpiarBase() ;
+
+    const [ org ] = await db
+      .insert( organizations )
+      .values( { name: "Casa" , slug: "casa-personal-test" } )
+      .returning() ;
+    orgId = org.id ;
+  } ) ;
+
+  afterEach( async () => {
+    await limpiarBase() ;
+  } ) ;
+
+  it( "AC-1: un usuario nuevo con invitación queda con su espacio Personal y su destino es la organización invitada" , async () => {
+    await invitationRepository.crearInvitacion( {
+      organizationId: orgId ,
+      email:          "con-invitacion@ejemplo.com" ,
+      role:           "member" ,
+      expiresAt:      new Date( Date.now() + 86400000 )
+    } ) ;
+
+    const res = await googleSignInService.resolverIdentidadGoogle( {
+      sub:             "sub-con-invitacion" ,
+      email:           "con-invitacion@ejemplo.com" ,
+      emailVerificado: true
+    } ) ;
+
+    expect( res.success ).toBe( true ) ;
+    if( !res.success ){ return ; }
+
+    const personales = await db.select().from( organizations ).where( eq( organizations.personalOwnerUserId , res.value.userId ) ) ;
+    expect( personales.length ).toBe( 1 ) ;
+    expect( personales[0].name ).toBe( "Personal" ) ;
+
+    const [ membresia ] = await db.select().from( memberships ).where( and( eq( memberships.userId , res.value.userId ) , eq( memberships.organizationId , personales[0].id ) ) ) ;
+    expect( membresia.role ).toBe( "owner" ) ;
+
+    // RN-7: el espacio no se fija como organización activa
+    const [ u ] = await db.select().from( users ).where( eq( users.id , res.value.userId ) ) ;
+    expect( u.lastOrganizationId ).toBe( orgId ) ;
+  } ) ;
+
+  it( "AC-2 / A8: sin invitación sigue el rechazo y no queda ningún espacio Personal" , async () => {
+    const res = await googleSignInService.resolverIdentidadGoogle( {
+      sub:             "sub-sin-invitacion" ,
+      email:           "sin-invitacion@ejemplo.com" ,
+      emailVerificado: true
+    } ) ;
+
+    expect( res.success ).toBe( false ) ;
+    if( !res.success ){
+      expect( res.error ).toBe( "sin_acceso" ) ;
+    }
+
+    const personales = await db.select().from( organizations ).where( isNotNull( organizations.personalOwnerUserId ) ) ;
+    expect( personales.length ).toBe( 0 ) ;
+  } ) ;
+
+  it( "AC-2: un usuario existente sin ninguna membresía sigue rechazado y no se le crea el espacio" , async () => {
+    const [ huerfano ] = await db
+      .insert( users )
+      .values( { email: "huerfano-personal@ejemplo.com" , googleSub: "sub-huerfano-personal" } )
+      .returning() ;
+
+    const res = await googleSignInService.resolverIdentidadGoogle( {
+      sub:             "sub-huerfano-personal" ,
+      email:           "huerfano-personal@ejemplo.com" ,
+      emailVerificado: true
+    } ) ;
+
+    expect( res.success ).toBe( false ) ;
+
+    const personales = await db.select().from( organizations ).where( eq( organizations.personalOwnerUserId , huerfano.id ) ) ;
+    expect( personales.length ).toBe( 0 ) ;
+  } ) ;
+
+  it( "A9: un usuario con membresía y sin espacio lo recibe al entrar, y un segundo ingreso no lo duplica" , async () => {
+    const usr = await crearUsuarioConMembresia( { organizationId: orgId , email: "sin-espacio@ejemplo.com" , role: "member" } ) ;
+    await db.update( users ).set( { googleSub: "sub-sin-espacio" } ).where( eq( users.id , usr.id ) ) ;
+
+    for( let ingreso = 0 ; ingreso < 2 ; ingreso++ ) {
+      const res = await googleSignInService.resolverIdentidadGoogle( { sub: "sub-sin-espacio" , email: "sin-espacio@ejemplo.com" , emailVerificado: true } ) ;
+      expect( res.success ).toBe( true ) ;
+    }
+
+    const personales = await db.select().from( organizations ).where( eq( organizations.personalOwnerUserId , usr.id ) ) ;
+    expect( personales.length ).toBe( 1 ) ;
+
+    // El destino no cambia: sigue siendo la organización donde estaba
+    const [ u ] = await db.select().from( users ).where( eq( users.id , usr.id ) ) ;
+    expect( u.lastOrganizationId ).toBe( orgId ) ;
   } ) ;
 } ) ;

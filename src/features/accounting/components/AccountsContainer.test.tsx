@@ -253,9 +253,38 @@ describe( "AccountsContainer — vista «Mis cuentas» (plan 25, RN-16)" , () =>
     expect( await screen.findByText( "No autorizado." ) ).toBeDefined() ;
   } ) ;
 
-  it( "«Nueva cuenta propia» abre el formulario en modo personal (sin selector de tipo)" , async () => {
+  it( "AC-6: desde una organización «Mis cuentas» no tiene el botón de crear una cuenta propia" , async () => {
     preparar() ;
     abrirMisCuentas() ;
+    await screen.findByText( "Banco Ana" ) ;
+
+    expect( screen.queryByRole( "button" , {name: new RegExp( dict.accountsPage.btnNewPersonal )} ) ).toBeNull() ;
+    // sigue pudiendo compartir y dejar de compartir
+    expect( screen.getAllByRole( "button" , {name: dict.accountsPage.btnStopSharing} ) ).toHaveLength( 1 ) ;
+  } ) ;
+
+  it( "AC-12: en Personal la vista única es «Mis cuentas» (sin selector de vista ni alta de cuenta de la organización)" , async () => {
+    preparar() ;
+    render(
+      <NotificationsProvider>
+        <AccountsContainer accounts={[ makeAccount( idA , "Caja A" , 1000000 ) ]} cards={[]} loans={[]} financialEntities={[]} summaries={[]} dict={dict} lang="es" esPersonal={true} />
+      </NotificationsProvider>
+    ) ;
+
+    expect( await screen.findByText( "Banco Ana" ) ).toBeDefined() ;
+    expect( screen.queryByRole( "button" , {name: dict.accountsPage.viewOrganization} ) ).toBeNull() ;
+    expect( screen.queryByRole( "button" , {name: dict.accountsPage.viewMine} ) ).toBeNull() ;
+    expect( screen.queryByText( "Total Activos" ) ).toBeNull() ;
+    expect( screen.queryByRole( "button" , {name: /\+ Nueva Cuenta/} ) ).toBeNull() ;
+  } ) ;
+
+  it( "AC-3 / AC-4: en Personal «Nueva cuenta propia» abre el formulario en modo personal (sin selector de tipo)" , async () => {
+    preparar() ;
+    render(
+      <NotificationsProvider>
+        <AccountsContainer accounts={[]} cards={[]} loans={[]} financialEntities={[]} summaries={[]} dict={dict} lang="es" esPersonal={true} />
+      </NotificationsProvider>
+    ) ;
     await screen.findByText( "Banco Ana" ) ;
 
     fireEvent.click( screen.getByRole( "button" , {name: new RegExp( dict.accountsPage.btnNewPersonal )} ) ) ;
@@ -263,5 +292,19 @@ describe( "AccountsContainer — vista «Mis cuentas» (plan 25, RN-16)" , () =>
     const dialog = await screen.findByRole( "dialog" ) ;
     expect( within( dialog ).queryByLabelText( new RegExp( dict.accountsPage.formType ) ) ).toBeNull() ;
     expect( within( dialog ).getByLabelText( new RegExp( dict.accountsPage.formName ) ) ).toBeDefined() ;
+  } ) ;
+} ) ;
+
+describe( "AccountsContainer — ya no hay formulario de entidad suelto (plan 29, AC-4)" , () => {
+  it( "no hay botón «Nueva Entidad» y «Nueva Cuenta» es el único alta" , () => {
+    render(
+      <NotificationsProvider>
+        <AccountsContainer accounts={[ makeAccount( idA , "Caja A" , 1000000 ) ]} cards={[]} loans={[]} financialEntities={[]} summaries={[]} dict={dict} lang="es" />
+      </NotificationsProvider>
+    ) ;
+
+    expect( screen.queryByRole( "button" , {name: /Nueva Entidad/} ) ).toBeNull() ;
+    expect( screen.getByRole( "button" , {name: /Nueva Cuenta/} ) ).toBeDefined() ;
+    expect( screen.queryByText( "Registrar Entidad Financiera" ) ).toBeNull() ;
   } ) ;
 } ) ;

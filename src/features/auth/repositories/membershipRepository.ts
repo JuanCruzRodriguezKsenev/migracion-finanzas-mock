@@ -3,7 +3,7 @@
  * Repositorio para la gestión de membresías de usuarios en organizaciones (Capa DAL).
  */
 // Librerías externas
-import { eq , and , asc , desc , count } from "drizzle-orm" ;
+import { eq , and , asc , desc , count , sql } from "drizzle-orm" ;
 
 // Shared
 import { db , DBOrTx } from "@/shared/db/client" ;
@@ -23,6 +23,8 @@ export interface MembresiaConOrganizacion {
   organizationName: string ;
   role:             string ;
   createdAt:        Date ;
+  /** `true` si la organización es el espacio Personal de alguien (el propio o uno al que se fue invitado). */
+  esPersonal:       boolean ;
 }
 
 /**
@@ -42,6 +44,7 @@ export interface MiembroDeOrganizacion {
 export const membershipRepository = {
   /**
    * Obtiene todas las membresías de un usuario junto con el nombre de cada organización y su rol.
+   * Los espacios Personal van primero (RN-15); el resto, de la membresía más reciente a la más antigua.
    *
    * @param userId - Identificador del usuario.
    * @param tx - Instancia de transacción opcional.
@@ -55,11 +58,15 @@ export const membershipRepository = {
           organizationName: organizations.name ,
           role:             memberships.role ,
           createdAt:        memberships.createdAt ,
+          esPersonal:       sql< boolean >`(${organizations.personalOwnerUserId} IS NOT NULL)` ,
         } )
         .from( memberships )
         .innerJoin( organizations , eq(memberships.organizationId , organizations.id) )
         .where( eq(memberships.userId , userId) )
-        .orderBy( desc( memberships.createdAt ) )
+        .orderBy(
+          sql`CASE WHEN ${organizations.personalOwnerUserId} IS NULL THEN 1 ELSE 0 END` ,
+          desc( memberships.createdAt )
+        )
     ) ;
   } ,
 

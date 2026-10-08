@@ -20,6 +20,7 @@ import { getAccountsAction , createAccountAction }                              
 // Feature: Auth
 import { organizations }                          from "@/features/auth/schema.db" ;
 import { membershipRepository }                   from "@/features/auth/repositories/membershipRepository" ;
+import { crearEspacioPersonal }                   from "@/features/auth/services/espacioPersonalService" ;
 import { quitarMiembroAction , cambiarRolAction } from "@/features/organizations/actions/membersActions" ;
 import { abandonarOrganizacionAction }            from "@/features/organizations/actions/organizationActions" ;
 
@@ -289,9 +290,10 @@ describe( "cuentas personales — modelo y visibilidad (plan 23)" , () => {
       return( n ) ;
     }
 
-    it( "nace privada, de activo, con el saldo directo y sin asiento de apertura" , async () => {
-      sesionDe( beto , orgA ) ;
-      const antes = await asientosDe( orgA ) ;
+    it( "nace privada, de activo, con el saldo directo y sin asiento de apertura, anclada en el espacio Personal (plan 29)" , async () => {
+      const personalBeto = await db.transaction( ( tx ) => crearEspacioPersonal( beto , tx ) ) ;
+      sesionDe( beto , personalBeto ) ;
+      const antes = await asientosDe( personalBeto ) ;
 
       const res = await crearCuentaPersonalAction( { name: "Caja de Beto" , balance: 25000 , currency: "ARS" } ) ;
 
@@ -300,21 +302,23 @@ describe( "cuentas personales — modelo y visibilidad (plan 23)" , () => {
 
       expect( res.value.type ).toBe( "asset" ) ;
       expect( res.value.ownerUserId ).toBe( beto ) ;
-      expect( res.value.organizationId ).toBe( orgA ) ;
+      expect( res.value.organizationId ).toBe( personalBeto ) ;
       expect( res.value.balance ).toBe( 25000 ) ;
-      expect( await asientosDe( orgA ) ).toBe( antes ) ;
+      expect( await asientosDe( personalBeto ) ).toBe( antes ) ;
       expect( await db.select().from( ledgerEntries ) ).toEqual( [] ) ;
       expect( await db.select().from( accountShares ).where( eq( accountShares.accountId , res.value.id ) ) ).toEqual( [] ) ;
     } ) ;
 
-    it( "un viewer no puede crear (el rol sale de la base, no del token)" , async () => {
+    it( "un viewer no puede crear (desde la organización, el servidor rechaza: plan 29, A3)" , async () => {
       sesionDe( lector , orgA ) ;
 
       expect( (await crearCuentaPersonalAction( { name: "Intento" } )).success ).toBe( false ) ;
     } ) ;
 
-    it( "el código no choca con los de la organización ni con otras personales de la ancla" , async () => {
-      sesionDe( beto , orgA ) ;
+    it( "el código no choca con los de la ancla ni con otras personales de la ancla" , async () => {
+      const personalBeto = await db.transaction( ( tx ) => crearEspacioPersonal( beto , tx ) ) ;
+      await crearCuentaPersonal( { ownerUserId: beto , organizationId: personalBeto , name: "Previa" , code: "1.1.01.01" } ) ;
+      sesionDe( beto , personalBeto ) ;
 
       const a = await crearCuentaPersonalAction( { name: "Una" } ) ;
       const b = await crearCuentaPersonalAction( { name: "Otra" } ) ;
@@ -324,7 +328,8 @@ describe( "cuentas personales — modelo y visibilidad (plan 23)" , () => {
     } ) ;
 
     it( "creaciones simultáneas terminan todas con códigos distintos" , async () => {
-      sesionDe( beto , orgA ) ;
+      const personalBeto = await db.transaction( ( tx ) => crearEspacioPersonal( beto , tx ) ) ;
+      sesionDe( beto , personalBeto ) ;
 
       const resultados = await Promise.all( [ 1 , 2 ].map( ( i ) => crearCuentaPersonalAction( { name: `Simultánea ${i}` } ) ) ) ;
       const codigos    = resultados.filter( ( r ) => r.success ).map( ( r ) => r.success && r.value.code ) ;

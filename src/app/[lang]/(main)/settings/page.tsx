@@ -15,7 +15,8 @@ import styles            from "./page.module.css" ;
 import { SettingsContainer } from "@/features/settings/components/SettingsContainer" ;
 
 // Feature: Auth
-import { membershipRepository } from "@/features/auth/repositories/membershipRepository" ;
+import { organizationRepository } from "@/features/auth/repositories/organizationRepository" ;
+import { membershipRepository }   from "@/features/auth/repositories/membershipRepository" ;
 
 // Feature: Organizations
 import { listarHabilitacionesAction } from "@/features/organizations/actions/habilitacionesActions" ;
@@ -66,6 +67,9 @@ export default async function SettingsPage( {params}: SettingsPageProps ) {
   // La pestaña Caja la ven los tres roles cuando la caja común está activa (RN-25, S-AN)
   const cajaRes           = await obtenerCajaAction() ;
 
+  // En el espacio Personal no hay Organización, Habilitaciones, Acuerdo, Saldos ni Caja (RN-16)
+  const esPersonal        = ( session?.user?.organizationId ? await organizationRepository.esPersonal( session.user.organizationId ) : false ) ;
+
   return(
     <div className={styles.container}>
       <SettingsContainer
@@ -82,6 +86,7 @@ export default async function SettingsPage( {params}: SettingsPageProps ) {
         acuerdo={acuerdoRes?.success ? acuerdoRes.value : null}
         saldos={saldosRes.success ? saldosRes.value : null}
         caja={cajaRes.success ? cajaRes.value : null}
+        esPersonal={esPersonal}
       />
     </div>
   ) ;

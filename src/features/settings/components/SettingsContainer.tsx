@@ -57,6 +57,8 @@ export interface SettingsContainerProps {
   saldos?:         VistaSaldos | null ;
   /** Caja común, para los tres roles; `null` si la caja no está activa (RN-25). */
   caja?:           VistaCaja | null ;
+  /** La organización activa es un espacio Personal: sin Organización, Habilitaciones, Acuerdo, Saldos ni Caja (RN-16). */
+  esPersonal?:     boolean ;
 }
 
 type PestanaConfiguracion = "categories" | "ledger" | "members" | "organization" | "habilitaciones" | "acuerdo" | "saldos" | "caja" ;
@@ -78,15 +80,16 @@ export function SettingsContainer( {
   acuerdo = null ,
   saldos = null ,
   caja = null ,
+  esPersonal = false ,
 }: SettingsContainerProps ) {
   const [ activeTab , setActiveTab ] = useState< PestanaConfiguracion >( "categories" ) ;
 
   const mostrarMiembros       = ( esOwner && !!miembros ) ;
-  const mostrarOrganizacion   = ( esOwner && !!organizacion ) ;
-  const mostrarHabilitaciones = ( ((rol === "owner") || (rol === "member")) && !!habilitaciones ) ;
-  const mostrarAcuerdo        = ( ((rol === "owner") || (rol === "member")) && !!acuerdo ) ;
-  const mostrarSaldos         = ( !!saldos && saldos.visible ) ;
-  const mostrarCaja           = ( !!caja && caja.visible ) ;
+  const mostrarOrganizacion   = ( !esPersonal && esOwner && !!organizacion ) ;
+  const mostrarHabilitaciones = ( !esPersonal && ((rol === "owner") || (rol === "member")) && !!habilitaciones ) ;
+  const mostrarAcuerdo        = ( !esPersonal && ((rol === "owner") || (rol === "member")) && !!acuerdo ) ;
+  const mostrarSaldos         = ( !esPersonal && !!saldos && saldos.visible ) ;
+  const mostrarCaja           = ( !esPersonal && !!caja && caja.visible ) ;
 
   const settingsTabs = [
     { key: "categories"  , label: dict.settingsPage.tabCategories } ,
@@ -126,6 +129,7 @@ export function SettingsContainer( {
           currentUserId={currentUserId}
           lang={lang}
           dict={dict.organizations.members}
+          soloVisualizador={esPersonal}
         />
       ) : ( (activeTab === "organization") && mostrarOrganizacion ) ? (
         <OrganizationPanel

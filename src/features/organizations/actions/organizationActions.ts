@@ -8,15 +8,13 @@
 
 // Librerías externas
 import { getServerSession } from "next-auth" ;
-import { eq }               from "drizzle-orm" ;
 import { revalidatePath }   from "next/cache" ;
 
 // Shared
 import { ok , fail , Result } from "@/shared/lib/result" ;
-import { generarSlug }        from "@/shared/db/bootstrap" ;
 import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
-import { db , DBOrTx }        from "@/shared/db/client" ;
+import { db }                 from "@/shared/db/client" ;
 
 // Feature: Accounting
 import { provisionarOrganizacion } from "@/features/accounting/services/organizationProvisioningService" ;
@@ -27,6 +25,7 @@ import { habilitacionRepository } from "@/features/auth/repositories/habilitacio
 import { organizationRepository } from "@/features/auth/repositories/organizationRepository" ;
 import { membershipRepository }   from "@/features/auth/repositories/membershipRepository" ;
 import { userRepository }         from "@/features/auth/repositories/userRepository" ;
+import { slugLibre }              from "@/features/auth/services/slugLibre" ;
 import { organizations }          from "@/features/auth/schema.db" ;
 
 // Feature: Notifications
@@ -70,26 +69,6 @@ export async function listarOrganizacionesAction(): Promise<
     organizaciones: membresias.map( ( m ) => ( { id: m.organizationId , nombre: m.organizationName , rol: m.role } ) ) ,
     activaId:       session.user.organizationId ,
   } ) ) ;
-}
-
-/**
- * Genera un slug libre: si el derivado del nombre ya existe, agrega un sufijo corto aleatorio.
- */
-async function slugLibre( nombre: string , tx: DBOrTx ): Promise< string > {
-  const base = ( generarSlug( nombre ) || "organizacion" ) ;
-
-  for( let intento = 0 ; intento < 5 ; intento++ ) {
-    const candidato = ( intento === 0 ) ? base : `${base}-${Math.random().toString( 36 ).slice( 2 , 6 )}` ;
-    const [ existente ] = await tx
-      .select( { id: organizations.id } )
-      .from( organizations )
-      .where( eq( organizations.slug , candidato ) )
-      .limit( 1 ) ;
-
-    if( !existente ) { return( candidato ) ; }
-  }
-
-  return( `${base}-${Date.now().toString( 36 )}` ) ;
 }
 
 /**
@@ -170,6 +149,10 @@ export async function renombrarOrganizacionAction(
     return( fail( owner.error ) ) ;
   }
 
+  if( await organizationRepository.esPersonal( owner.value.organizationId ) ) {
+    return( fail( "El espacio Personal no se renombra." ) ) ;
+  }
+
   const validation = renombrarSchema.safeParse( rawInput ) ;
 
   if( !validation.success ) {
@@ -215,6 +198,10 @@ export async function abandonarOrganizacionAction(): Promise< Result< CambioDeOr
 
       if( !membresia ) {
         return( fail( "No autorizado." ) ) ;
+      }
+
+      if( (await organizationRepository.findPersonalDe( userId , tx )) === organizationId ) {
+        return( fail( "No podés abandonar tu espacio Personal." ) ) ;
       }
 
       if( (await membershipRepository.contarPorUsuario( userId , tx )) <= 1 ) {
@@ -264,6 +251,10 @@ export async function eliminarOrganizacionAction(
 
   if( !owner.success ) {
     return( fail( owner.error ) ) ;
+  }
+
+  if( await organizationRepository.esPersonal( owner.value.organizationId ) ) {
+    return( fail( "El espacio Personal no se elimina." ) ) ;
   }
 
   const validation = eliminarSchema.safeParse( rawInput ) ;

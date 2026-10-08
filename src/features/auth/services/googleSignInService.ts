@@ -14,9 +14,10 @@ import { db }                 from "@/shared/db/client" ;
 import { profiles } from "@/features/profile/schema.db" ;
 
 // Feature: Auth
-import { invitationRepository } from "../repositories/invitationRepository" ;
-import { userRepository }       from "../repositories/userRepository" ;
-import { memberships }          from "../schema.db" ;
+import { invitationRepository }    from "../repositories/invitationRepository" ;
+import { userRepository }          from "../repositories/userRepository" ;
+import { asegurarEspacioPersonal } from "./espacioPersonalService" ;
+import { memberships }             from "../schema.db" ;
 
 
 export interface ResolverIdentidadGoogleParams {
@@ -142,6 +143,10 @@ export const googleSignInService = {
           if( !algunaMembresia ){
             throw( new RollbackError( "sin_acceso" ) ) ;
           }
+
+          // 8. Con acceso comprobado, asegurar el espacio Personal (idempotente). Va después del chequeo anterior:
+          //    si se creara antes, ese chequeo dejaría de rechazar a quien no tiene invitación (RN-6).
+          await asegurarEspacioPersonal( usuario.id , tx ) ;
 
           return( ok( { userId: usuario.id } ) ) ;
         } )

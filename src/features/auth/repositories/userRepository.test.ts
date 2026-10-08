@@ -8,6 +8,7 @@ import { db }                       from "@/shared/db/client" ;
 import { limpiarBase }              from "@/shared/db/testCleanup" ;
 
 // Feature: Auth
+import { crearEspacioPersonal }                from "../services/espacioPersonalService" ;
 import { organizations , users , memberships } from "../schema.db" ;
 import { userRepository }                      from "./userRepository" ;
 
@@ -230,6 +231,46 @@ describe( "userRepository" , () => {
     expect( actualizado?.passwordHash ).toBe( "1".repeat( 128 ) ) ;
     expect( actualizado?.salt ).toBe( "fedcba9876543210fedcba9876543210" ) ;
     expect( actualizado?.hashParams ).toBe( "scrypt$131072$8$1$64" ) ;
+  } ) ;
+
+  /**
+   * AC-11: el espacio Personal nunca es el destino por defecto, aunque sea la membresía más nueva.
+   */
+  describe( "AC-11 — destino al entrar con espacio Personal" , () => {
+    it( "con lastOrganizationId gana esa organización" , async () => {
+      await crearEspacioPersonal( userId , db ) ;
+
+      const identidad = await userRepository.findIdentidadVigente( userId ) ;
+
+      expect( identidad?.organizationId ).toBe( orgId ) ;
+    } ) ;
+
+    it( "sin lastOrganizationId, una organización real va antes que la personal aunque la personal sea más nueva" , async () => {
+      await db.update( users ).set( {lastOrganizationId: null} ).where( eq(users.id , userId) ) ;
+      await crearEspacioPersonal( userId , db ) ;
+
+      const identidad = await userRepository.findIdentidadVigente( userId ) ;
+
+      expect( identidad?.organizationId ).toBe( orgId ) ;
+    } ) ;
+
+    it( "si la única membresía es la personal, el destino es la personal" , async () => {
+      const personalId = await crearEspacioPersonal( userId , db ) ;
+      await db.update( users ).set( {lastOrganizationId: null} ).where( eq(users.id , userId) ) ;
+      await db.delete( memberships ).where( eq(memberships.organizationId , orgId) ) ;
+
+      const identidad = await userRepository.findIdentidadVigente( userId ) ;
+
+      expect( identidad?.organizationId ).toBe( personalId ) ;
+    } ) ;
+
+    it( "con preferida = la personal gana la personal" , async () => {
+      const personalId = await crearEspacioPersonal( userId , db ) ;
+
+      const identidad = await userRepository.findIdentidadVigente( userId , personalId ) ;
+
+      expect( identidad?.organizationId ).toBe( personalId ) ;
+    } ) ;
   } ) ;
 
   afterAll( async () => {

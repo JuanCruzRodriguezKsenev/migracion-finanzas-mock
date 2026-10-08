@@ -31,9 +31,11 @@ import styles from "./MembersPanel.module.css" ;
 
 
 export interface MembersPanelProps {
-  initialData:   ListadoMiembros ;
-  currentUserId: string ;
-  lang:          string ;
+  initialData:       ListadoMiembros ;
+  currentUserId:     string ;
+  lang:              string ;
+  /** Espacio Personal: sólo se invita (y se deja) como visualizador (RN-4). */
+  soloVisualizador?: boolean ;
   dict: {
     title:                   string ;
     subtitle:                string ;
@@ -62,6 +64,8 @@ export interface MembersPanelProps {
     removeConfirmSubmit:     string ;
     loadError:               string ;
     genericError:            string ;
+    /** Aviso del espacio Personal; sin él, no se muestra. */
+    personalOnlyViewer?:     string ;
   } ;
 }
 
@@ -70,7 +74,7 @@ type RolInvitable = "owner" | "member" | "viewer" ;
 /**
  * Panel de gestión de miembros e invitaciones de la organización activa.
  */
-export function MembersPanel( { initialData , currentUserId , lang , dict }: MembersPanelProps ) {
+export function MembersPanel( { initialData , currentUserId , lang , dict , soloVisualizador = false }: MembersPanelProps ) {
   const router                                  = useRouter() ;
   const [ data , setData ]                      = useState< ListadoMiembros >( initialData ) ;
   const [ cargando , setCargando ]              = useState( false ) ;
@@ -79,7 +83,7 @@ export function MembersPanel( { initialData , currentUserId , lang , dict }: Mem
 
   const [ invitando , setInvitando ]            = useState( false ) ;
   const [ emailInvitado , setEmailInvitado ]    = useState( "" ) ;
-  const [ rolInvitado , setRolInvitado ]        = useState< RolInvitable >( "member" ) ;
+  const [ rolInvitado , setRolInvitado ]        = useState< RolInvitable >( soloVisualizador ? "viewer" : "member" ) ;
   const [ errorInvitar , setErrorInvitar ]      = useState( "" ) ;
 
   const [ rolesPendientes , setRolesPendientes ] = useState< Record< string , RolInvitable > >( {} ) ;
@@ -110,7 +114,7 @@ export function MembersPanel( { initialData , currentUserId , lang , dict }: Mem
 
   const abrirInvitar = () => {
     setEmailInvitado( "" ) ;
-    setRolInvitado( "member" ) ;
+    setRolInvitado( soloVisualizador ? "viewer" : "member" ) ;
     setErrorInvitar( "" ) ;
     setInvitando( true ) ;
   } ;
@@ -267,8 +271,8 @@ export function MembersPanel( { initialData , currentUserId , lang , dict }: Mem
                   disabled={unicoOwner || cambiandoRol || cargando}
                   onChange={ ( e ) => handleCambiarRol( m , e.target.value as RolInvitable ) }
                 >
-                  <option value="owner">{dict.roleOwner}</option>
-                  <option value="member">{dict.roleMember}</option>
+                  {( !soloVisualizador || (m.rol === "owner") ) && <option value="owner">{dict.roleOwner}</option>}
+                  {( !soloVisualizador || (m.rol === "member") ) && <option value="member">{dict.roleMember}</option>}
                   <option value="viewer">{dict.roleViewer}</option>
                 </FormSelect>
               </div>
@@ -332,10 +336,12 @@ export function MembersPanel( { initialData , currentUserId , lang , dict }: Mem
               value={rolInvitado}
               onChange={ ( e ) => setRolInvitado( e.target.value as RolInvitable ) }
             >
-              <option value="member">{dict.roleMember}</option>
+              {!soloVisualizador && <option value="member">{dict.roleMember}</option>}
               <option value="viewer">{dict.roleViewer}</option>
-              <option value="owner">{dict.roleOwner}</option>
+              {!soloVisualizador && <option value="owner">{dict.roleOwner}</option>}
             </FormSelect>
+
+            {soloVisualizador && dict.personalOnlyViewer && <p className={styles.hint}>{dict.personalOnlyViewer}</p>}
 
           <FormActions
             onCancel={ () => setInvitando( false ) }

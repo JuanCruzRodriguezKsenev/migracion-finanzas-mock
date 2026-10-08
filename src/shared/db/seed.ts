@@ -30,6 +30,8 @@ import { loans , loanAccounts } from "@/features/loans/schema.db" ;
 import { subscriptions } from "@/features/subscriptions/schema.db" ;
 
 // Feature: Auth
+import { organizationRepository }              from "@/features/auth/repositories/organizationRepository" ;
+import { crearEspacioPersonal }                from "@/features/auth/services/espacioPersonalService" ;
 import { organizations , users , memberships } from "@/features/auth/schema.db" ;
 import { hashPassword }                        from "@/features/auth/services/authService" ;
 
@@ -122,6 +124,20 @@ async function main() {
       } ) ;
 
     console.log( "Membresía 'owner' demo configurada con éxito." ) ;
+
+    // 3.6 Espacio Personal (RN-2). La limpieza de arriba borró el catálogo de todas las organizaciones, también el de
+    // un Personal previo: se elimina y se recrea con su catálogo, para que el seed siga siendo idempotente.
+    await db.transaction( async ( tx ) => {
+      const personalPrevio = await organizationRepository.findPersonalDe( usuario.id , tx ) ;
+
+      if( personalPrevio ) {
+        await organizationRepository.eliminarCompleta( personalPrevio , tx ) ;
+      }
+
+      await crearEspacioPersonal( usuario.id , tx ) ;
+    } ) ;
+
+    console.log( "Espacio Personal demo creado con éxito." ) ;
 
     // 4. Crear Perfil y Preferencias asociadas en Argentina/ARS (idempotente)
     await db

@@ -19,6 +19,7 @@ import { accountRepository } from "@/features/accounting/repositories/accountRep
 
 // Feature: Auth
 import { habilitacionRepository } from "@/features/auth/repositories/habilitacionRepository" ;
+import { organizationRepository }  from "@/features/auth/repositories/organizationRepository" ;
 import { membershipRepository }    from "@/features/auth/repositories/membershipRepository" ;
 import { invitationRepository }    from "@/features/auth/repositories/invitationRepository" ;
 import { userRepository }          from "@/features/auth/repositories/userRepository" ;
@@ -30,6 +31,9 @@ import { notificationRepository } from "@/features/notifications/repositories/no
 import { invitarMiembroSchema , cambiarRolSchema , InvitarMiembroInput , CambiarRolInput } from "../schemas/organization.schema" ;
 import { exigirOwner }                                                                     from "../services/exigirOwner" ;
 
+
+/** Rechazo al invitar o ascender a alguien con un rol que escribe en el espacio Personal (RN-3). */
+const MENSAJE_SOLO_VISUALIZADOR = "Al espacio Personal sólo se invita como visualizador." ;
 
 /** Vigencia de una invitación: siete días. */
 const VIGENCIA_INVITACION_MS = ( 7 * 24 * 60 * 60 * 1000 ) ;
@@ -106,6 +110,11 @@ export async function invitarMiembroAction(
 
   const { email , rol }             = validation.data ;
   const { organizationId , userId } = owner.value ;
+
+  // RN-3: al espacio Personal sólo se invita como visualizador
+  if( (rol !== "viewer") && (await organizationRepository.esPersonal( organizationId )) ) {
+    return( fail( MENSAJE_SOLO_VISUALIZADOR ) ) ;
+  }
 
   try {
     return( await db.transaction( async ( tx ) => {
@@ -248,6 +257,11 @@ export async function cambiarRolAction( rawInput: CambiarRolInput ): Promise< Re
 
   const { userId , rol }                           = validation.data ;
   const { organizationId , userId: solicitanteId } = owner.value ;
+
+  // RN-3: en el espacio Personal el único rol invitable es visualizador (el dueño sigue siendo el único owner)
+  if( (rol !== "viewer") && (await organizationRepository.esPersonal( organizationId )) ) {
+    return( fail( MENSAJE_SOLO_VISUALIZADOR ) ) ;
+  }
 
   try {
     return( await db.transaction( async ( tx ) => {

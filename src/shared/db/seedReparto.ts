@@ -26,6 +26,7 @@ import { organizationAgreements , agreementPercentages } from "@/features/splits
 
 // Feature: Auth
 import { organizationRepository } from "@/features/auth/repositories/organizationRepository" ;
+import { asegurarEspacioPersonal } from "@/features/auth/services/espacioPersonalService" ;
 import { organizations , users , memberships } from "@/features/auth/schema.db" ;
 import { hashPassword } from "@/features/auth/services/authService" ;
 
@@ -90,6 +91,9 @@ async function main() {
       idPorEmail.set( miembro.email , usuario.id ) ;
 
       await db.insert( memberships ).values( {userId: usuario.id , organizationId: org.id , role: miembro.role} ) ;
+
+      // Espacio Personal de cada uno (RN-2): idempotente, no se toca si ya existe
+      await asegurarEspacioPersonal( usuario.id , db ) ;
 
       await db
         .insert( profiles )

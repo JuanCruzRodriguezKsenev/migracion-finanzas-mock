@@ -10,11 +10,17 @@ import { FormSelect }         from "@/shared/ui/forms/Form/FormSelect" ;
 import { Button }             from "@/shared/ui/display/Button/Button" ;
 import { FormInput }          from "@/shared/ui/forms/Form/FormInput" ;
 import { FormError }          from "@/shared/ui/forms/Form/FormError" ;
+import { Modal }              from "@/shared/ui/feedback/Modal/Modal" ;
 
 // Feature: Accounting
-import { crearCuentaPersonalAction } from "../actions/cuentasPersonalesActions" ;
-import { createAccountAction }       from "../actions/accountingActions" ;
-import styles                        from "./CreateAccountForm.module.css" ;
+import { CreateFinancialEntityForm , EntidadCreada } from "./CreateFinancialEntityForm" ;
+import { crearCuentaPersonalAction }                 from "../actions/cuentasPersonalesActions" ;
+import { createAccountAction }                       from "../actions/accountingActions" ;
+import styles                                        from "./CreateAccountForm.module.css" ;
+
+
+/** Valor reservado de la opción «Crear entidad nueva…»: nunca se guarda como entidad ni viaja al servidor. */
+const OPCION_ENTIDAD_NUEVA = "__nueva__" ;
 
 
 interface CreateAccountFormProps {
@@ -41,6 +47,11 @@ export function CreateAccountForm( {
   const [ type , setType ]               = useState( "asset" ) ;
   const [ balance , setBalance ]         = useState( "" ) ;
   const [ selectedEntityId , setSelectedEntityId ] = useState( defaultEntityId || "" ) ;
+
+  // Alta de entidad sin salir del formulario (RN-14): lo escrito acá se conserva, el modal se monta aparte
+  const [ creandoEntidad , setCreandoEntidad ]       = useState( false ) ;
+  const [ entidadesCreadas , setEntidadesCreadas ]   = useState< EntidadCreada[] >( [] ) ;
+  const entidades = [ ...financialEntities , ...entidadesCreadas.filter( ( c ) => !financialEntities.some( ( e ) => e.id === c.id ) ) ] ;
 
   // Sincronizar preselección de entidad ante cambios de prop
   const [ prevDefaultEntityId , setPrevDefaultEntityId ] = useState( defaultEntityId ) ;
@@ -92,7 +103,14 @@ export function CreateAccountForm( {
     } ) ;
   } ;
 
+  const handleEntidadCreada = ( entidad: EntidadCreada ) => {
+    setEntidadesCreadas( ( prev ) => [ ...prev , entidad ] ) ;
+    setSelectedEntityId( entidad.id ) ;
+    setCreandoEntidad( false ) ;
+  } ;
+
   return(
+    <>
     <form className={styles.form} onSubmit={handleSubmit}>
       <h3 className={styles.formTitle}>{ dict.formTitle || "Crear Cuenta" }</h3>
 
@@ -125,14 +143,21 @@ export function CreateAccountForm( {
         <FormSelect
           label={dict.formInstitution || "Entidad Financiera"}
           value={selectedEntityId}
-          onChange={ ( e ) => setSelectedEntityId( e.target.value ) }
+          onChange={ ( e ) => {
+            if( e.target.value === OPCION_ENTIDAD_NUEVA ) {
+              setCreandoEntidad( true ) ;
+              return ;
+            }
+            setSelectedEntityId( e.target.value ) ;
+          } }
           disabled={isTransitioning}
           required
         >
           <option value="">Seleccionar Entidad...</option>
-          {financialEntities.map( ( ent ) => (
+          {entidades.map( ( ent ) => (
             <option key={ent.id} value={ent.id}>{ ent.name }</option>
           ) )}
+          <option value={OPCION_ENTIDAD_NUEVA}>{ dict.createEntityOption }</option>
         </FormSelect>
       </div>
 
@@ -153,5 +178,19 @@ export function CreateAccountForm( {
         { isTransitioning ? "Procesando..." : ( dict.btnCreate || "Crear Cuenta" ) }
       </Button>
     </form>
+
+    <Modal
+      isOpen={creandoEntidad}
+      onClose={ () => setCreandoEntidad( false ) }
+      title={dict.titleCreateEntityModal}
+      subtitle={dict.subtitleCreateEntityModal}
+    >
+      <CreateFinancialEntityForm
+        dict={dict}
+        withOwnAccount={false}
+        onSuccess={handleEntidadCreada}
+      />
+    </Modal>
+    </>
   ) ;
 }

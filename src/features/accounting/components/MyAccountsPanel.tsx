@@ -37,9 +37,11 @@ import styles                   from "./MyAccountsPanel.module.css" ;
 interface MyAccountsPanelProps {
   dict:              Awaited< ReturnType< typeof getDictionary > >["accountsPage"] ;
   financialEntities: FinancialEntity[] ;
+  /** Sólo en el espacio Personal se crean cuentas propias (RN-9): desde una organización, el botón no existe. */
+  esPersonal?:       boolean ;
 }
 
-export function MyAccountsPanel( {dict , financialEntities}: MyAccountsPanelProps ) {
+export function MyAccountsPanel( {dict , financialEntities , esPersonal = false}: MyAccountsPanelProps ) {
   const { isContentVisible }                   = useMetricsVisibility() ;
   const [ isPending , startTransition ]        = useTransition() ;
   const [ cuentas , setCuentas ]               = useState< CuentaPersonalVista[] | null >( null ) ;
@@ -92,11 +94,13 @@ export function MyAccountsPanel( {dict , financialEntities}: MyAccountsPanelProp
 
   return(
     <section className={styles.panel} aria-label={dict.viewMine}>
-      <div className={styles.toolbar}>
-        <Button onClick={ () => setIsCreateOpen( true ) }>
-          + {dict.btnNewPersonal}
-        </Button>
-      </div>
+      {esPersonal && (
+        <div className={styles.toolbar}>
+          <Button onClick={ () => setIsCreateOpen( true ) }>
+            + {dict.btnNewPersonal}
+          </Button>
+        </div>
+      )}
 
       {error && <FormError error={error} />}
 
@@ -171,22 +175,24 @@ export function MyAccountsPanel( {dict , financialEntities}: MyAccountsPanelProp
         </div>
       )}
 
-      <Modal
-        isOpen={isCreateOpen}
-        onClose={ () => setIsCreateOpen( false ) }
-        title={dict.titleCreatePersonalModal}
-        subtitle={dict.subtitleCreatePersonalModal}
-      >
-        <CreateAccountForm
-          dict={dict}
-          financialEntities={financialEntities}
-          personal={true}
-          onSuccess={ () => {
-            setIsCreateOpen( false ) ;
-            setRecarga( ( n ) => (n + 1) ) ;
-          } }
-        />
-      </Modal>
+      {esPersonal && (
+        <Modal
+          isOpen={isCreateOpen}
+          onClose={ () => setIsCreateOpen( false ) }
+          title={dict.titleCreatePersonalModal}
+          subtitle={dict.subtitleCreatePersonalModal}
+        >
+          <CreateAccountForm
+            dict={dict}
+            financialEntities={financialEntities}
+            personal={true}
+            onSuccess={ () => {
+              setIsCreateOpen( false ) ;
+              setRecarga( ( n ) => (n + 1) ) ;
+            } }
+          />
+        </Modal>
+      )}
     </section>
   ) ;
 }

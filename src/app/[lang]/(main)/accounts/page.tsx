@@ -2,14 +2,21 @@
  * @file page.tsx
  * Página de visualización y gestión del catálogo de cuentas contables por Entidad.
  */
+// Librerías externas
+import { getServerSession } from "next-auth" ;
+
 // Shared
 import { getDictionary }  from "@/shared/lib/dictionary" ;
+import { authOptions }    from "@/shared/lib/auth" ;
 import styles             from "./page.module.css" ;
 
 // Feature: Accounting
 import { getMonthlySummariesAction , getFinancialEntitiesAction } from "@/features/accounting/actions/accountingActions" ;
 import { obtenerCuentasDeListadoAction }                           from "@/features/accounting/actions/cuentasPersonalesActions" ;
 import { AccountsContainer }                                       from "@/features/accounting/components/AccountsContainer" ;
+
+// Feature: Auth
+import { organizationRepository } from "@/features/auth/repositories/organizationRepository" ;
 
 // Feature: Cards
 import { getCardsAction } from "@/features/cards/actions/cardsActions" ;
@@ -30,14 +37,19 @@ export default async function AccountsPage( {params}: AccountsPageProps ) {
   const dict     = await getDictionary( lang ) ;
 
   // Consultar cuentas, históricos, entidades, tarjetas y préstamos concurrentemente de la DB
-  const [ accountsRes , summariesRes , entitiesRes , cardsRes , loansRes , reservedRes ] = await Promise.all( [
+  const [ accountsRes , summariesRes , entitiesRes , cardsRes , loansRes , reservedRes , session ] = await Promise.all( [
     obtenerCuentasDeListadoAction() ,
     getMonthlySummariesAction() ,
     getFinancialEntitiesAction() ,
     getCardsAction() ,
     getLoansAction() ,
-    getReservedByAccountAction()
+    getReservedByAccountAction() ,
+    getServerSession( authOptions )
   ] ) ;
+
+  // La vista única del espacio Personal es «Mis cuentas» (RN-16): sólo para su dueño
+  const personalDelUsuario = ( session?.user?.id ? await organizationRepository.findPersonalDe( session.user.id ) : null ) ;
+  const esPersonal         = ( !!personalDelUsuario && (personalDelUsuario === session?.user?.organizationId) ) ;
 
   const accounts          = ( accountsRes.success ? accountsRes.value : [] ) ;
   const summaries         = ( summariesRes.success ? summariesRes.value : [] ) ;
@@ -57,6 +69,7 @@ export default async function AccountsPage( {params}: AccountsPageProps ) {
         financialEntities={financialEntities}
         summaries={summaries}
         reservado={reservado}
+        esPersonal={esPersonal}
         dict={dict}
         lang={lang}
       />

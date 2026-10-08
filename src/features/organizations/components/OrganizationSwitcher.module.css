@@ -33,6 +33,11 @@
     text-overflow: ellipsis ;
 }
 
+.personalIcon {
+    flex-shrink: 0 ;
+    color:       var(--text-light) ;
+}
+
 .chevron {
     flex-shrink: 0 ;
     color:       var(--text-light) ;
