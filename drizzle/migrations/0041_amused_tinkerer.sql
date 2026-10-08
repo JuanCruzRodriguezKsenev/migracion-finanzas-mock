@@ -1,0 +1,1 @@
+ALTER TABLE "ledger_transactions" ADD COLUMN "absorbed_by_holder" boolean DEFAULT false NOT NULL;

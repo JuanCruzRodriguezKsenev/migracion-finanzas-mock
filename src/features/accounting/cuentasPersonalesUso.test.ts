@@ -18,9 +18,15 @@ import { derivarResumenDeMes }                                                  
 import { accountRepository }                                                                                                                                from "./repositories/accountRepository" ;
 
 // Feature: Auth
-import { organizations }          from "@/features/auth/schema.db" ;
-import { membershipRepository }   from "@/features/auth/repositories/membershipRepository" ;
-import { habilitacionRepository } from "@/features/auth/repositories/habilitacionRepository" ;
+import { organizations }        from "@/features/auth/schema.db" ;
+import { membershipRepository } from "@/features/auth/repositories/membershipRepository" ;
+
+// Feature: Splits
+import { acuerdoRepository }                            from "@/features/splits/repositories/acuerdoRepository" ;
+import { expenseSplits , organizationAgreements } from "@/features/splits/schema.db" ;
+
+// Feature: Notifications
+import { notifications } from "@/features/notifications/schema.db" ;
 
 // Feature: Transactions
 import { createTransactionFromFormAction } from "@/features/transactions/actions/transactionsActions" ;
@@ -176,12 +182,14 @@ describe( "cuentas personales — uso en movimientos (plan 24)" , () => {
       expect( ( await movimientos() )[0].holderUserId ).toBe( ana ) ;
     } ) ;
 
-    it( "una personal privada (sin compartir con la organización) no se puede usar" , async () => {
+    it( "AC-2 / A1: una personal privada propia (sin compartir con la organización) se asienta" , async () => {
       const privada = ( await crearCuentaPersonal( { ownerUserId: ana , organizationId: orgA , code: "1.1.80.02" , balance: 100 } ) ).id ;
-      const res     = await gastar( ana , orgA , { cuenta: privada } ) ;
+      const res     = await gastar( ana , orgA , { cuenta: privada , monto: 50 , titular: ana } ) ;
 
-      expect( res.success ).toBe( false ) ;
-      expect( await saldoDe( privada ) ).toBe( 100 ) ;
+      expect( res.success ).toBe( true ) ;
+      expect( await saldoDe( privada ) ).toBe( 50 ) ;
+      expect( await saldoDe( gastoA ) ).toBe( 50 ) ;
+      expect( ( await movimientos() )[0] ).toMatchObject( { organizationId: orgA , createdByUserId: ana , holderUserId: ana } ) ;
     } ) ;
   } ) ;
 
@@ -192,7 +200,7 @@ describe( "cuentas personales — uso en movimientos (plan 24)" , () => {
 
       const pagina = await getTransactionsPageAction( {} ) ;
       expect( pagina.success && pagina.value.items ).toHaveLength( 1 ) ;
-      expect( pagina.success && pagina.value.cuentasPersonales ).toEqual( [ expect.objectContaining( { id: personal , name: "Ahorros de Ana" , compartida: true } ) ] ) ;
+      expect( pagina.success && pagina.value.cuentasPersonales ).toEqual( [ expect.objectContaining( { id: personal , name: "Ahorros de Ana" , ownerNombre: expect.any( String ) } ) ] ) ;
       expect( pagina.success && Object.keys( pagina.value.cuentasPersonales[0] ) ).not.toContain( "balance" ) ;
 
       const cuentas = await getAccountsAction() ;
@@ -215,70 +223,70 @@ describe( "cuentas personales — uso en movimientos (plan 24)" , () => {
   } ) ;
 
   describe( "AC-4 / RN-13 — dejar de compartir conserva el movimiento" , () => {
-    it( "el movimiento sigue en la lista, la cuenta deja de ser usable y figura «ya no compartida»" , async () => {
+    it( "el movimiento sigue en la lista y Ana sigue pudiendo usar su propia cuenta" , async () => {
       await gastar( ana , orgA ) ;
 
       sesionDe( ana , orgA ) ;
       const dejar = await dejarDeCompartirAction( { accountId: personal , organizationId: orgA } ) ;
       expect( dejar.success ).toBe( true ) ;
 
-      expect( ( await accountRepository.findUsablesPara( orgA , ana ) ).map( ( c ) => c.id ) ).not.toContain( personal ) ;
-      expect( ( await accountRepository.findCompartiblesPara( orgA , ana ) ).map( ( c ) => c.id ) ).toContain( personal ) ;
+      // Ya no está compartida, pero sigue siendo usable para Ana (RN-2)
+      expect( ( await accountRepository.findUsablesPara( orgA , ana ) ).map( ( c ) => c.id ) ).toContain( personal ) ;
 
       const pagina = await getTransactionsPageAction( {} ) ;
       expect( pagina.success && pagina.value.items ).toHaveLength( 1 ) ;
       expect( pagina.success && pagina.value.items[0].entries.map( ( e ) => e.accountId ) ).toContain( personal ) ;
-      expect( pagina.success && pagina.value.cuentasPersonales ).toEqual( [ expect.objectContaining( { id: personal , compartida: false } ) ] ) ;
+      expect( pagina.success && pagina.value.cuentasPersonales ).toEqual( [ expect.objectContaining( { id: personal , ownerNombre: expect.any( String ) } ) ] ) ;
 
       const otra = await gastar( ana , orgA ) ;
-      expect( otra.success ).toBe( false ) ;
-      expect( await saldoDe( personal ) ).toBe( 4700 ) ;
+      expect( otra.success ).toBe( true ) ;
+      expect( await saldoDe( personal ) ).toBe( 4400 ) ;
     } ) ;
 
-    it( "findUsablesPara trae las propias de la organización y sólo las personales del usuario compartidas, con etiqueta" , async () => {
-      const ajena = await crearCuentaPersonal( { ownerUserId: beto , organizationId: orgA , code: "1.1.80.03" , compartidaCon: [ orgA ] } ) ;
+    it( "findUsablesPara trae las de la organización, las propias (compartidas o no) y las de otros compartidas" , async () => {
+      const ajenaCompartida = await crearCuentaPersonal( { ownerUserId: beto , organizationId: orgA , code: "1.1.80.03" , compartidaCon: [ orgA ] } ) ;
+      const ajenaPrivada    = await crearCuentaPersonal( { ownerUserId: beto , organizationId: orgA , code: "1.1.80.04" } ) ;
       await db.insert( accounts ).values( { organizationId: orgA , code: "1.1.01.01" , name: "Efectivo" , type: "asset" } ) ;
 
       const deAna = await accountRepository.findUsablesPara( orgA , ana ) ;
+      const ids   = deAna.map( ( c ) => c.id ) ;
 
-      expect( deAna.map( ( c ) => c.id ) ).toContain( personal ) ;
-      expect( deAna.map( ( c ) => c.id ) ).not.toContain( ajena.id ) ;
-      expect( deAna.find( ( c ) => (c.id === personal) )?.etiqueta ).toEqual( { tipo: "compartida" , organizaciones: [ { id: orgA , nombre: "Casa" } ] } ) ;
+      expect( ids ).toContain( personal ) ;
+      expect( ids ).toContain( ajenaCompartida.id ) ;
+      expect( ids ).not.toContain( ajenaPrivada.id ) ;
+      expect( deAna.find( ( c ) => (c.id === ajenaCompartida.id) )?.ownerNombre ).toBeTruthy() ;
       expect( deAna.find( ( c ) => (c.name === "Efectivo") )?.etiqueta ).toEqual( { tipo: "organizacion" } ) ;
     } ) ;
   } ) ;
 
-  describe( "AC-6 / A1 / A2 — quién puede asentar sobre la cuenta de otro" , () => {
-    it( "A1: un member sin habilitación no puede, con o sin titular, y no se escribe nada" , async () => {
-      const sinTitular = await gastar( beto , orgA ) ;
-      const conTitular = await gastar( beto , orgA , { titular: ana } ) ;
-
-      expect( sinTitular.success ).toBe( false ) ;
-      expect( conTitular.success ).toBe( false ) ;
-      expect( await saldoDe( personal ) ).toBe( 5000 ) ;
-      expect( await saldoDe( gastoA ) ).toBe( 0 ) ;
-      expect( await movimientos() ).toHaveLength( 0 ) ;
-    } ) ;
-
-    it( "con habilitación vigente y a nombre del dueño, sí; a nombre de otro, no" , async () => {
-      await habilitacionRepository.otorgar( orgA , ana , beto ) ;
-
+  describe( "AC-6 / AC-14 / A2 — quién puede asentar sobre la cuenta de otro" , () => {
+    it( "AC-6 / AC-14: Beto con la compartida de Ana puede asentar sin habilitación a nombre de Ana" , async () => {
       const ok = await gastar( beto , orgA , { titular: ana } ) ;
       expect( ok.success ).toBe( true ) ;
       expect( await saldoDe( personal ) ).toBe( 4700 ) ;
       expect( ( await movimientos() )[0] ).toMatchObject( { createdByUserId: beto , holderUserId: ana } ) ;
-
-      const aNombreDeBeto = await gastar( beto , orgA , { titular: beto } ) ;
-      expect( aNombreDeBeto.success ).toBe( false ) ;
-      expect( await saldoDe( personal ) ).toBe( 4700 ) ;
     } ) ;
 
-    it( "A2: la habilitación revocada entre abrir y guardar rechaza el guardado" , async () => {
-      await habilitacionRepository.otorgar( orgA , ana , beto ) ;
-      await habilitacionRepository.revocar( orgA , ana , beto ) ;
+    it( "AC-6: Beto intentando asentar a su propio nombre con la cuenta de Ana es rechazado" , async () => {
+      const aNombreDeBeto = await gastar( beto , orgA , { titular: beto } ) ;
+      expect( aNombreDeBeto.success ).toBe( false ) ;
+      expect( await saldoDe( personal ) ).toBe( 5000 ) ;
+    } ) ;
+
+    it( "AC-6: Beto con una personal no compartida de Ana es rechazado" , async () => {
+      const noCompartida = ( await crearCuentaPersonal( { ownerUserId: ana , organizationId: orgA , code: "1.1.80.99" , balance: 2000 } ) ).id ;
+      const res = await gastar( beto , orgA , { cuenta: noCompartida , titular: ana } ) ;
+
+      expect( res.success ).toBe( false ) ;
+      expect( await saldoDe( noCompartida ) ).toBe( 2000 ) ;
+      expect( await movimientos() ).toHaveLength( 0 ) ;
+    } ) ;
+
+    it( "A2 / AC-4: Ana deja de compartir y Beto ya no puede asentar con ella" , async () => {
+      sesionDe( ana , orgA ) ;
+      await dejarDeCompartirAction( { accountId: personal , organizationId: orgA } ) ;
 
       const res = await gastar( beto , orgA , { titular: ana } ) ;
-
       expect( res.success ).toBe( false ) ;
       expect( await saldoDe( personal ) ).toBe( 5000 ) ;
       expect( await movimientos() ).toHaveLength( 0 ) ;
@@ -339,8 +347,7 @@ describe( "cuentas personales — uso en movimientos (plan 24)" , () => {
       expect( await saldoDe( gastoA ) ).toBe( 0 ) ;
     } ) ;
 
-    it( "un member que no es el dueño ni el autor no puede reversar; el autor habilitado, sí" , async () => {
-      await habilitacionRepository.otorgar( orgA , ana , beto ) ;
+    it( "un member que no es el dueño ni el autor no puede reversar; el autor, sí" , async () => {
       const original = await gastar( beto , orgA , { titular: ana } ) ;
       const id       = ( original.success ? original.value.id : "" ) ;
 
@@ -356,7 +363,6 @@ describe( "cuentas personales — uso en movimientos (plan 24)" , () => {
     } ) ;
 
     it( "un owner de la organización puede reversar aunque no sea el dueño ni el autor" , async () => {
-      await habilitacionRepository.otorgar( orgA , ana , beto ) ;
       const original = await gastar( beto , orgA , { titular: ana } ) ;
       const dueña2   = ( await crearUsuarioConMembresia( { organizationId: orgA , email: "dueña2@ejemplo.com" , role: "owner" } ) ).id ;
 
@@ -365,6 +371,191 @@ describe( "cuentas personales — uso en movimientos (plan 24)" , () => {
 
       expect( res.success ).toBe( true ) ;
       expect( await saldoDe( personal ) ).toBe( 5000 ) ;
+    } ) ;
+
+    it( "eliminar un movimiento que usa una personal se rechaza y no toca saldos" , async () => {
+      const original = await gastar( ana , orgA ) ;
+      sesionDe( ana , orgA ) ;
+
+      const res = await deleteLedgerTransactionAction( original.success ? original.value.id : "" ) ;
+
+      expect( !res.success && res.error ).toContain( "Reversá el movimiento" ) ;
+      expect( await saldoDe( personal ) ).toBe( 4700 ) ;
+      expect( await movimientos() ).toHaveLength( 1 ) ;
+    } ) ;
+  } ) ;
+
+  describe( "AC-13 / AC-14 / AC-15 / AC-17 / A10 / A11 — absorción, reparto y deudas" , () => {
+    beforeEach( async () => {
+      // Reparto 50/50 entre Ana y Beto en Casa
+      await acuerdoRepository.guardar( orgA , {
+        modo:          "fixed_percentages" ,
+        usesCommonPot: false ,
+        porcentajes:   [
+          { userId: ana  , percentageBp: 5000 } ,
+          { userId: beto , percentageBp: 5000 } ,
+        ] ,
+      } , ana , db ) ;
+    } ) ;
+
+    it( "AC-13 / RN-19: Ana absorbe -> cabecera absorbedByHolder = true, 0 expense_splits, 0 avisos de deuda, suma en el resumen" , async () => {
+      sesionDe( ana , orgA ) ;
+
+      const res = await createTransactionFromFormAction( {
+        type:            "expense" ,
+        amount:          120 ,
+        description:     "Súper absorbido" ,
+        sourceAccountId: personal ,
+        occurredAt:      MARZO ,
+        absorbeElDueno:  true ,
+      } ) ;
+
+      expect( res.success ).toBe( true ) ;
+      expect( await saldoDe( personal ) ).toBe( -7000 ) ; // 5000 - 12000
+
+      const txs = await movimientos() ;
+      expect( txs ).toHaveLength( 1 ) ;
+      expect( txs[0].absorbedByHolder ).toBe( true ) ;
+
+      // 0 expense_splits generados
+      const splits = await db.select().from( expenseSplits ).where( eq( expenseSplits.organizationId , orgA ) ) ;
+      expect( splits ).toHaveLength( 0 ) ;
+
+      // 0 avisos de deuda generados
+      const avisos = await db.select().from( notifications ).where( eq( notifications.organizationId , orgA ) ) ;
+      expect( avisos.filter( ( n ) => n.type === "debt_created" ) ).toHaveLength( 0 ) ;
+
+      // Suma en el resumen mensual de Casa
+      const resumen = await derivarResumenDeMes( orgA , 2026 , 2 ) ;
+      expect( resumen.totalExpense ).toBe( 12000 ) ;
+    } ) ;
+
+    it( "RN-19 / §3.4.6: reversar un movimiento absorbido no falla aunque no haya expense_splits, y devuelve el saldo" , async () => {
+      sesionDe( ana , orgA ) ;
+
+      const original = await createTransactionFromFormAction( {
+        type:            "expense" ,
+        amount:          120 ,
+        description:     "Súper absorbido a reversar" ,
+        sourceAccountId: personal ,
+        occurredAt:      MARZO ,
+        absorbeElDueno:  true ,
+      } ) ;
+      expect( original.success ).toBe( true ) ;
+      expect( await saldoDe( personal ) ).toBe( -7000 ) ;
+
+      const reversa = await reverseLedgerTransactionAction( { transactionId: original.success ? original.value.id : "" } ) ;
+
+      expect( reversa.success ).toBe( true ) ;
+      expect( await saldoDe( personal ) ).toBe( 5000 ) ;
+      expect( await saldoDe( gastoA ) ).toBe( 0 ) ;
+
+      const splits = await db.select().from( expenseSplits ).where( eq( expenseSplits.organizationId , orgA ) ) ;
+      expect( splits ).toHaveLength( 0 ) ;
+    } ) ;
+
+    it( "AC-15 / A10: Beto envía absorbidoPorElTitular: true con la cuenta de Ana -> se ignora, deuda de $2.000 a Ana" , async () => {
+      sesionDe( beto , orgA ) ;
+
+      const res = await createTransactionFromFormAction( {
+        type:            "expense" ,
+        amount:          40 ,
+        description:     "Farmacia" ,
+        sourceAccountId: personal ,
+        occurredAt:      MARZO ,
+        holderUserId:    ana ,
+        absorbeElDueno:  true , // Beto intenta perdonar la deuda ajena
+      } ) ;
+
+      expect( res.success ).toBe( true ) ;
+
+      const txs = await movimientos() ;
+      expect( txs ).toHaveLength( 1 ) ;
+      expect( txs[0].absorbedByHolder ).toBe( false ) ;
+
+      // Beto le debe $2.000 a Ana
+      const splits = await db.select().from( expenseSplits ).where( eq( expenseSplits.organizationId , orgA ) ) ;
+      expect( splits ).toHaveLength( 1 ) ;
+      expect( splits[0] ).toMatchObject( {
+        debtorUserId:  beto ,
+        amountInCents: 2000 ,
+      } ) ;
+    } ) ;
+
+    it( "A11: sin respuesta (campo ausente / false) con la propia -> deuda generada normalmente" , async () => {
+      sesionDe( ana , orgA ) ;
+
+      const res = await createTransactionFromFormAction( {
+        type:            "expense" ,
+        amount:          40 ,
+        description:     "Farmacia sin absorción" ,
+        sourceAccountId: personal ,
+        occurredAt:      MARZO ,
+      } ) ;
+
+      expect( res.success ).toBe( true ) ;
+
+      const txs = await movimientos() ;
+      expect( txs[0].absorbedByHolder ).toBe( false ) ;
+
+      const splits = await db.select().from( expenseSplits ).where( eq( expenseSplits.organizationId , orgA ) ) ;
+      expect( splits ).toHaveLength( 1 ) ;
+      expect( splits[0] ).toMatchObject( {
+        debtorUserId:  beto ,
+        amountInCents: 2000 ,
+      } ) ;
+    } ) ;
+
+    it( "AC-14: Beto con la compartida, titular Ana fijo, deuda a Ana y aviso a Ana" , async () => {
+      sesionDe( beto , orgA ) ;
+
+      const res = await createTransactionFromFormAction( {
+        type:            "expense" ,
+        amount:          20 ,
+        description:     "Kiosco" ,
+        sourceAccountId: personal ,
+        occurredAt:      MARZO ,
+      } ) ;
+
+      expect( res.success ).toBe( true ) ;
+
+      const txs = await movimientos() ;
+      expect( txs[0].holderUserId ).toBe( ana ) ;
+
+      // Deuda de Beto a Ana por 1000
+      const splits = await db.select().from( expenseSplits ).where( eq( expenseSplits.organizationId , orgA ) ) ;
+      expect( splits ).toHaveLength( 1 ) ;
+      expect( splits[0] ).toMatchObject( {
+        debtorUserId:  beto ,
+        amountInCents: 1000 ,
+      } ) ;
+
+      // Notificación charged_to_holder para Ana
+      const avisos = await db.select().from( notifications ).where( eq( notifications.organizationId , orgA ) ) ;
+      expect( avisos.some( ( n ) => ( (n.type === "charged_to_holder") && (n.recipientUserId === ana) ) ) ).toBe( true ) ;
+    } ) ;
+
+    it( "AC-17: compartida en una organización sin reparto -> asienta, nadie debe" , async () => {
+      // Borrar acuerdo
+      await db.delete( organizationAgreements ).where( eq( organizationAgreements.organizationId , orgA ) ) ;
+
+      sesionDe( beto , orgA ) ;
+
+      const res = await createTransactionFromFormAction( {
+        type:            "expense" ,
+        amount:          20 ,
+        description:     "Kiosco sin reparto" ,
+        sourceAccountId: personal ,
+        occurredAt:      MARZO ,
+      } ) ;
+
+      expect( res.success ).toBe( true ) ;
+
+      const txs = await movimientos() ;
+      expect( txs[0].holderUserId ).toBe( ana ) ;
+
+      const splits = await db.select().from( expenseSplits ).where( eq( expenseSplits.organizationId , orgA ) ) ;
+      expect( splits ).toHaveLength( 0 ) ;
     } ) ;
 
     it( "eliminar un movimiento que usa una personal se rechaza y no toca saldos" , async () => {

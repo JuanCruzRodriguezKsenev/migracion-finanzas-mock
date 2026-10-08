@@ -127,37 +127,25 @@ describe( "interfaz de cuentas propias y compartidas — datos (plan 25)" , () =
   } ) ;
 
   describe( "obtenerCuentasParaMovimientoAction (RN-10)" , () => {
-    it( "Ana: usables = organización + su compartida; compartibles = su privada" , async () => {
+    it( "Ana: usables = organización + su compartida + su privada (RN-10)" , async () => {
       sesionDe( ana , orgA ) ;
 
       const res = await obtenerCuentasParaMovimientoAction() ;
       if( !res.success ) { throw new Error( res.error ) ; }
 
-      expect( res.value.usables.map( ( c ) => c.id ).sort() ).toEqual( [ efectivo , bancoAna ].sort() ) ;
-      expect( res.value.compartibles.map( ( c ) => c.id ) ).toEqual( [ ahorros ] ) ;
+      expect( res.value.usables.map( ( c ) => c.id ).sort() ).toEqual( [ efectivo , bancoAna , ahorros ].sort() ) ;
       expect( res.value.organizacionId ).toBe( orgA ) ;
       expect( res.value.organizacionNombre ).toBe( "Casa" ) ;
-      expect( res.value.compartibles[0].etiqueta ).toEqual( { tipo: "privada" } ) ;
     } ) ;
 
-    it( "Beto no ofrece la personal de Ana ni como usable ni como compartible" , async () => {
+    it( "Beto ofrece la compartida de Ana pero no su privada" , async () => {
       sesionDe( beto , orgA ) ;
 
       const res = await obtenerCuentasParaMovimientoAction() ;
       if( !res.success ) { throw new Error( res.error ) ; }
 
-      expect( res.value.usables.map( ( c ) => c.id ) ).toEqual( [ efectivo ] ) ;
-      expect( res.value.compartibles ).toEqual( [] ) ;
-    } ) ;
-
-    it( "un viewer con cuentas propias no recibe compartibles (el servidor rechazaría compartir)" , async () => {
-      await crearCuentaPersonal( { ownerUserId: lector , organizationId: orgA , name: "Del lector" , code: "1.1.80.09" } ) ;
-      sesionDe( lector , orgA ) ;
-
-      const res = await obtenerCuentasParaMovimientoAction() ;
-      if( !res.success ) { throw new Error( res.error ) ; }
-
-      expect( res.value.compartibles ).toEqual( [] ) ;
+      expect( res.value.usables.map( ( c ) => c.id ).sort() ).toEqual( [ efectivo , bancoAna ].sort() ) ;
+      expect( res.value.usables.map( ( c ) => c.id ) ).not.toContain( ahorros ) ;
     } ) ;
   } ) ;
 

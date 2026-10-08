@@ -122,6 +122,20 @@
   color: var(--color-primary-text);
 }
 
+.absorbedChip {
+  align-self: flex-start ;
+  max-width: 100% ;
+  padding: 0.1rem 0.5rem ;
+  overflow: hidden ;
+  text-overflow: ellipsis ;
+  white-space: nowrap ;
+  font-size: var(--fs-2xs) ;
+  font-weight: 600 ;
+  border-radius: var(--radius-xl) ;
+  background-color: var(--color-warning-light) ;
+  color: var(--color-warning-text) ;
+}
+
 .holderNote {
   margin: 0;
   font-size: var(--fs-sm);
@@ -471,37 +485,48 @@
   margin-top: 0.25rem;
 }
 
-/* «¿Pagaste con una cuenta tuya?»: compartir una personal y usarla sin salir del formulario (RN-10) */
-.shareBlock {
+/* Pregunta de absorción de deuda (RN-18, RN-19) */
+.debtQuestionBlock {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  border: 1px dashed var(--border-card);
+  border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
   background-color: var(--bg-inset);
 }
 
-.shareConfirm {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.shareText {
+.debtQuestionTitle {
   margin: 0;
   font-size: var(--fs-sm);
-  color: var(--text-muted);
-  overflow-wrap: anywhere;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
-.shareOptions,
-.shareActions {
+.debtOptions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
-.shareActions {
-  justify-content: flex-end;
+.debtOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.debtRadio {
+  margin: 0;
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .debtOptions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 }

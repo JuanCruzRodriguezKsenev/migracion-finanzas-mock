@@ -41,17 +41,17 @@ describe( "AccountLabel" , () => {
       .toBe( "Compartida · Casa, Taller" ) ;
   } ) ;
 
-  it( "ya no compartida (RN-13)" , () => {
-    render( <AccountLabel etiqueta={ {tipo: "yaNoCompartida"} } dict={dict} /> ) ;
-    expect( screen.getByText( "Ya no compartida" ) ).toBeDefined() ;
+  it( "cuenta personal de un dueño (RN-13)" , () => {
+    render( <AccountLabel etiqueta={ {tipo: "personal" , dueno: "Ana"} } dict={dict} /> ) ;
+    expect( screen.getByText( "Cuenta personal de Ana" ) ).toBeDefined() ;
   } ) ;
 
   it.each( [ "en" , "br" ] )( "los textos existen en %s y difieren del español" , async ( lang ) => {
     const otro = ( await getDictionary( lang ) ).accountsPage ;
 
-    for( const clave of [ "labelPrivate" , "labelShared" , "labelOrganization" , "labelNoLongerShared" ] as const ) {
+    for( const clave of [ "labelPrivate" , "labelShared" , "labelOrganization" , "labelPersonalOf" ] as const ) {
       expect( otro[clave] ).toBeTruthy() ;
     }
-    expect( textoDeEtiqueta( {tipo: "yaNoCompartida"} , otro ) ).not.toBe( "Ya no compartida" ) ;
+    expect( textoDeEtiqueta( {tipo: "personal" , dueno: "Ana"} , otro ) ).not.toBe( "Cuenta personal de Ana" ) ;
   } ) ;
 } ) ;

@@ -157,7 +157,7 @@
     "labelPrivate": "Privada",
     "labelShared": "Compartilhada · {organizacion}",
     "labelOrganization": "Da organização",
-    "labelNoLongerShared": "Não compartilhada mais",
+    "labelPersonalOf": "Conta pessoal de {dueno}",
     "viewSelectorLabel": "Visão das contas",
     "viewOrganization": "Organização",
     "viewMine": "Minhas contas",
@@ -168,14 +168,13 @@
     "btnStopSharing": "Parar de compartilhar",
     "shareChooseOrganization": "Escolha uma organização",
     "sharedInLabel": "Compartilhada em",
+    "shareHelp": "Outros membros dessa organização poderão usar esta conta em seu nome; os gastos que registrarem com ela serão devidos a você.",
     "emptyMine": "Você ainda não tem contas próprias.",
     "loadingMine": "Carregando suas contas…",
     "balanceHidden": "Saldo privado",
-    "shareAndUseHint": "Pagou com uma conta sua?",
-    "shareAndUseButton": "Compartilhar {cuenta} com {organizacion} e usá-la",
-    "shareConfirm": "Você vai compartilhar {cuenta} com {organizacion}: os membros verão os movimentos que você lançar aqui, não o saldo.",
-    "shareConfirmAccept": "Compartilhar e usar",
-    "shareConfirmCancel": "Cancelar",
+    "debtQuestion": "Os outros devem a você a parte deles?",
+    "debtYes": "Sim, de acordo com o acordo",
+    "debtNo": "Não, eu assumo",
     "holderFixedOwner": "Uma conta própria é sempre lançada em seu nome."
   },
   "cardsPage": {
@@ -521,7 +520,8 @@
     "holderDetailBy": "Lançado por {autor}",
     "holderDetailByFor": "Lançado por {autor} em nome de {titular}",
     "holderFilterLabel": "Titular",
-    "holderFilterAll": "Todos os titulares"
+    "holderFilterAll": "Todos os titulares" ,
+    "absorbedBy": "Absorvido por {titular}"
   },
   "contactsPage": {
     "title": "Agenda de Contatos",

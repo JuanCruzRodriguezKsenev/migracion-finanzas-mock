@@ -36,20 +36,21 @@ export const MONEDA_POR_DEFECTO = "ARS" ;
  */
 async function resolverRepartoDeLaCarga(
   datos: {
-    organizationId:  string ;
-    createdByUserId: string ;
-    holderUserId?:   string | null ;
-    occurredAt?:     Date | string | null ;
-    entries:         CreateTransactionParams["entries"] ;
+    organizationId:         string ;
+    createdByUserId:        string ;
+    holderUserId?:          string | null ;
+    occurredAt?:            Date | string | null ;
+    entries:                CreateTransactionParams["entries"] ;
+    absorbidoPorElTitular?: boolean ;
   } ,
   tx: DBOrTx
 ): Promise< RepartoResuelto | null > {
-  const { organizationId , createdByUserId , holderUserId , occurredAt , entries } = datos ;
+  const { organizationId , createdByUserId , holderUserId , occurredAt , entries , absorbidoPorElTitular } = datos ;
   const idsDeCuentas = [ ...new Set( entries.map( ( e ) => e.accountId ) ) ] ;
   const cuentas      = new Map< string , NonNullable< Awaited< ReturnType< typeof accountRepository.findVisibleById > > > >() ;
 
   for( const id of idsDeCuentas ) {
-    const cuenta = await accountRepository.findVisibleById( id , organizationId , tx ) ;
+    const cuenta = await accountRepository.findVisibleById( id , organizationId , createdByUserId , tx ) ;
 
     if( !cuenta ) {
       return( null ) ;
@@ -57,6 +58,12 @@ async function resolverRepartoDeLaCarga(
 
     cuentas.set( id , cuenta ) ;
   }
+
+  // RN-22, A10: absorbe efectivo sólo si el autor es el dueño de una personal de los asientos y el titular es el autor
+  const autorEsDuenoDePersonal = [ ...cuentas.values() ].some( ( c ) => c.ownerUserId === createdByUserId ) ;
+  const titularEfectivo        = ( holderUserId ?? createdByUserId ) ;
+  const titularEsAutor         = ( titularEfectivo === createdByUserId ) ;
+  const absorbe                = Boolean( absorbidoPorElTitular && autorEsDuenoDePersonal && titularEsAutor ) ;
 
   const resumen = calcularResumenTransaccion( entries.map( ( e ) => ( { accountId: e.accountId , debit: e.debit , credit: e.credit , currency: e.currency } ) ) , cuentas ) ;
 
@@ -71,6 +78,7 @@ async function resolverRepartoDeLaCarga(
       occurredAt ,
       cuentas:         idsDeCuentas ,
       esGastoManual:   true ,
+      absorbe ,
     } , tx )
   ) ;
 }
@@ -88,7 +96,7 @@ export async function createLedgerTransaction(
   params:     CreateTransactionParams ,
   externalTx?: DBOrTx
 ): Promise< Result<LedgerTransaction , string> > {
-  const { organizationId , categoryId , description , merchantName , merchantDomain , occurredAt , createdByUserId , holderUserId , aplicarReparto , titularPorDefecto , entries } = params ;
+  const { organizationId , categoryId , description , merchantName , merchantDomain , occurredAt , createdByUserId , holderUserId , aplicarReparto , titularPorDefecto , absorbidoPorElTitular , entries } = params ;
 
   // 1. Validar que la transacción no esté vacía
   if( !entries || (entries.length < 2) ){
@@ -108,7 +116,7 @@ export async function createLedgerTransaction(
       let titularFinal                    = holderUserId ;
 
       if( aplicarReparto && createdByUserId ) {
-        reparto = await resolverRepartoDeLaCarga( { organizationId , createdByUserId , holderUserId , occurredAt , entries } , tx ) ;
+        reparto = await resolverRepartoDeLaCarga( { organizationId , createdByUserId , holderUserId , occurredAt , entries , absorbidoPorElTitular } , tx ) ;
 
         if( reparto?.desactualizado ) {
           throw new Error( MENSAJE_DESACTUALIZADO ) ;
@@ -126,9 +134,10 @@ export async function createLedgerTransaction(
         description ,
         merchantName ,
         merchantDomain ,
-        occurredAt: occurredAt ? new Date( occurredAt ) : undefined ,
+        occurredAt:       occurredAt ? new Date( occurredAt ) : undefined ,
         createdByUserId ,
-        holderUserId: titularFinal ,
+        holderUserId:     titularFinal ,
+        absorbedByHolder: ( reparto?.motivo === "absorbido" ) ,
       } , tx ) ;
 
       const entriesToInsert: InsertLedgerEntry[] = [] ;
@@ -145,7 +154,7 @@ export async function createLedgerTransaction(
 
       for( const accountId of [ ...new Set( entries.map( ( e ) => e.accountId ) ) ].sort() ){
         // Bloquear la fila de la cuenta para evitar colisiones de concurrencia (SELECT FOR UPDATE)
-        const cuenta = await accountRepository.findVisibleByIdForUpdate( accountId , organizationId , tx ) ;
+        const cuenta = await accountRepository.findVisibleByIdForUpdate( accountId , organizationId , createdByUserId , tx ) ;
 
         if( !cuenta ){
           // Lanza excepción para forzar rollback de la transacción Drizzle
@@ -524,7 +533,7 @@ export async function reverseLedgerTransaction(
       const cuentasPorId = new Map< string , NonNullable< Awaited< ReturnType< typeof accountRepository.findVisibleByIdForUpdate > > > >() ;
 
       for( const accountId of [ ...new Set( entries.map( ( e ) => e.accountId ) ) ].sort() ){
-        let cuenta = await accountRepository.findVisibleByIdForUpdate( accountId , organizationId , tx ) ;
+        let cuenta = await accountRepository.findVisibleByIdForUpdate( accountId , organizationId , actorUserId , tx ) ;
 
         if( !cuenta ){
           const historica = await accountRepository.findHistoricaByIdForUpdate( accountId , tx ) ;

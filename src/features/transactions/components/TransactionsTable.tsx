@@ -33,8 +33,8 @@ interface TransactionsTableProps {
   financialEntities?:  FinancialEntity[] ;
   visibleColumns?:     string[] ;
   loading?:            boolean ;
-  holderDict?:         { holderChipLabel: string } ;
-  /** Textos de la etiqueta «Ya no compartida» (RN-13). Sin ellos la fila no la muestra. */
+  holderDict?:         { holderChipLabel: string ; absorbedBy?: string } ;
+  /** Textos de la etiqueta de la cuenta (RN-15, RN-13). Sin ellos la fila no la muestra. */
   cuentasDict?:        AccountLabelDict ;
   onSelectTransaction: ( tx: TransactionWithEntries ) => void ;
 }
@@ -177,6 +177,11 @@ export function TransactionsTable( {
                   {tx.holder.nombre}
                 </span>
               )}
+              {( tx.absorbedByHolder && holderDict?.absorbedBy ) && (
+                <span className={styles.absorbedChip}>
+                  {holderDict.absorbedBy.replace( "{titular}" , (tx.holder?.nombre || tx.createdBy?.nombre || "") )}
+                </span>
+              )}
             </div>
           </div>
         ) ;
@@ -213,8 +218,8 @@ export function TransactionsTable( {
             />
             <div className={styles.accountTextGroup}>
               <span className={styles.accountName}>{acc ? acc.name : "—"}</span>
-              {( cuentasDict && (acc?.compartida === false) ) && (
-                <AccountLabel etiqueta={ {tipo: "yaNoCompartida"} } dict={cuentasDict} />
+              {( cuentasDict && acc?.ownerUserId && acc?.ownerNombre ) && (
+                <AccountLabel etiqueta={ {tipo: "personal" , dueno: acc.ownerNombre} } dict={cuentasDict} />
               )}
             </div>
           </div>

@@ -20,9 +20,9 @@ import { claveDeMesActual }                  from "@/shared/lib/monthKey" ;
 import { budgetsService } from "@/features/budgets/services/budgetsService" ;
 
 // Feature: Auth
-import { membershipRepository } from "@/features/auth/repositories/membershipRepository" ;
-import { autorizarTitular }     from "@/features/auth/services/titularService" ;
-import { nombreVisible }        from "@/features/auth/utils/nombreVisible" ;
+import { membershipRepository }      from "@/features/auth/repositories/membershipRepository" ;
+import { autorizarTitularPorCuenta } from "@/features/auth/services/titularService" ;
+import { nombreVisible }             from "@/features/auth/utils/nombreVisible" ;
 
 // Feature: Notifications
 import { notificar } from "@/features/notifications/services/notificationService" ;
@@ -359,7 +359,7 @@ export async function previsualizarRepartoAction( datos: PrevisualizarInput ): P
   const entrada                     = validation.data ;
 
   try {
-    const titular = await autorizarTitular( organizationId , userId , entrada.holderUserId ) ;
+    const titular = await autorizarTitularPorCuenta( organizationId , userId , entrada.holderUserId , entrada.accountIds ) ;
 
     if( !titular.success ) {
       return( fail( titular.error ) ) ;
@@ -377,6 +377,7 @@ export async function previsualizarRepartoAction( datos: PrevisualizarInput ): P
       occurredAt:      fecha ,
       cuentas:         entrada.accountIds ,
       esGastoManual:   true ,
+      absorbe:         entrada.absorbe ,
     } ) ;
 
     if( !reparto.aplica || reparto.desactualizado ) {

@@ -14,38 +14,38 @@ import { fusionarPersonales , cuentasParaMovimientos } from "./cuentasDeMovimien
 import { derivarTipoTransaccion }                      from "./derivarTipo" ;
 
 
-function personal( id: string , compartida: boolean ): CuentaPersonalReferenciada {
-  return( {id , code: id , name: `Cuenta ${id}` , type: "asset" , currency: "ARS" , ownerUserId: "u" , compartida} ) ;
+function personal( id: string , ownerNombre: string = "Ana" ): CuentaPersonalReferenciada {
+  return( {id , code: id , name: `Cuenta ${id}` , type: "asset" , currency: "ARS" , ownerUserId: "u" , ownerNombre} ) ;
 }
 
 describe( "fusionarPersonales" , () => {
   it( "suma las nuevas sin duplicar por id" , () => {
-    const res = fusionarPersonales( [ personal( "a" , true ) ] , [ personal( "a" , true ) , personal( "b" , true ) ] ) ;
+    const res = fusionarPersonales( [ personal( "a" ) ] , [ personal( "a" ) , personal( "b" ) ] ) ;
 
     expect( res.map( ( c ) => c.id ) ).toEqual( [ "a" , "b" ] ) ;
   } ) ;
 
-  it( "si una vuelve a llegar gana la versión nueva (hoy ya no se comparte)" , () => {
-    const res = fusionarPersonales( [ personal( "a" , true ) ] , [ personal( "a" , false ) ] ) ;
+  it( "si una vuelve a llegar gana la versión nueva" , () => {
+    const res = fusionarPersonales( [ personal( "a" , "Ana" ) ] , [ personal( "a" , "Ana Nueva" ) ] ) ;
 
     expect( res ).toHaveLength( 1 ) ;
-    expect( res[0].compartida ).toBe( false ) ;
+    expect( res[0].ownerNombre ).toBe( "Ana Nueva" ) ;
   } ) ;
 } ) ;
 
 describe( "cuentasParaMovimientos" , () => {
   const gasto: CuentaReferenciada = {id: "g" , code: "5" , name: "Gasto" , type: "expense" , currency: "ARS"} ;
 
-  it( "las personales entran sin saldo y con su marca de compartida" , () => {
-    const res = cuentasParaMovimientos( [ gasto ] , [ personal( "a" , false ) ] ) ;
+  it( "las personales entran sin saldo y con su dueño" , () => {
+    const res = cuentasParaMovimientos( [ gasto ] , [ personal( "a" , "Ana" ) ] ) ;
     const a   = res.find( ( c ) => c.id === "a" )! ;
 
-    expect( a.compartida ).toBe( false ) ;
+    expect( a.ownerNombre ).toBe( "Ana" ) ;
     expect( "balance" in a ).toBe( false ) ;
   } ) ;
 
   it( "si una id está entre las de la organización, esa gana" , () => {
-    const res = cuentasParaMovimientos( [ {...gasto , id: "a" , name: "De la lista"} ] , [ personal( "a" , true ) ] ) ;
+    const res = cuentasParaMovimientos( [ {...gasto , id: "a" , name: "De la lista"} ] , [ personal( "a" ) ] ) ;
 
     expect( res ).toHaveLength( 1 ) ;
     expect( res[0].name ).toBe( "De la lista" ) ;
@@ -57,7 +57,7 @@ describe( "cuentasParaMovimientos" , () => {
       {accountId: "g" , debit: 100  , credit: 0} ,
     ] ;
 
-    expect( derivarTipoTransaccion( entradas , cuentasParaMovimientos( [ gasto ] , [ personal( "a" , true ) ] ) ) ).toBe( "expense" ) ;
+    expect( derivarTipoTransaccion( entradas , cuentasParaMovimientos( [ gasto ] , [ personal( "a" ) ] ) ) ).toBe( "expense" ) ;
     expect( derivarTipoTransaccion( entradas , [ gasto ] ) ).toBe( "expense" ) ;
     expect( derivarTipoTransaccion( [ {accountId: "a" , debit: 0 , credit: 100} , {accountId: "x" , debit: 100 , credit: 0} ] , [] ) ).toBe( "transfer" ) ;
   } ) ;

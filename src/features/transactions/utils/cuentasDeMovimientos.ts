@@ -45,12 +45,13 @@ export function cuentasParaMovimientos(
 
   for( const cuenta of personales ) {
     porId.set( cuenta.id , {
-      id:         cuenta.id ,
-      code:       cuenta.code ,
-      name:       cuenta.name ,
-      type:       cuenta.type as CuentaReferenciada["type"] ,
-      currency:   cuenta.currency ,
-      compartida: cuenta.compartida ,
+      id:          cuenta.id ,
+      code:        cuenta.code ,
+      name:        cuenta.name ,
+      type:        cuenta.type as CuentaReferenciada["type"] ,
+      currency:    cuenta.currency ,
+      ownerUserId: cuenta.ownerUserId ,
+      ownerNombre: cuenta.ownerNombre ,
     } ) ;
   }
 

@@ -427,4 +427,36 @@ describe( "reparto de gastos (plan 19)" , () => {
     expect( filas.reduce( ( s , f ) => ( s + f.percentageBp ) , 0 ) ).toBe( 10000 ) ;
     expect( [ "8000-2000" , "3000-7000" ] ).toContain( `${porId.get( ana )}-${porId.get( beto )}` ) ;
   } ) ;
+
+  it( "AC-13 / AC-16: previsualizarRepartoAction con absorbe: true devuelve aplica: false y motivo: absorbido" , async () => {
+    await acuerdo5050() ;
+    sesionDe( ana , orgA ) ;
+
+    const previaAbsorbida = await previsualizarRepartoAction( {
+      tipo:            "expense" ,
+      montoEnCentavos: 10000 ,
+      currency:        "ARS" ,
+      holderUserId:    ana ,
+      accountIds:      [ cajaId ] ,
+      absorbe:         true ,
+    } ) ;
+
+    expect( previaAbsorbida.success ).toBe( true ) ;
+    if( !previaAbsorbida.success ) { return ; }
+    expect( previaAbsorbida.value.aplica ).toBe( false ) ;
+    expect( previaAbsorbida.value.motivo ).toBe( "absorbido" ) ;
+
+    const previaNormal = await previsualizarRepartoAction( {
+      tipo:            "expense" ,
+      montoEnCentavos: 10000 ,
+      currency:        "ARS" ,
+      holderUserId:    ana ,
+      accountIds:      [ cajaId ] ,
+      absorbe:         false ,
+    } ) ;
+
+    expect( previaNormal.success ).toBe( true ) ;
+    if( !previaNormal.success ) { return ; }
+    expect( previaNormal.value.aplica ).toBe( true ) ;
+  } ) ;
 } ) ;

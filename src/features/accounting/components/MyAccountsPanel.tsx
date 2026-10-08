@@ -141,25 +141,28 @@ export function MyAccountsPanel( {dict , financialEntities}: MyAccountsPanelProp
                 )}
 
                 {candidatas.length > 0 && (
-                  <div className={styles.shareRow}>
-                    <FormSelect
-                      aria-label={ `${dict.btnShareWith} ${cuenta.name}` }
-                      value={destino}
-                      onChange={ ( e ) => setDestinos( ( prev ) => ( {...prev , [cuenta.id]: e.target.value} ) ) }
-                      disabled={isPending}
-                    >
-                      <option value="">{dict.shareChooseOrganization}</option>
-                      {candidatas.map( ( o ) => (
-                        <option key={o.id} value={o.id}>{o.nombre}</option>
-                      ) )}
-                    </FormSelect>
-                    <Button
-                      variant="secondary"
-                      disabled={isPending || !destino}
-                      onClick={ () => cambiarComparticion( cuenta.id , destino , true ) }
-                    >
-                      {dict.btnShareWith}
-                    </Button>
+                  <div className={styles.shareBlock}>
+                    {dict.shareHelp && <p className={styles.shareHelp}>{dict.shareHelp}</p>}
+                    <div className={styles.shareRow}>
+                      <FormSelect
+                        aria-label={ `${dict.btnShareWith} ${cuenta.name}` }
+                        value={destino}
+                        onChange={ ( e ) => setDestinos( ( prev ) => ( {...prev , [cuenta.id]: e.target.value} ) ) }
+                        disabled={isPending}
+                      >
+                        <option value="">{dict.shareChooseOrganization}</option>
+                        {candidatas.map( ( o ) => (
+                          <option key={o.id} value={o.id}>{o.nombre}</option>
+                        ) )}
+                      </FormSelect>
+                      <Button
+                        variant="secondary"
+                        disabled={isPending || !destino}
+                        onClick={ () => cambiarComparticion( cuenta.id , destino , true ) }
+                      >
+                        {dict.btnShareWith}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </Card>

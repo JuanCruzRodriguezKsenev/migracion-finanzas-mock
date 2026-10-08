@@ -34,11 +34,9 @@ export interface CuentaPersonalVista {
   organizacionesIds: string[] ;
 }
 
-/** Cuentas que ofrece el formulario de movimientos: las usables ya y las que se pueden compartir y usar (RN-10). */
+/** Cuentas que ofrece el formulario de movimientos (RN-10). */
 export interface CuentasParaMovimiento {
   usables:            CuentaConEtiqueta[] ;
-  compartibles:       CuentaConEtiqueta[] ;
-  /** Organización activa: su id para compartir y su nombre para el aviso «Compartir X con <organización>». */
   organizacionId:     string ;
   organizacionNombre: string ;
 }
@@ -281,10 +279,9 @@ export async function obtenerCuentasDeListadoAction(): Promise< Result< CuentaDe
 
 /**
  * Cuentas que ofrece el formulario de movimientos al usuario de la sesión (RN-10): `usables` (las de la
- * organización y sus personales ya compartidas) y `compartibles` (sus personales que aún no se compartieron
- * ahí). Quien no puede escribir (`viewer`) no recibe compartibles: el servidor rechazaría compartir.
+ * organización, todas sus personales y las de otros compartidas).
  *
- * @returns Usables y compartibles, con su etiqueta.
+ * @returns Usables con su etiqueta.
  */
 export async function obtenerCuentasParaMovimientoAction(): Promise< Result< CuentasParaMovimiento , string > > {
   const identidad = await identidadDeSesion() ;
@@ -296,18 +293,15 @@ export async function obtenerCuentasParaMovimientoAction(): Promise< Result< Cue
   const { userId , organizationId } = identidad ;
 
   try {
-    const [ usables , compartibles , membresias ] = await Promise.all( [
+    const [ usables , membresias ] = await Promise.all( [
       accountRepository.findUsablesPara( organizationId , userId ) ,
-      accountRepository.findCompartiblesPara( organizationId , userId ) ,
       membershipRepository.findByUser( userId ) ,
     ] ) ;
 
-    const membresia    = membresias.find( ( m ) => m.organizationId === organizationId ) ;
-    const puedeEscribir = ( !!membresia && ROLES_QUE_ESCRIBEN.includes( membresia.role ) ) ;
+    const membresia = membresias.find( ( m ) => m.organizationId === organizationId ) ;
 
     return( ok( {
       usables ,
-      compartibles:       ( puedeEscribir ? compartibles : [] ) ,
       organizacionId:     organizationId ,
       organizacionNombre: ( membresia?.organizationName ?? "" ) ,
     } ) ) ;

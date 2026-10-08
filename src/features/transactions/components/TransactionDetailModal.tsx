@@ -41,7 +41,7 @@ interface TransactionDetailModalProps {
   accounts:    CuentaReferenciada[] ;
   categories:  Category[] ;
   holderDict?: HolderDetailDict ;
-  /** Textos de la etiqueta «Ya no compartida» (RN-13). Sin ellos el detalle no la muestra. */
+  /** Textos de la etiqueta de la cuenta (RN-15, RN-13). Sin ellos el detalle no la muestra. */
   cuentasDict?: AccountLabelDict ;
 }
 
@@ -55,27 +55,39 @@ interface TransactionDetailContentProps {
   cuentasDict?: AccountLabelDict ;
 }
 
-/** Textos de la línea de autoría del detalle: `{autor}` y `{titular}` se reemplazan por los nombres. */
+/** Textos de la línea de autoría del detalle: `{autor}`, `{titular}` se reemplazan por los nombres. */
 export interface HolderDetailDict {
   holderDetailBy:    string ;
   holderDetailByFor: string ;
+  absorbedBy?:       string ;
 }
 
 /**
- * Línea de autoría del detalle: quién cargó el movimiento y, si es otra persona, a nombre de quién.
+ * Línea de autoría del detalle: quién cargó el movimiento, a nombre de quién y si lo absorbió el titular.
  * Sin autor no hay nada que decir; si el titular es el propio autor, se omite el «a nombre de».
  */
 function textoDeAutoria( transaction: TransactionWithEntries , dict?: HolderDetailDict ): string | null {
   const autor   = transaction.createdBy ;
   const titular = transaction.holder ;
 
-  if( !dict || !autor ) { return( null ) ; }
-
-  if( titular && (titular.id !== autor.id) ) {
-    return( dict.holderDetailByFor.replace( "{autor}" , autor.nombre ).replace( "{titular}" , titular.nombre ) ) ;
+  let base: string | null = null ;
+  if( dict && autor ) {
+    if( titular && (titular.id !== autor.id) ) {
+      base = dict.holderDetailByFor.replace( "{autor}" , autor.nombre ).replace( "{titular}" , titular.nombre ) ;
+    } else {
+      base = dict.holderDetailBy.replace( "{autor}" , autor.nombre ) ;
+    }
   }
 
-  return( dict.holderDetailBy.replace( "{autor}" , autor.nombre ) ) ;
+  const titularNombre  = ( titular?.nombre || autor?.nombre || "" ) ;
+  const textoAbsorbido = ( transaction.absorbedByHolder && dict?.absorbedBy )
+    ? dict.absorbedBy.replace( "{titular}" , titularNombre )
+    : null ;
+
+  if( base && textoAbsorbido ) {
+    return( `${base} · ${textoAbsorbido}` ) ;
+  }
+  return( base || textoAbsorbido ) ;
 }
 
 function TransactionDetailContent( {
@@ -222,10 +234,10 @@ function TransactionDetailContent( {
                 <tr key={entry.id || `entry-${index}`}>
                   <td>
                     {acc ? `${acc.name} (${acc.type})` : entry.accountId.slice( 0 , 8 )}
-                    {( cuentasDict && (acc?.compartida === false) ) && (
+                    {( cuentasDict && acc?.ownerUserId && acc?.ownerNombre ) && (
                       <>
                         {" "}
-                        <AccountLabel etiqueta={ {tipo: "yaNoCompartida"} } dict={cuentasDict} />
+                        <AccountLabel etiqueta={ {tipo: "personal" , dueno: acc.ownerNombre} } dict={cuentasDict} />
                       </>
                     )}
                   </td>

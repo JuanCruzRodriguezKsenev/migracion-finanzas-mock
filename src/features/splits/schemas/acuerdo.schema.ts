@@ -41,6 +41,7 @@ export const previsualizarSchema = z.object( {
   fecha:           z.string().min( 1 ).max( 40 ).optional() ,
   holderUserId:    z.string().uuid().optional() ,
   accountIds:      z.array( z.string().uuid() ).max( 50 ) ,
+  absorbe:         z.boolean().optional() ,
 } ) ;
 
 export type PrevisualizarInput = z.infer< typeof previsualizarSchema > ;

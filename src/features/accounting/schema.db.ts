@@ -116,9 +116,11 @@ export const ledgerTransactions = pgTable( "ledger_transactions" , {
   // Autoría: quién cargó el movimiento y a nombre de quién. Nulables: los movimientos anteriores no
   // se retro-completan, y los generados por cron u outbox no tienen autor. Si el usuario se borra,
   // el movimiento sobrevive con el campo en nulo.
-  createdByUserId: uuid( "created_by_user_id" ).references( () => users.id , {onDelete: "set null"} ) ,
-  holderUserId:    uuid( "holder_user_id"     ).references( () => users.id , {onDelete: "set null"} ) ,
-  createdAt:      timestamp( "created_at"  , {withTimezone: true} ).defaultNow().notNull() ,
+  createdByUserId:  uuid( "created_by_user_id" ).references( () => users.id , {onDelete: "set null"} ) ,
+  holderUserId:     uuid( "holder_user_id"     ).references( () => users.id , {onDelete: "set null"} ) ,
+  // Absorción del gasto por el titular cuando usa cuenta propia (RN-19).
+  absorbedByHolder: boolean( "absorbed_by_holder" ).notNull().default( false ) ,
+  createdAt:        timestamp( "created_at"  , {withTimezone: true} ).defaultNow().notNull() ,
 } , ( table ) => { return( {
   // Un único índice para la paginación por cursor, que ordena por (occurred_at, id). El índice
   // sobre (organization_id, occurred_at) que existía antes era redundante: este lo cubre por

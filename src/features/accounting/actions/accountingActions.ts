@@ -14,7 +14,7 @@ import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
 
 // Feature: Auth
-import { autorizarTitular } from "@/features/auth/services/titularService" ;
+import { autorizarTitularPorCuenta } from "@/features/auth/services/titularService" ;
 
 // Feature: Accounting
 import {
@@ -319,6 +319,8 @@ export async function createLedgerTransactionAction(
     occurredAt?:     Date | string ;
     /** A nombre de quién se carga. El autor nunca viene del cliente: es siempre la sesión (RN-3). */
     holderUserId?:   string ;
+    /** Si el titular absorbe el gasto en vez de repartir la deuda (RN-19). */
+    absorbeElDueno?: boolean ;
     entries: {
       accountId: string ;
       debit:     number ;
@@ -349,8 +351,9 @@ export async function createLedgerTransactionAction(
     const result = await executeIdempotent( idempotencyKey || "" , async () => {
       // El titular se valida contra la base en cada llamada, dentro de la idempotencia: una revocación
       // entre dos intentos tiene que verse en el segundo (AC-4).
+      const cuentaIds = validation.data.entries.map( ( e ) => e.accountId ) ;
       const titular = autorUserId
-        ? await autorizarTitular( organizationId , autorUserId , validation.data.holderUserId )
+        ? await autorizarTitularPorCuenta( organizationId , autorUserId , validation.data.holderUserId , cuentaIds )
         : ok( null ) ;
 
       if( !titular.success ){
@@ -360,10 +363,11 @@ export async function createLedgerTransactionAction(
       const bizRes = await createLedgerTransaction( {
         ...validation.data ,
         organizationId ,
-        createdByUserId:   autorUserId ,
-        holderUserId:      titular.value ,
-        aplicarReparto:    true ,
-        titularPorDefecto: autorUserId ,
+        createdByUserId:       autorUserId ,
+        holderUserId:          titular.value ,
+        aplicarReparto:        true ,
+        titularPorDefecto:     autorUserId ,
+        absorbidoPorElTitular: validation.data.absorbeElDueno ,
       } ) ;
 
       if( !bizRes.success ){

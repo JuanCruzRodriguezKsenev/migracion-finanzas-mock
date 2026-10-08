@@ -1,8 +1,6 @@
-/**
- * @file titularService.ts
- * Reglas de «cargar a nombre de otra persona» (RN-2 a RN-6): quién puede ser titular de un movimiento
- * que carga otro miembro. Todo se lee de la base en cada llamada; nada viene del token ni del cliente.
- */
+// Librerías externas
+import { eq , and , inArray , isNotNull } from "drizzle-orm" ;
+
 // Shared
 import { ok , fail , Result } from "@/shared/lib/result" ;
 import { db , DBOrTx }        from "@/shared/db/client" ;
@@ -11,6 +9,9 @@ import { db , DBOrTx }        from "@/shared/db/client" ;
 import { habilitacionRepository } from "../repositories/habilitacionRepository" ;
 import { membershipRepository }   from "../repositories/membershipRepository" ;
 import { nombreVisible }          from "../utils/nombreVisible" ;
+
+// Feature: Accounting
+import { accounts , accountShares } from "@/features/accounting/schema.db" ;
 
 
 /**
@@ -77,6 +78,110 @@ export async function autorizarTitular(
   }
 
   return( fail( "No tenés habilitación para cargar a nombre de esa persona." ) ) ;
+}
+
+/**
+ * Autoriza el titular de un movimiento teniendo en cuenta las cuentas involucradas (RN-3, RN-9).
+ * Si el `holder` es el dueño de alguna personal compartida con la organización entre `cuentaIds` (o la del
+ * propio autor), valida sólo que el `holder` sea miembro no `viewer` y que el autor sea miembro no `viewer`.
+ * En cualquier otro caso delega en `autorizarTitular` (habilitación incluida, sin cambios).
+ *
+ * @param organizationId - Organización de la sesión.
+ * @param autorUserId - Quien carga (la sesión).
+ * @param holderUserId - Titular pedido, o nulo/indefinido.
+ * @param cuentaIds - IDs de las cuentas de los asientos del movimiento.
+ * @param tx - Instancia de transacción opcional.
+ * @returns El titular a guardar, o fail con el motivo.
+ */
+export async function autorizarTitularPorCuenta(
+  organizationId: string ,
+  autorUserId:    string ,
+  holderUserId:   string | null | undefined ,
+  cuentaIds:      string[] ,
+  tx:             DBOrTx = db
+): Promise< Result< string | null , string > > {
+  if( !holderUserId ) {
+    return( autorizarTitular( organizationId , autorUserId , holderUserId , tx ) ) ;
+  }
+
+  if( cuentaIds.length > 0 ) {
+    // Si el titular es el propio autor con su cuenta personal
+    if( holderUserId === autorUserId ) {
+      const [ cuentaPropia ] = await tx
+        .select( { id: accounts.id } )
+        .from( accounts )
+        .where( and(
+          inArray( accounts.id , cuentaIds ) ,
+          eq( accounts.ownerUserId , autorUserId )
+        ) )
+        .limit( 1 ) ;
+
+      if( cuentaPropia ) {
+        const membresiaAutor = await membershipRepository.findMembership( autorUserId , organizationId , tx ) ;
+        if( !membresiaAutor ) {
+          return( fail( "No autorizado." ) ) ;
+        }
+        if( membresiaAutor.role === "viewer" ) {
+          return( fail( "Un lector no puede operar cuentas personales." ) ) ;
+        }
+        return( ok( holderUserId ) ) ;
+      }
+    }
+
+    // Si el titular es el dueño de una personal compartida con la organización
+    const [ cuentaCompartida ] = await tx
+      .select( { id: accounts.id } )
+      .from( accounts )
+      .innerJoin( accountShares , and(
+        eq( accountShares.accountId      , accounts.id ) ,
+        eq( accountShares.organizationId , organizationId )
+      ) )
+      .where( and(
+        inArray( accounts.id , cuentaIds ) ,
+        eq( accounts.ownerUserId , holderUserId )
+      ) )
+      .limit( 1 ) ;
+
+    if( cuentaCompartida ) {
+      const membresiaTitular = await membershipRepository.findMembership( holderUserId , organizationId , tx ) ;
+      if( !membresiaTitular ) {
+        return( fail( "La persona elegida no es miembro de la organización." ) ) ;
+      }
+      if( membresiaTitular.role === "viewer" ) {
+        return( fail( "Un lector no puede ser titular de un movimiento." ) ) ;
+      }
+
+      const membresiaAutor = await membershipRepository.findMembership( autorUserId , organizationId , tx ) ;
+      if( !membresiaAutor ) {
+        return( fail( "No autorizado." ) ) ;
+      }
+      if( membresiaAutor.role === "viewer" ) {
+        return( fail( "Un lector no puede operar cuentas personales." ) ) ;
+      }
+
+      return( ok( holderUserId ) ) ;
+    }
+
+    // Si entre las cuentas hay una personal compartida con la organización y el titular no es su dueño (RN-9)
+    const [ personalAjenaCompartida ] = await tx
+      .select( { id: accounts.id } )
+      .from( accounts )
+      .innerJoin( accountShares , and(
+        eq( accountShares.accountId      , accounts.id ) ,
+        eq( accountShares.organizationId , organizationId )
+      ) )
+      .where( and(
+        inArray( accounts.id , cuentaIds ) ,
+        isNotNull( accounts.ownerUserId )
+      ) )
+      .limit( 1 ) ;
+
+    if( personalAjenaCompartida ) {
+      return( fail( "Los movimientos con una cuenta personal ajena deben tener como titular al dueño de la cuenta." ) ) ;
+    }
+  }
+
+  return( autorizarTitular( organizationId , autorUserId , holderUserId , tx ) ) ;
 }
 
 /**

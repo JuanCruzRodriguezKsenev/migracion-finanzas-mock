@@ -59,7 +59,9 @@ export interface CreateTransactionParams {
    */
   aplicarReparto?:   boolean ;
   /** Titular que se asigna **sólo** si el reparto aplica y no se pidió ninguno (RN-7): el autor. */
-  titularPorDefecto?: string | null ;
+  titularPorDefecto?:     string | null ;
+  /** Si el titular absorbe el gasto en vez de repartir la deuda entre los miembros (RN-19). */
+  absorbidoPorElTitular?: boolean ;
   entries: {
     accountId: string ;
     debit:     number ;
@@ -97,20 +99,22 @@ export function etiquetaDeCuenta( cuenta: Pick< Account , "ownerUserId" > , shar
 }
 
 /**
- * Etiqueta que la interfaz sabe dibujar: las de {@link EtiquetaCuenta} más «Ya no compartida» (RN-13),
- * que sólo existe en las filas de movimientos.
+ * Etiqueta que la interfaz sabe dibujar: las de {@link EtiquetaCuenta} más «Cuenta personal de <dueño>» (RN-13),
+ * que se usa en las filas y detalle de movimientos.
  */
-export type EtiquetaVisible = EtiquetaCuenta | { tipo: "yaNoCompartida" } ;
+export type EtiquetaVisible =
+  | EtiquetaCuenta
+  | { tipo: "personal" ; dueno: string } ;
 
 /**
  * Cuenta tal como la necesitan la lista y el detalle de movimientos: lo justo para nombrarla y clasificar
- * el asiento, **sin saldo**. Una {@link Account} cabe en este tipo; una personal ajena (`compartida` informado)
- * llega así, sin fabricar un `Account` con saldo 0.
+ * el asiento, **sin saldo**. Una {@link Account} cabe en este tipo; una personal trae su dueño (RN-13)
+ * para etiquetarse en las filas de movimientos.
  */
 export type CuentaReferenciada = Pick< Account , "id" | "code" | "name" | "type" | "currency" > & {
-  entityId?:   string | null ;
-  /** `false` si el dueño ya dejó de compartirla con la organización (RN-13). Ausente en las cuentas de la organización. */
-  compartida?: boolean ;
+  entityId?:    string | null ;
+  ownerUserId?: string | null ;
+  ownerNombre?: string | null ;
 } ;
 
 /**

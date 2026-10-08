@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 /**
  * @file TransactionFormModal.cuentas.test.tsx
- * Plan 25, paso 4: selector de origen con etiquetas (RN-15), «Compartir y usar» con confirmación (RN-10, PA-3),
- * titular fijo con una personal (RN-9) y selector «a nombre de» sin viewers (AC-9).
+ * Plan 26 (AC-16): sin bloque «Compartir y usar», la pregunta de deuda aparece sólo con cuenta
+ * propia + reparto aplicable, titular fijo con personal (RN-9) y selector «a nombre de» sin viewers (AC-9).
  */
 // Librerías externas
 import { describe , it , expect , vi , beforeAll , beforeEach } from "vitest" ;
@@ -11,9 +11,11 @@ import { render , screen , fireEvent , waitFor , within }       from "@testing-l
 // Shared
 import { getDictionary } from "@/shared/lib/dictionary" ;
 
+// Feature: Splits
+import type { VistaPreviaReparto } from "@/features/splits/actions/acuerdoActions" ;
+
 // Feature: Accounting
 import type { Account , EtiquetaCuenta } from "@/features/accounting/types" ;
-import { compartirCuentaAction }         from "@/features/accounting/actions/cuentasPersonalesActions" ;
 
 // Feature: Transactions
 import { createTransactionFromFormAction } from "../actions/transactionsActions" ;
@@ -24,15 +26,11 @@ vi.mock( "@/features/accounting/actions/categoryActions" , () => ( {
   createCategoryAction: vi.fn() ,
 } ) ) ;
 
-vi.mock( "@/features/accounting/actions/cuentasPersonalesActions" , () => ( {
-  compartirCuentaAction: vi.fn() ,
-} ) ) ;
-
 vi.mock( "../actions/transactionsActions" , () => ( {
   createTransactionFromFormAction: vi.fn() ,
 } ) ) ;
 
-type ConEtiqueta = Account & { etiqueta?: EtiquetaCuenta } ;
+type ConEtiqueta = Account & { etiqueta?: EtiquetaCuenta ; ownerNombre?: string } ;
 
 function cuenta( id: string , name: string , extra: Partial< ConEtiqueta > = {} ): ConEtiqueta {
   return( {
@@ -42,14 +40,19 @@ function cuenta( id: string , name: string , extra: Partial< ConEtiqueta > = {} 
   } as ConEtiqueta ) ;
 }
 
-const caja:     ConEtiqueta = cuenta( "acc-caja"  , "Caja Casa"  , { etiqueta: { tipo: "organizacion" } } ) ;
-const bancoAna: ConEtiqueta = cuenta( "acc-banco" , "Banco Ana"  , {
+const caja:       ConEtiqueta = cuenta( "acc-caja"  , "Caja Casa"  , { etiqueta: { tipo: "organizacion" } } ) ;
+const bancoAna:   ConEtiqueta = cuenta( "acc-banco" , "Banco Ana"  , {
   ownerUserId: "u-ana" ,
   etiqueta:    { tipo: "compartida" , organizaciones: [ { id: "org-1" , nombre: "reparto-demo" } ] } ,
 } ) ;
-const dniAna:   ConEtiqueta = cuenta( "acc-dni"   , "Cuenta DNI" , { ownerUserId: "u-ana" , etiqueta: { tipo: "privada" } } ) ;
+const dniAna:     ConEtiqueta = cuenta( "acc-dni"   , "Cuenta DNI" , { ownerUserId: "u-ana" , etiqueta: { tipo: "privada" } } ) ;
+const cuentaBeto: ConEtiqueta = cuenta( "acc-beto"  , "Banco Beto" , {
+  ownerUserId: "u-beto" ,
+  ownerNombre: "Beto" ,
+  etiqueta:    { tipo: "compartida" , organizaciones: [ { id: "org-1" , nombre: "reparto-demo" } ] } ,
+} ) ;
 
-describe( "TransactionFormModal — cuentas propias y compartidas (plan 25)" , () => {
+describe( "TransactionFormModal — cuentas propias y pregunta de deuda (plan 26)" , () => {
   let dict: Awaited< ReturnType< typeof getDictionary > > ;
 
   beforeAll( async () => {
@@ -62,96 +65,127 @@ describe( "TransactionFormModal — cuentas propias y compartidas (plan 25)" , (
 
   const titulares = [ { userId: "u-ana" , nombre: "Ana" } , { userId: "u-juan" , nombre: "Juan" } ] ;
 
+  const vistaPreviaAplica: VistaPreviaReparto = {
+    aplica:         true ,
+    motivo:         "aplica" ,
+    titular:        "Ana" ,
+    partesIguales:  false ,
+    desactualizado: false ,
+    partes: [
+      { userId: "u-ana"  , nombre: "Ana"  , porcentajeBp: 5000 , montoEnCentavos: 5000 , esDeuda: false } ,
+      { userId: "u-juan" , nombre: "Juan" , porcentajeBp: 5000 , montoEnCentavos: 5000 , esDeuda: true } ,
+    ] ,
+  } ;
+
   const montar = ( props: Partial< React.ComponentProps< typeof TransactionFormModal > > = {} ) => {
-    const onCuentaCompartida = vi.fn() ;
-    const vista = render(
+    return( render(
       <TransactionFormModal
         isOpen
         onClose={ () => {} }
         onSuccess={ () => {} }
-        accounts={ [ caja , bancoAna ] }
-        compartibles={ [ dniAna ] }
-        organizacionId="org-1"
-        organizacionNombre="reparto-demo"
+        accounts={ [ caja , bancoAna , dniAna , cuentaBeto ] }
         cuentasDict={dict.accountsPage}
-        onCuentaCompartida={onCuentaCompartida}
         titulares={titulares}
         holderDict={dict.transactionsPage}
         {...props}
       />
-    ) ;
-    return( {...vista , onCuentaCompartida} ) ;
+    ) ) ;
   } ;
 
   const origen = () => screen.getByLabelText( /Cuenta de pago/ ) as HTMLSelectElement ;
 
-  it( "el selector de origen ofrece las usables, cada una con su etiqueta, y no ofrece las compartibles" , () => {
+  it( "el selector de origen ofrece las usables (propias privadas/compartidas, ajenas y org)" , () => {
     montar() ;
 
-    expect( within( origen() ).getByRole( "option" , {name: "Caja Casa (asset) · De la organización"} ) ).toBeTruthy() ;
-    expect( within( origen() ).getByRole( "option" , {name: "Banco Ana (asset) · Compartida · reparto-demo"} ) ).toBeTruthy() ;
-    expect( within( origen() ).queryByRole( "option" , {name: /Cuenta DNI/} ) ).toBeNull() ;
+    expect( within( origen() ).getByRole( "option" , { name: "Caja Casa (asset) · De la organización" } ) ).toBeTruthy() ;
+    expect( within( origen() ).getByRole( "option" , { name: "Banco Ana (asset) · Compartida · reparto-demo" } ) ).toBeTruthy() ;
+    expect( within( origen() ).getByRole( "option" , { name: "Cuenta DNI (asset) · Privada" } ) ).toBeTruthy() ;
+    expect( within( origen() ).getByRole( "option" , { name: "Banco Beto · Compartida · reparto-demo (de Beto)" } ) ).toBeTruthy() ;
   } ) ;
 
-  it( "sin compartibles el bloque «¿Pagaste con una cuenta tuya?» no aparece" , () => {
-    montar( {compartibles: []} ) ;
-
-    expect( screen.queryByText( dict.accountsPage.shareAndUseHint ) ).toBeNull() ;
-  } ) ;
-
-  it( "con compartibles ofrece «Compartir X con <org> y usarla»" , () => {
+  it( "no existe bloque «Compartir y usar» en el formulario" , () => {
     montar() ;
 
-    expect( screen.getByText( dict.accountsPage.shareAndUseHint ) ).toBeTruthy() ;
-    expect( screen.getByRole( "button" , {name: "Compartir Cuenta DNI con reparto-demo y usarla"} ) ).toBeTruthy() ;
+    expect( screen.queryByText( /¿Pagaste con una cuenta tuya\?/i ) ).toBeNull() ;
+    expect( screen.queryByRole( "button" , { name: /Compartir .* y usarla/ } ) ).toBeNull() ;
   } ) ;
 
-  it( "pide confirmación con la línea fija (PA-3) y cancelar no comparte nada" , () => {
-    montar() ;
+  describe( "pregunta de deuda (AC-16, RN-18, RN-19)" , () => {
+    it( "aparece con cuenta propia y reparto aplicable, con «Sí» marcado por defecto" , async () => {
+      const previsualizar = vi.fn().mockResolvedValue( { success: true , value: vistaPreviaAplica } ) ;
+      montar( { previsualizar: previsualizar as never , repartoDict: dict.splits } ) ;
 
-    fireEvent.click( screen.getByRole( "button" , {name: /Compartir Cuenta DNI/} ) ) ;
+      fireEvent.change( screen.getByLabelText( /Monto/ ) , { target: { value: "100" } } ) ;
+      fireEvent.change( origen() , { target: { value: "acc-banco" } } ) ;
 
-    expect( screen.getByText(
-      "Vas a compartir Cuenta DNI con reparto-demo: sus miembros verán los movimientos que cargues acá, no su saldo."
-    ) ).toBeTruthy() ;
+      await waitFor( () => expect( screen.getByText( dict.accountsPage.debtQuestion ) ).toBeTruthy() ) ;
 
-    const confirmacion = screen.getByRole( "group" , {name: dict.accountsPage.shareAndUseHint} ) ;
-    fireEvent.click( within( confirmacion ).getByRole( "button" , {name: dict.accountsPage.shareConfirmCancel} ) ) ;
+      const radioSi = screen.getByLabelText( dict.accountsPage.debtYes ) as HTMLInputElement ;
+      const radioNo = screen.getByLabelText( dict.accountsPage.debtNo ) as HTMLInputElement ;
 
-    expect( compartirCuentaAction ).not.toHaveBeenCalled() ;
-    expect( screen.getByRole( "button" , {name: /Compartir Cuenta DNI/} ) ).toBeTruthy() ;
-  } ) ;
+      expect( radioSi.checked ).toBe( true ) ;
+      expect( radioNo.checked ).toBe( false ) ;
+    } ) ;
 
-  it( "aceptar comparte, deja la cuenta elegida y conserva lo escrito sin cerrar el formulario (AC-2)" , async () => {
-    vi.mocked( compartirCuentaAction ).mockResolvedValue( {success: true , value: null} as never ) ;
-    const onClose = vi.fn() ;
-    const { onCuentaCompartida } = montar( {onClose} ) ;
+    it( "marcar «No, lo absorbo yo» envía absorbeElDueno: true" , async () => {
+      vi.mocked( createTransactionFromFormAction ).mockResolvedValue( { success: true , value: {} } as never ) ;
+      const previsualizar = vi.fn().mockResolvedValue( { success: true , value: vistaPreviaAplica } ) ;
+      montar( { previsualizar: previsualizar as never , repartoDict: dict.splits } ) ;
 
-    fireEvent.change( screen.getByLabelText( /Monto/ ) , {target: {value: "12000"}} ) ;
-    fireEvent.change( screen.getByLabelText( /Descripción/ ) , {target: {value: "Súper"}} ) ;
+      fireEvent.change( screen.getByLabelText( /Monto/ ) , { target: { value: "100" } } ) ;
+      fireEvent.change( screen.getByLabelText( /Descripción/ ) , { target: { value: "Súper" } } ) ;
+      fireEvent.change( origen() , { target: { value: "acc-banco" } } ) ;
 
-    fireEvent.click( screen.getByRole( "button" , {name: /Compartir Cuenta DNI/} ) ) ;
-    fireEvent.click( screen.getByRole( "button" , {name: dict.accountsPage.shareConfirmAccept} ) ) ;
+      await waitFor( () => expect( screen.getByText( dict.accountsPage.debtQuestion ) ).toBeTruthy() ) ;
 
-    await waitFor( () => expect( compartirCuentaAction ).toHaveBeenCalledWith( {accountId: "acc-dni" , organizationId: "org-1"} ) ) ;
-    await waitFor( () => expect( origen().value ).toBe( "acc-dni" ) ) ;
+      const radioNo = screen.getByLabelText( dict.accountsPage.debtNo ) ;
+      fireEvent.click( radioNo ) ;
 
-    expect( ( screen.getByLabelText( /Monto/ ) as HTMLInputElement ).value ).toBe( "12000" ) ;
-    expect( ( screen.getByLabelText( /Descripción/ ) as HTMLInputElement ).value ).toBe( "Súper" ) ;
-    expect( onClose ).not.toHaveBeenCalled() ;
-    expect( onCuentaCompartida ).toHaveBeenCalledTimes( 1 ) ;
-    expect( screen.queryByText( dict.accountsPage.shareAndUseHint ) ).toBeNull() ;
-  } ) ;
+      fireEvent.click( screen.getByRole( "button" , { name: "Guardar Transacción" } ) ) ;
 
-  it( "si compartir falla, muestra el error y la cuenta sigue sin elegirse" , async () => {
-    vi.mocked( compartirCuentaAction ).mockResolvedValue( {success: false , error: "No autorizado."} as never ) ;
-    montar() ;
+      await waitFor( () => expect( createTransactionFromFormAction ).toHaveBeenCalledTimes( 1 ) ) ;
+      expect( vi.mocked( createTransactionFromFormAction ).mock.calls[0][0] ).toMatchObject( {
+        sourceAccountId: "acc-banco" ,
+        absorbeElDueno:  true ,
+      } ) ;
+    } ) ;
 
-    fireEvent.click( screen.getByRole( "button" , {name: /Compartir Cuenta DNI/} ) ) ;
-    fireEvent.click( screen.getByRole( "button" , {name: dict.accountsPage.shareConfirmAccept} ) ) ;
+    it( "no aparece con una cuenta de la organización" , async () => {
+      const previsualizar = vi.fn().mockResolvedValue( { success: true , value: vistaPreviaAplica } ) ;
+      montar( { previsualizar: previsualizar as never , repartoDict: dict.splits } ) ;
 
-    expect( await screen.findByText( "No autorizado." ) ).toBeTruthy() ;
-    expect( origen().value ).toBe( "" ) ;
+      fireEvent.change( screen.getByLabelText( /Monto/ ) , { target: { value: "100" } } ) ;
+      fireEvent.change( origen() , { target: { value: "acc-caja" } } ) ;
+
+      // Esperar debounce
+      await waitFor( () => expect( previsualizar ).toHaveBeenCalled() ) ;
+      expect( screen.queryByText( dict.accountsPage.debtQuestion ) ).toBeNull() ;
+    } ) ;
+
+    it( "no aparece con una cuenta personal ajena (de Beto)" , async () => {
+      const previsualizar = vi.fn().mockResolvedValue( { success: true , value: vistaPreviaAplica } ) ;
+      montar( { previsualizar: previsualizar as never , repartoDict: dict.splits } ) ;
+
+      fireEvent.change( screen.getByLabelText( /Monto/ ) , { target: { value: "100" } } ) ;
+      fireEvent.change( origen() , { target: { value: "acc-beto" } } ) ;
+
+      await waitFor( () => expect( previsualizar ).toHaveBeenCalled() ) ;
+      expect( screen.queryByText( dict.accountsPage.debtQuestion ) ).toBeNull() ;
+    } ) ;
+
+    it( "no aparece si el reparto no aplica" , async () => {
+      const previsualizar = vi.fn().mockResolvedValue( {
+        success: true ,
+        value:   { ...vistaPreviaAplica , aplica: false , motivo: "modo_none" , partes: [] } ,
+      } ) ;
+      montar( { previsualizar: previsualizar as never , repartoDict: dict.splits } ) ;
+
+      fireEvent.change( screen.getByLabelText( /Monto/ ) , { target: { value: "100" } } ) ;
+      fireEvent.change( origen() , { target: { value: "acc-banco" } } ) ;
+
+      await waitFor( () => expect( previsualizar ).toHaveBeenCalled() ) ;
+      expect( screen.queryByText( dict.accountsPage.debtQuestion ) ).toBeNull() ;
+    } ) ;
   } ) ;
 
   describe( "titular con una cuenta personal (RN-9) y selector «a nombre de» (AC-9)" , () => {
@@ -161,15 +195,15 @@ describe( "TransactionFormModal — cuentas propias y compartidas (plan 25)" , (
       montar() ;
 
       expect( within( titular() ).getAllByRole( "option" ).map( ( o ) => o.textContent ) ).toEqual( [ "Ana (vos)" , "Juan" ] ) ;
-      expect( screen.queryByRole( "option" , {name: /Vera/} ) ).toBeNull() ;
+      expect( screen.queryByRole( "option" , { name: /Vera/ } ) ).toBeNull() ;
     } ) ;
 
     it( "con una personal de origen el titular queda fijo en el dueño y deshabilitado" , () => {
       montar() ;
-      fireEvent.change( titular() , {target: {value: "u-juan"}} ) ;
+      fireEvent.change( titular() , { target: { value: "u-juan" } } ) ;
       expect( titular().value ).toBe( "u-juan" ) ;
 
-      fireEvent.change( origen() , {target: {value: "acc-banco"}} ) ;
+      fireEvent.change( origen() , { target: { value: "acc-banco" } } ) ;
 
       expect( titular().value ).toBe( "u-ana" ) ;
       expect( titular().disabled ).toBe( true ) ;
@@ -177,33 +211,36 @@ describe( "TransactionFormModal — cuentas propias y compartidas (plan 25)" , (
     } ) ;
 
     it( "con una personal no se envía otro titular aunque se hubiera elegido antes" , async () => {
-      vi.mocked( createTransactionFromFormAction ).mockResolvedValue( {success: true , value: {}} as never ) ;
+      vi.mocked( createTransactionFromFormAction ).mockResolvedValue( { success: true , value: {} } as never ) ;
       montar() ;
 
-      fireEvent.change( titular() , {target: {value: "u-juan"}} ) ;
-      fireEvent.change( origen() , {target: {value: "acc-banco"}} ) ;
-      fireEvent.change( screen.getByLabelText( /Monto/ ) , {target: {value: "100"}} ) ;
-      fireEvent.change( screen.getByLabelText( /Descripción/ ) , {target: {value: "Súper"}} ) ;
-      fireEvent.click( screen.getByRole( "button" , {name: "Guardar Transacción"} ) ) ;
+      fireEvent.change( titular() , { target: { value: "u-juan" } } ) ;
+      fireEvent.change( origen() , { target: { value: "acc-banco" } } ) ;
+      fireEvent.change( screen.getByLabelText( /Monto/ ) , { target: { value: "100" } } ) ;
+      fireEvent.change( screen.getByLabelText( /Descripción/ ) , { target: { value: "Súper" } } ) ;
+      fireEvent.click( screen.getByRole( "button" , { name: "Guardar Transacción" } ) ) ;
 
       await waitFor( () => expect( createTransactionFromFormAction ).toHaveBeenCalledTimes( 1 ) ) ;
-      expect( vi.mocked( createTransactionFromFormAction ).mock.calls[0][0] ).toMatchObject( {sourceAccountId: "acc-banco" , holderUserId: undefined} ) ;
+      expect( vi.mocked( createTransactionFromFormAction ).mock.calls[0][0] ).toMatchObject( {
+        sourceAccountId: "acc-banco" ,
+        holderUserId:    undefined ,
+      } ) ;
     } ) ;
 
     it( "con una cuenta de la organización el titular se puede elegir y se envía" , async () => {
-      vi.mocked( createTransactionFromFormAction ).mockResolvedValue( {success: true , value: {}} as never ) ;
+      vi.mocked( createTransactionFromFormAction ).mockResolvedValue( { success: true , value: {} } as never ) ;
       montar() ;
 
-      fireEvent.change( titular() , {target: {value: "u-juan"}} ) ;
-      fireEvent.change( origen() , {target: {value: "acc-caja"}} ) ;
+      fireEvent.change( titular() , { target: { value: "u-juan" } } ) ;
+      fireEvent.change( origen() , { target: { value: "acc-caja" } } ) ;
       expect( titular().disabled ).toBe( false ) ;
 
-      fireEvent.change( screen.getByLabelText( /Monto/ ) , {target: {value: "100"}} ) ;
-      fireEvent.change( screen.getByLabelText( /Descripción/ ) , {target: {value: "Súper"}} ) ;
-      fireEvent.click( screen.getByRole( "button" , {name: "Guardar Transacción"} ) ) ;
+      fireEvent.change( screen.getByLabelText( /Monto/ ) , { target: { value: "100" } } ) ;
+      fireEvent.change( screen.getByLabelText( /Descripción/ ) , { target: { value: "Súper" } } ) ;
+      fireEvent.click( screen.getByRole( "button" , { name: "Guardar Transacción" } ) ) ;
 
       await waitFor( () => expect( createTransactionFromFormAction ).toHaveBeenCalledTimes( 1 ) ) ;
-      expect( vi.mocked( createTransactionFromFormAction ).mock.calls[0][0] ).toMatchObject( {holderUserId: "u-juan"} ) ;
+      expect( vi.mocked( createTransactionFromFormAction ).mock.calls[0][0] ).toMatchObject( { holderUserId: "u-juan" } ) ;
     } ) ;
   } ) ;
 } ) ;

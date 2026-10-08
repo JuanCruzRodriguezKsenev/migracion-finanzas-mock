@@ -6,11 +6,14 @@ import { crearUsuarioConMembresia } from "@/shared/db/testFixtures" ;
 import { limpiarBase }              from "@/shared/db/testCleanup" ;
 import { db }                       from "@/shared/db/client" ;
 
+// Feature: Accounting
+import { accounts , accountShares } from "@/features/accounting/schema.db" ;
+
 // Feature: Auth
-import { autorizarTitular , titularesPosibles } from "./titularService" ;
-import { habilitacionRepository }               from "../repositories/habilitacionRepository" ;
-import { membershipRepository }                 from "../repositories/membershipRepository" ;
-import { organizations }                        from "../schema.db" ;
+import { autorizarTitular , autorizarTitularPorCuenta , titularesPosibles } from "./titularService" ;
+import { habilitacionRepository }                                           from "../repositories/habilitacionRepository" ;
+import { membershipRepository }                                             from "../repositories/membershipRepository" ;
+import { organizations }                                                    from "../schema.db" ;
 
 
 describe( "titularService: un viewer no es titular (RN-17)" , () => {
@@ -61,6 +64,65 @@ describe( "titularService: un viewer no es titular (RN-17)" , () => {
       const res = await autorizarTitular( orgA , lector , lector ) ;
 
       expect( res.success && res.value ).toBe( lector ) ;
+    } ) ;
+  } ) ;
+
+  describe( "autorizarTitularPorCuenta (RN-3, RN-9)" , () => {
+    let cuentaAnaCompartida: string ;
+    let cuentaBetoPrivada:   string ;
+
+    beforeEach( async () => {
+      const [ ca ] = await db.insert( accounts ).values( {
+        organizationId: orgA , code: "1.1.91" , name: "Banco Ana" , type: "asset" , ownerUserId: ana ,
+      } ).returning() ;
+      cuentaAnaCompartida = ca.id ;
+      await db.insert( accountShares ).values( { accountId: ca.id , organizationId: orgA } ) ;
+
+      const [ cb ] = await db.insert( accounts ).values( {
+        organizationId: orgA , code: "1.1.92" , name: "Banco Beto Privado" , type: "asset" , ownerUserId: beto ,
+      } ).returning() ;
+      cuentaBetoPrivada = cb.id ;
+    } ) ;
+
+    it( "RN-3: autor con su cuenta propia personal es autorizado a su propio nombre" , async () => {
+      const res = await autorizarTitularPorCuenta( orgA , ana , ana , [ cuentaAnaCompartida ] ) ;
+
+      expect( res.success && res.value ).toBe( ana ) ;
+    } ) ;
+
+    it( "RN-3: autor Beto con cuenta compartida de Ana a nombre de Ana (sin habilitación previa) es autorizado" , async () => {
+      const res = await autorizarTitularPorCuenta( orgA , beto , ana , [ cuentaAnaCompartida ] ) ;
+
+      expect( res.success && res.value ).toBe( ana ) ;
+    } ) ;
+
+    it( "RN-9: autor Beto con cuenta compartida de Ana intentando poner a Beto como titular es rechazado" , async () => {
+      const res = await autorizarTitularPorCuenta( orgA , beto , beto , [ cuentaAnaCompartida ] ) ;
+
+      expect( res.success ).toBe( false ) ;
+    } ) ;
+
+    it( "RN-9: autor Ana con cuenta privada no compartida de Beto a nombre de Beto es rechazado sin habilitación" , async () => {
+      const res = await autorizarTitularPorCuenta( orgA , ana , beto , [ cuentaBetoPrivada ] ) ;
+
+      expect( res.success ).toBe( false ) ;
+    } ) ;
+
+    it( "un viewer no puede operar cuentas personales como autor" , async () => {
+      const res = await autorizarTitularPorCuenta( orgA , lector , ana , [ cuentaAnaCompartida ] ) ;
+
+      expect( res.success ).toBe( false ) ;
+    } ) ;
+
+    it( "un viewer no puede ser titular aunque tenga una personal compartida" , async () => {
+      const [ cl ] = await db.insert( accounts ).values( {
+        organizationId: orgA , code: "1.1.93" , name: "Banco Lector" , type: "asset" , ownerUserId: lector ,
+      } ).returning() ;
+      await db.insert( accountShares ).values( { accountId: cl.id , organizationId: orgA } ) ;
+
+      const res = await autorizarTitularPorCuenta( orgA , ana , lector , [ cl.id ] ) ;
+
+      expect( res.success ).toBe( false ) ;
     } ) ;
   } ) ;
 

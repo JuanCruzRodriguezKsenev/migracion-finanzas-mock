@@ -18,6 +18,8 @@ export const createTransactionSchema = z.object( {
   occurredAt:     z.coerce.date().optional() ,
   // A nombre de quién se carga (RN-2). El autor **no** está en el esquema: lo fija el servidor desde la sesión (RN-3).
   holderUserId:   z.string().uuid( "El titular debe ser un UUID válido." ).nullable().optional() ,
+  // Si el titular absorbe el gasto en vez de repartir la deuda (RN-19).
+  absorbeElDueno: z.boolean().optional() ,
   
   // Apuntes contables (Mínimo deben ser 2 para cumplir partida doble)
   entries: z.array(

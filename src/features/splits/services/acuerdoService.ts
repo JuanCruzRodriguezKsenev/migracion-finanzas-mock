@@ -97,6 +97,7 @@ export interface EntradaResolverReparto {
   /** Ids de las cuentas de los asientos. */
   cuentas:         string[] ;
   esGastoManual:   boolean ;
+  absorbe?:        boolean ;
 }
 
 /** Resultado de resolver el reparto de un gasto. */
@@ -150,6 +151,7 @@ export async function resolverReparto( datos: EntradaResolverReparto , tx: DBOrT
     cantidadMiembrosNoViewer: noViewer.length ,
     algunaCuentaEsCajaComun:  cuentasDelGasto.some( ( c ) => c.isCommonPot ) ,
     titularEsViewer:          ( !rolTitular || (rolTitular === "viewer") ) ,
+    absorbe:                  datos.absorbe ,
   } ) ;
 
   if( !decision.aplica ) {

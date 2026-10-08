@@ -58,6 +58,7 @@ function movimiento( extra: Partial< TransactionWithEntries > ): TransactionWith
     id: "tx-1" , organizationId: "org-1" , categoryId: null , description: "Súper del barrio" , merchantName: null ,
     merchantDomain: null , occurredAt: new Date( "2026-10-01T12:00:00Z" ) , createdAt: new Date( "2026-10-01T12:00:00Z" ) ,
     reversesTransactionId: null , reversedAt: null , createdByUserId: null , holderUserId: null ,
+    absorbedByHolder: false ,
     entries: [
       { id: "e1" , transactionId: "tx-1" , accountId: "acc-1" , debit: 0    , credit: 1200 , currency: "ARS" , createdAt: new Date() } ,
       { id: "e2" , transactionId: "tx-1" , accountId: "acc-2" , debit: 1200 , credit: 0    , currency: "ARS" , createdAt: new Date() } ,

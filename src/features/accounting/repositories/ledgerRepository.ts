@@ -15,7 +15,7 @@ import { users }         from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
 import { LedgerTransaction , InsertLedgerTransaction , LedgerEntry , InsertLedgerEntry } from "../types" ;
-import { ledgerTransactions , ledgerEntries , accounts , accountShares }                  from "../schema.db" ;
+import { ledgerTransactions , ledgerEntries , accounts }                                   from "../schema.db" ;
 
 
 /**
@@ -54,8 +54,7 @@ export interface QueryTransactionsParams {
 
 /**
  * Cuenta personal que aparece en los asientos de una página de movimientos (RN-13). No lleva saldo: quien
- * ve el movimiento ve el nombre de la cuenta, no su dinero. `compartida` es `false` si el dueño ya dejó de
- * compartirla con la organización («Ya no compartida»).
+ * ve el movimiento ve el nombre de la cuenta y de su dueño, no su dinero.
  */
 export interface CuentaPersonalReferenciada {
   id:          string ;
@@ -64,7 +63,7 @@ export interface CuentaPersonalReferenciada {
   type:        string ;
   currency:    string ;
   ownerUserId: string ;
-  compartida:  boolean ;
+  ownerNombre: string ;
 }
 
 /**
@@ -387,7 +386,7 @@ export const ledgerRepository = {
     const entries = await this.findEntriesByTransactionIds( txIds , tx ) ;
 
     // Personales referenciadas por los asientos: se resuelven por id, sin filtrar por la cuenta, para que
-    // un movimiento cuya cuenta ya no se comparte siga mostrándose con su nombre (RN-13).
+    // un movimiento cuya cuenta ya no se comparte siga mostrándose con su nombre y el de su dueño (RN-13).
     const idsDeCuentas = [ ...new Set( entries.map( ( e ) => e.accountId ) ) ] ;
     const personales   = ( idsDeCuentas.length === 0 ) ? [] : await tx
       .select( {
@@ -397,10 +396,12 @@ export const ledgerRepository = {
         type:        accounts.type ,
         currency:    accounts.currency ,
         ownerUserId: accounts.ownerUserId ,
-        compartida:  sql< boolean >`exists (select 1 from ${accountShares} where ${accountShares.accountId} = ${accounts.id} and ${accountShares.organizationId} = ${organizationId})` ,
+        ownerName:   users.name ,
+        ownerEmail:  users.email ,
       } )
       .from( accounts )
-      .where( and( inArray(accounts.id , idsDeCuentas) , isNotNull(accounts.ownerUserId) ) ) ;
+      .leftJoin( users , eq( accounts.ownerUserId , users.id ) )
+      .where( and( inArray( accounts.id , idsDeCuentas ) , isNotNull( accounts.ownerUserId ) ) ) ;
 
     const items: TransactionWithEntries[] = filas.map( ( fila ) => ( {
       ...fila.cabecera ,
@@ -423,7 +424,15 @@ export const ledgerRepository = {
 
     return( {
       items ,
-      cuentasPersonales: personales.map( ( p ) => ( {...p , ownerUserId: p.ownerUserId!} ) ) ,
+      cuentasPersonales: personales.map( ( p ) => ( {
+        id:          p.id ,
+        code:        p.code ,
+        name:        p.name ,
+        type:        p.type ,
+        currency:    p.currency ,
+        ownerUserId: p.ownerUserId! ,
+        ownerNombre: nombreVisible( p.ownerName , p.ownerEmail ?? "" ) ,
+      } ) ) ,
       nextCursor ,
       hasMore ,
     } ) ;

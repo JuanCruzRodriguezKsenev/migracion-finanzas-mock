@@ -281,6 +281,7 @@ export async function createTransactionFromFormAction(
       merchantName:   data.merchantName || undefined ,
       occurredAt:     data.occurredAt || new Date() ,
       holderUserId:   holderUserId || undefined ,
+      absorbeElDueno: data.absorbeElDueno ,
       entries ,
     } ) ) ;
   } catch( error ) {

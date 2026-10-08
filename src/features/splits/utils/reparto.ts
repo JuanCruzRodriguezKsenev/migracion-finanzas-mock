@@ -9,7 +9,7 @@
 export type ModoAcuerdo = "none" | "fixed_percentages" | "monthly_contributions" ;
 
 /** Por qué el reparto aplica o no aplica (primera fila de la tabla de decisión que coincide). */
-export type MotivoReparto = "no_manual" | "modo_none" | "pocos_miembros" | "caja_comun" | "titular_viewer" | "aplica" ;
+export type MotivoReparto = "no_manual" | "modo_none" | "pocos_miembros" | "caja_comun" | "titular_viewer" | "absorbido" | "aplica" ;
 
 /** Datos de la tabla de decisión. */
 export interface EntradaDecision {
@@ -19,24 +19,26 @@ export interface EntradaDecision {
   cantidadMiembrosNoViewer: number ;
   algunaCuentaEsCajaComun:  boolean ;
   titularEsViewer:          boolean ;
+  absorbe?:                 boolean ;
 }
 
 /**
  * Decide si un gasto se reparte. Evalúa la tabla de la spec en orden y la primera fila que coincide decide:
  * (1) no es manual o no es un gasto; (2) modo `none`; (3) menos de dos miembros no `viewer`;
- * (4) alguna cuenta es caja común; (5) el titular es `viewer`; (6) aplica.
+ * (4) alguna cuenta es caja común; (5) el titular es `viewer`; (6) absorbe el dueño; (7) aplica.
  *
- * @param datos - Los seis hechos de la tabla de decisión.
+ * @param datos - Los hechos de la tabla de decisión.
  * @returns Si aplica y el motivo.
  */
 export function decidirReparto( datos: EntradaDecision ): { aplica: boolean ; motivo: MotivoReparto } {
-  const { esGastoManual , tipo , modo , cantidadMiembrosNoViewer , algunaCuentaEsCajaComun , titularEsViewer } = datos ;
+  const { esGastoManual , tipo , modo , cantidadMiembrosNoViewer , algunaCuentaEsCajaComun , titularEsViewer , absorbe } = datos ;
 
   if( !esGastoManual || (tipo !== "expense") )   { return( { aplica: false , motivo: "no_manual"      } ) ; }
   if( modo === "none" )                          { return( { aplica: false , motivo: "modo_none"      } ) ; }
   if( cantidadMiembrosNoViewer < 2 )             { return( { aplica: false , motivo: "pocos_miembros" } ) ; }
   if( algunaCuentaEsCajaComun )                  { return( { aplica: false , motivo: "caja_comun"     } ) ; }
   if( titularEsViewer )                          { return( { aplica: false , motivo: "titular_viewer" } ) ; }
+  if( absorbe )                                  { return( { aplica: false , motivo: "absorbido"      } ) ; }
 
   return( { aplica: true , motivo: "aplica" } ) ;
 }

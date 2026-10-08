@@ -157,7 +157,7 @@
     "labelPrivate": "Private",
     "labelShared": "Shared · {organizacion}",
     "labelOrganization": "Organization's",
-    "labelNoLongerShared": "No longer shared",
+    "labelPersonalOf": "Personal account of {dueno}",
     "viewSelectorLabel": "Accounts view",
     "viewOrganization": "Organization",
     "viewMine": "My accounts",
@@ -168,14 +168,13 @@
     "btnStopSharing": "Stop sharing",
     "shareChooseOrganization": "Choose an organization",
     "sharedInLabel": "Shared in",
+    "shareHelp": "Other members of that organization will be able to use this account on your behalf; expenses they charge with it will be owed to you.",
     "emptyMine": "You don't have personal accounts yet.",
     "loadingMine": "Loading your accounts…",
     "balanceHidden": "Private balance",
-    "shareAndUseHint": "Did you pay with an account of yours?",
-    "shareAndUseButton": "Share {cuenta} with {organizacion} and use it",
-    "shareConfirm": "You are about to share {cuenta} with {organizacion}: its members will see the movements you record here, not its balance.",
-    "shareConfirmAccept": "Share and use",
-    "shareConfirmCancel": "Cancel",
+    "debtQuestion": "Do the others owe you their share?",
+    "debtYes": "Yes, according to the agreement",
+    "debtNo": "No, I'll absorb it",
     "holderFixedOwner": "A personal account is always recorded in your name."
   },
   "cardsPage": {
@@ -521,7 +520,8 @@
     "holderDetailBy": "Entered by {autor}",
     "holderDetailByFor": "Entered by {autor} on behalf of {titular}",
     "holderFilterLabel": "Holder",
-    "holderFilterAll": "All holders"
+    "holderFilterAll": "All holders" ,
+    "absorbedBy": "Absorbed by {titular}"
   },
   "contactsPage": {
     "title": "Contacts Directory",

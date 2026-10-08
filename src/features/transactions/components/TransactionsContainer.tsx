@@ -6,7 +6,7 @@
 
 // Librerías externas
 import React , { useState , useEffect , useTransition , useCallback } from "react" ;
-import { useSearchParams , useRouter }                                 from "next/navigation" ;
+import { useSearchParams }                                              from "next/navigation" ;
 
 // Shared
 import { PageHeader }          from "@/shared/ui/layout/PageHeader/PageHeader" ;
@@ -61,13 +61,8 @@ interface TransactionsContainerProps {
   miembros?:           TitularPosible[] ;
   /** Personales que nombran los asientos de la primera página, aunque ya no se compartan (RN-13). */
   cuentasPersonales?:  CuentaPersonalReferenciada[] ;
-  /** Cuentas que ofrece el selector de origen (las de la organización y las personales compartidas del usuario, RN-10). Sin ellas, `accounts`. */
+  /** Cuentas que ofrece el selector de origen (las de la organización y las personales usables del usuario, RN-10). Sin ellas, `accounts`. */
   usables?:            CuentaConEtiqueta[] ;
-  /** Personales del usuario que aún no se compartieron con la organización («Compartir y usar»). */
-  compartibles?:       CuentaConEtiqueta[] ;
-  /** Organización activa: con su id se comparte y con su nombre se avisa. */
-  organizacionId?:     string ;
-  organizacionNombre?: string ;
 }
 
 const ALL_COLUMNS: Column< TransactionTableColumns >[] = [
@@ -106,11 +101,7 @@ export function TransactionsContainer( {
   miembros = [] ,
   cuentasPersonales = [] ,
   usables ,
-  compartibles = [] ,
-  organizacionId = "" ,
-  organizacionNombre = "" ,
 }: TransactionsContainerProps ) {
-  const router       = useRouter() ;
   const searchParams = useSearchParams() ;
   const monthParam   = searchParams?.get( "month" ) ;
   const { profile }  = useProfileContext() ;
@@ -342,11 +333,7 @@ export function TransactionsContainer( {
         onClose={ () => setIsFormModalOpen(false) }
         onSuccess={handleDataMutated}
         accounts={usables ?? accounts}
-        compartibles={compartibles}
-        organizacionId={organizacionId}
-        organizacionNombre={organizacionNombre}
         cuentasDict={dict.accountsPage}
-        onCuentaCompartida={ () => router.refresh() }
         categories={categories}
         categoryTree={categoryTree}
         titulares={titulares}

@@ -84,3 +84,16 @@
   color: var(--text-muted) ;
   overflow-wrap: anywhere ;
 }
+
+.shareBlock {
+  display: flex ;
+  flex-direction: column ;
+  gap: 0.5rem ;
+}
+
+.shareHelp {
+  font-size: var(--fs-xs) ;
+  color: var(--text-muted) ;
+  margin: 0 ;
+  line-height: 1.4 ;
+}

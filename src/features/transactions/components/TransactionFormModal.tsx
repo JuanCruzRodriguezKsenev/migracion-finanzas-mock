@@ -16,12 +16,11 @@ import { Button }      from "@/shared/ui/display/Button/Button" ;
 import { Modal }       from "@/shared/ui/feedback/Modal/Modal" ;
 
 // Feature: Accounting
-import { CategoryTreeNode }                       from "@/features/accounting/types" ;
-import { createCategoryAction }                   from "@/features/accounting/actions/categoryActions" ;
-import { compartirCuentaAction }                  from "@/features/accounting/actions/cuentasPersonalesActions" ;
-import { iconoDeCategoria }                       from "@/features/accounting/utils/categoryIcons" ;
-import { textoDeEtiqueta , AccountLabelDict }     from "@/features/accounting/components/AccountLabel" ;
-import { Account , Category , EtiquetaCuenta }    from "@/features/accounting/types" ;
+import { CategoryTreeNode }                    from "@/features/accounting/types" ;
+import { createCategoryAction }                from "@/features/accounting/actions/categoryActions" ;
+import { iconoDeCategoria }                    from "@/features/accounting/utils/categoryIcons" ;
+import { textoDeEtiqueta , AccountLabelDict }  from "@/features/accounting/components/AccountLabel" ;
+import { Account , Category , EtiquetaCuenta } from "@/features/accounting/types" ;
 
 // Feature: Auth
 import type { TitularPosible } from "@/features/auth/services/titularService" ;
@@ -39,34 +38,28 @@ import { TransactionType }                 from "../utils/derivarTipo" ;
 import styles                              from "./Transactions.module.css" ;
 
 
-/** Cuenta del selector de origen: una {@link Account} que puede traer su etiqueta (RN-15). */
-type CuentaDeFormulario = Account & { etiqueta?: EtiquetaCuenta } ;
+/** Cuenta del selector de origen: una {@link Account} que puede traer su etiqueta (RN-15) y el nombre de su dueño (RN-10). */
+type CuentaDeFormulario = Account & {
+  etiqueta?:    EtiquetaCuenta ;
+  ownerNombre?: string | null ;
+} ;
 
-/** Textos del bloque «Compartir y usar» (PA-3) y de la etiqueta de cada cuenta. */
+/** Textos de la pregunta de la deuda y de la etiqueta de cada cuenta. */
 export interface CuentasFormDict extends AccountLabelDict {
-  shareAndUseHint:     string ;
-  shareAndUseButton:   string ;
-  shareConfirm:        string ;
-  shareConfirmAccept:  string ;
-  shareConfirmCancel:  string ;
-  holderFixedOwner:    string ;
+  debtQuestion:     string ;
+  debtYes:          string ;
+  debtNo:           string ;
+  holderFixedOwner: string ;
 }
 
 interface TransactionFormModalProps {
   isOpen:        boolean ;
   onClose:       () => void ;
   onSuccess:     () => void ;
-  /** Cuentas que el servidor ya filtró para este usuario: las de la organización y sus personales compartidas (RN-10). */
+  /** Cuentas que el servidor ya filtró para este usuario: las de la organización, todas sus personales y las de otros compartidas (RN-10). */
   accounts:      CuentaDeFormulario[] ;
-  /** Personales del usuario que aún no se compartieron con la organización: alimentan «Compartir y usar». */
-  compartibles?: CuentaDeFormulario[] ;
-  /** Organización activa: con su id se comparte y con su nombre se avisa. */
-  organizacionId?:     string ;
-  organizacionNombre?: string ;
-  /** Textos de las etiquetas y del bloque de compartir. Sin ellos no hay etiquetas ni bloque. */
+  /** Textos de las etiquetas y de la pregunta de la deuda. Sin ellos no hay etiquetas ni pregunta. */
   cuentasDict?:  CuentasFormDict ;
-  /** Se llama cuando se compartió una cuenta desde el formulario, para que la página refresque sus listas. */
-  onCuentaCompartida?: () => void ;
   categories?:   Category[] ;
   categoryTree?: CategoryTreeNode[] ;
   /** A nombre de quiénes puede cargar quien abre el modal, con uno mismo primero (RN-2, RN-5, RN-6). */
@@ -111,11 +104,7 @@ export function TransactionFormModal( {
   onClose ,
   onSuccess ,
   accounts ,
-  compartibles = [] ,
-  organizacionId = "" ,
-  organizacionNombre = "" ,
   cuentasDict ,
-  onCuentaCompartida ,
   categories ,
   categoryTree ,
   titulares = [] ,
@@ -142,11 +131,8 @@ export function TransactionFormModal( {
   const [ holderUserId , setHolderUserId ]                 = useState( "" ) ;
   const [ errorMessage , setErrorMessage ]                 = useState( "" ) ;
 
-  // «Compartir y usar» (RN-10, PA-3): la cuenta que espera confirmación y las ya compartidas desde este formulario
-  const [ aConfirmarId , setAConfirmarId ]                 = useState( "" ) ;
-  const [ compartidasAca , setCompartidasAca ]             = useState< CuentaDeFormulario[] >( [] ) ;
-  const [ isSharePending , startShareTransition ]          = useTransition() ;
-  const [ errorCompartir , setErrorCompartir ]             = useState( "" ) ;
+  // Pregunta de la deuda (RN-18, RN-19): false = "Sí, según el acuerdo", true = "No, lo absorbo yo"
+  const [ absorbeElDueno , setAbsorbeElDueno ]             = useState( false ) ;
 
   // Estado para creación de categorías al vuelo (Paso 3)
   const [ isCreatingCategory , setIsCreatingCategory ]       = useState( false ) ;
@@ -176,21 +162,24 @@ export function TransactionFormModal( {
   const [ customTree , setCustomTree ] = useState< CategoryTreeNode[] | null >( null ) ;
   const tree = ( customTree ?? baseTree ) ;
 
-  // Las que ya ofrece el servidor más las que se compartieron desde este formulario, sin repetir
-  const todasLasCuentas = [ ...accounts , ...compartidasAca.filter( ( c ) => !accounts.some( ( a ) => a.id === c.id ) ) ] ;
+  const todasLasCuentas = accounts ;
 
   // Filtrar cuentas de pago/cobro (Activos y Pasivos como tarjetas)
   const liquidityAccounts = todasLasCuentas.filter( ( a ) => ( (a.type === "asset") || (a.type === "liability") ) ) ;
 
-  // Una personal se carga siempre a nombre de su dueño (RN-9): el titular queda fijo y no se envía
-  const origenEsPersonal  = !!todasLasCuentas.find( ( a ) => a.id === sourceAccountId )?.ownerUserId ;
-  const compartiblesAun   = compartibles.filter( ( c ) => !compartidasAca.some( ( x ) => x.id === c.id ) ) ;
-  const aConfirmar        = compartiblesAun.find( ( c ) => c.id === aConfirmarId ) ;
+  // El primero de la lista es uno mismo (RN-2)
+  const propio           = titulares[0] ;
+  const cuentaOrigen     = todasLasCuentas.find( ( a ) => a.id === sourceAccountId ) ;
+  const origenEsPersonal = !!cuentaOrigen?.ownerUserId ;
+  const duenoDeOrigen    = cuentaOrigen?.ownerUserId ;
+  const origenEsPropia   = Boolean( origenEsPersonal && (duenoDeOrigen === propio?.userId) ) ;
 
   /** Texto de una cuenta en el selector: su nombre y tipo, más la etiqueta si el servidor la informó (RN-15). */
   const textoDeCuenta = ( a: CuentaDeFormulario , detalle: string ): string => {
     const etiqueta = ( (cuentasDict && a.etiqueta) ? ` · ${textoDeEtiqueta( a.etiqueta , cuentasDict )}` : "" ) ;
-    return( `${a.name} (${detalle})${etiqueta}` ) ;
+    const ajena    = ( !!a.ownerUserId && (a.ownerUserId !== propio?.userId) && !!a.ownerNombre ) ;
+    const sufijo   = ajena ? ` (de ${a.ownerNombre})` : ` (${detalle})` ;
+    return( `${a.name}${ajena ? etiqueta + sufijo : sufijo + etiqueta}` ) ;
   } ;
 
   // La moneda no se elige: es la de la cuenta. Un selector libre permitía cargar un movimiento en
@@ -198,7 +187,7 @@ export function TransactionFormModal( {
   const monedaDestino = ( todasLasCuentas.find( ( a ) => a.id === destinationAccountId )?.currency || "" ) ;
 
   const montoPrevia   = Math.round( parseFloat( amount ) * 100 ) ;
-  const titularPrevia = ( (origenEsPersonal ? "" : holderUserId) || titulares[0]?.userId || "" ) ;
+  const titularPrevia = ( (origenEsPersonal ? (duenoDeOrigen ?? "") : holderUserId) || propio?.userId || "" ) ;
   const pedirPrevia   = ( isOpen && repartoActivo && (type === "expense") && !!sourceAccountId && Number.isFinite( montoPrevia ) && (montoPrevia > 0) ) ;
 
   useEffect( () => {
@@ -221,8 +210,9 @@ export function TransactionFormModal( {
           montoEnCentavos: montoPrevia ,
           currency ,
           fecha:           occurredAt ,
-          holderUserId:    ( titularPrevia && (titularPrevia !== titulares[0]?.userId) ) ? titularPrevia : undefined ,
+          holderUserId:    ( titularPrevia && (titularPrevia !== propio?.userId) ) ? titularPrevia : undefined ,
           accountIds:      [ sourceAccountId ] ,
+          absorbe:         origenEsPropia ? absorbeElDueno : undefined ,
         } ) ;
 
         if( vigente ) {
@@ -242,7 +232,7 @@ export function TransactionFormModal( {
       clearTimeout( espera ) ;
     } ) ;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `titulares` sólo aporta el id propio, ya contenido en `titularPrevia`
-  } , [ pedirPrevia , montoPrevia , currency , occurredAt , titularPrevia , sourceAccountId ] ) ;
+  } , [ pedirPrevia , montoPrevia , currency , occurredAt , titularPrevia , sourceAccountId , origenEsPropia , absorbeElDueno ] ) ;
 
   // Con el acuerdo desactualizado la carga se rechazaría: se bloquea el botón antes de intentarlo (S-S)
   const bloqueadoPorAcuerdo = ( pedirPrevia && !!vistaPrevia?.aplica && vistaPrevia.desactualizado ) ;
@@ -259,8 +249,7 @@ export function TransactionFormModal( {
     setOccurredAt( todayStr ) ;
     setHolderUserId( "" ) ;
     setErrorMessage( "" ) ;
-    setAConfirmarId( "" ) ;
-    setErrorCompartir( "" ) ;
+    setAbsorbeElDueno( false ) ;
     setVistaPrevia( null ) ;
     setErrorPrevia( false ) ;
     setType( "expense" ) ;
@@ -275,33 +264,11 @@ export function TransactionFormModal( {
 
   const handleSourceAccountChange = ( id: string ) => {
     setSourceAccountId( id ) ;
+    setAbsorbeElDueno( false ) ;
     const acc = todasLasCuentas.find( ( a ) => a.id === id ) ;
     if( acc?.currency ) {
       setCurrency( acc.currency ) ;
     }
-  } ;
-
-  /** Comparte la cuenta con la organización activa y la deja elegida, sin cerrar el formulario ni tocar lo escrito. */
-  const handleCompartirYUsar = () => {
-    if( !aConfirmar ) {
-      return ;
-    }
-
-    setErrorCompartir( "" ) ;
-
-    startShareTransition( async () => {
-      const res = await compartirCuentaAction( {accountId: aConfirmar.id , organizationId: organizacionId} ) ;
-
-      if( !res.success ) {
-        setErrorCompartir( res.error ) ;
-        return ;
-      }
-
-      setCompartidasAca( ( prev ) => [ ...prev , aConfirmar ] ) ;
-      setAConfirmarId( "" ) ;
-      handleSourceAccountChange( aConfirmar.id ) ;
-      onCuentaCompartida?.() ;
-    } ) ;
   } ;
 
   const handleCreateQuickCategory = () => {
@@ -411,7 +378,10 @@ export function TransactionFormModal( {
         categoryId:           categoryId || null ,
         merchantName:         merchantName || null ,
         occurredAt:           new Date( occurredAt ) ,
-        holderUserId:         ( !origenEsPersonal && holderUserId && (holderUserId !== propio?.userId) ) ? holderUserId : undefined ,
+        holderUserId:         origenEsPersonal
+          ? ( (duenoDeOrigen && (duenoDeOrigen !== propio?.userId)) ? duenoDeOrigen : undefined )
+          : ( (holderUserId && (holderUserId !== propio?.userId)) ? holderUserId : undefined ) ,
+        absorbeElDueno:       ( origenEsPropia && mostrarPreguntaDeuda ) ? absorbeElDueno : undefined ,
       } ) ;
 
       if( !res.success ) {
@@ -426,8 +396,13 @@ export function TransactionFormModal( {
   } ;
 
   // El primero de la lista es uno mismo: el selector sólo aparece si hay a nombre de quién más cargar.
-  const propio           = titulares[0] ;
   const mostrarTitulares = ( (titulares.length > 1) && !!holderDict ) ;
+
+  // Pregunta de deuda (RN-18, RN-19): visible si la cuenta es propia y el reparto aplica o fue absorbido
+  const mostrarPreguntaDeuda = Boolean(
+    origenEsPropia &&
+    (vistaPrevia?.aplica || (vistaPrevia?.motivo === "absorbido"))
+  ) ;
 
   const targetCategoryType = ( (type === "income") ? "revenue" : "expense" ) ;
   const currentTypeTree    = tree.filter( ( p ) => ( (p.type === targetCategoryType) && (!p.isSystemLeaf) ) ) ;
@@ -503,7 +478,7 @@ export function TransactionFormModal( {
         {( mostrarTitulares && holderDict ) && (
           <FormSelect
             label={holderDict.holderSelectLabel}
-            value={origenEsPersonal ? propio.userId : (holderUserId || propio.userId)}
+            value={origenEsPersonal ? (duenoDeOrigen ?? propio.userId) : (holderUserId || propio.userId)}
             onChange={ ( e ) => setHolderUserId( e.target.value ) }
             disabled={origenEsPersonal}
             helperText={( origenEsPersonal && cuentasDict ) ? cuentasDict.holderFixedOwner : undefined}
@@ -513,6 +488,11 @@ export function TransactionFormModal( {
                 {(i === 0) ? holderDict.holderSelfOption.replace( "{nombre}" , t.nombre ) : t.nombre}
               </option>
             ) )}
+            {( origenEsPersonal && duenoDeOrigen && !titulares.some( ( t ) => t.userId === duenoDeOrigen ) ) && (
+              <option value={duenoDeOrigen}>
+                {cuentaOrigen?.ownerNombre ?? duenoDeOrigen}
+              </option>
+            )}
           </FormSelect>
         )}
 
@@ -547,6 +527,34 @@ export function TransactionFormModal( {
           <p className={styles.splitWarn} role="alert">{repartoDict.previewError}</p>
         )}
 
+        {( mostrarPreguntaDeuda && cuentasDict ) && (
+          <fieldset className={styles.debtQuestionBlock}>
+            <legend className={styles.debtQuestionTitle}>{cuentasDict.debtQuestion}</legend>
+            <div className={styles.debtOptions}>
+              <label className={styles.debtOption}>
+                <input
+                  type="radio"
+                  name="absorbeElDueno"
+                  className={styles.debtRadio}
+                  checked={!absorbeElDueno}
+                  onChange={ () => setAbsorbeElDueno( false ) }
+                />
+                <span>{cuentasDict.debtYes}</span>
+              </label>
+              <label className={styles.debtOption}>
+                <input
+                  type="radio"
+                  name="absorbeElDueno"
+                  className={styles.debtRadio}
+                  checked={absorbeElDueno}
+                  onChange={ () => setAbsorbeElDueno( true ) }
+                />
+                <span>{cuentasDict.debtNo}</span>
+              </label>
+            </div>
+          </fieldset>
+        )}
+
         <FormInput
           label="Descripción"
           placeholder="Ej: Compra supermercado, Sueldo mensual..."
@@ -574,50 +582,6 @@ export function TransactionFormModal( {
             <option key={a.id} value={a.id}>{textoDeCuenta( a , a.type )}</option>
           ) )}
         </FormSelect>
-
-        {( cuentasDict && organizacionId && (compartiblesAun.length > 0) ) && (
-          <div className={styles.shareBlock}>
-            {aConfirmar ? (
-              <div className={styles.shareConfirm} role="group" aria-label={cuentasDict.shareAndUseHint}>
-                <p className={styles.shareText}>
-                  {cuentasDict.shareConfirm
-                    .replace( "{cuenta}" , aConfirmar.name )
-                    .replace( "{organizacion}" , organizacionNombre )}
-                </p>
-                {errorCompartir && <FormError error={errorCompartir} />}
-                <div className={styles.shareActions}>
-                  <Button type="button" variant="secondary" disabled={isSharePending} onClick={ () => setAConfirmarId( "" ) }>
-                    {cuentasDict.shareConfirmCancel}
-                  </Button>
-                  <Button type="button" variant="primary" isLoading={isSharePending} onClick={handleCompartirYUsar}>
-                    {cuentasDict.shareConfirmAccept}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <p className={styles.shareText}>{cuentasDict.shareAndUseHint}</p>
-                <div className={styles.shareOptions}>
-                  {compartiblesAun.map( ( c ) => (
-                    <Button
-                      key={c.id}
-                      type="button"
-                      variant="outline"
-                      onClick={ () => {
-                        setErrorCompartir( "" ) ;
-                        setAConfirmarId( c.id ) ;
-                      } }
-                    >
-                      {cuentasDict.shareAndUseButton
-                        .replace( "{cuenta}" , c.name )
-                        .replace( "{organizacion}" , organizacionNombre )}
-                    </Button>
-                  ) )}
-                </div>
-              </>
-            )}
-          </div>
-        )}
 
         {( (type === "transfer") || (type === "exchange") ) && (
           <FormSelect

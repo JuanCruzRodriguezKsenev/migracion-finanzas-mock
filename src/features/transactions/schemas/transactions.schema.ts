@@ -21,6 +21,8 @@ export const createTransactionFormSchema = z.object( {
   currency:             z.string().max( 10 ).optional() ,
   /** A nombre de quién se carga (RN-2). Opcional: sin él, el titular es quien carga. */
   holderUserId:         z.string().uuid( "El titular elegido no es válido." ).optional().nullable() ,
+  /** Si el titular absorbe el gasto en vez de repartir la deuda (RN-19). */
+  absorbeElDueno:       z.boolean().optional() ,
   /**
    * Importe recibido, en la moneda de la cuenta de destino. Sólo aplica a `exchange`: en un cambio
    * de divisas los dos lados tienen importes distintos, y la cotización se deduce de su cociente

@@ -112,9 +112,6 @@ export default async function TransactionsPage( {params , searchParams}: Transac
         miembros={miembros}
         cuentasPersonales={cuentasPersonales}
         usables={cuentasMovimiento?.usables}
-        compartibles={cuentasMovimiento?.compartibles}
-        organizacionId={cuentasMovimiento?.organizacionId}
-        organizacionNombre={cuentasMovimiento?.organizacionNombre}
       />
     </div>
   ) ;

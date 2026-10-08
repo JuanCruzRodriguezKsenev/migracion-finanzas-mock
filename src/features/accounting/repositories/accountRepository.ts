@@ -3,13 +3,14 @@
  * Repositorio de Cuentas Financieras (Capa de Acceso a Datos - DAL).
  */
 // Librerías externas
-import { eq , and , or , isNull , exists , notExists , inArray , sql , SQL } from "drizzle-orm" ;
+import { eq , and , or , isNull , exists , inArray , sql , SQL } from "drizzle-orm" ;
 
 // Shared
 import { db , DBOrTx } from "@/shared/db/client" ;
 
 // Feature: Auth
-import { organizations } from "@/features/auth/schema.db" ;
+import { nombreVisible }         from "@/features/auth/utils/nombreVisible" ;
+import { organizations , users } from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
 import { accounts , accountShares , financialEntities }                from "../schema.db" ;
@@ -27,27 +28,37 @@ export function cuentaDeLaOrg( orgId: string ): SQL {
 }
 
 /**
- * Predicado de las cuentas VISIBLES en la organización: las suyas más las personales que el dueño
- * compartió con ella. Sólo lo consume el plan 24 (movimientos con cuentas personales).
+ * Predicado de las cuentas VISIBLES en la organización: las suyas, las personales que el dueño
+ * compartió con ella, o las personales del propio actor si se indica (RN-10).
  *
  * @param orgId - ID de la organización.
+ * @param actorUserId - ID del actor que escribe (opcional).
  */
-export function cuentaVisibleEn( orgId: string ): SQL {
+export function cuentaVisibleEn( orgId: string , actorUserId?: string | null ): SQL {
+  const compartida = exists(
+    db.select( {uno: sql`1`} ).from( accountShares ).where( and(
+      eq(accountShares.accountId      , accounts.id) ,
+      eq(accountShares.organizationId , orgId)
+    ) )
+  ) ;
+  if( actorUserId ) {
+    return( or(
+      cuentaDeLaOrg( orgId ) ,
+      compartida ,
+      eq(accounts.ownerUserId , actorUserId)
+    ) as SQL ) ;
+  }
   return( or(
     cuentaDeLaOrg( orgId ) ,
-    exists(
-      db.select( {uno: sql`1`} ).from( accountShares ).where( and(
-        eq(accountShares.accountId      , accounts.id) ,
-        eq(accountShares.organizationId , orgId)
-      ) )
-    )
+    compartida
   ) as SQL ) ;
 }
 
 /** Cuenta con su entidad financiera y su etiqueta (RN-15), lista para el selector de cuentas. */
 export type CuentaConEtiqueta = Account & {
-  entity?:  { name: string ; logo: string | null ; color: string | null } | null ;
-  etiqueta: EtiquetaCuenta ;
+  entity?:      { name: string ; logo: string | null ; color: string | null } | null ;
+  etiqueta:     EtiquetaCuenta ;
+  ownerNombre?: string | null ;
 } ;
 
 /** Cuenta personal con las organizaciones donde está compartida (vacío = privada). */
@@ -73,9 +84,15 @@ async function listarConEtiqueta( donde: SQL , tx: DBOrTx ): Promise< CuentaConE
         logo:  financialEntities.logo ,
         color: financialEntities.color ,
       } ,
+      owner: {
+        id:    users.id ,
+        name:  users.name ,
+        email: users.email ,
+      } ,
     } )
     .from( accounts )
-    .leftJoin( financialEntities , eq(accounts.entityId , financialEntities.id) )
+    .leftJoin( financialEntities , eq(accounts.entityId    , financialEntities.id) )
+    .leftJoin( users             , eq(accounts.ownerUserId , users.id) )
     .where( donde )
     .orderBy( accounts.code ) ;
 
@@ -98,8 +115,9 @@ async function listarConEtiqueta( donde: SQL , tx: DBOrTx ): Promise< CuentaConE
 
   return( filas.map( ( f ) => ( {
     ...f.account ,
-    entity:   f.entity?.name ? f.entity : null ,
-    etiqueta: etiquetaDeCuenta( f.account , sharesPorCuenta.get( f.account.id ) ?? [] ) ,
+    entity:      f.entity?.name ? f.entity : null ,
+    etiqueta:    etiquetaDeCuenta( f.account , sharesPorCuenta.get( f.account.id ) ?? [] ) ,
+    ownerNombre: f.owner?.id ? nombreVisible( f.owner.name , f.owner.email ) : null ,
   } ) ) ) ;
 }
 
@@ -154,17 +172,24 @@ export const accountRepository = {
   } ,
 
   /**
-   * Obtiene una cuenta **visible** en la organización: una suya o una personal compartida con ella (plan 24).
+   * Obtiene una cuenta **visible** en la organización: una suya, una personal compartida con ella,
+   * o una personal del actor (RN-10).
    *
    * @param id - ID único de la cuenta.
    * @param organizationId - ID de la organización desde la que se mira.
+   * @param actorUserId - ID del actor que escribe (opcional).
    * @param tx - Instancia de transacción opcional.
    */
-  async findVisibleById( id: string , organizationId: string , tx: DBOrTx = db ): Promise< Account | null > {
+  async findVisibleById(
+    id:             string ,
+    organizationId: string ,
+    actorUserId?:   string | null ,
+    tx:             DBOrTx = db
+  ): Promise< Account | null > {
     const results = await tx
       .select()
       .from( accounts )
-      .where( and( eq(accounts.id , id) , cuentaVisibleEn( organizationId ) ) )
+      .where( and( eq(accounts.id , id) , cuentaVisibleEn( organizationId , actorUserId ) ) )
       .limit( 1 ) ;
     return( results[0] || null ) ;
   } ,
@@ -174,13 +199,19 @@ export const accountRepository = {
    *
    * @param id - ID único de la cuenta.
    * @param organizationId - ID de la organización desde la que se mira.
+   * @param actorUserId - ID del actor que escribe (opcional).
    * @param tx - Instancia de transacción de base de datos (requerido para bloqueo).
    */
-  async findVisibleByIdForUpdate( id: string , organizationId: string , tx: DBOrTx ): Promise< Account | null > {
+  async findVisibleByIdForUpdate(
+    id:             string ,
+    organizationId: string ,
+    actorUserId?:   string | null ,
+    tx:             DBOrTx = db
+  ): Promise< Account | null > {
     const results = await tx
       .select()
       .from( accounts )
-      .where( and( eq(accounts.id , id) , cuentaVisibleEn( organizationId ) ) )
+      .where( and( eq(accounts.id , id) , cuentaVisibleEn( organizationId , actorUserId ) ) )
       .for( "update" ) ;
     return( results[0] || null ) ;
   } ,
@@ -210,8 +241,8 @@ export const accountRepository = {
   } ,
 
   /**
-   * Cuentas que un usuario puede usar en un movimiento de la organización: las de la organización más sus
-   * personales compartidas con ella. Es la lista del selector.
+   * Cuentas que un usuario puede usar en un movimiento de la organización: las de la organización más
+   * todas las personales del usuario (compartidas o no) y las de otros compartidas (RN-10).
    *
    * @param organizationId - ID de la organización.
    * @param userId - ID del usuario que carga.
@@ -219,32 +250,7 @@ export const accountRepository = {
    */
   async findUsablesPara( organizationId: string , userId: string , tx: DBOrTx = db ): Promise< CuentaConEtiqueta[] > {
     return( await listarConEtiqueta(
-      or(
-        cuentaDeLaOrg( organizationId ) ,
-        and( eq(accounts.ownerUserId , userId) , cuentaVisibleEn( organizationId ) )
-      ) as SQL ,
-      tx
-    ) ) ;
-  } ,
-
-  /**
-   * Personales del usuario que **aún no** se compartieron con la organización (alimenta «Compartir y usar»).
-   *
-   * @param organizationId - ID de la organización.
-   * @param userId - ID del usuario titular.
-   * @param tx - Instancia de transacción opcional.
-   */
-  async findCompartiblesPara( organizationId: string , userId: string , tx: DBOrTx = db ): Promise< CuentaConEtiqueta[] > {
-    return( await listarConEtiqueta(
-      and(
-        eq(accounts.ownerUserId , userId) ,
-        notExists(
-          db.select( {uno: sql`1`} ).from( accountShares ).where( and(
-            eq(accountShares.accountId      , accounts.id) ,
-            eq(accountShares.organizationId , organizationId)
-          ) )
-        )
-      ) as SQL ,
+      cuentaVisibleEn( organizationId , userId ) ,
       tx
     ) ) ;
   } ,

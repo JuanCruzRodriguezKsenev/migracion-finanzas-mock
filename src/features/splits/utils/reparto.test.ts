@@ -55,6 +55,18 @@ describe( "decidirReparto - tabla de decisión" , () => {
     expect( decidirReparto( { ...base , modo: "none" , cantidadMiembrosNoViewer: 1 } ).motivo ).toBe( "modo_none" ) ;
     expect( decidirReparto( { ...base , esGastoManual: false , modo: "none" } ).motivo ).toBe( "no_manual" ) ;
   } ) ;
+
+  it( "AC-13 / AC-16: absorbe con todo aplicable devuelve motivo absorbido y aplica false" , () => {
+    expect( decidirReparto( { ...base , absorbe: true } ) ).toEqual( { aplica: false , motivo: "absorbido" } ) ;
+  } ) ;
+
+  it( "AC-13 / AC-16: absorbe con modo none devuelve modo_none (no absorbido)" , () => {
+    expect( decidirReparto( { ...base , modo: "none" , absorbe: true } ) ).toEqual( { aplica: false , motivo: "modo_none" } ) ;
+  } ) ;
+
+  it( "absorbe false deja aplicar el reparto normalmente" , () => {
+    expect( decidirReparto( { ...base , absorbe: false } ) ).toEqual( { aplica: true , motivo: "aplica" } ) ;
+  } ) ;
 } ) ;
 
 describe( "calcularPesos" , () => {

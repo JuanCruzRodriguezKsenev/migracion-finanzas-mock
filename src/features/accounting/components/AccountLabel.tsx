@@ -10,12 +10,12 @@ import type { EtiquetaVisible } from "../types" ;
 import styles                   from "./AccountLabel.module.css" ;
 
 
-/** Textos de la etiqueta; `{organizacion}` de `labelShared` se reemplaza por los nombres. */
+/** Textos de la etiqueta; `{organizacion}` de `labelShared` y `{dueno}` de `labelPersonalOf` se reemplazan por los nombres. */
 export interface AccountLabelDict {
-  labelPrivate:        string ;
-  labelShared:         string ;
-  labelOrganization:   string ;
-  labelNoLongerShared: string ;
+  labelPrivate:      string ;
+  labelShared:       string ;
+  labelOrganization: string ;
+  labelPersonalOf:   string ;
 }
 
 interface AccountLabelProps {
@@ -37,8 +37,8 @@ export function textoDeEtiqueta( etiqueta: EtiquetaVisible , dict: AccountLabelD
       return( dict.labelPrivate ) ;
     case "compartida":
       return( dict.labelShared.replace( "{organizacion}" , etiqueta.organizaciones.map( ( o ) => o.nombre ).join( ", " ) ) ) ;
-    case "yaNoCompartida":
-      return( dict.labelNoLongerShared ) ;
+    case "personal":
+      return( dict.labelPersonalOf.replace( "{dueno}" , etiqueta.dueno ) ) ;
     default:
       return( dict.labelOrganization ) ;
   }
@@ -47,10 +47,10 @@ export function textoDeEtiqueta( etiqueta: EtiquetaVisible , dict: AccountLabelD
 /** Chip con el color del tipo de etiqueta. */
 export function AccountLabel( {etiqueta , dict , className}: AccountLabelProps ) {
   const variante = ( {
-    organizacion:   styles.organization ,
-    privada:        styles.private ,
-    compartida:     styles.shared ,
-    yaNoCompartida: styles.noLongerShared ,
+    organizacion: styles.organization ,
+    privada:      styles.private ,
+    compartida:   styles.shared ,
+    personal:     styles.personal ,
   } )[etiqueta.tipo] ;
 
   return(
