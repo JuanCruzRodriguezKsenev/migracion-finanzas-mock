@@ -2,7 +2,8 @@
  * @file seedReparto.ts
  * Seed pequeño y aparte para probar a mano el reparto y la caja común.
  * Arma la organización `reparto-demo` con tres miembros, cuentas, contactos, un acuerdo de reparto
- * sin caja activada y los movimientos del mes en curso. No toca ninguna otra organización.
+ * sin caja activada, los movimientos del mes en curso y «Banco Ana», una cuenta propia privada de Ana.
+ * No toca ninguna otra organización.
  * Es idempotente: si la organización ya existe, la elimina por completo y la recrea.
  */
 // Librerías externas
@@ -135,6 +136,21 @@ async function main() {
     await db
       .insert( accounts )
       .values( {organizationId: org.id , code: "2.1.01.01" , name: "Tarjeta" , type: "liability" , balance: 0 , currency: "ARS" , entityId: entBanco.id} ) ;
+
+    // 3b. Cuenta propia de Ana: privada (sin comparticiones), anclada en la organización y con el saldo inicial
+    // guardado directo, sin asiento (RN-2 de la spec de cuentas). Nace sin compartir para poder probar «Compartir y usar».
+    await db
+      .insert( accounts )
+      .values( {
+        organizationId: org.id ,
+        ownerUserId:    idPorEmail.get( "ana@demo.test" )! ,
+        code:           "1.1.01.04" ,
+        name:           "Banco Ana" ,
+        type:           "asset" ,
+        balance:        50000000 ,
+        currency:       "ARS" ,
+        entityId:       entBanco.id ,
+      } ) ;
 
     // 4. Contactos
     await db.insert( contacts ).values( [
