@@ -27,3 +27,6 @@
 - [`cuentas-2-uso.md`](cuentas-2-uso.md): Plan 24 uso de personales en movimientos: rama no creada, `cuentasPersonales` en la página (sin saldo), bloqueo ordenado y mutaciones.
 - [`cuentas-1-modelo.md`](cuentas-1-modelo.md): Plan 23 cuentas personales: choque de códigos (hallazgo), fixtures rotos por campo nuevo, predicados no observables.
 - [`cuentas-3-interfaz.md`](cuentas-3-interfaz.md): Plan 25 interfaz de cuentas: rama ocupada, claves extra, tipos sin saldo, trampa de `git checkout` y fish.
+- [`despliegue-vercel-neon-27.md`](despliegue-vercel-neon-27.md): Plan 27 despliegue CLI: worktree desacoplado, región São Paulo en Neon, disconnect git en Vercel y dominio asignado.
+- [`replay-plan-27.md`](replay-plan-27.md): Pedido de reejecutar el plan 27 ya hecho: cruzar con Estado/Informes antes; no se hizo nada.
+- [`cuentas-4-ajuste-26.md`](cuentas-4-ajuste-26.md): Plan 26 retomado con código ya escrito: commit sin tocar memorias ajenas, mutaciones con copia (no git), hallazgo de la reversa.
