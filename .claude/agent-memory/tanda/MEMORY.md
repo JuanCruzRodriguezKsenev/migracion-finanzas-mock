@@ -5,6 +5,8 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 
 ## Dónde quedó todo
 
+- [Estado al cerrar 2026-10-08](estado_2026-10-08.md) — master pusheado, Neon desalineada (plan 28), plan 29 en obra; **Vercel despliega por push**.
+
 - [Estado al cerrar la última ronda](estado_actual.md) — plan 02 integrado a master (2026-10-06); rama `feat/acceso-1-aprovisionamiento` lista para `obra`. **Contrastar con `git log`.**
 
 - [Serie «acceso con Google»](acceso_con_google_serie.md) — spec aprobada + 5 planes escritos (2026-10-06, commit 451d0b0); el plan 0 sigue sin ejecutar y precede.
