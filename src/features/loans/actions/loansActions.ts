@@ -138,7 +138,8 @@ export async function createLoanAction( params: CreateLoanInput ): Promise< Resu
 
     // 5. Crear cuenta espejo en el libro mayor
     const accountType    = ( data.direction === "borrowed" ? "liability" : "asset" ) ;
-    const codigoContable = getNextCode( accountType , todasLasCuentas ) ;
+    const ancladas       = await accountRepository.findTodasEnAncla( organizationId ) ;
+    const codigoContable = getNextCode( accountType , ancladas ) ;
 
     const cuentaEspejo = await accountRepository.create( {
       organizationId ,

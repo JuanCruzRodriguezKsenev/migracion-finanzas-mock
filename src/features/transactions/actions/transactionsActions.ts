@@ -119,12 +119,21 @@ export async function createTransactionFromFormAction(
   let resolvedCategoryId: string | undefined = data.categoryId || undefined ;
 
   try {
-    const allAccounts = await accountRepository.findAll( organizationId ) ;
+    // Las de la organización más las personales del autor compartidas con ella (plan 24). El permiso
+    // fino lo aplica el motor en cada escritura.
+    const allAccounts = await accountRepository.findUsablesPara( organizationId , session.user.id ) ;
     const sourceAcc   = allAccounts.find( ( a ) => a.id === data.sourceAccountId ) ;
 
     if( !sourceAcc ) {
       return( fail("La cuenta de origen no existe o no pertenece a tu organización.") ) ;
     }
+
+    // RN-9: un movimiento sobre una personal se carga siempre a nombre de su dueño.
+    if( sourceAcc.ownerUserId && data.holderUserId && (data.holderUserId !== sourceAcc.ownerUserId) ) {
+      return( fail("Un movimiento sobre una cuenta personal se carga a nombre de su dueño.") ) ;
+    }
+
+    const holderUserId = ( sourceAcc.ownerUserId ?? data.holderUserId ) ;
 
     // La moneda la define la cuenta, nunca el formulario. Antes ganaba `data.currency`, así que
     // elegir USD sobre una caja en pesos le sumaba centavos de dólar a un saldo en pesos.
@@ -271,7 +280,7 @@ export async function createTransactionFromFormAction(
       categoryId:     resolvedCategoryId ,
       merchantName:   data.merchantName || undefined ,
       occurredAt:     data.occurredAt || new Date() ,
-      holderUserId:   data.holderUserId || undefined ,
+      holderUserId:   holderUserId || undefined ,
       entries ,
     } ) ) ;
   } catch( error ) {

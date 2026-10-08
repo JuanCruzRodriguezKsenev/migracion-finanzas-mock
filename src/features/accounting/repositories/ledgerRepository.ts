@@ -3,7 +3,7 @@
  * Repositorio de Libro Mayor y Asientos de Diario (Capa de Acceso a Datos - DAL).
  */
 // Librerías externas
-import { eq , and , desc , inArray , gte , lte , lt , gt , or , ilike , isNull , sql } from "drizzle-orm" ;
+import { eq , and , desc , inArray , gte , lte , lt , gt , or , ilike , isNull , isNotNull , sql } from "drizzle-orm" ;
 import { alias }                                                                       from "drizzle-orm/pg-core" ;
 
 // Shared
@@ -15,7 +15,7 @@ import { users }         from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
 import { LedgerTransaction , InsertLedgerTransaction , LedgerEntry , InsertLedgerEntry } from "../types" ;
-import { ledgerTransactions , ledgerEntries }                                            from "../schema.db" ;
+import { ledgerTransactions , ledgerEntries , accounts , accountShares }                  from "../schema.db" ;
 
 
 /**
@@ -53,10 +53,27 @@ export interface QueryTransactionsParams {
 }
 
 /**
+ * Cuenta personal que aparece en los asientos de una página de movimientos (RN-13). No lleva saldo: quien
+ * ve el movimiento ve el nombre de la cuenta, no su dinero. `compartida` es `false` si el dueño ya dejó de
+ * compartirla con la organización («Ya no compartida»).
+ */
+export interface CuentaPersonalReferenciada {
+  id:          string ;
+  code:        string ;
+  name:        string ;
+  type:        string ;
+  currency:    string ;
+  ownerUserId: string ;
+  compartida:  boolean ;
+}
+
+/**
  * Resultado estructurado para la paginación por cursor del libro diario.
  */
 export interface TransactionsPageResult {
-  items:      TransactionWithEntries[] ;
+  items:             TransactionWithEntries[] ;
+  /** Personales usadas por los asientos de la página, aunque ya no se compartan (RN-13). */
+  cuentasPersonales: CuentaPersonalReferenciada[] ;
   nextCursor: { occurredAt: string ; id: string } | null ;
   hasMore:    boolean ;
 }
@@ -359,14 +376,31 @@ export const ledgerRepository = {
 
     if( pageRows.length === 0 ) {
       return( {
-        items:      [] ,
-        nextCursor: null ,
-        hasMore:    false ,
+        items:             [] ,
+        cuentasPersonales: [] ,
+        nextCursor:        null ,
+        hasMore:           false ,
       } ) ;
     }
 
     const txIds = pageRows.map( ( t ) => t.id ) ;
     const entries = await this.findEntriesByTransactionIds( txIds , tx ) ;
+
+    // Personales referenciadas por los asientos: se resuelven por id, sin filtrar por la cuenta, para que
+    // un movimiento cuya cuenta ya no se comparte siga mostrándose con su nombre (RN-13).
+    const idsDeCuentas = [ ...new Set( entries.map( ( e ) => e.accountId ) ) ] ;
+    const personales   = ( idsDeCuentas.length === 0 ) ? [] : await tx
+      .select( {
+        id:          accounts.id ,
+        code:        accounts.code ,
+        name:        accounts.name ,
+        type:        accounts.type ,
+        currency:    accounts.currency ,
+        ownerUserId: accounts.ownerUserId ,
+        compartida:  sql< boolean >`exists (select 1 from ${accountShares} where ${accountShares.accountId} = ${accounts.id} and ${accountShares.organizationId} = ${organizationId})` ,
+      } )
+      .from( accounts )
+      .where( and( inArray(accounts.id , idsDeCuentas) , isNotNull(accounts.ownerUserId) ) ) ;
 
     const items: TransactionWithEntries[] = filas.map( ( fila ) => ( {
       ...fila.cabecera ,
@@ -389,6 +423,7 @@ export const ledgerRepository = {
 
     return( {
       items ,
+      cuentasPersonales: personales.map( ( p ) => ( {...p , ownerUserId: p.ownerUserId!} ) ) ,
       nextCursor ,
       hasMore ,
     } ) ;

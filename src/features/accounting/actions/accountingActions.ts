@@ -96,8 +96,9 @@ export async function createAccountAction( params: {
 
   try {
     // 2. Obtener cuentas para autogeneración del código contable correlativo
-    const todasLasCuentas = await accountRepository.findAll( session.user.organizationId ) ;
-    const codigoGenerado  = ( code || getNextCode( type , todasLasCuentas ) ) ;
+    // El código se calcula sobre todas las ancladas (personales incluidas): el índice único las cuenta
+    const ancladas        = await accountRepository.findTodasEnAncla( session.user.organizationId ) ;
+    const codigoGenerado  = ( code || getNextCode( type , ancladas ) ) ;
 
     // 3. Opción B: Invertir signo automáticamente para cuentas de pasivo (liability)
     let balanceFinal = ( balance || 0 ) ;
@@ -231,7 +232,8 @@ export async function createAccountForEntityAction( params: {
       }
     }
 
-    const codigoGenerado = getNextCode( "asset" , todasLasCuentas ) ;
+    const ancladas       = await accountRepository.findTodasEnAncla( session.user.organizationId ) ;
+    const codigoGenerado = getNextCode( "asset" , ancladas ) ;
 
     // 5. Crear la cuenta con saldo 0 siempre dentro de su propia persistencia
     const cuentaCreada = await accountRepository.create( {

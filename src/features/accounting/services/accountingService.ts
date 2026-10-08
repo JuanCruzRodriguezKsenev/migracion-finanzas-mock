@@ -19,9 +19,10 @@ import { repartoRepository }                                                from
 
 // Feature: Accounting
 import { CreateTransactionParams , LedgerTransaction , InsertLedgerEntry } from "../types" ;
-import { accountRepository } from "../repositories/accountRepository" ;
-import { ledgerRepository }  from "../repositories/ledgerRepository" ;
-import { outboxEvents }      from "../schema.db" ;
+import { exigirPermisoSobreCuentas , exigirPermisoDeReversa } from "./cuentasPersonalesService" ;
+import { accountRepository }                                   from "../repositories/accountRepository" ;
+import { ledgerRepository }                                    from "../repositories/ledgerRepository" ;
+import { outboxEvents }                                        from "../schema.db" ;
 
 
 /** Moneda que se asume cuando un asiento no declara la suya y la cuenta tampoco pudo resolverse. */
@@ -45,10 +46,10 @@ async function resolverRepartoDeLaCarga(
 ): Promise< RepartoResuelto | null > {
   const { organizationId , createdByUserId , holderUserId , occurredAt , entries } = datos ;
   const idsDeCuentas = [ ...new Set( entries.map( ( e ) => e.accountId ) ) ] ;
-  const cuentas      = new Map< string , NonNullable< Awaited< ReturnType< typeof accountRepository.findById > > > >() ;
+  const cuentas      = new Map< string , NonNullable< Awaited< ReturnType< typeof accountRepository.findVisibleById > > > >() ;
 
   for( const id of idsDeCuentas ) {
-    const cuenta = await accountRepository.findById( id , organizationId , tx ) ;
+    const cuenta = await accountRepository.findVisibleById( id , organizationId , tx ) ;
 
     if( !cuenta ) {
       return( null ) ;
@@ -136,18 +137,29 @@ export async function createLedgerTransaction(
       // B. Resolver la cuenta de cada asiento, fijar su moneda y acumular el balance por divisa.
       //    Se bloquean todas las filas antes de tocar un solo saldo: si la transacción está
       //    desbalanceada, no se escribió nada todavía.
-      const resueltos: { entry: typeof entries[number] ; account: NonNullable< Awaited< ReturnType< typeof accountRepository.findByIdForUpdate > > > ; moneda: string }[] = [] ;
+      const resueltos: { entry: typeof entries[number] ; account: NonNullable< Awaited< ReturnType< typeof accountRepository.findVisibleByIdForUpdate > > > ; moneda: string }[] = [] ;
 
-      for( const entry of entries ){
+      // Orden de bloqueo (NFR-2): por id de cuenta, no en el orden del asiento. Dos organizaciones que
+      // escriben sobre una misma personal no pueden tomar los locks en orden inverso.
+      const bloqueadas = new Map< string , NonNullable< Awaited< ReturnType< typeof accountRepository.findVisibleByIdForUpdate > > > >() ;
+
+      for( const accountId of [ ...new Set( entries.map( ( e ) => e.accountId ) ) ].sort() ){
         // Bloquear la fila de la cuenta para evitar colisiones de concurrencia (SELECT FOR UPDATE)
-        const account = await accountRepository.findByIdForUpdate( entry.accountId , organizationId , tx ) ;
+        const cuenta = await accountRepository.findVisibleByIdForUpdate( accountId , organizationId , tx ) ;
 
-        if( !account ){
+        if( !cuenta ){
           // Lanza excepción para forzar rollback de la transacción Drizzle
-          throw new Error( `La cuenta con ID ${entry.accountId} no existe o no pertenece a la organización solicitante.` ) ;
+          throw new Error( `La cuenta con ID ${accountId} no existe o no pertenece a la organización solicitante.` ) ;
         }
 
-        if( account.organizationId !== organizationId ){
+        bloqueadas.set( accountId , cuenta ) ;
+      }
+
+      for( const entry of entries ){
+        const account = bloqueadas.get( entry.accountId )! ;
+
+        // Visible: de la organización o personal compartida con ella (la consulta ya lo garantiza)
+        if( !account.ownerUserId && (account.organizationId !== organizationId) ){
           throw new Error( `Acceso no autorizado: la cuenta ${account.name} no pertenece a la organización solicitante.` ) ;
         }
 
@@ -169,6 +181,14 @@ export async function createLedgerTransaction(
         ) ;
 
         resueltos.push( {entry , account , moneda: monedaAsiento} ) ;
+      }
+
+      // B2. Una personal sólo la asienta su dueño o quien tiene su habilitación (RN-6, A1, A2). Antes de
+      //     tocar un saldo: si no hay permiso, el rollback deja la base como estaba.
+      const permiso = await exigirPermisoSobreCuentas( { organizationId , autorUserId: createdByUserId , holderUserId: titularFinal , cuentas: [ ...bloqueadas.values() ] } , tx ) ;
+
+      if( !permiso.success ){
+        throw new Error( permiso.error ) ;
       }
 
       // C. Regla de Balance Cero, una moneda por vez.
@@ -332,6 +352,16 @@ export async function deleteLedgerTransaction(
       // 2. Obtener los movimientos de la transacción
       const entries = await ledgerRepository.findEntriesByTransactionId( transactionId , tx ) ;
 
+      // 2b. Una personal compartida no se elimina: el saldo es único y la historia de otras organizaciones
+      //     depende de ella. Se reversa.
+      for( const entry of entries ){
+        const historica = await accountRepository.findHistoricaById( entry.accountId , tx ) ;
+
+        if( historica?.ownerUserId ){
+          return( fail("Reversá el movimiento en lugar de eliminarlo: usa una cuenta personal.") ) ;
+        }
+      }
+
       // 3. Revertir saldos para cada cuenta involucrada
       for( const entry of entries ){
         const account = await accountRepository.findByIdForUpdate( entry.accountId , organizationId , tx ) ;
@@ -488,14 +518,35 @@ export async function reverseLedgerTransaction(
         return( fail("La transacción contable no tiene asientos asociados para reversar.") ) ;
       }
 
-      // 3. Revertir saldos en las cuentas (operación inversa)
-      const cuentasPorId = new Map< string , NonNullable< Awaited< ReturnType< typeof accountRepository.findByIdForUpdate > > > >() ;
+      // 3. Bloquear las cuentas en orden por id (NFR-2) y verificar quién puede reversar.
+      //    Si una personal ya no se comparte con la organización se bloquea igual: el saldo único se
+      //    corrige de todos modos (A8).
+      const cuentasPorId = new Map< string , NonNullable< Awaited< ReturnType< typeof accountRepository.findVisibleByIdForUpdate > > > >() ;
 
-      for( const entry of entries ){
-        const account = await accountRepository.findByIdForUpdate( entry.accountId , organizationId , tx ) ;
-        if( !account ){
-          throw new Error( `La cuenta con ID ${entry.accountId} asociada a la entrada no existe.` ) ;
+      for( const accountId of [ ...new Set( entries.map( ( e ) => e.accountId ) ) ].sort() ){
+        let cuenta = await accountRepository.findVisibleByIdForUpdate( accountId , organizationId , tx ) ;
+
+        if( !cuenta ){
+          const historica = await accountRepository.findHistoricaByIdForUpdate( accountId , tx ) ;
+          cuenta = ( historica?.ownerUserId ? historica : null ) ;
         }
+
+        if( !cuenta ){
+          throw new Error( `La cuenta con ID ${accountId} asociada a la entrada no existe.` ) ;
+        }
+
+        cuentasPorId.set( accountId , cuenta ) ;
+      }
+
+      const permisoReversa = await exigirPermisoDeReversa( { organizationId , actorUserId , autorOriginalId: original.createdByUserId , cuentas: [ ...cuentasPorId.values() ] } , tx ) ;
+
+      if( !permisoReversa.success ) {
+        return( fail( permisoReversa.error ) ) ;
+      }
+
+      // 3b. Revertir saldos en las cuentas (operación inversa)
+      for( const entry of entries ){
+        const account = cuentasPorId.get( entry.accountId )! ;
 
         let nuevoSaldo = account.balance ;
         const tipo     = account.type ;
@@ -509,7 +560,8 @@ export async function reverseLedgerTransaction(
         }
 
         await accountRepository.updateBalance( account.id , nuevoSaldo , tx ) ;
-        cuentasPorId.set( account.id , account ) ;
+        // Si la cuenta aparece en más de un asiento, el siguiente parte del saldo ya corregido
+        cuentasPorId.set( account.id , {...account , balance: nuevoSaldo} ) ;
       }
 
       // 4. Crear la transacción espejo de reversión
