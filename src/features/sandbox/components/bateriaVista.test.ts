@@ -234,4 +234,29 @@ describe( "bateriaVista" , () => {
     expect( res.ningunaAcierta ).toBe( 1 ) ;
     expect( res.alMenosUna ).toBe( 2 ) ;
   } ) ;
+
+  it( "7. posicionEsperado ignora los candidatos con resuelve === false, y los sin resuelve (wikidata) siguen contando" , () => {
+    const esperados = [ "edesur.com.ar" ] ;
+
+    // Caso A: candidato esperado tiene resuelve: false -> retorna -1 (sin esperado)
+    const listaConFallo = [
+      { dominio: "edesur.com" ,    resuelve: true } ,
+      { dominio: "edesur.com.ar" , resuelve: false }
+    ] ;
+    expect( posicionEsperado( listaConFallo , esperados ) ).toBe( -1 ) ;
+
+    // Caso B: candidato esperado tiene resuelve: undefined (como wikidata/duckduckgo) -> cuenta normalmente
+    const listaWikidata = [
+      { dominio: "otra.com" } ,
+      { dominio: "edesur.com.ar" }
+    ] ;
+    expect( posicionEsperado( listaWikidata , esperados ) ).toBe( 1 ) ;
+
+    // Caso C: candidato no resuelto previo no penaliza el índice del siguiente válido que coincide
+    const listaConPrevioInvalido = [
+      { dominio: "invalido.com" ,  resuelve: false } ,
+      { dominio: "edesur.com.ar" , resuelve: true }
+    ] ;
+    expect( posicionEsperado( listaConPrevioInvalido , esperados ) ).toBe( 0 ) ;
+  } ) ;
 } ) ;

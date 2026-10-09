@@ -20,22 +20,35 @@ import {
   normalizarIcono ,
   medirImagen
 } from "./imagenIcono" ;
-import { colorDominante }  from "./colorMarca" ;
+import {
+  colorDominante ,
+  esColorExtremo
+} from "./colorMarca" ;
 import type { CandidatoIcono } from "./tiposMarca" ;
+
+/** Umbral de resolución nítida para íconos directos de sitio (64 px). */
+export const UMBRAL_NITIDO = 64 ;
+
+/** Umbral de resolución mínima estándar para íconos de cualquier fuente (32 px). */
+export const UMBRAL_MINIMO = 32 ;
+
+/** Umbral de resolución de piso absoluto aceptable como baja resolución (16 px). */
+export const UMBRAL_PISO = 16 ;
 
 export type OrigenIcono = "sitio" | "google-s2" ;
 
 export interface IdentidadMarca {
   dominio:    string ;
   icono:      {
-    origen:       OrigenIcono ;
-    dataUri?:     string ;
-    url?:         string ;
-    ancho?:       number ;
-    alto?:        number ;
-    origenAncho?: number ;
-    origenAlto?:  number ;
-    fuenteUrl?:   string ;
+    origen:          OrigenIcono ;
+    dataUri?:        string ;
+    url?:            string ;
+    ancho?:          number ;
+    alto?:           number ;
+    origenAncho?:    number ;
+    origenAlto?:     number ;
+    fuenteUrl?:      string ;
+    bajaResolucion?: boolean ;
   } | null ;
   color:      string | null ;
   intentos:   { fuente: OrigenIcono ; ok: boolean ; motivo?: string }[] ;
@@ -137,19 +150,33 @@ export async function resolverIdentidad(
 
   const intentos: { fuente: OrigenIcono ; ok: boolean ; motivo?: string }[] = [] ;
   let iconoElegido: {
-    origen:       OrigenIcono ;
-    dataUri?:     string ;
-    url?:         string ;
-    ancho?:       number ;
-    alto?:        number ;
-    origenAncho?: number ;
-    origenAlto?:  number ;
-    fuenteUrl?:   string ;
+    origen:          OrigenIcono ;
+    dataUri?:        string ;
+    url?:            string ;
+    ancho?:          number ;
+    alto?:           number ;
+    origenAncho?:    number ;
+    origenAlto?:     number ;
+    fuenteUrl?:      string ;
+    bajaResolucion?: boolean ;
   } | null = null ;
   let bufferPngParaColor: Buffer | null = null ;
   let redirigeA: string | undefined = undefined ;
 
   let respaldoChico: {
+    icono:  {
+      origen:       OrigenIcono ;
+      dataUri:      string ;
+      ancho:        number ;
+      alto:         number ;
+      origenAncho?: number ;
+      origenAlto?:  number ;
+      fuenteUrl?:   string ;
+    } ;
+    pngBuf: Buffer ;
+  } | null = null ;
+
+  let candidatoS2: {
     icono:  {
       origen:       OrigenIcono ;
       dataUri:      string ;
@@ -227,7 +254,8 @@ export async function resolverIdentidad(
     const urlsCandidatas  = ordenarUrlsCandidatas( todosCandidatos , urlFinal ) ;
     const topeCandidatos  = urlsCandidatas.slice( 0 , 4 ) ;
 
-    let encontroApto = false ;
+    let encontroApto    = false ;
+    let habiaMenorAPiso = false ;
 
     for( const urlIcono of topeCandidatos ) {
       const resIcono = await fetchSeguro( urlIcono , { timeoutMs: 4000 , maxBytes: 300 * 1024 } ) ;
@@ -241,13 +269,15 @@ export async function resolverIdentidad(
         continue ;
       }
 
-      if( normalizado.origenAncho >= 64 ) {
+      const anchoEfectivo = dimensiones?.ancho ?? normalizado.origenAncho ;
+
+      if( anchoEfectivo >= UMBRAL_NITIDO ) {
         iconoElegido = {
           origen:      "sitio" ,
           dataUri:     normalizado.dataUri ,
           ancho:       normalizado.ancho ,
           alto:        normalizado.alto ,
-          origenAncho: dimensiones?.ancho ?? normalizado.origenAncho ,
+          origenAncho: anchoEfectivo ,
           origenAlto:  dimensiones?.alto ,
           fuenteUrl:   urlIcono
         } ;
@@ -259,26 +289,28 @@ export async function resolverIdentidad(
         } ) ;
         encontroApto = true ;
         break ;
-      } else {
-        if( !respaldoChico ) {
+      } else if( anchoEfectivo >= UMBRAL_PISO ) {
+        if( !respaldoChico || (anchoEfectivo > (respaldoChico.icono.origenAncho ?? 0)) ) {
           respaldoChico = {
             icono: {
               origen:      "sitio" ,
               dataUri:     normalizado.dataUri ,
               ancho:       normalizado.ancho ,
               alto:        normalizado.alto ,
-              origenAncho: dimensiones?.ancho ?? normalizado.origenAncho ,
+              origenAncho: anchoEfectivo ,
               origenAlto:  dimensiones?.alto ,
               fuenteUrl:   urlIcono
             } ,
             pngBuf: Buffer.from( normalizado.dataUri.slice( "data:image/png;base64,".length ) , "base64" )
           } ;
         }
+      } else {
+        habiaMenorAPiso = true ;
       }
     }
 
     if( !encontroApto ) {
-      const motivo = respaldoChico ? "menor a 64 px" : "ilegible" ;
+      const motivo = respaldoChico ? "menor a 64 px" : (habiaMenorAPiso ? "menor a 16 px" : "ilegible") ;
       intentos.push( { fuente: "sitio" , ok: false , motivo } ) ;
     }
   } else if( !fueReintentoWww && resHtml.ok ) {
@@ -301,17 +333,24 @@ export async function resolverIdentidad(
       const dimsS2 = await medirImagen( resS2.cuerpo ) ;
       const normS2 = await normalizarIcono( resS2.cuerpo ) ;
       if( normS2 ) {
-        iconoElegido = {
-          origen:      "google-s2" ,
-          dataUri:     normS2.dataUri ,
-          ancho:       normS2.ancho ,
-          alto:        normS2.alto ,
-          origenAncho: dimsS2?.ancho ?? normS2.origenAncho ,
-          origenAlto:  dimsS2?.alto ,
-          fuenteUrl:   urlS2Usada
-        } ;
-        bufferPngParaColor = Buffer.from( normS2.dataUri.slice( "data:image/png;base64,".length ) , "base64" ) ;
-        intentos.push( { fuente: "google-s2" , ok: true } ) ;
+        const anchoS2 = dimsS2?.ancho ?? normS2.origenAncho ;
+        if( anchoS2 >= UMBRAL_PISO ) {
+          candidatoS2 = {
+            icono: {
+              origen:      "google-s2" ,
+              dataUri:     normS2.dataUri ,
+              ancho:       normS2.ancho ,
+              alto:        normS2.alto ,
+              origenAncho: anchoS2 ,
+              origenAlto:  dimsS2?.alto ,
+              fuenteUrl:   urlS2Usada
+            } ,
+            pngBuf: Buffer.from( normS2.dataUri.slice( "data:image/png;base64,".length ) , "base64" )
+          } ;
+          intentos.push( { fuente: "google-s2" , ok: true } ) ;
+        } else {
+          intentos.push( { fuente: "google-s2" , ok: false , motivo: "menor a 16 px" } ) ;
+        }
       } else {
         intentos.push( { fuente: "google-s2" , ok: false , motivo: "ilegible" } ) ;
       }
@@ -321,18 +360,59 @@ export async function resolverIdentidad(
     }
   }
 
-  // 3. Respaldo chico de sitio (si S2 no funcionó y había un ícono chico del sitio)
-  if( !iconoElegido && respaldoChico ) {
-    iconoElegido       = respaldoChico.icono ;
-    bufferPngParaColor = respaldoChico.pngBuf ;
+  // 3. Selección entre Google S2 y respaldo chico de sitio
+  if( !iconoElegido ) {
+    const anchoS2       = candidatoS2?.icono.origenAncho ?? 0 ;
+    const anchoRespaldo = respaldoChico?.icono.origenAncho ?? 0 ;
+
+    const s2LlegaMinimo       = anchoS2 >= UMBRAL_MINIMO ;
+    const respaldoLlegaMinimo = anchoRespaldo >= UMBRAL_MINIMO ;
+
+    if( s2LlegaMinimo || respaldoLlegaMinimo ) {
+      // Regla 2: los que tengan >= 32. Mayor gana; empate -> Google S2
+      if( s2LlegaMinimo && respaldoLlegaMinimo ) {
+        if( anchoRespaldo > anchoS2 ) {
+          iconoElegido       = respaldoChico!.icono ;
+          bufferPngParaColor = respaldoChico!.pngBuf ;
+        } else {
+          iconoElegido       = candidatoS2!.icono ;
+          bufferPngParaColor = candidatoS2!.pngBuf ;
+        }
+      } else if( s2LlegaMinimo ) {
+        iconoElegido       = candidatoS2!.icono ;
+        bufferPngParaColor = candidatoS2!.pngBuf ;
+      } else {
+        iconoElegido       = respaldoChico!.icono ;
+        bufferPngParaColor = respaldoChico!.pngBuf ;
+      }
+    } else if( (anchoS2 >= UMBRAL_PISO) || (anchoRespaldo >= UMBRAL_PISO) ) {
+      // Regla 3: Si ninguno llega a 32, el de mayor ancho con >= 16; bajaResolucion: true; empate -> Google S2
+      let elegido: typeof respaldoChico ;
+      if( (anchoS2 >= UMBRAL_PISO) && (anchoRespaldo >= UMBRAL_PISO) ) {
+        elegido = (anchoRespaldo > anchoS2) ? respaldoChico : candidatoS2 ;
+      } else if( anchoS2 >= UMBRAL_PISO ) {
+        elegido = candidatoS2 ;
+      } else {
+        elegido = respaldoChico ;
+      }
+
+      if( elegido ) {
+        iconoElegido = {
+          ...elegido.icono ,
+          bajaResolucion: true
+        } ;
+        bufferPngParaColor = elegido.pngBuf ;
+      }
+    }
   }
-
-
 
   // Color dominante
   let color: string | null = null ;
   if( iconoElegido?.dataUri && bufferPngParaColor ) {
     color = await colorDominante( bufferPngParaColor ) ;
+    if( color && esColorExtremo( color ) ) {
+      color = null ;
+    }
   }
 
   return( {

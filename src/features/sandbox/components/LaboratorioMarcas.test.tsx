@@ -1180,4 +1180,113 @@ describe( "LaboratorioMarcas" , () => {
       expect( tarjetaS2 ).toHaveClass( styles.celdaUsada ) ;
     } ) ;
   } ) ;
+
+  it( "19. la etiqueta 'baja resolución' aparece sólo cuando bajaResolucion es true" , async() => {
+    vi.useFakeTimers() ;
+
+    global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+      const u = String( url ) ;
+      if( u.includes( "fase=iconos" ) ) {
+        return( { ok: true , status: 200 , json: async() => ( { resultados: [] } ) } ) ;
+      }
+      if( u.includes( "/api/brand/identidad" ) ) {
+        if( u.includes( "galicia.ar" ) ) {
+          return( {
+            ok:     true ,
+            status: 200 ,
+            json:   async() => ( {
+              dominio:  "galicia.ar" ,
+              icono:    { origen: "sitio" , url: "https://galicia.ar/logo.png" , bajaResolucion: true } ,
+              color:    "#ff5500" ,
+              intentos: [ { fuente: "sitio" , ok: true } ]
+            } )
+          } ) ;
+        }
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            dominio:  "bbva.com" ,
+            icono:    { origen: "google-s2" , url: "https://bbva.com/logo.png" } ,
+            color:    "#004488" ,
+            intentos: [ { fuente: "google-s2" , ok: true } ]
+          } )
+        } ) ;
+      }
+      return( { ok: false , status: 404 } ) ;
+    } ) ;
+
+    render( <LaboratorioMarcas dict={dict} lang="es" /> ) ;
+    fireEvent.click( screen.getByText( dict.sandboxPage.brandsBattery ) ) ;
+
+    await act( async() => {
+      await vi.runAllTimersAsync() ;
+    } ) ;
+
+    // Galicia tiene bajaResolucion: true -> etiqueta visible
+    expect( screen.getByText( "baja resolución" ) ).toBeInTheDocument() ;
+
+    vi.useRealTimers() ;
+  } ) ;
+
+  it( "20. el JSON copiado conserva bajaResolucion" , async() => {
+    vi.useFakeTimers() ;
+    let clipboardText = "" ;
+    Object.assign( navigator , {
+      clipboard: {
+        writeText: vi.fn().mockImplementation( async( text: string ) => {
+          clipboardText = text ;
+        } )
+      }
+    } ) ;
+    vi.spyOn( window , "alert" ).mockImplementation( () => {} ) ;
+
+    global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+      const u = String( url ) ;
+      if( u.includes( "fase=dominios" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            resultados: [
+              {
+                estrategia: "wikidata" ,
+                ok:         true ,
+                ms:         20 ,
+                estado:     "200" ,
+                candidatos: [ { dominio: "galicia.ar" } ]
+              }
+            ]
+          } )
+        } ) ;
+      }
+      if( u.includes( "/api/brand/identidad" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            dominio:  "galicia.ar" ,
+            icono:    { origen: "sitio" , url: "https://galicia.ar/logo.png" , bajaResolucion: true } ,
+            color:    "#ff5500" ,
+            intentos: [ { fuente: "sitio" , ok: true } ]
+          } )
+        } ) ;
+      }
+      return( { ok: false , status: 404 } ) ;
+    } ) ;
+
+    render( <LaboratorioMarcas dict={dict} lang="es" /> ) ;
+    fireEvent.click( screen.getByText( dict.sandboxPage.brandsBatteryName ) ) ;
+
+    await act( async() => {
+      await vi.runAllTimersAsync() ;
+    } ) ;
+
+    fireEvent.click( screen.getByText( dict.sandboxPage.brandsCopy ) ) ;
+
+    const parsed = JSON.parse( clipboardText ) ;
+    expect( parsed.bateriaNombres[0].estrategias[0].primero.identidad.icono.bajaResolucion ).toBe( true ) ;
+
+    vi.useRealTimers() ;
+  } ) ;
 } ) ;

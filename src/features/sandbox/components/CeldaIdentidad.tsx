@@ -19,7 +19,8 @@ export interface IdentidadMarcaLab {
     alto?:        number ;
     origenAncho?: number ;
     origenAlto?:  number ;
-    fuenteUrl?:   string ;
+    fuenteUrl?:      string ;
+    bajaResolucion?: boolean ;
   } | null ;
   color:      string | null ;
   intentos:   { fuente: string ; ok: boolean ; motivo?: string }[] ;
@@ -86,6 +87,11 @@ export function CeldaIdentidad( { identidad }: CeldaIdentidadProps ) {
       <span className={styles.resolverOrigin}>
         {identidad.icono?.origen || "—"}
       </span>
+      {identidad.icono?.bajaResolucion && (
+        <span className={styles.bajaResolucionBadge}>
+          baja resolución
+        </span>
+      )}
     </div>
   ) ;
 }

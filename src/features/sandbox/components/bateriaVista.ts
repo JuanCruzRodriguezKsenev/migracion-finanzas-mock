@@ -31,18 +31,20 @@ export function dominioBase( texto: string ): string {
 
 /**
  * Busca la posición (índice 0-based) del primer candidato cuyo dominioBase coincide con algún esperado.
+ * Descarta candidatos que explícitamente no resuelven (resuelve === false).
  *
- * @param candidatos - Lista de candidatos con dominio.
+ * @param candidatos - Lista de candidatos con dominio y estado de resolución opcional.
  * @param esperados - Lista de dominios esperados para la consulta.
- * @returns Índice del primer candidato esperado, o -1 si ninguno coincide.
+ * @returns Índice del primer candidato esperado entre los válidos, o -1 si ninguno coincide.
  */
 export function posicionEsperado(
-  candidatos: { dominio: string }[] ,
-  esperados: string[]
+  candidatos: { dominio: string ; resuelve?: boolean }[] ,
+  esperados:  string[]
 ): number {
   const esperadosBase = esperados.map( ( e ) => dominioBase( e ) ) ;
-  for( let i = 0 ; i < candidatos.length ; i++ ) {
-    const candBase = dominioBase( candidatos[i].dominio ) ;
+  const validos       = candidatos.filter( ( c ) => c.resuelve !== false ) ;
+  for( let i = 0 ; i < validos.length ; i++ ) {
+    const candBase = dominioBase( validos[i].dominio ) ;
     if( candBase && esperadosBase.includes( candBase ) ) {
       return( i ) ;
     }

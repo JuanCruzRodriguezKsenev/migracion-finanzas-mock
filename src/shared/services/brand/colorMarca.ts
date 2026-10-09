@@ -155,3 +155,20 @@ export async function colorDominante( png: Buffer ): Promise< string | null > {
     return( null ) ;
   }
 }
+
+/**
+ * true si el color es casi blanco (Y >= 240) o casi negro (Y <= 12); sin gamma, canales 0–255.
+ *
+ * @param hex - Cadena hexadecimal #rrggbb.
+ * @returns true si el color es extremo; false si es intermedio o inválido.
+ */
+export function esColorExtremo( hex: string ): boolean {
+  if( !hex || !/^#[0-9a-f]{6}$/i.test( hex ) ) {
+    return( false ) ;
+  }
+  const r = parseInt( hex.slice( 1 , 3 ) , 16 ) ;
+  const g = parseInt( hex.slice( 3 , 5 ) , 16 ) ;
+  const b = parseInt( hex.slice( 5 , 7 ) , 16 ) ;
+  const y = (0.2126 * r) + (0.7152 * g) + (0.0722 * b) ;
+  return( (y <= 12) || (y >= 240) ) ;
+}

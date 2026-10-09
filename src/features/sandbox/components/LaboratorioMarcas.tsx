@@ -371,12 +371,13 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
   const limpiarIdentidadParaBateriaNombres = ( id?: IdentidadMarcaLab | null ) => {
     if( !id ) return( null ) ;
     const iconoLimpio = id.icono ? {
-      origen:      id.icono.origen ,
-      ancho:       id.icono.ancho ,
-      alto:        id.icono.alto ,
-      origenAncho: id.icono.origenAncho ,
-      origenAlto:  id.icono.origenAlto ,
-      fuenteUrl:   id.icono.fuenteUrl
+      origen:         id.icono.origen ,
+      ancho:          id.icono.ancho ,
+      alto:           id.icono.alto ,
+      origenAncho:    id.icono.origenAncho ,
+      origenAlto:     id.icono.origenAlto ,
+      fuenteUrl:      id.icono.fuenteUrl ,
+      ...( id.icono.bajaResolucion ? { bajaResolucion: true } : {} )
     } : null ;
     return( {
       icono:    iconoLimpio ,

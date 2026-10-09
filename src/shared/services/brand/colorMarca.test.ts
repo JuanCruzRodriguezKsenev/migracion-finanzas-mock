@@ -8,7 +8,10 @@ import { describe , it , expect } from "vitest" ;
 import sharp                       from "sharp" ;
 
 // Shared
-import { colorDominante } from "./colorMarca" ;
+import {
+  colorDominante ,
+  esColorExtremo
+} from "./colorMarca" ;
 
 function extraerCanalesHex( hex: string ): { r: number ; g: number ; b: number } {
   const limpio = hex.replace( "#" , "" ) ;
@@ -276,5 +279,24 @@ describe( "colorMarca" , () => {
     expect( canales.r ).toBeLessThan( 80 ) ;
     expect( canales.g ).toBeLessThan( 80 ) ;
     expect( canales.b ).toBeLessThan( 80 ) ;
+  } ) ;
+
+  it( "11. esColorExtremo identifica casi blanco o casi negro y conserva colores cromáticos" , () => {
+    // Casi blanco (Y >= 240) o casi negro (Y <= 12) -> true
+    expect( esColorExtremo( "#fefefe" ) ).toBe( true ) ;
+    expect( esColorExtremo( "#070809" ) ).toBe( true ) ;
+    expect( esColorExtremo( "#000000" ) ).toBe( true ) ;
+    expect( esColorExtremo( "#ffffff" ) ).toBe( true ) ;
+    expect( esColorExtremo( "#f0f0f0" ) ).toBe( true ) ;
+
+    // Colores cromáticos e intermedios -> false
+    expect( esColorExtremo( "#480078" ) ).toBe( false ) ;
+    expect( esColorExtremo( "#00278f" ) ).toBe( false ) ;
+    expect( esColorExtremo( "#1ed961" ) ).toBe( false ) ;
+    expect( esColorExtremo( "#ececec" ) ).toBe( false ) ;
+
+    // Cadenas inválidas -> false sin explotar
+    expect( esColorExtremo( "rojo" ) ).toBe( false ) ;
+    expect( esColorExtremo( "" ) ).toBe( false ) ;
   } ) ;
 } ) ;

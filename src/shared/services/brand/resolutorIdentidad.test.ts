@@ -380,4 +380,137 @@ describe( "resolutorIdentidad" , () => {
     const resMismo = await resolverIdentidad( "propio.com" ) ;
     expect( resMismo.redirigeA ).toBeUndefined() ;
   } ) ;
+
+  it( "20. S2 de 32 px y respaldo de 48 px -> gana el respaldo" , async() => {
+    const png48 = await crearPng( 48 , 48 , 0 , 120 , 200 ) ;
+    const pngS2 = await crearPng( 32 , 32 , 200 , 50 , 50 ) ;
+
+    fetchMock.mockImplementation( async( url: string | Request ) => {
+      const u = String( url ) ;
+      if( u === "https://ejemplo.com/" ) {
+        const html = `<html><head><link rel="icon" sizes="48x48" href="/icon-48.png"></head></html>` ;
+        return( new Response( html , { status: 200 , headers: { "content-type": "text/html" } } ) ) ;
+      }
+      if( u === "https://ejemplo.com/icon-48.png" ) {
+        return( respuestaImagen( png48 ) ) ;
+      }
+      if( u.includes( "google.com/s2/favicons" ) ) {
+        return( respuestaImagen( pngS2 ) ) ;
+      }
+      return( new Response( "" , { status: 404 } ) ) ;
+    } ) ;
+
+    const res = await resolverIdentidad( "ejemplo.com" ) ;
+    expect( res.icono?.origen ).toBe( "sitio" ) ;
+    expect( res.icono?.origenAncho ).toBe( 48 ) ;
+    expect( res.icono?.bajaResolucion ).toBeUndefined() ;
+  } ) ;
+
+  it( "21. empate de 32 px entre S2 y respaldo chico -> gana Google S2" , async() => {
+    const png32Sitio = await crearPng( 32 , 32 , 0 , 120 , 200 ) ;
+    const png32S2    = await crearPng( 32 , 32 , 200 , 50 , 50 ) ;
+
+    fetchMock.mockImplementation( async( url: string | Request ) => {
+      const u = String( url ) ;
+      if( u === "https://ejemplo.com/" ) {
+        const html = `<html><head><link rel="icon" sizes="32x32" href="/icon-32.png"></head></html>` ;
+        return( new Response( html , { status: 200 , headers: { "content-type": "text/html" } } ) ) ;
+      }
+      if( u === "https://ejemplo.com/icon-32.png" ) {
+        return( respuestaImagen( png32Sitio ) ) ;
+      }
+      if( u.includes( "google.com/s2/favicons" ) ) {
+        return( respuestaImagen( png32S2 ) ) ;
+      }
+      return( new Response( "" , { status: 404 } ) ) ;
+    } ) ;
+
+    const res = await resolverIdentidad( "ejemplo.com" ) ;
+    expect( res.icono?.origen ).toBe( "google-s2" ) ;
+    expect( res.icono?.origenAncho ).toBe( 32 ) ;
+    expect( res.icono?.bajaResolucion ).toBeUndefined() ;
+  } ) ;
+
+  it( "22. sólo 16 px -> ícono con bajaResolucion: true" , async() => {
+    const png16 = await crearPng( 16 , 16 , 0 , 150 , 100 ) ;
+
+    fetchMock.mockImplementation( async( url: string | Request ) => {
+      const u = String( url ) ;
+      if( u === "https://ejemplo.com/" ) {
+        const html = `<html><head><link rel="icon" sizes="16x16" href="/icon-16.png"></head></html>` ;
+        return( new Response( html , { status: 200 , headers: { "content-type": "text/html" } } ) ) ;
+      }
+      if( u === "https://ejemplo.com/icon-16.png" ) {
+        return( respuestaImagen( png16 ) ) ;
+      }
+      return( new Response( "" , { status: 500 } ) ) ;
+    } ) ;
+
+    const res = await resolverIdentidad( "ejemplo.com" ) ;
+    expect( res.icono?.origen ).toBe( "sitio" ) ;
+    expect( res.icono?.origenAncho ).toBe( 16 ) ;
+    expect( res.icono?.bajaResolucion ).toBe( true ) ;
+  } ) ;
+
+  it( "23. sólo 12 px -> icono: null, color: null y motivo menor a 16 px" , async() => {
+    const png12 = await crearPng( 12 , 12 , 0 , 150 , 100 ) ;
+
+    fetchMock.mockImplementation( async( url: string | Request ) => {
+      const u = String( url ) ;
+      if( u === "https://ejemplo.com/" ) {
+        const html = `<html><head><link rel="icon" sizes="12x12" href="/icon-12.png"></head></html>` ;
+        return( new Response( html , { status: 200 , headers: { "content-type": "text/html" } } ) ) ;
+      }
+      if( u === "https://ejemplo.com/icon-12.png" ) {
+        return( respuestaImagen( png12 ) ) ;
+      }
+      return( new Response( "" , { status: 500 } ) ) ;
+    } ) ;
+
+    const res = await resolverIdentidad( "ejemplo.com" ) ;
+    expect( res.icono ).toBeNull() ;
+    expect( res.color ).toBeNull() ;
+    expect( res.intentos[0] ).toEqual( { fuente: "sitio" , ok: false , motivo: "menor a 16 px" } ) ;
+  } ) ;
+
+  it( "24. ícono de sitio ≥ 64 px -> sin bajaResolucion (propiedad ausente)" , async() => {
+    const png180 = await crearPng( 180 , 180 , 229 , 9 , 20 ) ;
+
+    fetchMock.mockImplementation( async( url: string | Request ) => {
+      const u = String( url ) ;
+      if( u === "https://ejemplo.com/" ) {
+        const html = `<html><head><link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png"></head></html>` ;
+        return( new Response( html , { status: 200 , headers: { "content-type": "text/html" } } ) ) ;
+      }
+      if( u === "https://ejemplo.com/icon-180.png" ) {
+        return( respuestaImagen( png180 ) ) ;
+      }
+      return( new Response( "" , { status: 404 } ) ) ;
+    } ) ;
+
+    const res = await resolverIdentidad( "ejemplo.com" ) ;
+    expect( res.icono?.origen ).toBe( "sitio" ) ;
+    expect( res.icono?.bajaResolucion ).toBeUndefined() ;
+  } ) ;
+
+  it( "25. ícono monocromo blanco -> color: null con ícono presente" , async() => {
+    const pngBlanco = await crearPng( 128 , 128 , 255 , 255 , 255 ) ;
+
+    fetchMock.mockImplementation( async( url: string | Request ) => {
+      const u = String( url ) ;
+      if( u === "https://ejemplo.com/" ) {
+        const html = `<html><head><link rel="apple-touch-icon" sizes="128x128" href="/icon-white.png"></head></html>` ;
+        return( new Response( html , { status: 200 , headers: { "content-type": "text/html" } } ) ) ;
+      }
+      if( u === "https://ejemplo.com/icon-white.png" ) {
+        return( respuestaImagen( pngBlanco ) ) ;
+      }
+      return( new Response( "" , { status: 404 } ) ) ;
+    } ) ;
+
+    const res = await resolverIdentidad( "ejemplo.com" ) ;
+    expect( res.icono ).not.toBeNull() ;
+    expect( res.icono?.origen ).toBe( "sitio" ) ;
+    expect( res.color ).toBeNull() ;
+  } ) ;
 } ) ;

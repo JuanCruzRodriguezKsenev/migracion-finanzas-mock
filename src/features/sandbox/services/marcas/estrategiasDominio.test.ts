@@ -13,8 +13,10 @@ import {
   estrategiaVerificados ,
   estrategiaDuckDuckGo ,
   estrategiaCandidatos ,
+  titulaDominioEnVenta ,
   estrategiaWikidata ,
-  generarCandidatos
+  generarCandidatos ,
+  TLDS_PRODUCTO
 } from "./estrategiasDominio" ;
 
 interface DnsSpyMock {
@@ -196,7 +198,11 @@ describe( "estrategiasDominio" , () => {
         "mercadopago.ar" ,
         "mercadopago.com" ,
         "mercado-pago.com.ar" ,
-        "mercado-pago.com"
+        "mercado-pago.com" ,
+        "mp.com.ar" ,
+        "mp.com" ,
+        "mpa.com.ar" ,
+        "mpa.com"
       ] ) ;
     } ) ;
 
@@ -205,7 +211,7 @@ describe( "estrategiasDominio" , () => {
       expect( candGalicia ).toEqual( [ "galicia.com" ] ) ;
 
       const candMp = generarCandidatosVerificables( "mercado pago" , null ) ;
-      expect( candMp ).toEqual( [ "mercadopago.com" , "mercado-pago.com" ] ) ;
+      expect( candMp ).toEqual( [ "mercadopago.com" , "mercado-pago.com" , "mp.com" ] ) ;
     } ) ;
 
     it( "galicia.ar con <title>Banco Galicia</title> -> coincide: true y primero frente a host con otro título" , async() => {
@@ -290,6 +296,182 @@ describe( "estrategiasDominio" , () => {
       expect( cand?.resuelve ).toBe( true ) ;
       expect( cand?.titulo ).toBeUndefined() ;
       expect( cand?.coincide ).toBe( false ) ;
+    } ) ;
+
+    it( "generarCandidatosVerificables con 'banco nacion' (AR) incluye siglas y respeta tope 10" , () => {
+      const cand = generarCandidatosVerificables( "banco nacion" , paisAr ) ;
+      expect( cand ).toContain( "bn.com.ar" ) ;
+      expect( cand ).toContain( "bna.com.ar" ) ;
+      expect( cand ).toHaveLength( 9 ) ;
+      expect( cand.length ).toBeLessThanOrEqual( 10 ) ;
+    } ) ;
+
+    it( "belo sin coincidencia en primera pasada prueba belo.app y queda primero" , async() => {
+      spyDns().mockImplementation( async( host ) => {
+        if( (host === "belo.com") || (host === "belo.app") ) {
+          return( [{ address: "200.5.120.10" , family: 4 }] ) ;
+        }
+        return( [] ) ;
+      } ) ;
+
+      global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+        if( url.includes( "belo.com" ) ) {
+          return( {
+            ok:     true ,
+            status: 200 ,
+            headers: new Headers( { "content-type": "text/html" } ) ,
+            body: new ReadableStream( {
+              start( controller ) {
+                controller.enqueue( new TextEncoder().encode( "<html><head><title>Otra Empresa Diferente</title></head></html>" ) ) ;
+                controller.close() ;
+              }
+            } )
+          } as unknown as Response ) ;
+        }
+        if( url.includes( "belo.app" ) ) {
+          return( {
+            ok:     true ,
+            status: 200 ,
+            headers: new Headers( { "content-type": "text/html" } ) ,
+            body: new ReadableStream( {
+              start( controller ) {
+                controller.enqueue( new TextEncoder().encode( "<html><head><title>Belo - cuenta</title></head></html>" ) ) ;
+                controller.close() ;
+              }
+            } )
+          } as unknown as Response ) ;
+        }
+        return( { ok: false , status: 404 } as unknown as Response ) ;
+      } ) ;
+
+      const res = await estrategiaVerificados( "belo" , { pais: paisAr } ) ;
+
+      expect( res.ok ).toBe( true ) ;
+      expect( res.candidatos[0].dominio ).toBe( "belo.app" ) ;
+      expect( res.candidatos[0].coincide ).toBe( true ) ;
+    } ) ;
+
+    it( "si hay coincidencia en primera pasada no se prueba TLDS_PRODUCTO (cero pedidos a .app)" , async() => {
+      expect( TLDS_PRODUCTO ).toEqual( [ ".app" , ".io" , ".so" , ".co" , ".ai" ] ) ;
+
+      spyDns().mockImplementation( async( host ) => {
+        if( (host === "galicia.ar") || (host === "galicia.app") ) {
+          return( [{ address: "200.5.120.10" , family: 4 }] ) ;
+        }
+        return( [] ) ;
+      } ) ;
+
+      const fetchSpy = vi.fn().mockImplementation( async( url: string ) => {
+        if( url.includes( "galicia.ar" ) ) {
+          return( {
+            ok:     true ,
+            status: 200 ,
+            headers: new Headers( { "content-type": "text/html" } ) ,
+            body: new ReadableStream( {
+              start( controller ) {
+                controller.enqueue( new TextEncoder().encode( "<html><head><title>Banco Galicia Oficial</title></head></html>" ) ) ;
+                controller.close() ;
+              }
+            } )
+          } as unknown as Response ) ;
+        }
+        return( { ok: false , status: 404 } as unknown as Response ) ;
+      } ) ;
+      global.fetch = fetchSpy ;
+
+      const res = await estrategiaVerificados( "galicia" , { pais: paisAr } ) ;
+
+      expect( res.ok ).toBe( true ) ;
+      expect( res.candidatos[0].coincide ).toBe( true ) ;
+      const llamadasApp = fetchSpy.mock.calls.filter( ( [ u ] ) => String( u ).includes( ".app" ) ) ;
+      expect( llamadasApp ).toHaveLength( 0 ) ;
+    } ) ;
+
+    it( "titulaDominioEnVenta detecta los cuatro casos reales y marca coincide: false con resuelve: true" , async() => {
+      expect( titulaDominioEnVenta( "Edesur.com is for sale | HugeDomains" ) ).toBe( true ) ;
+      expect( titulaDominioEnVenta( "telecentro.com&nbsp;-&nbsp;¡Este sitio web está a la venta!&nbsp;-&nbsp;telecentro Recursos e información." ) ).toBe( true ) ;
+      expect( titulaDominioEnVenta( "Banco Provincia de Buenos Aires" ) ).toBe( false ) ;
+      expect( titulaDominioEnVenta( "Mercado Pago | De ahora en adelante, hacés más con tu dinero" ) ).toBe( false ) ;
+
+      spyDns().mockImplementation( async( host ) => {
+        if( host === "edesur.com" ) {
+          return( [{ address: "200.5.120.10" , family: 4 }] ) ;
+        }
+        return( [] ) ;
+      } ) ;
+
+      global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+        if( url.includes( "edesur.com" ) ) {
+          return( {
+            ok:     true ,
+            status: 200 ,
+            headers: new Headers( { "content-type": "text/html" } ) ,
+            body: new ReadableStream( {
+              start( controller ) {
+                controller.enqueue( new TextEncoder().encode( "<html><head><title>Edesur.com is for sale | HugeDomains</title></head></html>" ) ) ;
+                controller.close() ;
+              }
+            } )
+          } as unknown as Response ) ;
+        }
+        return( { ok: false , status: 404 } as unknown as Response ) ;
+      } ) ;
+
+      const res = await estrategiaVerificados( "edesur" , { pais: paisAr } ) ;
+      expect( res.ok ).toBe( true ) ;
+      const cand = res.candidatos.find( ( c ) => c.dominio === "edesur.com" ) ;
+      expect( cand?.resuelve ).toBe( true ) ;
+      expect( cand?.coincide ).toBe( false ) ;
+      expect( cand?.titulo ).toBe( "Edesur.com is for sale | HugeDomains" ) ;
+    } ) ;
+
+    it( "apex sin DNS y www con DNS -> resuelve: true, pedido a www y dominio sin www" , async() => {
+      spyDns().mockImplementation( async( host ) => {
+        if( host === "www.edesur.com.ar" ) {
+          return( [{ address: "45.60.113.88" , family: 4 }] ) ;
+        }
+        return( [] ) ;
+      } ) ;
+
+      const fetchSpy = vi.fn().mockImplementation( async( url: string ) => {
+        if( url.includes( "www.edesur.com.ar" ) ) {
+          return( {
+            ok:     true ,
+            status: 200 ,
+            headers: new Headers( { "content-type": "text/html" } ) ,
+            body: new ReadableStream( {
+              start( controller ) {
+                controller.enqueue( new TextEncoder().encode( "<html><head><title>Edesur - Inicio</title></head></html>" ) ) ;
+                controller.close() ;
+              }
+            } )
+          } as unknown as Response ) ;
+        }
+        return( { ok: false , status: 404 } as unknown as Response ) ;
+      } ) ;
+      global.fetch = fetchSpy ;
+
+      const res = await estrategiaVerificados( "edesur" , { pais: paisAr } ) ;
+      expect( res.ok ).toBe( true ) ;
+      const cand = res.candidatos.find( ( c ) => c.dominio === "edesur.com.ar" ) ;
+      expect( cand?.resuelve ).toBe( true ) ;
+      expect( cand?.dominio ).toBe( "edesur.com.ar" ) ;
+      expect( fetchSpy ).toHaveBeenCalledWith(
+        "https://www.edesur.com.ar/" ,
+        expect.anything()
+      ) ;
+    } ) ;
+
+    it( "ni apex ni www con DNS -> resuelve: false y cero pedidos" , async() => {
+      spyDns().mockImplementation( async() => [] ) ;
+
+      const fetchSpy = vi.fn() ;
+      global.fetch   = fetchSpy ;
+
+      const res = await estrategiaVerificados( "inexistente total" , { pais: paisAr } ) ;
+      expect( res.ok ).toBe( true ) ;
+      expect( res.candidatos.every( ( c ) => c.resuelve === false ) ).toBe( true ) ;
+      expect( fetchSpy ).not.toHaveBeenCalled() ;
     } ) ;
   } ) ;
 } ) ;

@@ -334,13 +334,36 @@ function normalizarTexto( texto: string ): string {
   ) ;
 }
 
+/** TLDs alternativos de producto para la segunda pasada si ningún candidato inicial coincide. */
+export const TLDS_PRODUCTO: readonly string[] = [ ".app" , ".io" , ".so" , ".co" , ".ai" ] ;
+
+/**
+ * Evalúa si el título HTML indica que el dominio está estacionado o a la venta.
+ *
+ * @param titulo - Título extraído de la página web.
+ * @returns true si el título contiene frases de venta o aparcamiento conocidas.
+ */
+export function titulaDominioEnVenta( titulo: string ): boolean {
+  const normalizado = normalizarTexto( titulo ) ;
+  const patrones = [
+    "for sale" ,
+    "a la venta" ,
+    "se vende" ,
+    "hugedomains" ,
+    "buy this domain" ,
+    "domain is available" ,
+    "parked"
+  ] ;
+  return( patrones.some( ( p ) => normalizado.includes( p ) ) ) ;
+}
+
 /**
  * Genera candidatos especulativos verificables basados en el texto y el país.
  * Función pura sin acceso a red.
  *
  * @param texto - Término de búsqueda de la marca.
  * @param pais - Configuración del país para sufijos y nombres locales.
- * @returns Lista de nombres de dominio candidatos (máximo 6).
+ * @returns Lista de nombres de dominio candidatos (máximo 10).
  */
 export function generarCandidatosVerificables(
   texto: string ,
@@ -383,7 +406,20 @@ export function generarCandidatosVerificables(
     }
   }
 
-  return( Array.from( candidatos ).slice( 0 , 6 ) ) ;
+  if( palabras.length > 1 ) {
+    const sigla = palabras.map( ( p ) => p[0] ).join( "" ) ;
+    if( pais ) {
+      const siglaPais = `${sigla}${pais.nombre[0].toLowerCase()}` ;
+      candidatos.add( `${sigla}${pais.sufijo}` ) ;
+      candidatos.add( `${sigla}.com` ) ;
+      candidatos.add( `${siglaPais}${pais.sufijo}` ) ;
+      candidatos.add( `${siglaPais}.com` ) ;
+    } else {
+      candidatos.add( `${sigla}.com` ) ;
+    }
+  }
+
+  return( Array.from( candidatos ).slice( 0 , 10 ) ) ;
 }
 
 /**
@@ -405,56 +441,92 @@ export async function estrategiaVerificados(
     const consultaNormalizada = normalizarTexto( texto ) ;
     const palabrasConsulta    = consultaNormalizada.split( " " ).filter( ( p ) => p.length >= 2 ) ;
 
-    // Concurrencia 3
-    for( let i = 0 ; i < lista.length ; i += 3 ) {
-      const lote = lista.slice( i , i + 3 ) ;
-      const procesados = await Promise.all(
-        lote.map( async( dominio ) => {
-          const resuelve = await hostEsPublico( dominio ) ;
-          if( !resuelve ) {
-            return( {
-              dominio ,
-              resuelve: false ,
-              coincide: false
-            } as CandidatoDominio ) ;
-          }
+    const verificarDominio = async( dominio: string ): Promise< CandidatoDominio > => {
+      let hostParaFetch = dominio ;
+      let resuelve      = await hostEsPublico( dominio ) ;
 
-          let titulo: string | undefined ;
-          let nombreSitio: string | undefined ;
+      if( !resuelve && !dominio.startsWith( "www." ) ) {
+        const resuelveWww = await hostEsPublico( `www.${dominio}` ) ;
+        if( resuelveWww ) {
+          resuelve      = true ;
+          hostParaFetch = `www.${dominio}` ;
+        }
+      }
 
-          try {
-            const res = await fetchSeguro( `https://${dominio}/` , {
-              timeoutMs: 4000 ,
-              maxBytes:  256 * 1024
-            } ) ;
+      if( !resuelve ) {
+        return( {
+          dominio ,
+          resuelve: false ,
+          coincide: false
+        } as CandidatoDominio ) ;
+      }
 
-            if( res.ok && res.cuerpo ) {
-              const html = res.cuerpo.toString( "utf-8" ) ;
-              const info = extraerNombreSitio( html ) ;
-              titulo      = info.titulo ;
-              nombreSitio = info.nombreSitio ;
-            }
-          } catch {
-            // Un fallo del pedido deja resuelve: true sin título
-          }
+      let titulo: string | undefined ;
+      let nombreSitio: string | undefined ;
 
-          let coincide = false ;
-          if( titulo ) {
-            const textoSitio = normalizarTexto( `${titulo} ${nombreSitio || ""}` ) ;
-            coincide = (palabrasConsulta.length > 0) && palabrasConsulta.every( ( p ) => textoSitio.includes( p ) ) ;
-          }
+      try {
+        const res = await fetchSeguro( `https://${hostParaFetch}/` , {
+          timeoutMs: 4000 ,
+          maxBytes:  256 * 1024
+        } ) ;
 
-          return( {
-            dominio ,
-            resuelve: true ,
-            ...( titulo ? { titulo } : {} ) ,
-            ...( nombreSitio ? { nombre: nombreSitio } : {} ) ,
-            coincide
-          } as CandidatoDominio ) ;
-        } )
-      ) ;
+        if( res.ok && res.cuerpo ) {
+          const html = res.cuerpo.toString( "utf-8" ) ;
+          const info = extraerNombreSitio( html ) ;
+          titulo      = info.titulo ;
+          nombreSitio = info.nombreSitio ;
+        }
+      } catch {
+        // Un fallo del pedido deja resuelve: true sin título
+      }
 
-      candidatos.push( ...procesados ) ;
+      let coincide = false ;
+      if( titulo ) {
+        if( titulaDominioEnVenta( titulo ) ) {
+          coincide = false ;
+        } else {
+          const textoSitio = normalizarTexto( `${titulo} ${nombreSitio || ""}` ) ;
+          coincide = (palabrasConsulta.length > 0) && palabrasConsulta.every( ( p ) => textoSitio.includes( p ) ) ;
+        }
+      }
+
+      return( {
+        dominio ,
+        resuelve: true ,
+        ...( titulo ? { titulo } : {} ) ,
+        ...( nombreSitio ? { nombre: nombreSitio } : {} ) ,
+        coincide
+      } as CandidatoDominio ) ;
+    } ;
+
+    const procesarLotes = async( dominios: string[] ): Promise< CandidatoDominio[] > => {
+      const acumulados: CandidatoDominio[] = [] ;
+      for( let i = 0 ; i < dominios.length ; i += 4 ) {
+        const lote       = dominios.slice( i , i + 4 ) ;
+        const procesados = await Promise.all( lote.map( ( d ) => verificarDominio( d ) ) ) ;
+        acumulados.push( ...procesados ) ;
+      }
+      return( acumulados ) ;
+    } ;
+
+    candidatos.push( ...( await procesarLotes( lista ) ) ) ;
+
+    // Segunda pasada si ningún candidato inicial coincide
+    const tieneCoincidencia = candidatos.some( ( c ) => c.coincide === true ) ;
+    if( !tieneCoincidencia ) {
+      const palabras = consultaNormalizada.split( " " ).filter( Boolean ) ;
+      const slug     = palabras.join( "" ) ;
+      if( slug ) {
+        const yaEvaluados  = new Set( candidatos.map( ( c ) => c.dominio ) ) ;
+        const listaSegunda = TLDS_PRODUCTO
+          .map( ( tld ) => `${slug}${tld}` )
+          .filter( ( d ) => !yaEvaluados.has( d ) ) ;
+
+        if( listaSegunda.length > 0 ) {
+          const procesadosSegunda = await procesarLotes( listaSegunda ) ;
+          candidatos.push( ...procesadosSegunda ) ;
+        }
+      }
     }
 
     // Orden de salida: coincide primero, luego resuelve, luego orden original de la lista
@@ -475,7 +547,7 @@ export async function estrategiaVerificados(
       ok:         true ,
       ms:         Math.round( performance.now() - inicio ) ,
       estado:     "200" ,
-      candidatos: ordenados.slice( 0 , 6 )
+      candidatos: ordenados.slice( 0 , 10 )
     } ) ;
   } catch( error: unknown ) {
     const errorObj = error as { message?: string } | undefined ;

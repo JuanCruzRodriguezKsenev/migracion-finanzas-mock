@@ -500,3 +500,13 @@
   opacity: 0.85;
 }
 
+.bajaResolucionBadge {
+  display: inline-block;
+  font-size: var(--fs-xs);
+  color: var(--color-warning-text);
+  background-color: var(--color-warning-light);
+  padding: 0.0625rem 0.25rem;
+  border-radius: var(--radius-xs);
+  line-height: 1.2;
+}
+
