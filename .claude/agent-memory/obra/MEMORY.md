@@ -42,3 +42,4 @@
 - [`laboratorio-identidad-38.md`](laboratorio-identidad-38.md): Plan 38 resolutor en la batería: fake timers y afterEach, mutaciones con respaldo, vi.importActual para fixtures y sanitización de dataUri.
 - [`cierre-resolutor-39b.md`](cierre-resolutor-39b.md): Plan 39b resolutor: distinción DNS vs IP privada con dominioNoResuelve, reintento www acotado, contrato de fuenteUrl sin CDN, y 8 mutaciones verificadas.
 - [`laboratorio-sin-brandfetch-40.md`](laboratorio-sin-brandfetch-40.md): Plan 40: retiro de Brandfetch, estrategia verificados, batería de nombres a ícono, subcomponentes modulares de LaboratorioMarcas y 12 mutaciones verificadas.
+- [`afinar-verificados-resolutor-40b.md`](afinar-verificados-resolutor-40b.md): Plan 40b: afinación de verificados (siglas, venta, fallback www, TLDS_PRODUCTO), umbrales del resolutor (64, 32, 16 con bajaResolucion), color extremo Y y 9 mutaciones comprobadas.
