@@ -51,3 +51,6 @@ next-env.d.ts
 # Al clonar en otra máquina hay que rehacerlos:
 #   ln -s ../../.agents/skills/<nombre> .claude/skills/<nombre>
 /.claude/skills/
+
+# Salida de playwright-cli
+.playwright-cli/

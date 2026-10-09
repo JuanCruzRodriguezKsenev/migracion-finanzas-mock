@@ -5,12 +5,13 @@ import { useRouter }                                           from "next/naviga
 import React , { useState , useTransition , useEffect } from "react" ;
 
 // Shared
-import type { getDictionary }                from "@/shared/lib/dictionary" ;
-import { Autocomplete , AutocompleteOption } from "@/shared/ui/forms/Autocomplete/Autocomplete" ;
-import { FormSelect }                        from "@/shared/ui/forms/Form/FormSelect" ;
-import { Button }                            from "@/shared/ui/display/Button/Button" ;
-import { FormInput }                         from "@/shared/ui/forms/Form/FormInput" ;
-import { FormError }                         from "@/shared/ui/forms/Form/FormError" ;
+import { Autocomplete , AutocompleteOption }                 from "@/shared/ui/forms/Autocomplete/Autocomplete" ;
+import { buscarMarcas , banderaDeDominio , MarcaEncontrada } from "@/shared/services/brand/brandSearch" ;
+import type { getDictionary }                                from "@/shared/lib/dictionary" ;
+import { FormSelect }                                        from "@/shared/ui/forms/Form/FormSelect" ;
+import { Button }                                            from "@/shared/ui/display/Button/Button" ;
+import { FormInput }                                         from "@/shared/ui/forms/Form/FormInput" ;
+import { FormError }                                         from "@/shared/ui/forms/Form/FormError" ;
 
 // Feature: Accounting
 import { createFinancialEntityAction } from "../actions/accountingActions" ;
@@ -77,29 +78,6 @@ function detectUserCountry(): string {
   return( "ar" ) ;
 }
 
-/**
- * Resuelve la bandera del país en base a la extensión de dominio.
- * Método 100% dinámico basado en Unicode Offset.
- */
-function getDomainCountryFlag( domain: string ): string {
-  const parts = domain.toLowerCase().split( "." ) ;
-  const tld   = parts[parts.length - 1] ;
-
-  if( tld && ( tld.length === 2 ) ) {
-    try {
-      const codePoints = tld
-        .toUpperCase()
-        .split( "" )
-        .map( ( char ) => 127397 + char.charCodeAt( 0 ) ) ;
-      return( String.fromCodePoint( ...codePoints ) ) ;
-    } catch {
-      return( "🌐" ) ;
-    }
-  }
-
-  return( "🌐" ) ;
-}
-
 export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancialEntityFormProps ) {
   const router                           = useRouter() ;
   const [ isTransitioning , startTrans ] = useTransition() ;
@@ -113,7 +91,7 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
 
   const [ selectedCountry , setSelectedCountry ] = useState( () => detectUserCountry() ) ;
 
-  const [ suggestions , setSuggestions ]       = useState< { name: string ; domain: string ; icon?: string }[] >( [] ) ;
+  const [ suggestions , setSuggestions ]       = useState< MarcaEncontrada[] >( [] ) ;
   const [ showDropdown , setShowDropdown ]     = useState( false ) ;
   const [ isBrandFromApi , setIsBrandFromApi ] = useState( false ) ;
 
@@ -126,60 +104,11 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
     const delayDebounceFn = setTimeout( () => {
       const searchBrand = async () => {
         try {
-          const clientId = process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || "brandfetch" ;
-          const cleanQuery = name.trim() ;
+          const sufijos     = ( selectedCountry ? [ ".com" , `.com.${selectedCountry}` , `.${selectedCountry}` ] : [ ".com" ] ) ;
+          const encontradas = await buscarMarcas( name , { sufijos , paisPrioritario: selectedCountry , limite: 5 } ) ;
 
-          // Generar consultas concurrentes para jalar variaciones locales y genéricas de la API
-          const queries = [ cleanQuery ] ;
-          if( !cleanQuery.includes( "." ) ) {
-            queries.push( `${cleanQuery}.com` ) ;
-            if( selectedCountry ) {
-              queries.push( `${cleanQuery}.com.${selectedCountry}` ) ;
-              queries.push( `${cleanQuery}.${selectedCountry}` ) ;
-            }
-          }
-
-          // Ejecutar búsquedas en paralelo
-          const responses = await Promise.all(
-            queries.map( ( q ) =>
-              fetch( `https://api.brandfetch.io/v2/search/${encodeURIComponent( q )}?c=${clientId}` )
-                .then( ( r ) => ( r.ok ? r.json() : [] ) )
-                .catch( () => [] )
-            )
-          ) ;
-
-          // Consolidar resultados sin duplicados de dominio
-          const merged: { name: string ; domain: string ; icon?: string }[] = [] ;
-          const seen = new Set<string>() ;
-
-          for( const res of responses ) {
-            if( Array.isArray( res ) ) {
-              for( const item of res ) {
-                if( item?.domain && !seen.has( item.domain ) ) {
-                  seen.add( item.domain ) ;
-                  merged.push( {
-                    name:   item.name || item.domain ,
-                    domain: item.domain ,
-                    icon:   item.icon
-                  } ) ;
-                }
-              }
-            }
-          }
-
-          // Priorizar resultados del país seleccionado en la UI si corresponde
-          const sorted = merged.sort( ( a , b ) => {
-            if( selectedCountry ) {
-              const aLocal = a.domain.endsWith( `.${selectedCountry}` ) || a.domain.includes( `.${selectedCountry}.` ) ;
-              const bLocal = b.domain.endsWith( `.${selectedCountry}` ) || b.domain.includes( `.${selectedCountry}.` ) ;
-              if( aLocal && !bLocal ) { return( -1 ) ; }
-              if( !aLocal && bLocal ) { return( 1 ) ; }
-            }
-            return( 0 ) ;
-          } ) ;
-
-          setSuggestions( sorted.slice( 0 , 5 ) ) ;
-          setShowDropdown( sorted.length > 0 ) ;
+          setSuggestions( encontradas ) ;
+          setShowDropdown( encontradas.length > 0 ) ;
         } catch( err ) {
           console.error( "Error querying brand search:" , err ) ;
         }
@@ -248,7 +177,7 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
       // eslint-disable-next-line @next/next/no-img-element -- Icono externo de CDN/Brandfetch sin dimensiones fijas conocidas
       ? <img src={sugg.icon} alt={sugg.name} />
       : <span>🌐</span> ,
-    trailing: <span>{ getDomainCountryFlag( sugg.domain ) }</span>
+    trailing: <span>{ banderaDeDominio( sugg.domain ) }</span>
   } ) ) ;
 
   const handleAutocompleteSelect = ( option: AutocompleteOption ) => {
@@ -301,7 +230,7 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
       {isBrandFromApi ? (
         <div className={styles.brandLinkedBanner}>
           <span>
-            ✨ Marca vinculada: <strong>{ name }</strong> <span className={styles.brandLinkedDomain}>({ brandDomain })</span> { brandDomain ? getDomainCountryFlag( brandDomain ) : "" }
+            ✨ Marca vinculada: <strong>{ name }</strong> <span className={styles.brandLinkedDomain}>({ brandDomain })</span> { brandDomain ? banderaDeDominio( brandDomain ) : "" }
           </span>
           <button
             type="button"

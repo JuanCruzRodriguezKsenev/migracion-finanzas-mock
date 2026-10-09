@@ -1,0 +1,144 @@
+/**
+ * @file colorMarca.ts
+ * Cálculo determinista del color dominante de un ícono de marca a partir de su imagen.
+ */
+
+// Librerías externas
+import sharp from "sharp" ;
+
+interface CuboColor {
+  cuenta:       number ;
+  sumaR:        number ;
+  sumaG:        number ;
+  sumaB:        number ;
+  saturacion?:  number ;
+  esCromatico?: boolean ;
+}
+
+function formatearHex( canal: number ): string {
+  return( canal.toString( 16 ).padStart( 2 , "0" ) ) ;
+}
+
+/**
+ * Calcula el color dominante de un ícono a partir de su buffer PNG o binario compatible.
+ * Prioriza los cubos cromáticos con suficiente saturación y brillo; si el isotipo es
+ * acromático (blanco o negro), toma el cubo no transparente con mayor cantidad de píxeles.
+ *
+ * @param png - Buffer binario de la imagen.
+ * @returns Cadena hexadecimal #rrggbb en minúsculas o null si no hay píxeles legibles.
+ */
+export async function colorDominante( png: Buffer ): Promise< string | null > {
+  try {
+    if( !Buffer.isBuffer( png ) || (png.length === 0) ) {
+      return( null ) ;
+    }
+
+    const { data , info } = await sharp( png )
+      .resize( 32 , 32 , { fit: "fill" } )
+      .ensureAlpha()
+      .raw()
+      .toBuffer( { resolveWithObject: true } ) ;
+
+    if( !data || (info.channels !== 4) ) {
+      return( null ) ;
+    }
+
+    const cubos      = new Map< number , CuboColor >() ;
+    const totalBytes = data.length ;
+
+    for( let i = 0 ; i < totalBytes ; i += 4 ) {
+      const r = data[i] ;
+      const g = data[i + 1] ;
+      const b = data[i + 2] ;
+      const a = data[i + 3] ;
+
+      if( a < 128 ) {
+        continue ;
+      }
+
+      const qr  = r >> 4 ;
+      const qg  = g >> 4 ;
+      const qb  = b >> 4 ;
+      const key = (qr << 8) | (qg << 4) | qb ;
+
+      const existente = cubos.get( key ) ;
+      if( existente ) {
+        existente.cuenta++ ;
+        existente.sumaR += r ;
+        existente.sumaG += g ;
+        existente.sumaB += b ;
+      } else {
+        cubos.set( key , {
+          cuenta: 1 ,
+          sumaR:  r ,
+          sumaG:  g ,
+          sumaB:  b
+        } ) ;
+      }
+    }
+
+    if( cubos.size === 0 ) {
+      return( null ) ;
+    }
+
+    const cromaticos: { cubo: CuboColor ; s: number }[] = [] ;
+    let mejorAcromatico: CuboColor | null = null ;
+
+    for( const cubo of cubos.values() ) {
+      const mediaR = Math.round( cubo.sumaR / cubo.cuenta ) ;
+      const mediaG = Math.round( cubo.sumaG / cubo.cuenta ) ;
+      const mediaB = Math.round( cubo.sumaB / cubo.cuenta ) ;
+
+      const rn  = mediaR / 255 ;
+      const gn  = mediaG / 255 ;
+      const bn  = mediaB / 255 ;
+      const max = Math.max( rn , gn , bn ) ;
+      const min = Math.min( rn , gn , bn ) ;
+      const d   = max - min ;
+
+      const v = max ;
+      const s = (max === 0) ? 0 : (d / max) ;
+
+      cubo.saturacion = s ;
+
+      const esCromatico = (s >= 0.25) && (v >= 0.15) && (v <= 0.95) ;
+      cubo.esCromatico = esCromatico ;
+
+      if( esCromatico ) {
+        cromaticos.push( { cubo , s } ) ;
+      }
+
+      if( !mejorAcromatico || (cubo.cuenta > mejorAcromatico.cuenta) ) {
+        mejorAcromatico = cubo ;
+      }
+    }
+
+    let cuboElegido: CuboColor | null = null ;
+
+    if( cromaticos.length > 0 ) {
+      cromaticos.sort( ( a , b ) => {
+        const difCuenta = b.cubo.cuenta - a.cubo.cuenta ;
+        if( difCuenta !== 0 ) {
+          return( difCuenta ) ;
+        }
+        return( b.s - a.s ) ;
+      } ) ;
+      cuboElegido = cromaticos[0].cubo ;
+    } else {
+      cuboElegido = mejorAcromatico ;
+    }
+
+    if( !cuboElegido ) {
+      return( null ) ;
+    }
+
+    const finalR = Math.round( cuboElegido.sumaR / cuboElegido.cuenta ) ;
+    const finalG = Math.round( cuboElegido.sumaG / cuboElegido.cuenta ) ;
+    const finalB = Math.round( cuboElegido.sumaB / cuboElegido.cuenta ) ;
+
+    const hex = `#${formatearHex( finalR )}${formatearHex( finalG )}${formatearHex( finalB )}`.toLowerCase() ;
+    return( hex ) ;
+  } catch {
+    return( null ) ;
+  }
+}

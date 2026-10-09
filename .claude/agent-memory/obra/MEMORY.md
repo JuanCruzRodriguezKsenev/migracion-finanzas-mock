@@ -33,3 +33,10 @@
 - [`espacio-personal-29.md`](espacio-personal-29.md): Plan 29 espacio Personal: plan 07 inexistente (viewer sin guardas), AnyPgColumn, slugLibre movido, seeds y tests viejos rotos.
 - [`solo-lectura-30.md`](solo-lectura-30.md): Plan 30 solo lectura: inventario del plan corto (21 archivos, reexportaciones), props con default permisivo, renderConPermisos y trampas de tests.
 - [`neon-produccion-28.md`](neon-produccion-28.md): Plan 28: migración de esquema en Neon, psql vía podman, --no-secrets en branches create, región gru1 en Vercel y push alineado.
+- [`seed-31-cuentas-propias.md`](seed-31-cuentas-propias.md): Plan 31 seed con cuentas propias por usuario: ayudante sembrarCuentaPropia, orden estricto de scripts y verificación contra Postgres.
+- [`blindaje-marcas-32.md`](blindaje-marcas-32.md): Plan 32 blindaje de buscadores de marcas: 33 tests en 2 suites (CreateFinancialEntityForm y AddSubscriptionModal), fake timers vs waitFor, portales de Modal y 10 mutaciones comprobadas.
+- [`busqueda-marcas-33.md`](busqueda-marcas-33.md): Plan 33 extracción de búsqueda de marcas compartida a brandSearch.ts y CreateFinancialEntityForm: funciones puras, deduplicación case-insensitive, suite brandSearch.test.ts y 7 mutaciones.
+- [`suscripciones-busqueda-34.md`](suscripciones-busqueda-34.md): Plan 34 conexión de AddSubscriptionModal a buscarMarcas compartida, blindaje de directMatch sin domain, tests 15 y 16 y 5 mutaciones comprobadas.
+- [`marcas-laboratorio-36.md`](marcas-laboratorio-36.md): Plan 36 laboratorio de marcas: anti-SSRF, HTML puro con regex, sobrecargas de dns.promises.lookup en Vitest/TS, ubicación de tests de API route.
+- [`resolutor-marcas-37.md`](resolutor-marcas-37.md): Plan 37 resolutor de marcas en servidor: cascada de íconos, normalización PNG con sharp y parseo ICO, color dominante determinista, mock de next-auth y tipados de lookup.
+- [`laboratorio-identidad-38.md`](laboratorio-identidad-38.md): Plan 38 resolutor en la batería: fake timers y afterEach, mutaciones con respaldo, vi.importActual para fixtures y sanitización de dataUri.

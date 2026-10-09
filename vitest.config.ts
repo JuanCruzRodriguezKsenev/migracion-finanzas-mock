@@ -20,6 +20,8 @@ export default defineConfig( {
   test: {
     environment: "node" ,
     globals:     true ,
+    // Los tests de Brandfetch esperan el valor por defecto: el Client ID real de .env.local no debe filtrarse a la suite.
+    env: {NEXT_PUBLIC_BRANDFETCH_CLIENT_ID: "brandfetch"} ,
     globalSetup: "./src/shared/db/vitest.setup.ts" ,
     setupFiles:  [
       "./src/shared/lib/vitest.setup.dom.ts" ,

@@ -38,6 +38,9 @@ import { hashPassword }                        from "@/features/auth/services/au
 // Feature: Profile
 import { profiles } from "@/features/profile/schema.db" ;
 
+// Shared: base de datos
+import { sembrarCuentaPropia } from "./seedCuentasPropias" ;
+
 async function main() {
   console.log( "Iniciando seed de base de datos..." ) ;
 
@@ -134,10 +137,18 @@ async function main() {
         await organizationRepository.eliminarCompleta( personalPrevio , tx ) ;
       }
 
-      await crearEspacioPersonal( usuario.id , tx ) ;
+      const personalOrgId = await crearEspacioPersonal( usuario.id , tx ) ;
+
+      await sembrarCuentaPropia( tx , {
+        usuarioId:     usuario.id ,
+        personalOrgId ,
+        nombre:        "Cuenta propia Admin" ,
+        entidad:       { nombre: "Banco Demo" , logo: "bank" , color: "#e67e22" } ,
+        saldo:         20000000 ,
+      } ) ;
     } ) ;
 
-    console.log( "Espacio Personal demo creado con éxito." ) ;
+    console.log( "Espacio Personal demo creado con éxito (con cuenta propia inicial)." ) ;
 
     // 4. Crear Perfil y Preferencias asociadas en Argentina/ARS (idempotente)
     await db
@@ -528,6 +539,7 @@ async function main() {
     console.log( "Credenciales de prueba listas para usar:"                      ) ;
     console.log( `Email:    ${usuario.email}`                                    ) ;
     console.log( `Password: ${contraseniaPlana}`                                 ) ;
+    console.log( "Orden requerido: ejecutar siempre 'pnpm db:seed' antes de 'pnpm db:seed:reparto'." ) ;
     console.log( "-------------------------------------------------------------" ) ;
 
   } catch( error ) {
