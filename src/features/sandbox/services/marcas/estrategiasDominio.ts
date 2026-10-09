@@ -3,16 +3,18 @@
  * Estrategias de descubrimiento y resolución de dominios de marcas.
  */
 
-// Feature: Sandbox
+// Shared: Brand
 import {
   desenvolverArchive ,
   parseResultadosDdg ,
   dominioDeUrl
-} from "./analisisHtml" ;
+} from "@/shared/services/brand/analisisHtml" ;
 import {
   fetchSeguro ,
   hostEsPublico
-} from "./fetchSeguro" ;
+} from "@/shared/services/brand/fetchSeguro" ;
+
+// Feature: Sandbox
 import type {
   CandidatoDominio ,
   ResultadoDominios

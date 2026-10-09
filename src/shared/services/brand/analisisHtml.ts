@@ -3,8 +3,8 @@
  * Utilidades puras (sin red) para parsear HTML, manifiestos web y respuestas de motores de búsqueda.
  */
 
-// Feature: Sandbox
-import type { CandidatoIcono } from "./tipos" ;
+// Shared: Brand
+import type { CandidatoIcono } from "./tiposMarca" ;
 
 /**
  * Normaliza y resuelve una URL frente a una URL base.

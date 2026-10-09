@@ -24,7 +24,7 @@ import {
 } from "@/features/sandbox/services/marcas/estrategiasIcono" ;
 import {
   validarDominio
-} from "@/features/sandbox/services/marcas/fetchSeguro" ;
+} from "@/shared/services/brand/fetchSeguro" ;
 
 export const runtime = "nodejs" ;
 export const dynamic = "force-dynamic" ;

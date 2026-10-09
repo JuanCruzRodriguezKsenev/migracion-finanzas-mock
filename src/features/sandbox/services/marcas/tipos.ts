@@ -37,15 +37,10 @@ export interface ResultadoDominios {
   candidatos: CandidatoDominio[] ;
 }
 
-/**
- * Candidato a ícono extraído del HTML o manifiesto de un sitio.
- */
-export interface CandidatoIcono {
-  url:     string ;
-  origen:  string ;
-  tamano?: number ;
-  tipo?:   string ;
-}
+// Shared: Brand
+import type { CandidatoIcono } from "@/shared/services/brand/tiposMarca" ;
+
+export type { CandidatoIcono } ;
 
 /**
  * Resultado devuelto por una estrategia de resolución de íconos.

@@ -3,15 +3,17 @@
  * Estrategias de extracción y resolución de logotipos e íconos de marcas.
  */
 
-// Feature: Sandbox
+// Shared: Brand
 import {
   extraerManifestUrl ,
   iconosDeManifest ,
   extraerThemeColor ,
   elegirMejorIcono ,
   extraerIconos
-} from "./analisisHtml" ;
-import { fetchSeguro } from "./fetchSeguro" ;
+} from "@/shared/services/brand/analisisHtml" ;
+import { fetchSeguro } from "@/shared/services/brand/fetchSeguro" ;
+
+// Feature: Sandbox
 import type {
   ResultadoIcono ,
   CandidatoIcono

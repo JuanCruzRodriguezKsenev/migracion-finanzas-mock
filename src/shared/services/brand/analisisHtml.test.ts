@@ -17,7 +17,7 @@ import {
   extraerIconos ,
   dominioDeUrl
 } from "./analisisHtml" ;
-import type { CandidatoIcono } from "./tipos" ;
+import type { CandidatoIcono } from "./tiposMarca" ;
 
 describe( "analisisHtml" , () => {
   describe( "extraerIconos con fixtures reales" , () => {
