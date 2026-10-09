@@ -9,8 +9,6 @@ import dns                                          from "dns" ;
 
 // Feature: Sandbox
 import {
-  estrategiaIconoBrandfetchSearch ,
-  estrategiaIconoBrandfetchCdn ,
   estrategiaIconoGoogleS2 ,
   estrategiaIconoSitio
 } from "./estrategiasIcono" ;
@@ -71,9 +69,7 @@ describe( "estrategiasIcono" , () => {
         } as unknown as Response ) ;
       } ) ;
 
-      const res = await estrategiaIconoSitio( "ejemplo.com" , {
-        clientIdBrandfetch: "test"
-      } ) ;
+      const res = await estrategiaIconoSitio( "ejemplo.com" , {} ) ;
 
       expect( res.ok ).toBe( true ) ;
       expect( res.origen ).toBe( "apple-touch-icon" ) ;
@@ -98,9 +94,7 @@ describe( "estrategiasIcono" , () => {
         } )
       } as unknown as Response ) ;
 
-      const res = await estrategiaIconoSitio( "bbva.com.ar" , {
-        clientIdBrandfetch: "test"
-      } ) ;
+      const res = await estrategiaIconoSitio( "bbva.com.ar" , {} ) ;
 
       expect( res.ok ).toBe( false ) ;
       expect( res.estado ).toBe( "http 403" ) ;
@@ -126,46 +120,11 @@ describe( "estrategiasIcono" , () => {
         } )
       } as unknown as Response ) ;
 
-      const res = await estrategiaIconoGoogleS2( "galicia.ar" , {
-        clientIdBrandfetch: "test"
-      } ) ;
+      const res = await estrategiaIconoGoogleS2( "galicia.ar" , {} ) ;
 
       expect( res.ok ).toBe( true ) ;
       expect( res.bytes ).toBe( 261 ) ;
       expect( res.estado ).toBe( "200" ) ;
-    } ) ;
-  } ) ;
-
-  describe( "brandfetch-cdn" , () => {
-    it( "no llama a fetch y construye la URL con clientId" , () => {
-      const fetchSpy = vi.fn() ;
-      global.fetch = fetchSpy ;
-
-      const res = estrategiaIconoBrandfetchCdn( "bbva.com" , {
-        clientIdBrandfetch: "mi-client-id"
-      } ) ;
-
-      expect( fetchSpy ).not.toHaveBeenCalled() ;
-      expect( res.modo ).toBe( "navegador" ) ;
-      expect( res.url ).toBe( "https://cdn.brandfetch.io/bbva.com?c=mi-client-id" ) ;
-    } ) ;
-  } ) ;
-
-  describe( "brandfetch-search-icon" , () => {
-    it( "descarta una URL que no empiece con https://cdn.brandfetch.io/" , () => {
-      const resInvalida = estrategiaIconoBrandfetchSearch( "ejemplo.com" , {
-        iconoBrandfetch:    "https://malicioso.com/logo.png" ,
-        clientIdBrandfetch: "test"
-      } ) ;
-      expect( resInvalida.ok ).toBe( false ) ;
-      expect( resInvalida.estado ).toBe( "sin icono de busqueda" ) ;
-
-      const resValida = estrategiaIconoBrandfetchSearch( "ejemplo.com" , {
-        iconoBrandfetch:    "https://cdn.brandfetch.io/id/token" ,
-        clientIdBrandfetch: "test"
-      } ) ;
-      expect( resValida.ok ).toBe( true ) ;
-      expect( resValida.estado ).toContain( "24 h" ) ;
     } ) ;
   } ) ;
 } ) ;

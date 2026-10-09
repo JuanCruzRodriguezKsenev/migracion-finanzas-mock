@@ -23,6 +23,14 @@ vi.mock( "./bateria" , () => ( {
   ]
 } ) ) ;
 
+vi.mock( "./consultas" , () => ( {
+  CONSULTAS: [
+    { consulta: "galicia" , esperados: [ "galicia.ar" , "bancogalicia.com" ] } ,
+    { consulta: "bbva" ,    esperados: [ "bbva.com" , "bbva.com.ar" ] } ,
+    { consulta: "gali" ,    esperados: [ "galicia.ar" ] , parcial: true }
+  ]
+} ) ) ;
+
 describe( "LaboratorioMarcas" , () => {
   let dict: Awaited< ReturnType< typeof getDictionary > > ;
 
@@ -47,7 +55,7 @@ describe( "LaboratorioMarcas" , () => {
         q:          "galicia" ,
         resultados: [
           {
-            estrategia: "brandfetch-search" ,
+            estrategia: "candidatos" ,
             ok:         true ,
             ms:         45 ,
             estado:     "200" ,
@@ -79,7 +87,7 @@ describe( "LaboratorioMarcas" , () => {
       expect( fetchSpy ).toHaveBeenCalledWith( "/api/sandbox/marcas?fase=dominios&q=galicia" ) ;
     } ) ;
 
-    expect( await screen.findByText( "brandfetch-search" ) ).toBeInTheDocument() ;
+    expect( await screen.findByText( "candidatos" ) ).toBeInTheDocument() ;
     expect( screen.getByText( "200 · 45 ms" ) ).toBeInTheDocument() ;
     expect( screen.getByText( "galicia.ar" ) ).toBeInTheDocument() ;
   } ) ;
@@ -113,7 +121,7 @@ describe( "LaboratorioMarcas" , () => {
             q:          "galicia" ,
             resultados: [
               {
-                estrategia: "brandfetch-search" ,
+                estrategia: "candidatos" ,
                 ok:         true ,
                 ms:         40 ,
                 estado:     "200" ,
@@ -410,7 +418,6 @@ describe( "LaboratorioMarcas" , () => {
     const resumenEl = screen.getByText( new RegExp( dict.sandboxPage.brandsResolverSummary ) ).parentElement ;
     expect( resumenEl ).toHaveTextContent( "sitio 1" ) ;
     expect( resumenEl ).toHaveTextContent( "google-s2 1" ) ;
-    expect( resumenEl ).toHaveTextContent( "brandfetch-cdn 0" ) ;
     expect( resumenEl ).toHaveTextContent( "sin ícono 1" ) ;
     expect( resumenEl ).toHaveTextContent( "con color 2/3" ) ;
 
@@ -576,5 +583,601 @@ describe( "LaboratorioMarcas" , () => {
     expect( titleText ).toContain( "→ personal.com.ar" ) ;
 
     vi.useRealTimers() ;
+  } ) ;
+
+  it( "7. la batería por nombre llama a fase=dominios&q=<consulta> por cada consulta, no llama a fase=iconos, y pide /api/brand/identidad una sola vez por dominio repetido" , async() => {
+    vi.useFakeTimers() ;
+
+    const fetchSpy = vi.fn().mockImplementation( async( url: string ) => {
+      const u = String( url ) ;
+      if( u.includes( "fase=dominios" ) ) {
+        // galicia y gali retornan el mismo primer dominio galicia.ar
+        const dominio = u.includes( "bbva" ) ? "bbva.com" : "galicia.ar" ;
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            resultados: [
+              {
+                estrategia: "wikidata" ,
+                ok:         true ,
+                ms:         30 ,
+                estado:     "200" ,
+                candidatos: [ { dominio } ]
+              } ,
+              {
+                estrategia: "candidatos" ,
+                ok:         true ,
+                ms:         40 ,
+                estado:     "200" ,
+                candidatos: [ { dominio , resuelve: true } ]
+              } ,
+              {
+                estrategia: "verificados" ,
+                ok:         true ,
+                ms:         50 ,
+                estado:     "200" ,
+                candidatos: [ { dominio , coincide: true } ]
+              }
+            ]
+          } )
+        } ) ;
+      }
+      if( u.includes( "/api/brand/identidad" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            dominio:  "galicia.ar" ,
+            icono:    { origen: "sitio" , url: "https://galicia.ar/logo.png" } ,
+            color:    "#ff5500" ,
+            intentos: [ { fuente: "sitio" , ok: true } ]
+          } )
+        } ) ;
+      }
+      return( { ok: false , status: 404 } ) ;
+    } ) ;
+    global.fetch = fetchSpy ;
+
+    render( <LaboratorioMarcas dict={dict} lang="es" /> ) ;
+    fireEvent.click( screen.getByText( dict.sandboxPage.brandsBatteryName ) ) ;
+
+    await act( async() => {
+      await vi.runAllTimersAsync() ;
+    } ) ;
+
+    // No debe haber llamado a fase=iconos
+    const llamadasIconos = fetchSpy.mock.calls.filter( ( [ u ] ) => String( u ).includes( "fase=iconos" ) ) ;
+    expect( llamadasIconos ).toHaveLength( 0 ) ;
+
+    // Debe haber llamado a fase=dominios para las 3 consultas
+    const llamadasDominios = fetchSpy.mock.calls.filter( ( [ u ] ) => String( u ).includes( "fase=dominios" ) ) ;
+    expect( llamadasDominios ).toHaveLength( 3 ) ;
+
+    // Identidad para galicia.ar debe haberse llamado UNA sola vez (galicia y gali comparten dominio)
+    const llamadasIdGalicia = fetchSpy.mock.calls.filter( ( [ u ] ) => String( u ).includes( "domain=galicia.ar" ) ) ;
+    expect( llamadasIdGalicia ).toHaveLength( 1 ) ;
+
+    vi.useRealTimers() ;
+  } ) ;
+
+  it( "8. una casilla cuyo primer candidato es esperado lleva celdaUsada, muestra ícono y #rrggbb; con esperado tercero lleva celdaFallo y esperado en #3" , async() => {
+    vi.useFakeTimers() ;
+
+    global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+      const u = String( url ) ;
+      if( u.includes( "fase=dominios" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            resultados: [
+              {
+                estrategia: "wikidata" ,
+                ok:         true ,
+                ms:         20 ,
+                estado:     "200" ,
+                candidatos: [ { dominio: "galicia.ar" } ]
+              } ,
+              {
+                estrategia: "candidatos" ,
+                ok:         true ,
+                ms:         25 ,
+                estado:     "200" ,
+                candidatos: [
+                  { dominio: "otro1.com" , resuelve: true } ,
+                  { dominio: "otro2.com" , resuelve: true } ,
+                  { dominio: "galicia.ar" , resuelve: true }
+                ]
+              }
+            ]
+          } )
+        } ) ;
+      }
+      if( u.includes( "/api/brand/identidad" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            dominio:  "galicia.ar" ,
+            icono:    { origen: "sitio" , url: "https://galicia.ar/logo.png" } ,
+            color:    "#ff5500" ,
+            intentos: [ { fuente: "sitio" , ok: true } ]
+          } )
+        } ) ;
+      }
+      return( { ok: false , status: 404 } ) ;
+    } ) ;
+
+    render( <LaboratorioMarcas dict={dict} lang="es" /> ) ;
+    fireEvent.click( screen.getByText( dict.sandboxPage.brandsBatteryName ) ) ;
+
+    await act( async() => {
+      await vi.runAllTimersAsync() ;
+    } ) ;
+
+    // Celda de wikidata: acertó en primero -> celdaUsada, #ff5500
+    const celdaUsada = screen.getAllByText( "#ff5500" )[0].closest( "td" ) ;
+    expect( celdaUsada ).toHaveClass( styles.celdaUsada ) ;
+
+    // Celda de candidatos: esperado en posición 2 (3.º candidato) -> celdaFallo, esperado en #3
+    const celdaFallo = screen.getAllByText( /esperado en #3/ )[0].closest( "td" ) ;
+    expect( celdaFallo ).toHaveClass( styles.celdaFallo ) ;
+
+    vi.useRealTimers() ;
+  } ) ;
+
+  it( "9. una estrategia con candidatos vacíos lleva celdaVacia; una con ok: false muestra su estado" , async() => {
+    vi.useFakeTimers() ;
+
+    global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+      const u = String( url ) ;
+      if( u.includes( "fase=dominios" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            resultados: [
+              {
+                estrategia: "wikidata" ,
+                ok:         true ,
+                ms:         15 ,
+                estado:     "200" ,
+                candidatos: []
+              } ,
+              {
+                estrategia: "verificados" ,
+                ok:         false ,
+                ms:         50 ,
+                estado:     "timeout-504" ,
+                candidatos: []
+              }
+            ]
+          } )
+        } ) ;
+      }
+      return( { ok: false , status: 404 } ) ;
+    } ) ;
+
+    render( <LaboratorioMarcas dict={dict} lang="es" /> ) ;
+    fireEvent.click( screen.getByText( dict.sandboxPage.brandsBatteryName ) ) ;
+
+    await act( async() => {
+      await vi.runAllTimersAsync() ;
+    } ) ;
+
+    // Wikidata: candidatos vacíos -> celdaVacia en tabla
+    const celdaVacia = screen.getAllByText( dict.sandboxPage.brandsNoResults )
+      .map( ( el ) => el.closest( "td" ) )
+      .find( Boolean ) ;
+    expect( celdaVacia ).toHaveClass( styles.celdaVacia ) ;
+
+    // Verificados: ok: false -> muestra su estado
+    expect( screen.getAllByText( /timeout-504/ ).length ).toBeGreaterThan( 0 ) ;
+
+    vi.useRealTimers() ;
+  } ) ;
+
+  it( "10. parcial muestra brandsPartial" , async() => {
+    vi.useFakeTimers() ;
+
+    global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+      if( url.includes( "fase=dominios" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( { resultados: [] } )
+        } ) ;
+      }
+      return( { ok: false , status: 404 } ) ;
+    } ) ;
+
+    render( <LaboratorioMarcas dict={dict} lang="es" /> ) ;
+    fireEvent.click( screen.getByText( dict.sandboxPage.brandsBatteryName ) ) ;
+
+    await act( async() => {
+      await vi.runAllTimersAsync() ;
+    } ) ;
+
+    // La tercera consulta 'gali' es parcial: true
+    expect( screen.getByText( new RegExp( dict.sandboxPage.brandsPartial ) ) ).toBeInTheDocument() ;
+
+    vi.useRealTimers() ;
+  } ) ;
+
+  it( "11. el resumen cuenta 1.º y top3 correctamente para un caso de 3 consultas (dos aciertan, una no) y ninguna: 1" , async() => {
+    vi.useFakeTimers() ;
+
+    global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+      const u = String( url ) ;
+      if( u.includes( "fase=dominios" ) ) {
+        if( u.includes( "q=galicia" ) ) {
+          return( {
+            ok:     true ,
+            status: 200 ,
+            json:   async() => ( {
+              resultados: [
+                { estrategia: "wikidata" , ok: true , ms: 20 , estado: "200" , candidatos: [ { dominio: "galicia.ar" } ] }
+              ]
+            } )
+          } ) ;
+        }
+        if( u.includes( "q=bbva" ) ) {
+          return( {
+            ok:     true ,
+            status: 200 ,
+            json:   async() => ( {
+              resultados: [
+                { estrategia: "wikidata" , ok: true , ms: 20 , estado: "200" , candidatos: [ { dominio: "erroneo.com" } , { dominio: "bbva.com" } ] }
+              ]
+            } )
+          } ) ;
+        }
+        // q=gali -> no acierta
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            resultados: [
+              { estrategia: "wikidata" , ok: true , ms: 20 , estado: "200" , candidatos: [ { dominio: "noesperado.com" } ] }
+            ]
+          } )
+        } ) ;
+      }
+      return( { ok: false , status: 404 } ) ;
+    } ) ;
+
+    render( <LaboratorioMarcas dict={dict} lang="es" /> ) ;
+    fireEvent.click( screen.getByText( dict.sandboxPage.brandsBatteryName ) ) ;
+
+    await act( async() => {
+      await vi.runAllTimersAsync() ;
+    } ) ;
+
+    expect( screen.getByText( /alguna acierta 2\/3 · ninguna: 1/ ) ).toBeInTheDocument() ;
+
+    vi.useRealTimers() ;
+  } ) ;
+
+  it( "12. una respuesta 401/500 de identidad deja la casilla con el dominio y sin ícono, y la batería termina todas las consultas" , async() => {
+    vi.useFakeTimers() ;
+
+    global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+      const u = String( url ) ;
+      if( u.includes( "fase=dominios" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            resultados: [
+              { estrategia: "wikidata" , ok: true , ms: 10 , estado: "200" , candidatos: [ { dominio: "galicia.ar" } ] }
+            ]
+          } )
+        } ) ;
+      }
+      if( u.includes( "/api/brand/identidad" ) ) {
+        return( { ok: false , status: 500 } ) ;
+      }
+      return( { ok: false , status: 404 } ) ;
+    } ) ;
+
+    render( <LaboratorioMarcas dict={dict} lang="es" /> ) ;
+    const btn = screen.getByText( dict.sandboxPage.brandsBatteryName ) ;
+    fireEvent.click( btn ) ;
+
+    await act( async() => {
+      await vi.runAllTimersAsync() ;
+    } ) ;
+
+    // Muestra el dominio pero sin img de logo
+    expect( screen.getAllByText( "galicia.ar" ).length ).toBeGreaterThan( 0 ) ;
+    expect( screen.queryByAltText( "galicia.ar" ) ).not.toBeInTheDocument() ;
+    // Terminó la batería
+    expect( screen.getByText( dict.sandboxPage.brandsBatteryName ) ).toBeInTheDocument() ;
+
+    vi.useRealTimers() ;
+  } ) ;
+
+  it( "13. batería por dominio: no hay columnas Wikidata ni Brandfetch; 1 · y 2 · en la cascada; brandsInformative en DDG e Icon Horse" , async() => {
+    vi.useFakeTimers() ;
+
+    global.fetch = vi.fn().mockResolvedValue( {
+      ok:     true ,
+      status: 200 ,
+      json:   async() => ( { resultados: [] } )
+    } ) ;
+
+    render( <LaboratorioMarcas dict={dict} lang="es" /> ) ;
+    fireEvent.click( screen.getByText( dict.sandboxPage.brandsBattery ) ) ;
+
+    await act( async() => {
+      await vi.runAllTimersAsync() ;
+    } ) ;
+
+    // No debe haber columnas Wikidata ni Brandfetch en la tabla de dominios
+    const tablaDominios = screen.getByText( "1 · Sitio" ).closest( "table" ) ;
+    expect( tablaDominios ).not.toBeNull() ;
+    expect( tablaDominios?.textContent ).not.toContain( "Brandfetch" ) ;
+    expect( tablaDominios?.textContent ).not.toContain( "Wikidata" ) ;
+
+    // 1 · Sitio y 2 · Google S2 presentes
+    expect( screen.getByText( "1 · Sitio" ) ).toBeInTheDocument() ;
+    expect( screen.getByText( "2 · Google S2" ) ).toBeInTheDocument() ;
+
+    // DDG e Icon Horse con brandsInformative
+    const infoHeaders = screen.getAllByText( dict.sandboxPage.brandsInformative ) ;
+    expect( infoHeaders.length ).toBeGreaterThanOrEqual( 2 ) ;
+
+    vi.useRealTimers() ;
+  } ) ;
+
+  it( "14. pintado: identidad con origen: 'google-s2' e intentos [sitio falló 'http 404', google-s2 ok] -> Google S2 con celdaUsada, brandsUsedIcon y brandsUsedColor; Sitio con celdaFallo y http 404" , async() => {
+    vi.useFakeTimers() ;
+
+    global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+      const u = String( url ) ;
+      if( u.includes( "fase=iconos" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            resultados: [
+              { estrategia: "sitio" , ok: false , ms: 20 , estado: "404" } ,
+              { estrategia: "google-s2" , ok: true , ms: 30 , estado: "200" , url: "https://s2.test/icon.png" }
+            ]
+          } )
+        } ) ;
+      }
+      if( u.includes( "/api/brand/identidad" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            dominio:  "galicia.ar" ,
+            icono:    { origen: "google-s2" , url: "https://s2.test/icon.png" } ,
+            color:    "#002244" ,
+            intentos: [
+              { fuente: "sitio" , ok: false , motivo: "http 404" } ,
+              { fuente: "google-s2" , ok: true }
+            ]
+          } )
+        } ) ;
+      }
+      return( { ok: false , status: 404 } ) ;
+    } ) ;
+
+    render( <LaboratorioMarcas dict={dict} lang="es" /> ) ;
+    fireEvent.click( screen.getByText( dict.sandboxPage.brandsBattery ) ) ;
+
+    await act( async() => {
+      await vi.runAllTimersAsync() ;
+    } ) ;
+
+    // Google S2 celdaUsada, brandsUsedIcon, brandsUsedColor
+    const usedLabel = screen.getAllByText( dict.sandboxPage.brandsUsedIcon )[0] ;
+    const tdGoogle = usedLabel.closest( "td" ) ;
+    expect( tdGoogle ).toHaveClass( styles.celdaUsada ) ;
+    expect( tdGoogle?.textContent ).toContain( dict.sandboxPage.brandsUsedColor ) ;
+
+    // Sitio celdaFallo con http 404
+    const falloLabel = screen.getAllByText( /http 404/ )[0] ;
+    const tdSitio = falloLabel.closest( "td" ) ;
+    expect( tdSitio ).toHaveClass( styles.celdaFallo ) ;
+
+    vi.useRealTimers() ;
+  } ) ;
+
+  it( "15. respaldo chico: origen: 'sitio' + intento ok:false 'menor a 64 px' -> Sitio celdaUsada con 'respaldo chico'" , async() => {
+    vi.useFakeTimers() ;
+
+    global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+      const u = String( url ) ;
+      if( u.includes( "fase=iconos" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            resultados: [
+              { estrategia: "sitio" , ok: true , ms: 20 , estado: "200" , url: "https://sitio.test/favicon.png" }
+            ]
+          } )
+        } ) ;
+      }
+      if( u.includes( "/api/brand/identidad" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            dominio:  "galicia.ar" ,
+            icono:    { origen: "sitio" , url: "https://sitio.test/favicon.png" , origenAncho: 32 , origenAlto: 32 } ,
+            color:    "#ff5500" ,
+            intentos: [
+              { fuente: "sitio" , ok: false , motivo: "menor a 64 px" }
+            ]
+          } )
+        } ) ;
+      }
+      return( { ok: false , status: 404 } ) ;
+    } ) ;
+
+    render( <LaboratorioMarcas dict={dict} lang="es" /> ) ;
+    fireEvent.click( screen.getByText( dict.sandboxPage.brandsBattery ) ) ;
+
+    await act( async() => {
+      await vi.runAllTimersAsync() ;
+    } ) ;
+
+    const labelRespaldo = screen.getAllByText( "respaldo chico" )[0] ;
+    const tdSitio = labelRespaldo.closest( "td" ) ;
+    expect( tdSitio ).toHaveClass( styles.celdaUsada ) ;
+
+    vi.useRealTimers() ;
+  } ) ;
+
+  it( "16. los dos botones se bloquean entre sí" , async() => {
+    render( <LaboratorioMarcas dict={dict} lang="es" /> ) ;
+
+    const btnNombres = screen.getByText( dict.sandboxPage.brandsBatteryName ) ;
+    const btnDominios = screen.getByText( dict.sandboxPage.brandsBattery ) ;
+
+    expect( btnNombres ).toBeEnabled() ;
+    expect( btnDominios ).toBeEnabled() ;
+
+    // Iniciar batería por dominio -> botón de nombres se deshabilita
+    await act( async() => {
+      fireEvent.click( btnDominios ) ;
+    } ) ;
+    expect( screen.getByText( dict.sandboxPage.brandsBatteryName ) ).toBeDisabled() ;
+
+    // Cancelar batería por dominio
+    await act( async() => {
+      fireEvent.click( screen.getByText( new RegExp( dict.sandboxPage.brandsCancel ) ) ) ;
+    } ) ;
+
+    // Ambos botones habilitados de nuevo
+    expect( screen.getByText( dict.sandboxPage.brandsBatteryName ) ).toBeEnabled() ;
+    expect( screen.getByText( dict.sandboxPage.brandsBattery ) ).toBeEnabled() ;
+
+    // Iniciar batería por nombre -> botón de dominio se deshabilita
+    await act( async() => {
+      fireEvent.click( screen.getByText( dict.sandboxPage.brandsBatteryName ) ) ;
+    } ) ;
+    expect( screen.getByText( dict.sandboxPage.brandsBattery ) ).toBeDisabled() ;
+  } ) ;
+
+  it( "17. el JSON copiado trae bateriaNombres con esperados y posicionEsperado, y NO contiene dataUri" , async() => {
+    vi.useFakeTimers() ;
+    let clipboardText = "" ;
+    Object.assign( navigator , {
+      clipboard: {
+        writeText: vi.fn().mockImplementation( async( text: string ) => {
+          clipboardText = text ;
+        } )
+      }
+    } ) ;
+    vi.spyOn( window , "alert" ).mockImplementation( () => {} ) ;
+
+    global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+      const u = String( url ) ;
+      if( u.includes( "fase=dominios" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            resultados: [
+              {
+                estrategia: "wikidata" ,
+                ok:         true ,
+                ms:         20 ,
+                estado:     "200" ,
+                candidatos: [ { dominio: "galicia.ar" } ]
+              }
+            ]
+          } )
+        } ) ;
+      }
+      if( u.includes( "/api/brand/identidad" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            dominio:  "galicia.ar" ,
+            icono:    { origen: "sitio" , dataUri: "data:image/png;base64,SECRET" } ,
+            color:    "#ff5500" ,
+            intentos: [ { fuente: "sitio" , ok: true } ]
+          } )
+        } ) ;
+      }
+      return( { ok: false , status: 404 } ) ;
+    } ) ;
+
+    render( <LaboratorioMarcas dict={dict} lang="es" /> ) ;
+    fireEvent.click( screen.getByText( dict.sandboxPage.brandsBatteryName ) ) ;
+
+    await act( async() => {
+      await vi.runAllTimersAsync() ;
+    } ) ;
+
+    fireEvent.click( screen.getByText( dict.sandboxPage.brandsCopy ) ) ;
+
+    expect( navigator.clipboard.writeText ).toHaveBeenCalled() ;
+    const parsed = JSON.parse( clipboardText ) ;
+    expect( parsed.bateriaNombres ).toBeDefined() ;
+    expect( parsed.bateriaNombres[0].esperados ).toBeDefined() ;
+    expect( parsed.bateriaNombres[0].estrategias[0].primero.posicionEsperado ).toBe( 0 ) ;
+    expect( clipboardText ).not.toContain( "dataUri" ) ;
+
+    vi.useRealTimers() ;
+  } ) ;
+
+  it( "18. fase 2 individual: la tarjeta de la estrategia usada lleva celdaUsada" , async() => {
+    global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+      const u = String( url ) ;
+      if( u.includes( "fase=iconos" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            resultados: [
+              { estrategia: "sitio" , ok: true , ms: 20 , estado: "200" , url: "https://sitio.test/favicon.png" } ,
+              { estrategia: "google-s2" , ok: true , ms: 30 , estado: "200" , url: "https://s2.test/favicon.png" }
+            ]
+          } )
+        } ) ;
+      }
+      if( u.includes( "/api/brand/identidad" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            dominio:  "galicia.ar" ,
+            icono:    { origen: "google-s2" , url: "https://s2.test/favicon.png" } ,
+            color:    "#002244" ,
+            intentos: [ { fuente: "google-s2" , ok: true } ]
+          } )
+        } ) ;
+      }
+      return( { ok: false , status: 404 } ) ;
+    } ) ;
+
+    render( <LaboratorioMarcas dict={dict} lang="es" /> ) ;
+
+    const inputManual = screen.getByPlaceholderText( "ej: bbva.com" ) ;
+    fireEvent.change( inputManual , { target: { value: "galicia.ar" } } ) ;
+
+    // Probar íconos
+    const btnsProbar = screen.getAllByText( dict.sandboxPage.brandsTryIcons ) ;
+    fireEvent.click( btnsProbar[0] ) ;
+
+    // Resolver identidad
+    fireEvent.click( screen.getByText( dict.sandboxPage.brandsResolverRun ) ) ;
+
+    await waitFor( () => {
+      const tarjetas = screen.getAllByText( "google-s2" ) ;
+      const tarjetaS2 = tarjetas
+        .map( ( t ) => t.closest( `.${styles.iconTile}` ) )
+        .find( Boolean ) ;
+      expect( tarjetaS2 ).toHaveClass( styles.celdaUsada ) ;
+    } ) ;
   } ) ;
 } ) ;

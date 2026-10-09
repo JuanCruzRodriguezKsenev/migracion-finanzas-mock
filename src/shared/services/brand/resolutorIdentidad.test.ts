@@ -131,36 +131,17 @@ describe( "resolutorIdentidad" , () => {
     expect( res.intentos[1] ).toEqual( { fuente: "google-s2" , ok: true } ) ;
   } ) ;
 
-  it( "10. sitio y S2 fallan, hay c= real -> brandfetch-cdn con url correcta, sin dataUri y color: null" , async () => {
+  it( "11. sin ícono de ninguna fuente -> icono: null, color: null y intentos no menciona brandfetch-cdn" , async () => {
     fetchMock.mockImplementation( async () => {
       return( new Response( "" , { status: 500 } ) ) ;
     } ) ;
 
-    const res = await resolverIdentidad( "ejemplo.com" , { clientIdBrandfetch: "client_real_123" } ) ;
-    expect( res.icono ).toEqual( {
-      origen: "brandfetch-cdn" ,
-      url:    "https://cdn.brandfetch.io/ejemplo.com?c=client_real_123"
-    } ) ;
-    expect( res.color ).toBeNull() ;
-    expect( res.intentos ).toEqual( [
-      { fuente: "sitio" , ok: false , motivo: "http 500" } ,
-      { fuente: "google-s2" , ok: false , motivo: "http 500" } ,
-      { fuente: "brandfetch-cdn" , ok: true }
-    ] ) ;
-  } ) ;
-
-  it( "11. todo falla, sin c= real (vacío o 'brandfetch') -> icono: null, color: null, y no lanza" , async () => {
-    fetchMock.mockImplementation( async () => {
-      return( new Response( "" , { status: 500 } ) ) ;
-    } ) ;
-
-    const res = await resolverIdentidad( "ejemplo.com" , { clientIdBrandfetch: "brandfetch" } ) ;
+    const res = await resolverIdentidad( "ejemplo.com" ) ;
     expect( res.icono ).toBeNull() ;
     expect( res.color ).toBeNull() ;
     expect( res.intentos ).toEqual( [
       { fuente: "sitio" , ok: false , motivo: "http 500" } ,
-      { fuente: "google-s2" , ok: false , motivo: "http 500" } ,
-      { fuente: "brandfetch-cdn" , ok: false , motivo: "sin cliente" }
+      { fuente: "google-s2" , ok: false , motivo: "http 500" }
     ] ) ;
   } ) ;
 
@@ -179,7 +160,7 @@ describe( "resolutorIdentidad" , () => {
       return( new Response( "" , { status: 500 } ) ) ;
     } ) ;
 
-    const res = await resolverIdentidad( "ejemplo.com" , { clientIdBrandfetch: "brandfetch" } ) ;
+    const res = await resolverIdentidad( "ejemplo.com" ) ;
     expect( res.icono ).not.toBeNull() ;
     expect( res.icono?.origen ).toBe( "sitio" ) ;
     expect( res.icono?.dataUri?.startsWith( "data:image/png;base64," ) ).toBe( true ) ;
@@ -211,7 +192,7 @@ describe( "resolutorIdentidad" , () => {
       return( new Response( "" , { status: 404 } ) ) ;
     } ) ;
 
-    await resolverIdentidad( "ejemplo.com" , { clientIdBrandfetch: "brandfetch" } ) ;
+    await resolverIdentidad( "ejemplo.com" ) ;
 
     const llamadasIconos = fetchMock.mock.calls
       .map( ( [ url ] ) => String( url ) )

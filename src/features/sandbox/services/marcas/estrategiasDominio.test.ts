@@ -9,7 +9,8 @@ import dns                                          from "dns" ;
 
 // Feature: Sandbox
 import {
-  estrategiaBrandfetchSearch ,
+  generarCandidatosVerificables ,
+  estrategiaVerificados ,
   estrategiaDuckDuckGo ,
   estrategiaCandidatos ,
   estrategiaWikidata ,
@@ -49,7 +50,6 @@ describe( "estrategiasDominio" , () => {
       global.fetch = fetchSpy ;
 
       const res = await estrategiaDuckDuckGo( "galicia" , {
-        clientIdBrandfetch: "test" ,
         pais: { sufijo: ".com.ar" , nombre: "argentina" }
       } ) ;
 
@@ -134,7 +134,6 @@ describe( "estrategiasDominio" , () => {
       } ) ;
 
       const res = await estrategiaWikidata( "galicia mas" , {
-        clientIdBrandfetch: "test" ,
         pais: { sufijo: ".com.ar" , nombre: "argentina" }
       } ) ;
 
@@ -171,7 +170,6 @@ describe( "estrategiasDominio" , () => {
       } ) ;
 
       const res = await estrategiaCandidatos( "banco nacion" , {
-        clientIdBrandfetch: "test" ,
         pais: { sufijo: ".com.ar" , nombre: "argentina" }
       } ) ;
 
@@ -181,32 +179,117 @@ describe( "estrategiasDominio" , () => {
     } ) ;
   } ) ;
 
-  describe( "brandfetch-search" , () => {
-    it( "maneja error 403 retornando ok:false y estado '403'" , async() => {
-      spyDns().mockResolvedValue( [
-        { address: "104.18.2.1" , family: 4 }
+  describe( "verificados" , () => {
+    const paisAr = { sufijo: ".com.ar" , nombre: "argentina" } ;
+
+    it( "genera lista de candidatos para 'galicia' y 'mercado pago'" , () => {
+      const candGalicia = generarCandidatosVerificables( "galicia" , paisAr ) ;
+      expect( candGalicia ).toEqual( [
+        "galicia.com.ar" ,
+        "galicia.ar" ,
+        "galicia.com"
       ] ) ;
 
-      global.fetch = vi.fn().mockResolvedValue( {
-        status: 403 ,
-        ok:     false ,
-        headers: new Headers( { "content-type": "application/json" } ) ,
-        body: new ReadableStream( {
-          start( controller ) {
-            controller.enqueue( new TextEncoder().encode( '{"message":"forbidden"}' ) ) ;
-            controller.close() ;
-          }
-        } )
-      } as unknown as Response ) ;
+      const candMp = generarCandidatosVerificables( "mercado pago" , paisAr ) ;
+      expect( candMp ).toEqual( [
+        "mercadopago.com.ar" ,
+        "mercadopago.ar" ,
+        "mercadopago.com" ,
+        "mercado-pago.com.ar" ,
+        "mercado-pago.com"
+      ] ) ;
+    } ) ;
 
-      const res = await estrategiaBrandfetchSearch( "galicia" , {
-        clientIdBrandfetch: "invalido" ,
-        pais: { sufijo: ".com.ar" , nombre: "argentina" }
+    it( "sin pais genera sólo candidatos con .com" , () => {
+      const candGalicia = generarCandidatosVerificables( "galicia" , null ) ;
+      expect( candGalicia ).toEqual( [ "galicia.com" ] ) ;
+
+      const candMp = generarCandidatosVerificables( "mercado pago" , null ) ;
+      expect( candMp ).toEqual( [ "mercadopago.com" , "mercado-pago.com" ] ) ;
+    } ) ;
+
+    it( "galicia.ar con <title>Banco Galicia</title> -> coincide: true y primero frente a host con otro título" , async() => {
+      spyDns().mockImplementation( async( host ) => {
+        if( (host === "galicia.com.ar") || (host === "galicia.ar") ) {
+          return( [{ address: "200.5.120.10" , family: 4 }] ) ;
+        }
+        return( [] ) ;
       } ) ;
 
-      expect( res.ok ).toBe( false ) ;
-      expect( res.estado ).toBe( "403" ) ;
-      expect( res.candidatos ).toEqual( [] ) ;
+      global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+        if( url.includes( "galicia.ar" ) ) {
+          return( {
+            ok:     true ,
+            status: 200 ,
+            headers: new Headers( { "content-type": "text/html" } ) ,
+            body: new ReadableStream( {
+              start( controller ) {
+                controller.enqueue( new TextEncoder().encode( "<html><head><title>Banco Galicia</title></head></html>" ) ) ;
+                controller.close() ;
+              }
+            } )
+          } as unknown as Response ) ;
+        }
+        if( url.includes( "galicia.com.ar" ) ) {
+          return( {
+            ok:     true ,
+            status: 200 ,
+            headers: new Headers( { "content-type": "text/html" } ) ,
+            body: new ReadableStream( {
+              start( controller ) {
+                controller.enqueue( new TextEncoder().encode( "<html><head><title>Otra cosa totalmente distinta</title></head></html>" ) ) ;
+                controller.close() ;
+              }
+            } )
+          } as unknown as Response ) ;
+        }
+        return( { ok: false , status: 404 } as unknown as Response ) ;
+      } ) ;
+
+      const res = await estrategiaVerificados( "galicia" , { pais: paisAr } ) ;
+
+      expect( res.ok ).toBe( true ) ;
+      expect( res.candidatos[0].dominio ).toBe( "galicia.ar" ) ;
+      expect( res.candidatos[0].coincide ).toBe( true ) ;
+      expect( res.candidatos[1].dominio ).toBe( "galicia.com.ar" ) ;
+      expect( res.candidatos[1].coincide ).toBe( false ) ;
+    } ) ;
+
+    it( "host sin DNS -> resuelve: false y cero pedidos HTTP a él" , async() => {
+      spyDns().mockImplementation( async() => [] ) ;
+
+      const fetchSpy = vi.fn() ;
+      global.fetch = fetchSpy ;
+
+      const res = await estrategiaVerificados( "galicia" , { pais: paisAr } ) ;
+
+      expect( res.ok ).toBe( true ) ;
+      expect( res.candidatos.every( ( c ) => c.resuelve === false ) ).toBe( true ) ;
+      expect( fetchSpy ).not.toHaveBeenCalled() ;
+    } ) ;
+
+    it( "timeout del pedido -> resuelve: true, sin título" , async() => {
+      spyDns().mockImplementation( async( host ) => {
+        if( host === "galicia.ar" ) {
+          return( [{ address: "200.5.120.10" , family: 4 }] ) ;
+        }
+        return( [] ) ;
+      } ) ;
+
+      global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+        if( url.includes( "galicia.ar" ) ) {
+          throw new Error( "The operation was aborted" ) ;
+        }
+        return( { ok: false , status: 404 } as unknown as Response ) ;
+      } ) ;
+
+      const res = await estrategiaVerificados( "galicia" , { pais: paisAr } ) ;
+
+      expect( res.ok ).toBe( true ) ;
+      const cand = res.candidatos.find( ( c ) => c.dominio === "galicia.ar" ) ;
+      expect( cand?.resuelve ).toBe( true ) ;
+      expect( cand?.titulo ).toBeUndefined() ;
+      expect( cand?.coincide ).toBe( false ) ;
     } ) ;
   } ) ;
 } ) ;

@@ -9,6 +9,7 @@ import { describe , it , expect } from "vitest" ;
 // Feature: Sandbox
 import {
   desenvolverArchive ,
+  extraerNombreSitio ,
   extraerManifestUrl ,
   parseResultadosDdg ,
   iconosDeManifest ,
@@ -250,6 +251,39 @@ describe( "analisisHtml" , () => {
     it( "quita www. y normaliza a minúsculas" , () => {
       expect( dominioDeUrl( "https://www.BancoGalicia.com.ar/personas" ) ).toBe( "bancogalicia.com.ar" ) ;
       expect( dominioDeUrl( "http://Netflix.COM" ) ).toBe( "netflix.com" ) ;
+    } ) ;
+  } ) ;
+
+  describe( "extraerNombreSitio" , () => {
+    it( "extrae título simple desde la etiqueta <title>" , () => {
+      const html = "<html><head><title>Banco Galicia</title></head><body></body></html>" ;
+      const resultado = extraerNombreSitio( html ) ;
+      expect( resultado.titulo ).toBe( "Banco Galicia" ) ;
+      expect( resultado.nombreSitio ).toBeUndefined() ;
+    } ) ;
+
+    it( "extrae og:site_name con atributos invertidos y comillas simples" , () => {
+      const html = "<html><head><meta content='Banco Galicia Oficial' property='og:site_name'></head></html>" ;
+      const resultado = extraerNombreSitio( html ) ;
+      expect( resultado.nombreSitio ).toBe( "Banco Galicia Oficial" ) ;
+    } ) ;
+
+    it( "decodifica entidades HTML básicas en el título y en el nombre de sitio" , () => {
+      const html = "<title>Ventas &amp; Cobros &quot;Pro&quot; &#39;Plus&#39; &lt;AR&gt;</title>" ;
+      const resultado = extraerNombreSitio( html ) ;
+      expect( resultado.titulo ).toBe( "Ventas & Cobros \"Pro\" 'Plus' <AR>" ) ;
+    } ) ;
+
+    it( "retorna objeto vacío para HTML sin título ni etiquetas meta" , () => {
+      const html = "<html><body><div>Sin metadatos</div></body></html>" ;
+      const resultado = extraerNombreSitio( html ) ;
+      expect( resultado ).toEqual( {} ) ;
+    } ) ;
+
+    it( "usa og:title como alternativa cuando no existe og:site_name" , () => {
+      const html = "<html><head><meta property=\"og:title\" content=\"Galicia Seguros\"></head></html>" ;
+      const resultado = extraerNombreSitio( html ) ;
+      expect( resultado.nombreSitio ).toBe( "Galicia Seguros" ) ;
     } ) ;
   } ) ;
 } ) ;

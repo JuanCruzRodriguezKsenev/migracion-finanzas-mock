@@ -14,103 +14,28 @@ import { EmptyState }         from "@/shared/ui/feedback/EmptyState/EmptyState" 
 // Feature: Sandbox
 import type {
   ResultadoDominios ,
-  ResultadoIcono
+  ResultadoIcono ,
+  IdEstrategiaDominio
 } from "../services/marcas/tipos" ;
-import styles      from "./LaboratorioMarcas.module.css" ;
-import { BATERIA } from "./bateria" ;
+import type { FilaBateriaDominios } from "./MatrizDominios" ;
+import type { FilaBateriaNombres }  from "./bateriaVista" ;
+import type { IdentidadMarcaLab }   from "./CeldaIdentidad" ;
 
-interface LaboratorioMarcasProps {
+import {
+  primerCandidato ,
+  posicionEsperado ,
+  columnaDeOrigen
+} from "./bateriaVista" ;
+import { CeldaIdentidad } from "./CeldaIdentidad" ;
+import { MatrizDominios } from "./MatrizDominios" ;
+import { MatrizNombres }  from "./MatrizNombres" ;
+import { CONSULTAS }      from "./consultas" ;
+import { BATERIA }        from "./bateria" ;
+import styles             from "./LaboratorioMarcas.module.css" ;
+
+export interface LaboratorioMarcasProps {
   dict: Awaited< ReturnType< typeof getDictionary > > ;
   lang: string ;
-}
-
-interface IdentidadMarcaLab {
-  dominio:    string ;
-  icono:      {
-    origen:       string ;
-    dataUri?:     string ;
-    url?:         string ;
-    ancho?:       number ;
-    alto?:        number ;
-    origenAncho?: number ;
-    origenAlto?:  number ;
-    fuenteUrl?:   string ;
-  } | null ;
-  color:      string | null ;
-  intentos:   { fuente: string ; ok: boolean ; motivo?: string }[] ;
-  redirigeA?: string ;
-}
-
-interface FilaBateria {
-  nombre:       string ;
-  dominio:      string ;
-  resultados:   ResultadoIcono[] ;
-  identidad?:   IdentidadMarcaLab | null ;
-  msIdentidad?: number ;
-}
-
-interface CeldaIdentidadProps {
-  identidad?: IdentidadMarcaLab | null ;
-}
-
-/**
- * Celda que muestra el resultado de identidad: ícono, muestra de color, hex y fuente.
- */
-function CeldaIdentidad( { identidad }: CeldaIdentidadProps ) {
-  if( !identidad ) {
-    return(
-      <div className={styles.resolverCellContent}>
-        <span>✗</span>
-        <span className={styles.resolverOrigin}>—</span>
-      </div>
-    ) ;
-  }
-
-  const partesTitle: string[] = [] ;
-  if( identidad.intentos && (identidad.intentos.length > 0) ) {
-    partesTitle.push(
-      identidad.intentos.map( ( it ) => `${it.fuente}: ${it.ok ? "ok" : "falló"}${it.motivo ? ` (${it.motivo})` : ""}` ).join( "\n" )
-    ) ;
-  }
-  if( identidad.icono?.origenAncho && identidad.icono?.origenAlto ) {
-    partesTitle.push( `${identidad.icono.origenAncho}×${identidad.icono.origenAlto}` ) ;
-  }
-  if( identidad.icono?.fuenteUrl ) {
-    partesTitle.push( identidad.icono.fuenteUrl ) ;
-  }
-  if( identidad.redirigeA ) {
-    partesTitle.push( `→ ${identidad.redirigeA}` ) ;
-  }
-  const titleText = partesTitle.join( "\n" ) ;
-
-  const imgSrc = identidad.icono?.dataUri || identidad.icono?.url ;
-
-  return(
-    <div className={styles.resolverCellContent} title={titleText}>
-      {imgSrc ? (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          src={imgSrc}
-          alt={identidad.icono?.origen || "resolutor"}
-          className={styles.matrixCellThumb}
-        />
-      ) : (
-        <span>✗</span>
-      )}
-      {identidad.color && (
-        <span
-          className={styles.colorSwatch}
-          style={{ backgroundColor: identidad.color }}
-        />
-      )}
-      {identidad.color && (
-        <span className={styles.colorHex}>{identidad.color}</span>
-      )}
-      <span className={styles.resolverOrigin}>
-        {identidad.icono?.origen || "—"}
-      </span>
-    </div>
-  ) ;
 }
 
 /**
@@ -124,21 +49,27 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
   const [ disabledServer , setDisabledServer ]       = useState( false ) ;
   const [ cargandoDominios , setCargandoDominios ]   = useState( false ) ;
   const [ cargandoIconos , setCargandoIconos ]       = useState( false ) ;
-  const [ resultadosDominios , setResultadosDom ]   = useState< ResultadoDominios[] >( [] ) ;
+  const [ resultadosDominios , setResultadosDom ]    = useState< ResultadoDominios[] >( [] ) ;
   const [ resultadosIconos , setResultadosIconos ]   = useState< ResultadoIcono[] >( [] ) ;
-  const [ dominioActual , setDominioActual ]                 = useState( "" ) ;
-  const [ identidadIndividual , setIdentidadIndividual ]     = useState< IdentidadMarcaLab | null | undefined >( undefined ) ;
-  const [ cargandoIdentidad , setCargandoIdentidad ]         = useState( false ) ;
+  const [ dominioActual , setDominioActual ]         = useState( "" ) ;
+  const [ identidadIndividual , setIdentidadIndividual ] = useState< IdentidadMarcaLab | null | undefined >( undefined ) ;
+  const [ cargandoIdentidad , setCargandoIdentidad ] = useState( false ) ;
 
   // Dimensiones leídas de imágenes
   const [ dimensionesImg , setDimensionesImg ]       = useState< Record< string , { w: number ; h: number } > >( {} ) ;
   const [ estadosNavegador , setEstadosNavegador ]   = useState< Record< string , "cargado" | "error" > >( {} ) ;
 
-  // Batería de pruebas
+  // Batería «dominio → ícono»
   const [ corriendoBateria , setCorriendoBateria ]   = useState( false ) ;
-  const [ matrizBateria , setMatrizBateria ]         = useState< FilaBateria[] >( [] ) ;
+  const [ matrizBateria , setMatrizBateria ]         = useState< FilaBateriaDominios[] >( [] ) ;
   const [ progresoBateria , setProgresoBateria ]     = useState< string >( "" ) ;
   const cancelacionBateriaRef                        = useRef( false ) ;
+
+  // Batería «nombre → ícono»
+  const [ corriendoNombres , setCorriendoNombres ]   = useState( false ) ;
+  const [ matrizNombres , setMatrizNombres ]         = useState< FilaBateriaNombres[] >( [] ) ;
+  const [ progresoNombres , setProgresoNombres ]     = useState< string >( "" ) ;
+  const cancelacionNombresRef                        = useRef( false ) ;
 
   if( disabledServer ) {
     return(
@@ -176,7 +107,7 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
     }
   } ;
 
-  const probarIconos = async( candidato: { dominio: string ; nombre?: string ; archivoLogo?: string ; iconoBrandfetch?: string } ) => {
+  const probarIconos = async( candidato: { dominio: string ; nombre?: string ; archivoLogo?: string } ) => {
     const d = candidato.dominio.trim() ;
     if( !d ) return ;
 
@@ -193,7 +124,6 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
       } ) ;
       if( candidato.nombre ) params.set( "nombre" , candidato.nombre ) ;
       if( candidato.archivoLogo ) params.set( "archivoLogo" , candidato.archivoLogo ) ;
-      if( candidato.iconoBrandfetch ) params.set( "iconoBf" , candidato.iconoBrandfetch ) ;
 
       const res = await fetch( `/api/sandbox/marcas?${params.toString()}` ) ;
       if( res.status === 404 ) {
@@ -310,6 +240,123 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
     setProgresoBateria( "" ) ;
   } ;
 
+  const ejecutarBateriaNombres = async() => {
+    setCorriendoNombres( true ) ;
+    cancelacionNombresRef.current = false ;
+    setMatrizNombres( [] ) ;
+    const cacheIdentidad = new Map< string , IdentidadMarcaLab | null >() ;
+
+    for( let i = 0 ; i < CONSULTAS.length ; i++ ) {
+      if( cancelacionNombresRef.current ) break ;
+      const c = CONSULTAS[i] ;
+      setProgresoNombres( `${i + 1}/${CONSULTAS.length}: ${c.consulta}` ) ;
+
+      let resultadosDom: ResultadoDominios[] = [] ;
+      try {
+        const res = await fetch( `/api/sandbox/marcas?fase=dominios&q=${encodeURIComponent( c.consulta )}` ) ;
+        if( res.status === 404 ) {
+          const body = await res.json().catch( () => ( {} ) ) ;
+          if( body.error === "disabled" ) {
+            setDisabledServer( true ) ;
+            break ;
+          }
+        }
+        if( res.ok ) {
+          const data = await res.json() ;
+          resultadosDom = data.resultados || [] ;
+        }
+      } catch {
+        resultadosDom = [] ;
+      }
+
+      const estrategiasFila: FilaBateriaNombres["estrategias"] = [] ;
+      const ordenEstrategias: IdEstrategiaDominio[] = [ "wikidata" , "candidatos" , "verificados" ] ;
+
+      for( const est of ordenEstrategias ) {
+        const r = resultadosDom.find( ( item ) => item.estrategia === est ) ;
+        if( !r ) {
+          estrategiasFila.push( {
+            estrategia: est ,
+            ok:         false ,
+            estado:     "sin-respuesta" ,
+            ms:         0 ,
+            candidatos: [] ,
+            primero: {
+              dominio:          null ,
+              esperado:         false ,
+              posicionEsperado: -1
+            }
+          } ) ;
+          continue ;
+        }
+
+        const primerDom = primerCandidato( est , r.candidatos ) ;
+        const pos = posicionEsperado( r.candidatos , c.esperados ) ;
+        const esEsperado = (pos === 0) ;
+
+        let identidadRes: IdentidadMarcaLab | null = null ;
+        let msId: number | undefined ;
+
+        if( primerDom ) {
+          if( cacheIdentidad.has( primerDom ) ) {
+            identidadRes = cacheIdentidad.get( primerDom ) || null ;
+          } else {
+            try {
+              const t0 = performance.now() ;
+              const resId = await fetch( `/api/brand/identidad?domain=${encodeURIComponent( primerDom )}` ) ;
+              msId = Math.round( performance.now() - t0 ) ;
+              if( resId.ok ) {
+                identidadRes = await resId.json() ;
+              } else {
+                identidadRes = null ;
+              }
+            } catch {
+              identidadRes = null ;
+            }
+            cacheIdentidad.set( primerDom , identidadRes ) ;
+          }
+        }
+
+        estrategiasFila.push( {
+          estrategia: est ,
+          ok:         r.ok ,
+          estado:     r.estado ,
+          ms:         r.ms ,
+          candidatos: r.candidatos ,
+          primero: {
+            dominio:          primerDom ,
+            esperado:         esEsperado ,
+            posicionEsperado: pos ,
+            identidad:        identidadRes ,
+            msIdentidad:      msId
+          }
+        } ) ;
+      }
+
+      const nuevaFila: FilaBateriaNombres = {
+        consulta:    c.consulta ,
+        esperados:   c.esperados ,
+        parcial:     c.parcial ,
+        estrategias: estrategiasFila
+      } ;
+
+      setMatrizNombres( ( prev ) => [ ...prev , nuevaFila ] ) ;
+
+      if( i < CONSULTAS.length - 1 ) {
+        await new Promise( ( resolve ) => setTimeout( resolve , 1500 ) ) ;
+      }
+    }
+
+    setCorriendoNombres( false ) ;
+    setProgresoNombres( "" ) ;
+  } ;
+
+  const cancelarBateriaNombres = () => {
+    cancelacionNombresRef.current = true ;
+    setCorriendoNombres( false ) ;
+    setProgresoNombres( "" ) ;
+  } ;
+
   const limpiarIdentidadParaCopia = ( id?: IdentidadMarcaLab | null ) => {
     if( !id ) return( id ) ;
     const copia = { ...id } ;
@@ -319,6 +366,23 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
       copia.icono = copiaIcono ;
     }
     return( copia ) ;
+  } ;
+
+  const limpiarIdentidadParaBateriaNombres = ( id?: IdentidadMarcaLab | null ) => {
+    if( !id ) return( null ) ;
+    const iconoLimpio = id.icono ? {
+      origen:      id.icono.origen ,
+      ancho:       id.icono.ancho ,
+      alto:        id.icono.alto ,
+      origenAncho: id.icono.origenAncho ,
+      origenAlto:  id.icono.origenAlto ,
+      fuenteUrl:   id.icono.fuenteUrl
+    } : null ;
+    return( {
+      icono:    iconoLimpio ,
+      color:    id.color ,
+      intentos: id.intentos
+    } ) ;
   } ;
 
   const copiarResultados = async() => {
@@ -345,6 +409,30 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
           delete copia.dataUri ;
           return( copia ) ;
         } )
+      } ) ) ,
+      bateriaNombres: matrizNombres.map( ( f ) => ( {
+        consulta:    f.consulta ,
+        esperados:   f.esperados ,
+        parcial:     f.parcial ,
+        estrategias: f.estrategias.map( ( e ) => ( {
+          estrategia: e.estrategia ,
+          ok:         e.ok ,
+          estado:     e.estado ,
+          ms:         e.ms ,
+          candidatos: e.candidatos.map( ( c ) => ( {
+            dominio:  c.dominio ,
+            resuelve: c.resuelve ,
+            coincide: c.coincide ,
+            titulo:   c.titulo
+          } ) ) ,
+          primero: {
+            dominio:          e.primero.dominio ,
+            esperado:         e.primero.esperado ,
+            posicionEsperado: e.primero.posicionEsperado ,
+            identidad:        limpiarIdentidadParaBateriaNombres( e.primero.identidad ) ,
+            msIdentidad:      e.primero.msIdentidad
+          }
+        } ) )
       } ) )
     } ;
 
@@ -416,10 +504,30 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
           </div>
 
           <div className={styles.barActions}>
+            {!corriendoNombres ? (
+              <button
+                type="button"
+                className={styles.buttonSecondary}
+                disabled={corriendoBateria || disabledServer}
+                onClick={ejecutarBateriaNombres}
+              >
+                {sandboxDict.brandsBatteryName}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={styles.buttonDanger}
+                onClick={cancelarBateriaNombres}
+              >
+                {sandboxDict.brandsCancel} ({progresoNombres})
+              </button>
+            )}
+
             {!corriendoBateria ? (
               <button
                 type="button"
                 className={styles.buttonSecondary}
+                disabled={corriendoNombres || disabledServer}
                 onClick={ejecutarBateria}
               >
                 {sandboxDict.brandsBattery}
@@ -469,24 +577,39 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
                               {cand.resuelve ? "✓ resuelve" : "✗ no resuelve"}
                             </span>
                           )}
-                        </div>
-                        {cand.detalle && (
-                          <span className={styles.candidateDetail}>{cand.detalle}</span>
-                        )}
-                        <div className={styles.candidateActions}>
+                          {cand.coincide !== undefined && (
+                            <span className={styles.strategyMeta}>
+                              {cand.coincide ? "✓ coincide" : "✗ difiere"}
+                            </span>
+                          )}
                           <button
                             type="button"
-                            className={styles.candidateButton}
+                            className={styles.candidateAction}
                             onClick={ () => probarIconos( cand ) }
                           >
                             {sandboxDict.brandsTryIcons}
                           </button>
                         </div>
+                        {cand.titulo && (
+                          <span className={styles.candidateDetail}>
+                            {cand.titulo}
+                          </span>
+                        )}
+                        {cand.nombre && (
+                          <span className={styles.candidateDetail}>
+                            {cand.nombre}
+                          </span>
+                        )}
+                        {cand.descripcion && (
+                          <span className={styles.candidateDetail}>
+                            {cand.descripcion}
+                          </span>
+                        )}
                       </li>
                     ) )}
                   </ul>
                 ) : (
-                  <span className={styles.candidateDetail}>{sandboxDict.brandsNoResults}</span>
+                  <div className={styles.emptyText}>{sandboxDict.brandsNoResults}</div>
                 )}
               </div>
             ) )}
@@ -496,43 +619,51 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
         )}
       </div>
 
-      {/* Fase 2: Íconos */}
-      <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h3 className={styles.sectionTitle}>
-            {sandboxDict.brandsIconsTitle} {dominioActual ? `(${dominioActual})` : ""}
-          </h3>
-        </div>
-
-        {identidadIndividual !== undefined && (
+      {/* Identidad Individual Resuelta */}
+      {identidadIndividual !== undefined && (
+        <div className={styles.section}>
           <div className={styles.individualResolverRow}>
-            <strong>{sandboxDict.brandsResolverCol}:</strong>
+            <strong>{sandboxDict.brandsResolverCol} ({dominioActual}):</strong>
             <CeldaIdentidad identidad={identidadIndividual} />
           </div>
-        )}
+        </div>
+      )}
 
+      {/* Fase 2: Íconos y logotipos */}
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>
+          {sandboxDict.brandsIconsTitle} {dominioActual && `(${dominioActual})`}
+        </h3>
         {resultadosIconos.length > 0 ? (
           <div className={styles.iconsGrid}>
             {resultadosIconos.map( ( icono ) => {
-              const src = icono.dataUri || icono.url ;
               const dim = dimensionesImg[icono.estrategia] ;
-              const esChico = dim && (Math.max( dim.w , dim.h ) < 64) ;
               const estadoNav = estadosNavegador[icono.estrategia] ;
+              const origenUsado = columnaDeOrigen( identidadIndividual?.icono?.origen ) ;
+              const esUsada = Boolean( origenUsado && (icono.estrategia === origenUsado) ) ;
+              const esChico = Boolean( dim && ((dim.w < 64) || (dim.h < 64)) ) ;
 
               return(
-                <div key={icono.estrategia} className={styles.iconTile}>
-                  <div className={styles.tileHeader}>
-                    <span className={styles.tileStrategyName}>{icono.estrategia}</span>
+                <div
+                  key={icono.estrategia}
+                  className={`${styles.iconTile}${esUsada ? ` ${styles.celdaUsada}` : ""}`}
+                >
+                  <div className={styles.iconTileHeader}>
+                    <span className={styles.iconTileName}>{icono.estrategia}</span>
+                    {esUsada && (
+                      <span className={styles.etiquetaUsada}>{sandboxDict.brandsUsedIcon}</span>
+                    )}
                     {esChico && (
                       <span className={styles.badgeSmall}>{sandboxDict.brandsSmall}</span>
                     )}
+                    <span className={styles.iconTileMode}>{icono.modo}</span>
                   </div>
 
-                  <div className={styles.iconPreviewBox}>
-                    {src ? (
+                  <div className={styles.iconTilePreview}>
+                    {(icono.dataUri || icono.url) ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
-                        src={src}
+                        src={icono.dataUri || icono.url}
                         alt={icono.estrategia}
                         className={styles.iconImage}
                         onLoad={ ( e ) => {
@@ -637,122 +768,11 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
         )}
       </div>
 
-      {/* Matriz de Batería */}
-      {matrizBateria.length > 0 && (
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>
-            Matriz de Batería ({matrizBateria.length} marcas evaluadas)
-          </h3>
-          <div className={styles.matrixWrapper}>
-            <table className={styles.matrixTable}>
-              <thead>
-                <tr>
-                  <th>Marca / Dominio</th>
-                  <th>{sandboxDict.brandsResolverCol}</th>
-                  <th>Sitio</th>
-                  <th>Wikidata</th>
-                  <th>Google S2</th>
-                  <th>DDG Icons</th>
-                  <th>Icon Horse</th>
-                  <th>Brandfetch CDN</th>
-                  <th>Brandfetch Search</th>
-                </tr>
-              </thead>
-              <tbody>
-                {matrizBateria.map( ( fila , fIdx ) => {
-                  const mapa = Object.fromEntries(
-                    fila.resultados.map( ( r ) => [r.estrategia , r] )
-                  ) ;
-                  const estrategiasOrdenadas = [
-                    "sitio" ,
-                    "wikidata-logo" ,
-                    "google-s2" ,
-                    "ddg-icons" ,
-                    "icon-horse" ,
-                    "brandfetch-cdn" ,
-                    "brandfetch-search-icon"
-                  ] ;
+      {/* Matriz Batería «nombre → ícono» */}
+      <MatrizNombres filas={matrizNombres} dict={sandboxDict} />
 
-                  const titleIntentos = fila.identidad?.intentos
-                    ? fila.identidad.intentos.map( ( it ) => `${it.fuente}: ${it.ok ? "ok" : "falló"}${it.motivo ? ` (${it.motivo})` : ""}` ).join( "\n" )
-                    : "" ;
-
-                  return(
-                    <tr key={fIdx}>
-                      <td>
-                        <strong>{fila.nombre}</strong>
-                        <br />
-                        <span className={styles.candidateDetail}>{fila.dominio}</span>
-                      </td>
-                      <td className={styles.resolverCell} title={titleIntentos}>
-                        <CeldaIdentidad identidad={fila.identidad} />
-                      </td>
-                      {estrategiasOrdenadas.map( ( est ) => {
-                        const item = mapa[est] ;
-                        if( !item ) return( <td key={est}>-</td> ) ;
-
-                        const titleText = `${item.estrategia}: ${item.estado} (${item.ms}ms, ${item.bytes || 0}B)` ;
-                        const imgSrc = item.dataUri || item.url ;
-
-                        return(
-                          <td key={est} title={titleText}>
-                            {imgSrc ? (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img
-                                src={imgSrc}
-                                alt={item.estrategia}
-                                className={styles.matrixCellThumb}
-                              />
-                            ) : (
-                              <span>{item.ok ? "✓" : "✗"}</span>
-                            )}
-                          </td>
-                        ) ;
-                      } )}
-                    </tr>
-                  ) ;
-                } )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Resumen del resolutor */}
-          {(() => {
-            let cantSitio = 0 ;
-            let cantGoogle = 0 ;
-            let cantBrandfetch = 0 ;
-            let cantSinIcono = 0 ;
-            let cantConColor = 0 ;
-
-            for( const f of matrizBateria ) {
-              const origen = f.identidad?.icono?.origen ;
-              if( origen === "sitio" ) {
-                cantSitio++ ;
-              } else if( origen === "google-s2" ) {
-                cantGoogle++ ;
-              } else if( origen === "brandfetch-cdn" ) {
-                cantBrandfetch++ ;
-              } else {
-                cantSinIcono++ ;
-              }
-
-              if( f.identidad?.color ) {
-                cantConColor++ ;
-              }
-            }
-
-            const total = matrizBateria.length ;
-            const textoResumen = `sitio ${cantSitio} · google-s2 ${cantGoogle} · brandfetch-cdn ${cantBrandfetch} · sin ícono ${cantSinIcono} · con color ${cantConColor}/${total}` ;
-
-            return(
-              <div className={styles.resolverSummary}>
-                <strong>{sandboxDict.brandsResolverSummary}:</strong>
-                <span>{textoResumen}</span>
-              </div>
-            ) ;
-          })()}
-        </div>
-      )}
+      {/* Matriz Batería «dominio → ícono» */}
+      <MatrizDominios filas={matrizBateria} dict={sandboxDict} />
     </div>
   ) ;
 }

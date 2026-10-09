@@ -23,7 +23,7 @@ import {
 import { colorDominante }  from "./colorMarca" ;
 import type { CandidatoIcono } from "./tiposMarca" ;
 
-export type OrigenIcono = "sitio" | "google-s2" | "brandfetch-cdn" ;
+export type OrigenIcono = "sitio" | "google-s2" ;
 
 export interface IdentidadMarca {
   dominio:    string ;
@@ -121,16 +121,14 @@ function normalizarHostSinWww( host: string ): string {
 
 /**
  * Resuelve la identidad de una marca (ícono normalizado a 128x128 y color corporativo)
- * ejecutando la cascada: sitio (>= 64px) -> Google S2 -> respaldo chico del sitio -> Brandfetch CDN.
+ * ejecutando la cascada: sitio (>= 64px) -> Google S2 -> respaldo chico del sitio.
  *
  * @param dominio - Dominio o URL a consultar.
- * @param opciones - Opciones opcionales como clientIdBrandfetch.
  * @returns Estructura IdentidadMarca con el ícono, color, registro de intentos y redirección opcional.
  * @throws Error("dominio inválido") únicamente si el dominio es sintácticamente inválido.
  */
 export async function resolverIdentidad(
-  dominio:   string ,
-  opciones?: { clientIdBrandfetch?: string }
+  dominio: string
 ): Promise< IdentidadMarca > {
   const domLimpio = validarDominio( dominio ) ;
   if( !domLimpio ) {
@@ -329,22 +327,7 @@ export async function resolverIdentidad(
     bufferPngParaColor = respaldoChico.pngBuf ;
   }
 
-  // 4. Fuente: brandfetch-cdn
-  if( !iconoElegido ) {
-    const rawCid = opciones?.clientIdBrandfetch ?? process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID ?? "" ;
-    const cid    = rawCid.trim() ;
 
-    if( (cid !== "") && (cid !== "brandfetch") ) {
-      const urlCdn = `https://cdn.brandfetch.io/${domLimpio}?c=${cid}` ;
-      iconoElegido = {
-        origen: "brandfetch-cdn" ,
-        url:    urlCdn
-      } ;
-      intentos.push( { fuente: "brandfetch-cdn" , ok: true } ) ;
-    } else {
-      intentos.push( { fuente: "brandfetch-cdn" , ok: false , motivo: "sin cliente" } ) ;
-    }
-  }
 
   // Color dominante
   let color: string | null = null ;

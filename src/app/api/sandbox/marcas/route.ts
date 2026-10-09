@@ -14,7 +14,7 @@ import { logger }      from "@/shared/lib/logger" ;
 
 // Feature: Sandbox
 import {
-  estrategiaBrandfetchSearch ,
+  estrategiaVerificados ,
   estrategiaCandidatos ,
   estrategiaDuckDuckGo ,
   estrategiaWikidata
@@ -58,24 +58,23 @@ export async function GET( request: NextRequest ) {
       }
 
       const contexto = {
-        clientIdBrandfetch: process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || "brandfetch" ,
         pais: {
           sufijo: ".com.ar" ,
           nombre: "argentina"
         }
       } ;
 
-      const [ bf , wiki , ddg , cand ] = await Promise.all( [
-        estrategiaBrandfetchSearch( q , contexto ) ,
+      const [ wiki , ddg , cand , verif ] = await Promise.all( [
         estrategiaWikidata( q , contexto ) ,
         estrategiaDuckDuckGo( q , contexto ) ,
-        estrategiaCandidatos( q , contexto )
+        estrategiaCandidatos( q , contexto ) ,
+        estrategiaVerificados( q , contexto )
       ] ) ;
 
       return( NextResponse.json( {
         fase:       "dominios" ,
         q ,
-        resultados: [ bf , wiki , ddg , cand ]
+        resultados: [ wiki , ddg , cand , verif ]
       } ) ) ;
     }
 
@@ -87,15 +86,12 @@ export async function GET( request: NextRequest ) {
         return( NextResponse.json( { error: "dominio" } , { status: 400 } ) ) ;
       }
 
-      const nombre          = searchParams.get( "nombre" ) || undefined ;
-      const archivoLogo     = searchParams.get( "archivoLogo" ) || undefined ;
-      const iconoBrandfetch = searchParams.get( "iconoBf" ) || undefined ;
+      const nombre      = searchParams.get( "nombre" ) || undefined ;
+      const archivoLogo = searchParams.get( "archivoLogo" ) || undefined ;
 
       const contexto = {
         nombre ,
-        archivoLogo ,
-        iconoBrandfetch ,
-        clientIdBrandfetch: process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || "brandfetch"
+        archivoLogo
       } ;
 
       const resultados = await ejecutarEstrategiasIcono( dominio , contexto ) ;

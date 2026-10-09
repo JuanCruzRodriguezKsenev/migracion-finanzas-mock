@@ -20,10 +20,8 @@ import type {
 } from "./tipos" ;
 
 export interface ContextoEstrategiaIcono {
-  nombre?:             string ;
-  archivoLogo?:        string ;
-  iconoBrandfetch?:    string ;
-  clientIdBrandfetch: string ;
+  nombre?:      string ;
+  archivoLogo?: string ;
 }
 
 /**
@@ -404,55 +402,7 @@ export async function estrategiaIconoHorse(
 }
 
 /**
- * Estrategia de cliente para probar la CDN directa de Brandfetch en el navegador.
- */
-export function estrategiaIconoBrandfetchCdn(
-  dominio: string ,
-  contexto: ContextoEstrategiaIcono
-): ResultadoIcono {
-  const clientId = contexto.clientIdBrandfetch || process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || "brandfetch" ;
-  const url = `https://cdn.brandfetch.io/${dominio}?c=${clientId}` ;
-
-  return( {
-    estrategia: "brandfetch-cdn" ,
-    modo:       "navegador" ,
-    ok:         true ,
-    ms:         0 ,
-    estado:     "esperando carga en navegador" ,
-    url
-  } ) ;
-}
-
-/**
- * Estrategia de cliente para validar el token temporal firmado de Brandfetch Search.
- */
-export function estrategiaIconoBrandfetchSearch(
-  _dominio: string ,
-  contexto: ContextoEstrategiaIcono
-): ResultadoIcono {
-  void _dominio ;
-  if( contexto.iconoBrandfetch && contexto.iconoBrandfetch.startsWith( "https://cdn.brandfetch.io/" ) ) {
-    return( {
-      estrategia: "brandfetch-search-icon" ,
-      modo:       "navegador" ,
-      ok:         true ,
-      ms:         0 ,
-      estado:     "token firmado (vence en 24 h)" ,
-      url:        contexto.iconoBrandfetch
-    } ) ;
-  }
-
-  return( {
-    estrategia: "brandfetch-search-icon" ,
-    modo:       "navegador" ,
-    ok:         false ,
-    ms:         0 ,
-    estado:     "sin icono de busqueda"
-  } ) ;
-}
-
-/**
- * Ejecuta todas las estrategias de ícono (servidor en paralelo y navegador instantáneas).
+ * Ejecuta todas las estrategias de ícono del servidor en paralelo.
  */
 export async function ejecutarEstrategiasIcono(
   dominio: string ,
@@ -467,8 +417,6 @@ export async function ejecutarEstrategiasIcono(
   ] ) ;
 
   const [ sitio , wikidata , google , ddg , horse ] = await promesasServidor ;
-  const cdn    = estrategiaIconoBrandfetchCdn( dominio , contexto ) ;
-  const search = estrategiaIconoBrandfetchSearch( dominio , contexto ) ;
 
-  return( [ sitio , wikidata , google , ddg , horse , cdn , search ] ) ;
+  return( [ sitio , wikidata , google , ddg , horse ] ) ;
 }

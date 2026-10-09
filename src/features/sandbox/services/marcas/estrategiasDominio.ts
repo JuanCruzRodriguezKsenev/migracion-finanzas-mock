@@ -7,6 +7,7 @@
 import {
   desenvolverArchive ,
   parseResultadosDdg ,
+  extraerNombreSitio ,
   dominioDeUrl
 } from "@/shared/services/brand/analisisHtml" ;
 import {
@@ -21,7 +22,6 @@ import type {
 } from "./tipos" ;
 
 export interface ContextoEstrategiaDominio {
-  clientIdBrandfetch: string ;
   pais: {
     sufijo: string ;
     nombre: string ;
@@ -101,87 +101,6 @@ export function generarCandidatos(
   return( Array.from( candidatos ) ) ;
 }
 
-interface ItemBrandfetchRaw {
-  domain?: string ;
-  name?:   string ;
-  icon?:   string ;
-}
-
-interface EntidadWikidataRaw {
-  id?:          string ;
-  label?:       string ;
-  description?: string ;
-}
-
-interface ClaimItemRaw {
-  mainsnak?: {
-    datavalue?: {
-      value?: string ;
-    } ;
-  } ;
-}
-
-interface DetalleWikidataRaw {
-  entities?: Record< string , {
-    claims?: {
-      P856?: ClaimItemRaw[] ;
-      P154?: ClaimItemRaw[] ;
-    } ;
-  } > ;
-}
-
-/**
- * Consulta la Search API de Brandfetch para descubrir dominios asociados.
- */
-export async function estrategiaBrandfetchSearch(
-  texto: string ,
-  contexto: ContextoEstrategiaDominio
-): Promise< ResultadoDominios > {
-  const inicio = performance.now() ;
-  const clientId = contexto.clientIdBrandfetch || process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || "brandfetch" ;
-  const url = `https://api.brandfetch.io/v2/search/${encodeURIComponent( texto )}?c=${encodeURIComponent( clientId )}` ;
-
-  try {
-    const res = await fetchSeguro( url , { timeoutMs: 6000 } ) ;
-    const duracion = Math.round( performance.now() - inicio ) ;
-
-    if( !res.ok ) {
-      return( {
-        estrategia: "brandfetch-search" ,
-        ok:         false ,
-        ms:         duracion ,
-        estado:     String( res.status ) ,
-        candidatos: []
-      } ) ;
-    }
-
-    const json = JSON.parse( res.cuerpo?.toString( "utf-8" ) || "[]" ) ;
-    const candidatos: CandidatoDominio[] = ( Array.isArray( json ) ? (json as ItemBrandfetchRaw[]) : [] )
-      .slice( 0 , 5 )
-      .map( ( item ) => ( {
-        dominio:          item.domain || "" ,
-        nombre:           item.name ,
-        iconoBrandfetch:  item.icon
-      } ) ) ;
-
-    return( {
-      estrategia: "brandfetch-search" ,
-      ok:         true ,
-      ms:         duracion ,
-      estado:     "200" ,
-      candidatos
-    } ) ;
-  } catch( error: unknown ) {
-    const errorObj = error as { message?: string } | undefined ;
-    return( {
-      estrategia: "brandfetch-search" ,
-      ok:         false ,
-      ms:         Math.round( performance.now() - inicio ) ,
-      estado:     errorObj?.message || "error" ,
-      candidatos: []
-    } ) ;
-  }
-}
 
 /**
  * Consulta la API de entidades de Wikidata (P856 para dominios y P154 para logotipos).
@@ -369,6 +288,176 @@ export async function estrategiaCandidatos(
     const errorObj = error as { message?: string } | undefined ;
     return( {
       estrategia: "candidatos" ,
+      ok:         false ,
+      ms:         Math.round( performance.now() - inicio ) ,
+      estado:     errorObj?.message || "error" ,
+      candidatos: []
+    } ) ;
+  }
+}
+
+/**
+ * Normaliza una cadena a minúsculas, sin acentos ni signos y con espacios simples.
+ */
+function normalizarTexto( texto: string ): string {
+  return(
+    texto
+      .toLowerCase()
+      .normalize( "NFD" )
+      .replace( /[\u0300-\u036f]/g , "" )
+      .replace( /[^a-z0-9\s]/g , " " )
+      .replace( /\s+/g , " " )
+      .trim()
+  ) ;
+}
+
+/**
+ * Genera candidatos especulativos verificables basados en el texto y el país.
+ * Función pura sin acceso a red.
+ *
+ * @param texto - Término de búsqueda de la marca.
+ * @param pais - Configuración del país para sufijos y nombres locales.
+ * @returns Lista de nombres de dominio candidatos (máximo 6).
+ */
+export function generarCandidatosVerificables(
+  texto: string ,
+  pais: { sufijo: string ; nombre: string } | null
+): string[] {
+  const consultaLimpia = normalizarTexto( texto ) ;
+  if( !consultaLimpia ) return( [] ) ;
+
+  const palabras   = consultaLimpia.split( " " ).filter( Boolean ) ;
+  const candidatos = new Set< string >() ;
+
+  const slug  = palabras.join( "" ) ;
+  const guion = (palabras.length > 1) ? palabras.join( "-" ) : null ;
+
+  const tldsSlug: string[] = [] ;
+  if( pais ) {
+    tldsSlug.push( pais.sufijo ) ;
+    const partes = pais.sufijo.split( "." ).filter( Boolean ) ;
+    const ccTld  = partes.length > 0 ? `.${partes[partes.length - 1]}` : pais.sufijo ;
+    if( !tldsSlug.includes( ccTld ) ) {
+      tldsSlug.push( ccTld ) ;
+    }
+    if( !tldsSlug.includes( ".com" ) ) {
+      tldsSlug.push( ".com" ) ;
+    }
+  } else {
+    tldsSlug.push( ".com" ) ;
+  }
+
+  for( const tld of tldsSlug ) {
+    candidatos.add( `${slug}${tld}` ) ;
+  }
+
+  if( guion ) {
+    if( pais ) {
+      candidatos.add( `${guion}${pais.sufijo}` ) ;
+      candidatos.add( `${guion}.com` ) ;
+    } else {
+      candidatos.add( `${guion}.com` ) ;
+    }
+  }
+
+  return( Array.from( candidatos ).slice( 0 , 6 ) ) ;
+}
+
+/**
+ * Consulta y valida dominios candidatos mediante DNS y extracción de título HTML.
+ *
+ * @param texto - Consulta de la marca.
+ * @param contexto - Contexto con información de país.
+ * @returns Lista de candidatos ordenados por coincidencia, resolución y orden inicial.
+ */
+export async function estrategiaVerificados(
+  texto: string ,
+  contexto: ContextoEstrategiaDominio
+): Promise< ResultadoDominios > {
+  const inicio = performance.now() ;
+
+  try {
+    const lista = generarCandidatosVerificables( texto , contexto.pais ) ;
+    const candidatos: CandidatoDominio[] = [] ;
+    const consultaNormalizada = normalizarTexto( texto ) ;
+    const palabrasConsulta    = consultaNormalizada.split( " " ).filter( ( p ) => p.length >= 2 ) ;
+
+    // Concurrencia 3
+    for( let i = 0 ; i < lista.length ; i += 3 ) {
+      const lote = lista.slice( i , i + 3 ) ;
+      const procesados = await Promise.all(
+        lote.map( async( dominio ) => {
+          const resuelve = await hostEsPublico( dominio ) ;
+          if( !resuelve ) {
+            return( {
+              dominio ,
+              resuelve: false ,
+              coincide: false
+            } as CandidatoDominio ) ;
+          }
+
+          let titulo: string | undefined ;
+          let nombreSitio: string | undefined ;
+
+          try {
+            const res = await fetchSeguro( `https://${dominio}/` , {
+              timeoutMs: 4000 ,
+              maxBytes:  256 * 1024
+            } ) ;
+
+            if( res.ok && res.cuerpo ) {
+              const html = res.cuerpo.toString( "utf-8" ) ;
+              const info = extraerNombreSitio( html ) ;
+              titulo      = info.titulo ;
+              nombreSitio = info.nombreSitio ;
+            }
+          } catch {
+            // Un fallo del pedido deja resuelve: true sin título
+          }
+
+          let coincide = false ;
+          if( titulo ) {
+            const textoSitio = normalizarTexto( `${titulo} ${nombreSitio || ""}` ) ;
+            coincide = (palabrasConsulta.length > 0) && palabrasConsulta.every( ( p ) => textoSitio.includes( p ) ) ;
+          }
+
+          return( {
+            dominio ,
+            resuelve: true ,
+            ...( titulo ? { titulo } : {} ) ,
+            ...( nombreSitio ? { nombre: nombreSitio } : {} ) ,
+            coincide
+          } as CandidatoDominio ) ;
+        } )
+      ) ;
+
+      candidatos.push( ...procesados ) ;
+    }
+
+    // Orden de salida: coincide primero, luego resuelve, luego orden original de la lista
+    const ordenados = [...candidatos].sort( ( a , b ) => {
+      const cA = a.coincide ? 1 : 0 ;
+      const cB = b.coincide ? 1 : 0 ;
+      if( cB !== cA ) return( cB - cA ) ;
+
+      const rA = a.resuelve ? 1 : 0 ;
+      const rB = b.resuelve ? 1 : 0 ;
+      if( rB !== rA ) return( rB - rA ) ;
+
+      return( 0 ) ;
+    } ) ;
+
+    return( {
+      estrategia: "verificados" ,
+      ok:         true ,
+      ms:         Math.round( performance.now() - inicio ) ,
+      estado:     "200" ,
+      candidatos: ordenados.slice( 0 , 6 )
+    } ) ;
+  } catch( error: unknown ) {
+    const errorObj = error as { message?: string } | undefined ;
+    return( {
+      estrategia: "verificados" ,
       ok:         false ,
       ms:         Math.round( performance.now() - inicio ) ,
       estado:     errorObj?.message || "error" ,

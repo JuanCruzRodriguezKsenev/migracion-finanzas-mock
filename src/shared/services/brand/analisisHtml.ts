@@ -376,3 +376,64 @@ export function dominioDeUrl( url: string ): string | null {
     return( null ) ;
   }
 }
+
+/**
+ * Decodifica entidades HTML básicas (&amp;, &quot;, &#39;, &lt;, &gt;).
+ */
+function decodificarEntidadesBasicas( texto: string ): string {
+  return(
+    texto
+      .replace( /&amp;/g  , "&" )
+      .replace( /&quot;/g , "\"" )
+      .replace( /&#39;/g  , "'" )
+      .replace( /&lt;/g   , "<" )
+      .replace( /&gt;/g   , ">" )
+  ) ;
+}
+
+/**
+ * Extrae el título y el nombre de sitio declarados en un documento HTML.
+ *
+ * @param html - Cadena de texto con contenido HTML.
+ * @returns Objeto con titulo y nombreSitio opcionales, o vacío si no se encuentran.
+ */
+export function extraerNombreSitio(
+  html: string
+): { titulo?: string ; nombreSitio?: string } {
+  if( !html ) return( {} ) ;
+
+  let titulo: string | undefined ;
+  const matchTitle = html.match( /<title\b[^>]*>([\s\S]*?)<\/title>/i ) ;
+  if( matchTitle && matchTitle[1] ) {
+    const limpio = decodificarEntidadesBasicas( matchTitle[1].trim() ) ;
+    if( limpio ) {
+      titulo = limpio.slice( 0 , 200 ) ;
+    }
+  }
+
+  function extraerMeta( propiedad: string ): string | undefined {
+    const metaRegex = /<meta\b([^>]*)\/?>/gi ;
+    let m: RegExpExecArray | null ;
+    while( (m = metaRegex.exec( html )) !== null ) {
+      const attrs = m[1] ;
+      const propMatch =
+        attrs.match( /\bproperty=["']([^"']*)["']/i ) ||
+        attrs.match( /\bname=["']([^"']*)["']/i ) ;
+      if( propMatch && (propMatch[1].toLowerCase() === propiedad.toLowerCase()) ) {
+        const contentMatch = attrs.match( /\bcontent=["']([^"']*)["']/i ) ;
+        if( contentMatch && contentMatch[1].trim() ) {
+          return( decodificarEntidadesBasicas( contentMatch[1].trim() ) ) ;
+        }
+      }
+    }
+    return( undefined ) ;
+  }
+
+  const nombreSitio = extraerMeta( "og:site_name" ) || extraerMeta( "og:title" ) ;
+
+  const resultado: { titulo?: string ; nombreSitio?: string } = {} ;
+  if( titulo ) resultado.titulo = titulo ;
+  if( nombreSitio ) resultado.nombreSitio = nombreSitio ;
+
+  return( resultado ) ;
+}

@@ -110,8 +110,8 @@ describe( "GET /api/sandbox/marcas" , () => {
       user: { id: "user-123" }
     } as unknown as nextAuth.Session ) ;
 
-    vi.spyOn( estrategiasDominio , "estrategiaBrandfetchSearch" ).mockResolvedValue( {
-      estrategia: "brandfetch-search" ,
+    vi.spyOn( estrategiasDominio , "estrategiaVerificados" ).mockResolvedValue( {
+      estrategia: "verificados" ,
       ok:         true ,
       ms:         120 ,
       estado:     "200" ,
