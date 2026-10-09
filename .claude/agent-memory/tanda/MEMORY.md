@@ -5,6 +5,7 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 
 ## Dónde quedó todo
 
+- [Login con Google roto: Neon desalineada](login_google_neon_desalineada.md) — plan 28 listo para `obra`; WIP de marcas en stash (2026-10-09).
 - [Estado al cerrar 2026-10-08](estado_2026-10-08.md) — master pusheado, Neon desalineada (plan 28), plan 29 en obra; **Vercel despliega por push**.
 
 - [Estado al cerrar la última ronda](estado_actual.md) — plan 02 integrado a master (2026-10-06); rama `feat/acceso-1-aprovisionamiento` lista para `obra`. **Contrastar con `git log`.**
@@ -12,6 +13,10 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 - [Serie «acceso con Google»](acceso_con_google_serie.md) — spec aprobada + 5 planes escritos (2026-10-06, commit 451d0b0); el plan 0 sigue sin ejecutar y precede.
 
 - [La bóveda de Obsidian, pendiente en los agentes](boveda_obsidian_pendiente_en_agentes.md) — diseño de forja decidido (2026-09-26), sin aplicar a tanda/obra; este repo sigue en `docs/`.
+
+- [Planes 33 y 34: búsqueda de marcas](marcas_planes_33_34.md) — módulo de funciones y no hook; misma rama; qué duplicación queda (2026-10-08).
+
+- [Brandfetch se elimina; plan 40 reescrito](marcas_sin_brandfetch.md) — nombre→dominio vs dominio→ícono, lo medido, plan 41 pendiente (2026-10-09).
 
 ## Antes de planificar
 
