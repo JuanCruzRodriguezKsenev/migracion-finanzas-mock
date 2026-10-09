@@ -32,3 +32,4 @@
 - [`cuentas-4-ajuste-26.md`](cuentas-4-ajuste-26.md): Plan 26 retomado con código ya escrito: commit sin tocar memorias ajenas, mutaciones con copia (no git), hallazgo de la reversa.
 - [`espacio-personal-29.md`](espacio-personal-29.md): Plan 29 espacio Personal: plan 07 inexistente (viewer sin guardas), AnyPgColumn, slugLibre movido, seeds y tests viejos rotos.
 - [`solo-lectura-30.md`](solo-lectura-30.md): Plan 30 solo lectura: inventario del plan corto (21 archivos, reexportaciones), props con default permisivo, renderConPermisos y trampas de tests.
+- [`neon-produccion-28.md`](neon-produccion-28.md): Plan 28: migración de esquema en Neon, psql vía podman, --no-secrets en branches create, región gru1 en Vercel y push alineado.
