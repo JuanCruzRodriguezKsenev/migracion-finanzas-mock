@@ -1,11 +1,8 @@
 /**
  * @file googleSignInService.ts
  * Servicio para la resolución atómica de identidad y membresías al iniciar sesión con Google.
- * Implementa las reglas RN-1 a RN-5, RN-8, RN-14 y NFR-2 del sistema de acceso.
+ * Implementa las reglas RN-1 a RN-4, RN-8, RN-14 y RN-40 a RN-44 del sistema de acceso (Revisión 3).
  */
-// Librerías externas
-import { eq } from "drizzle-orm" ;
-
 // Shared
 import { ok , fail , Result } from "@/shared/lib/result" ;
 import { db }                 from "@/shared/db/client" ;
@@ -32,7 +29,7 @@ export type ErrorGoogleSignIn = "no_verificado" | "sin_acceso" ;
 
 /**
  * Error de control interno para forzar el rollback atómico de la transacción
- * ante denegaciones de acceso (RN-5, Fila 6).
+ * ante denegaciones de acceso (Revisión 3 — registro abierto, caso 3b).
  */
 class RollbackError extends Error {
   constructor( public readonly errorReason: ErrorGoogleSignIn ) {
@@ -47,7 +44,8 @@ export const googleSignInService = {
   /**
    * Resuelve la identidad de un usuario a partir de su cuenta de Google.
    * Ejecuta de forma atómica dentro de una única transacción la vinculación,
-   * alta de cuenta, aceptación de invitaciones vigentes y actualización de perfil.
+   * alta de cuenta, aceptación de invitaciones vigentes, aprovisionamiento
+   * del espacio Personal y actualización de perfil (Revisión 3 — registro abierto).
    *
    * @param params - Datos del perfil y claims entregados por el proveedor Google.
    * @returns Result con `{ userId }` en caso de éxito, o código de fallo `"no_verificado" | "sin_acceso"`.
@@ -55,7 +53,7 @@ export const googleSignInService = {
   async resolverIdentidadGoogle(
     params: ResolverIdentidadGoogleParams
   ): Promise< Result< { userId: string } , ErrorGoogleSignIn > > {
-    // 1. Si el email no está verificado en Google, denegar acceso inmediatamente sin tocar base de datos (Fila 1, RN-1)
+    // 1. Si el email no está verificado en Google, denegar acceso inmediatamente sin tocar base de datos (Fila 1, RN-1, RN-43)
     if( !params.emailVerificado ){
       return( fail( "no_verificado" ) ) ;
     }
@@ -75,18 +73,11 @@ export const googleSignInService = {
                 await userRepository.linkGoogle( usuarioExistente.id , params.sub , tx ) ;
                 usuario = { ...usuarioExistente , googleSub: params.sub } ;
               } else {
-                // Caso 3b: el usuario ya tiene otro sub vinculado; denegar acceso
+                // Caso 3b: el usuario ya tiene otro sub vinculado; denegar acceso (RN-43)
                 throw( new RollbackError( "sin_acceso" ) ) ;
               }
             } else {
-              // 4. Si no hay usuario: comprobar si tiene invitaciones vigentes (Fila 4 vs Fila 5)
-              const invitacionesVigentes = await invitationRepository.findVigentesPorEmail( params.email , tx ) ;
-
-              if( invitacionesVigentes.length === 0 ){
-                throw( new RollbackError( "sin_acceso" ) ) ;
-              }
-
-              // Crear usuario y su registro de perfil inicial (con valores por defecto)
+              // 4. Si no hay usuario: crear usuario y su registro de perfil inicial (Revisión 3, RN-40)
               usuario = await userRepository.createFromGoogle(
                 {
                   googleSub: params.sub ,
@@ -101,7 +92,7 @@ export const googleSignInService = {
             }
           }
 
-          // 5. En todos los caminos exitosos (2, 3 y 4): aceptar todas las invitaciones vigentes del email (RN-4)
+          // 5. En todos los caminos exitosos: aceptar todas las invitaciones vigentes del email (RN-4)
           const invitaciones = await invitationRepository.findVigentesPorEmail( params.email , tx ) ;
 
           for( const inv of invitaciones ){
@@ -124,7 +115,10 @@ export const googleSignInService = {
             usuario.lastOrganizationId = primeraOrgId ;
           }
 
-          // 6. Actualizar name e image desde Google (RN-8)
+          // 6. Asegurar siempre el espacio Personal dentro de la transacción (RN-40, idempotente)
+          await asegurarEspacioPersonal( usuario.id , tx ) ;
+
+          // 7. Actualizar name e image desde Google si cambiaron (RN-8)
           if( (params.nombre !== undefined) || (params.imagen !== undefined) ){
             await userRepository.updateProfileFromGoogle(
               usuario.id ,
@@ -132,21 +126,6 @@ export const googleSignInService = {
               tx
             ) ;
           }
-
-          // 7. Si después de todo el usuario no tiene ninguna membresía, denegar y hacer rollback (Fila 6, RN-5)
-          const [ algunaMembresia ] = await tx
-            .select( { id: memberships.userId } )
-            .from( memberships )
-            .where( eq( memberships.userId , usuario.id ) )
-            .limit( 1 ) ;
-
-          if( !algunaMembresia ){
-            throw( new RollbackError( "sin_acceso" ) ) ;
-          }
-
-          // 8. Con acceso comprobado, asegurar el espacio Personal (idempotente). Va después del chequeo anterior:
-          //    si se creara antes, ese chequeo dejaría de rechazar a quien no tiene invitación (RN-6).
-          await asegurarEspacioPersonal( usuario.id , tx ) ;
 
           return( ok( { userId: usuario.id } ) ) ;
         } )

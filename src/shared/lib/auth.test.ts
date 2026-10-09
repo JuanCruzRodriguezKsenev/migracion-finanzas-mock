@@ -342,13 +342,40 @@ describe( "authOptions callbacks (JWT & Session)" , () => {
       expect( resultado ).toBe( true ) ;
     } ) ;
 
-    it( "debería rechazar con false si el usuario de Google no tiene acceso ni invitaciones" , async () => {
+    it( "debería autenticar exitosamente a usuario de Google sin invitaciones asignando su espacio Personal (AC-35)" , async () => {
+      const signInFn = authOptions.callbacks?.signIn ;
+
+      const mockUserObj: Record< string , unknown > = {
+        email: "desconocido-google@ejemplo.com" ,
+        name:  "Desconocido Google"
+      } ;
+
+      const resultado = await signInFn!( {
+        user:    mockUserObj ,
+        account: { provider: "google" , type: "oauth" , providerAccountId: "sub-desconocido-google" } ,
+        profile: { email: "desconocido-google@ejemplo.com" , email_verified: true , name: "Desconocido Google" }
+      } as unknown as ParametrosSignIn ) ;
+
+      expect( resultado ).toBe( true ) ;
+      expect( mockUserObj.id ).toBeDefined() ;
+
+      const [ personal ] = await db
+        .select()
+        .from( organizations )
+        .where( eq( organizations.personalOwnerUserId , mockUserObj.id as string ) ) ;
+
+      expect( personal ).toBeDefined() ;
+      expect( mockUserObj.organizationId ).toBe( personal.id ) ;
+      expect( mockUserObj.role ).toBe( "owner" ) ;
+    } ) ;
+
+    it( "debería rechazar con false si el email no está verificado en Google (AC-39)" , async () => {
       const signInFn = authOptions.callbacks?.signIn ;
 
       const resultado = await signInFn!( {
-        user:    { email: "desconocido-google@ejemplo.com" } ,
-        account: { provider: "google" , type: "oauth" , providerAccountId: "sub-desconocido-google" } ,
-        profile: { email: "desconocido-google@ejemplo.com" , email_verified: true }
+        user:    { email: "no-verificado-google@ejemplo.com" } ,
+        account: { provider: "google" , type: "oauth" , providerAccountId: "sub-no-verificado-google" } ,
+        profile: { email: "no-verificado-google@ejemplo.com" , email_verified: false }
       } as unknown as ParametrosSignIn ) ;
 
       expect( resultado ).toBe( false ) ;

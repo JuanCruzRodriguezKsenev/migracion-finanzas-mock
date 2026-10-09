@@ -4,8 +4,8 @@
  * Valida la tabla de decisión de la spec (Filas 1 a 6 y casos de borde AC-1 a AC-6, AC-9).
  */
 // Librerías externas
-import { describe , it , expect , beforeEach , afterEach } from "vitest" ;
-import { eq , and , isNotNull }                             from "drizzle-orm" ;
+import { describe , it , expect , vi , beforeEach , afterEach } from "vitest" ;
+import { eq , and }                                            from "drizzle-orm" ;
 
 // Shared
 import { crearUsuarioConMembresia } from "@/shared/db/testFixtures" ;
@@ -16,9 +16,11 @@ import { db }                       from "@/shared/db/client" ;
 import { profiles } from "@/features/profile/schema.db" ;
 
 // Feature: Auth
-import { organizations , memberships , users , invitations } from "../schema.db" ;
-import { googleSignInService }                               from "./googleSignInService" ;
 import { invitationRepository }                              from "../repositories/invitationRepository" ;
+import { organizations , memberships , users , invitations } from "../schema.db" ;
+import { userRepository }                                    from "../repositories/userRepository" ;
+import * as espacioPersonalModule                            from "./espacioPersonalService" ;
+import { googleSignInService }                               from "./googleSignInService" ;
 
 
 describe( "googleSignInService.resolverIdentidadGoogle" , () => {
@@ -219,31 +221,47 @@ describe( "googleSignInService.resolverIdentidadGoogle" , () => {
     expect( inv.status ).toBe( "accepted" ) ;
   } ) ;
 
-  // Fila 5: sin usuario ni invitación (AC-2)
-  it( "Fila 5: debería rechazar con 'sin_acceso' y no crear usuarios si no hay usuario ni invitación (AC-2)" , async () => {
+  // Fila 5: sin usuario ni invitación (AC-35)
+  it( "Fila 5: debería autenticar con éxito creando usuario, perfil y Personal, sin membresías en organizaciones reales (AC-35)" , async () => {
     const res = await googleSignInService.resolverIdentidadGoogle( {
       sub:             "sub-desconocido" ,
       email:           "desconocido@ejemplo.com" ,
       emailVerificado: true
     } ) ;
 
-    expect( res.success ).toBe( false ) ;
-    if( !res.success ){
-      expect( res.error ).toBe( "sin_acceso" ) ;
+    expect( res.success ).toBe( true ) ;
+    let userId = "" ;
+    if( res.success ){
+      userId = res.value.userId ;
     }
 
-    const u = await db.select().from( users ).where( eq( users.email , "desconocido@ejemplo.com" ) ) ;
-    expect( u.length ).toBe( 0 ) ;
+    const [ u ] = await db.select().from( users ).where( eq( users.email , "desconocido@ejemplo.com" ) ) ;
+    expect( u ).toBeDefined() ;
+    expect( u.id ).toBe( userId ) ;
+    expect( u.lastOrganizationId ).toBeNull() ;
+
+    const [ perfil ] = await db.select().from( profiles ).where( eq( profiles.userId , userId ) ) ;
+    expect( perfil ).toBeDefined() ;
+
+    const personales = await db.select().from( organizations ).where( eq( organizations.personalOwnerUserId , userId ) ) ;
+    expect( personales.length ).toBe( 1 ) ;
+    expect( personales[0].name ).toBe( "Personal" ) ;
+
+    const m = await db.select().from( memberships ).where( eq( memberships.userId , userId ) ) ;
+    expect( m.length ).toBe( 1 ) ;
+    expect( m[0].organizationId ).toBe( personales[0].id ) ;
+    expect( m[0].role ).toBe( "owner" ) ;
   } ) ;
 
-  // Fila 6: usuario existente con cero membresías y sin invitación
-  it( "Fila 6: debería rechazar con 'sin_acceso' si el usuario existe pero no tiene ninguna membresía activa (RN-5)" , async () => {
-    await db
+  // Fila 6: usuario existente con cero membresías y sin invitación (AC-37)
+  it( "Fila 6: debería autenticar con éxito a usuario existente sin membresías asegurando su espacio Personal (AC-37)" , async () => {
+    const [ usuarioCreado ] = await db
       .insert( users )
       .values( {
         email:     "huerfano@ejemplo.com" ,
         googleSub: "sub-huerfano"
-      } ) ;
+      } )
+      .returning() ;
 
     const res = await googleSignInService.resolverIdentidadGoogle( {
       sub:             "sub-huerfano" ,
@@ -251,14 +269,21 @@ describe( "googleSignInService.resolverIdentidadGoogle" , () => {
       emailVerificado: true
     } ) ;
 
-    expect( res.success ).toBe( false ) ;
-    if( !res.success ){
-      expect( res.error ).toBe( "sin_acceso" ) ;
+    expect( res.success ).toBe( true ) ;
+    if( res.success ){
+      expect( res.value.userId ).toBe( usuarioCreado.id ) ;
     }
+
+    const personales = await db.select().from( organizations ).where( eq( organizations.personalOwnerUserId , usuarioCreado.id ) ) ;
+    expect( personales.length ).toBe( 1 ) ;
+
+    const [ m ] = await db.select().from( memberships ).where( eq( memberships.userId , usuarioCreado.id ) ) ;
+    expect( m.organizationId ).toBe( personales[0].id ) ;
+    expect( m.role ).toBe( "owner" ) ;
   } ) ;
 
-  // Casos de borde: invitación vencida o revocada (AC-4)
-  it( "debería rechazar con 'sin_acceso' ante invitación vencida o revocada (AC-4)" , async () => {
+  // Casos de borde: invitación vencida o revocada (AC-38)
+  it( "debería autenticar a su Personal y no crear membresía en la organización de la invitación vencida o revocada (AC-38)" , async () => {
     // Invitación vencida
     await db
       .insert( invitations )
@@ -275,7 +300,13 @@ describe( "googleSignInService.resolverIdentidadGoogle" , () => {
       email:           "vencida@ejemplo.com" ,
       emailVerificado: true
     } ) ;
-    expect( res1.success ).toBe( false ) ;
+    expect( res1.success ).toBe( true ) ;
+    if( res1.success ){
+      const m1 = await db.select().from( memberships ).where( eq( memberships.userId , res1.value.userId ) ) ;
+      expect( m1.length ).toBe( 1 ) ;
+      const [ p1 ] = await db.select().from( organizations ).where( eq( organizations.personalOwnerUserId , res1.value.userId ) ) ;
+      expect( m1[0].organizationId ).toBe( p1.id ) ;
+    }
 
     // Invitación revocada
     await db
@@ -293,7 +324,13 @@ describe( "googleSignInService.resolverIdentidadGoogle" , () => {
       email:           "revocada@ejemplo.com" ,
       emailVerificado: true
     } ) ;
-    expect( res2.success ).toBe( false ) ;
+    expect( res2.success ).toBe( true ) ;
+    if( res2.success ){
+      const m2 = await db.select().from( memberships ).where( eq( memberships.userId , res2.value.userId ) ) ;
+      expect( m2.length ).toBe( 1 ) ;
+      const [ p2 ] = await db.select().from( organizations ).where( eq( organizations.personalOwnerUserId , res2.value.userId ) ) ;
+      expect( m2[0].organizationId ).toBe( p2.id ) ;
+    }
   } ) ;
 
   // Caso: cambio de email en Google con mismo sub (AC-6)
@@ -425,23 +462,25 @@ describe( "googleSignInService — espacio Personal (AC-1, AC-2, A8)" , () => {
     expect( u.lastOrganizationId ).toBe( orgId ) ;
   } ) ;
 
-  it( "AC-2 / A8: sin invitación sigue el rechazo y no queda ningún espacio Personal" , async () => {
+  it( "AC-35 / A8: sin invitación entra con éxito y queda creado su espacio Personal" , async () => {
     const res = await googleSignInService.resolverIdentidadGoogle( {
       sub:             "sub-sin-invitacion" ,
       email:           "sin-invitacion@ejemplo.com" ,
       emailVerificado: true
     } ) ;
 
-    expect( res.success ).toBe( false ) ;
-    if( !res.success ){
-      expect( res.error ).toBe( "sin_acceso" ) ;
+    expect( res.success ).toBe( true ) ;
+    let userId = "" ;
+    if( res.success ){
+      userId = res.value.userId ;
     }
 
-    const personales = await db.select().from( organizations ).where( isNotNull( organizations.personalOwnerUserId ) ) ;
-    expect( personales.length ).toBe( 0 ) ;
+    const personales = await db.select().from( organizations ).where( eq( organizations.personalOwnerUserId , userId ) ) ;
+    expect( personales.length ).toBe( 1 ) ;
+    expect( personales[0].name ).toBe( "Personal" ) ;
   } ) ;
 
-  it( "AC-2: un usuario existente sin ninguna membresía sigue rechazado y no se le crea el espacio" , async () => {
+  it( "AC-37: un usuario existente sin ninguna membresía entra con éxito y se le crea el espacio Personal" , async () => {
     const [ huerfano ] = await db
       .insert( users )
       .values( { email: "huerfano-personal@ejemplo.com" , googleSub: "sub-huerfano-personal" } )
@@ -453,10 +492,10 @@ describe( "googleSignInService — espacio Personal (AC-1, AC-2, A8)" , () => {
       emailVerificado: true
     } ) ;
 
-    expect( res.success ).toBe( false ) ;
+    expect( res.success ).toBe( true ) ;
 
     const personales = await db.select().from( organizations ).where( eq( organizations.personalOwnerUserId , huerfano.id ) ) ;
-    expect( personales.length ).toBe( 0 ) ;
+    expect( personales.length ).toBe( 1 ) ;
   } ) ;
 
   it( "A9: un usuario con membresía y sin espacio lo recibe al entrar, y un segundo ingreso no lo duplica" , async () => {
@@ -474,5 +513,85 @@ describe( "googleSignInService — espacio Personal (AC-1, AC-2, A8)" , () => {
     // El destino no cambia: sigue siendo la organización donde estaba
     const [ u ] = await db.select().from( users ).where( eq( users.id , usr.id ) ) ;
     expect( u.lastOrganizationId ).toBe( orgId ) ;
+  } ) ;
+
+  it( "AC-40: usuario nuevo sin invitación entra a Personal; con posterior invitación a Casa, el segundo login fija lastOrganizationId en Casa y preserva Personal" , async () => {
+    // Primer login: sin invitaciones
+    const res1 = await googleSignInService.resolverIdentidadGoogle( {
+      sub:             "sub-ac40" ,
+      email:           "ac40@ejemplo.com" ,
+      emailVerificado: true
+    } ) ;
+    expect( res1.success ).toBe( true ) ;
+    if( !res1.success ){ return ; }
+    const userId = res1.value.userId ;
+
+    const [ u1 ] = await db.select().from( users ).where( eq( users.id , userId ) ) ;
+    expect( u1.lastOrganizationId ).toBeNull() ;
+
+    // Se crea después una invitación vigente a Casa
+    await invitationRepository.crearInvitacion( {
+      organizationId: orgId ,
+      email:          "ac40@ejemplo.com" ,
+      role:           "member" ,
+      expiresAt:      new Date( Date.now() + 86400000 )
+    } ) ;
+
+    // Segundo login
+    const res2 = await googleSignInService.resolverIdentidadGoogle( {
+      sub:             "sub-ac40" ,
+      email:           "ac40@ejemplo.com" ,
+      emailVerificado: true
+    } ) ;
+    expect( res2.success ).toBe( true ) ;
+
+    const [ u2 ] = await db.select().from( users ).where( eq( users.id , userId ) ) ;
+    expect( u2.lastOrganizationId ).toBe( orgId ) ;
+
+    // Membresías: Casa y Personal
+    const m = await db.select().from( memberships ).where( eq( memberships.userId , userId ) ) ;
+    expect( m.length ).toBe( 2 ) ;
+
+    const personales = await db.select().from( organizations ).where( eq( organizations.personalOwnerUserId , userId ) ) ;
+    expect( personales.length ).toBe( 1 ) ;
+  } ) ;
+
+  it( "Atomicidad (RN-40): si asegurarEspacioPersonal falla, la transacción hace rollback y no queda usuario ni perfil" , async () => {
+    const espia = vi.spyOn( espacioPersonalModule , "asegurarEspacioPersonal" ).mockRejectedValueOnce(
+      new Error( "falla forzada en espacio personal" )
+    ) ;
+
+    await expect(
+      googleSignInService.resolverIdentidadGoogle( {
+        sub:             "sub-fallo-atomico" ,
+        email:           "fallo-atomico@ejemplo.com" ,
+        emailVerificado: true
+      } )
+    ).rejects.toThrow( "falla forzada en espacio personal" ) ;
+
+    espia.mockRestore() ;
+
+    const u = await db.select().from( users ).where( eq( users.email , "fallo-atomico@ejemplo.com" ) ) ;
+    expect( u.length ).toBe( 0 ) ;
+
+    const perfiles = await db.select().from( profiles ) ;
+    expect( perfiles.some( ( p ) => p.userId === "sub-fallo-atomico" ) ).toBe( false ) ;
+  } ) ;
+
+  it( "§3.3 auth.ts / findIdentidadVigente: usuario sin organización real resuelve a su Personal con rol owner" , async () => {
+    const res = await googleSignInService.resolverIdentidadGoogle( {
+      sub:             "sub-solo-personal" ,
+      email:           "solo-personal@ejemplo.com" ,
+      emailVerificado: true
+    } ) ;
+    expect( res.success ).toBe( true ) ;
+    if( !res.success ){ return ; }
+
+    const identidad = await userRepository.findIdentidadVigente( res.value.userId ) ;
+    expect( identidad ).not.toBeNull() ;
+
+    const [ personal ] = await db.select().from( organizations ).where( eq( organizations.personalOwnerUserId , res.value.userId ) ) ;
+    expect( identidad?.organizationId ).toBe( personal.id ) ;
+    expect( identidad?.role ).toBe( "owner" ) ;
   } ) ;
 } ) ;

@@ -84,8 +84,8 @@ organización tiene el catálogo de categorías y la cuenta de Patrimonio Neto.
 
 Mediciones que sólo se ven desplegado:
 
-- **M-1.** Entrar con una cuenta de Google sin invitación: debe aterrizar en `/es/auth/signin?error=AccessDenied`,
-  no en una página de error de next-auth.
+- **M-1.** Entrar con una cuenta de Google sin invitación: debe aterrizar en el panel, con **Personal**
+  como única opción del selector. Si la pantalla de consentimiento OAuth de Google está en modo Testing, sólo entran los usuarios de prueba (M-3 de la spec).
 - **M-2.** Latencia de una carga de `/accounts` y de un alta de movimiento (pestaña Red, tres mediciones). Si
   es mayor a 2 s sostenidos, revisar primero que Vercel y Neon estén en la misma región.
 - **M-3.** Un intento por contraseña con un email inexistente no debe dar 500 ni timeout (el `scrypt` señuelo
