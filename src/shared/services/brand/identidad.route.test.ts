@@ -25,6 +25,11 @@ describe( "GET /api/brand/identidad" , () => {
     vi.spyOn( nextAuth , "getServerSession" ).mockResolvedValue( null ) ;
     const resolverSpy = vi.spyOn( resolutorModulo , "resolverIdentidad" ) ;
 
+    const reqSinParam = new NextRequest( "http://localhost:3000/api/brand/identidad" ) ;
+    const resSinParam = await GET( reqSinParam ) ;
+    expect( resSinParam.status ).toBe( 401 ) ;
+    expect( await resSinParam.json() ).toEqual( { error: "Unauthorized" } ) ;
+
     const req = new NextRequest( "http://localhost:3000/api/brand/identidad?domain=ejemplo.com" ) ;
     const res = await GET( req ) ;
 
