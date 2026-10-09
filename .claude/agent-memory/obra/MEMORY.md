@@ -41,3 +41,4 @@
 - [`resolutor-marcas-37.md`](resolutor-marcas-37.md): Plan 37 resolutor de marcas en servidor: cascada de íconos, normalización PNG con sharp y parseo ICO, color dominante determinista, mock de next-auth y tipados de lookup.
 - [`laboratorio-identidad-38.md`](laboratorio-identidad-38.md): Plan 38 resolutor en la batería: fake timers y afterEach, mutaciones con respaldo, vi.importActual para fixtures y sanitización de dataUri.
 - [`cierre-resolutor-39b.md`](cierre-resolutor-39b.md): Plan 39b resolutor: distinción DNS vs IP privada con dominioNoResuelve, reintento www acotado, contrato de fuenteUrl sin CDN, y 8 mutaciones verificadas.
+- [`laboratorio-sin-brandfetch-40.md`](laboratorio-sin-brandfetch-40.md): Plan 40: retiro de Brandfetch, estrategia verificados, batería de nombres a ícono, subcomponentes modulares de LaboratorioMarcas y 12 mutaciones verificadas.
