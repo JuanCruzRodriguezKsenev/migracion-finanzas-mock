@@ -5,6 +5,8 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 
 ## Dónde quedó todo
 
+- [Plan 40b escrito: afinar verificados y resolutor](marcas_plan_40b_escrito.md) — decisiones color/resolución, qué NO entra, Edesur no reproducible (2026-10-09).
+
 - [Plan 40 verificado: laboratorio sin Brandfetch](marcas_plan_40_cerrado.md) — 1530 tests verdes, estrategia verificados, batería nombre→ícono 22 consultas, pendiente prueba de usuario §7 (2026-10-09).
 - [Plan 39b verificado: resolutor y laboratorio](marcas_plan_39b_cerrado.md) — 1506 tests verdes, DNS vs IP privada resuelto, pendiente prueba de usuario §7 (2026-10-09).
 - [Login con Google roto: Neon desalineada](login_google_neon_desalineada.md) — plan 28 listo para `obra`; WIP de marcas en stash (2026-10-09).
