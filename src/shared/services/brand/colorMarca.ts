@@ -21,8 +21,9 @@ function formatearHex( canal: number ): string {
 
 /**
  * Calcula el color dominante de un ícono a partir de su buffer PNG o binario compatible.
- * Prioriza los cubos cromáticos con suficiente saturación y brillo; si el isotipo es
- * acromático (blanco o negro), toma el cubo no transparente con mayor cantidad de píxeles.
+ * Prioriza los cubos cromáticos con suficiente saturación y brillo (s >= 0.25 y v >= 0.15);
+ * si el isotipo es acromático, excluye los cubos casi blancos (s < 0.25 y v > 0.9) salvo que
+ * sean los únicos cubos opacos de la imagen.
  *
  * @param png - Buffer binario de la imagen.
  * @returns Cadena hexadecimal #rrggbb en minúsculas o null si no hay píxeles legibles.
@@ -83,6 +84,7 @@ export async function colorDominante( png: Buffer ): Promise< string | null > {
 
     const cromaticos: { cubo: CuboColor ; s: number }[] = [] ;
     let mejorAcromatico: CuboColor | null = null ;
+    let mejorCasiBlanco: CuboColor | null = null ;
 
     for( const cubo of cubos.values() ) {
       const mediaR = Math.round( cubo.sumaR / cubo.cuenta ) ;
@@ -101,16 +103,27 @@ export async function colorDominante( png: Buffer ): Promise< string | null > {
 
       cubo.saturacion = s ;
 
-      const esCromatico = (s >= 0.25) && (v >= 0.15) && (v <= 0.95) ;
+      const esCromatico = (s >= 0.25) && (v >= 0.15) ;
       cubo.esCromatico = esCromatico ;
 
       if( esCromatico ) {
         cromaticos.push( { cubo , s } ) ;
+      } else {
+        const esCasiBlanco = (s < 0.25) && (v > 0.9) ;
+        if( esCasiBlanco ) {
+          if( !mejorCasiBlanco || (cubo.cuenta > mejorCasiBlanco.cuenta) ) {
+            mejorCasiBlanco = cubo ;
+          }
+        } else {
+          if( !mejorAcromatico || (cubo.cuenta > mejorAcromatico.cuenta) ) {
+            mejorAcromatico = cubo ;
+          }
+        }
       }
+    }
 
-      if( !mejorAcromatico || (cubo.cuenta > mejorAcromatico.cuenta) ) {
-        mejorAcromatico = cubo ;
-      }
+    if( !mejorAcromatico ) {
+      mejorAcromatico = mejorCasiBlanco ;
     }
 
     let cuboElegido: CuboColor | null = null ;

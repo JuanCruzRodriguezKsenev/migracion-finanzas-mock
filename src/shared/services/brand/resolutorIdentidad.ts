@@ -13,17 +13,30 @@ import {
   validarDominio ,
   fetchSeguro
 } from "./fetchSeguro" ;
-import { normalizarIcono } from "./imagenIcono" ;
+import {
+  normalizarIcono ,
+  medirImagen
+} from "./imagenIcono" ;
 import { colorDominante }  from "./colorMarca" ;
 import type { CandidatoIcono } from "./tiposMarca" ;
 
 export type OrigenIcono = "sitio" | "google-s2" | "brandfetch-cdn" ;
 
 export interface IdentidadMarca {
-  dominio:  string ;
-  icono:    { origen: OrigenIcono ; dataUri?: string ; url?: string ; ancho?: number ; alto?: number } | null ;
-  color:    string | null ;
-  intentos: { fuente: OrigenIcono ; ok: boolean ; motivo?: string }[] ;
+  dominio:    string ;
+  icono:      {
+    origen:       OrigenIcono ;
+    dataUri?:     string ;
+    url?:         string ;
+    ancho?:       number ;
+    alto?:        number ;
+    origenAncho?: number ;
+    origenAlto?:  number ;
+    fuenteUrl?:   string ;
+  } | null ;
+  color:      string | null ;
+  intentos:   { fuente: OrigenIcono ; ok: boolean ; motivo?: string }[] ;
+  redirigeA?: string ;
 }
 
 /**
@@ -40,7 +53,7 @@ function puntajeCandidato( c: CandidatoIcono ): number {
 }
 
 /**
- * Ordena y filtra la lista de URLs candidatas de íconos para un sitio.
+ * Ordena y filtra la lista de URLs candidatas de íconos para un sitio descartando og:image.
  */
 function ordenarUrlsCandidatas( candidatos: CandidatoIcono[] , urlBase: string ): string[] {
   const sinOg = candidatos.filter( ( c ) => c.origen !== "og:image" ) ;
@@ -55,8 +68,6 @@ function ordenarUrlsCandidatas( candidatos: CandidatoIcono[] , urlBase: string )
   const sinTamano = sinOg.filter( ( c ) => typeof c.tamano !== "number" ) ;
   sinTamano.sort( ( a , b ) => puntajeCandidato( b ) - puntajeCandidato( a ) ) ;
 
-  const conOg = candidatos.filter( ( c ) => c.origen === "og:image" ) ;
-
   let urlFavicon: string | null = null ;
   try {
     urlFavicon = new URL( "/favicon.ico" , urlBase ).href ;
@@ -67,7 +78,6 @@ function ordenarUrlsCandidatas( candidatos: CandidatoIcono[] , urlBase: string )
   const todasLasUrls = [
     ...conTamano.map( ( c ) => c.url ) ,
     ...sinTamano.map( ( c ) => c.url ) ,
-    ...conOg.map( ( c ) => c.url ) ,
     ...( urlFavicon ? [ urlFavicon ] : [] )
   ] ;
 
@@ -82,12 +92,19 @@ function ordenarUrlsCandidatas( candidatos: CandidatoIcono[] , urlBase: string )
 }
 
 /**
+ * Remueve el prefijo www. de un nombre de host para comparaciones canónicas.
+ */
+function normalizarHostSinWww( host: string ): string {
+  return( host.toLowerCase().replace( /^www\./ , "" ) ) ;
+}
+
+/**
  * Resuelve la identidad de una marca (ícono normalizado a 128x128 y color corporativo)
  * ejecutando la cascada: sitio (>= 64px) -> Google S2 -> respaldo chico del sitio -> Brandfetch CDN.
  *
  * @param dominio - Dominio o URL a consultar.
  * @param opciones - Opciones opcionales como clientIdBrandfetch.
- * @returns Estructura IdentidadMarca con el ícono, color y registro de intentos.
+ * @returns Estructura IdentidadMarca con el ícono, color, registro de intentos y redirección opcional.
  * @throws Error("dominio inválido") únicamente si el dominio es sintácticamente inválido.
  */
 export async function resolverIdentidad(
@@ -100,32 +117,82 @@ export async function resolverIdentidad(
   }
 
   const intentos: { fuente: OrigenIcono ; ok: boolean ; motivo?: string }[] = [] ;
-  let iconoElegido: { origen: OrigenIcono ; dataUri?: string ; url?: string ; ancho?: number ; alto?: number } | null = null ;
+  let iconoElegido: {
+    origen:       OrigenIcono ;
+    dataUri?:     string ;
+    url?:         string ;
+    ancho?:       number ;
+    alto?:        number ;
+    origenAncho?: number ;
+    origenAlto?:  number ;
+    fuenteUrl?:   string ;
+  } | null = null ;
   let bufferPngParaColor: Buffer | null = null ;
+  let redirigeA: string | undefined = undefined ;
 
   let respaldoChico: {
-    icono:  { origen: OrigenIcono ; dataUri: string ; ancho: number ; alto: number } ;
+    icono:  {
+      origen:       OrigenIcono ;
+      dataUri:      string ;
+      ancho:        number ;
+      alto:         number ;
+      origenAncho?: number ;
+      origenAlto?:  number ;
+      fuenteUrl?:   string ;
+    } ;
     pngBuf: Buffer ;
   } | null = null ;
 
   // 1. Fuente: sitio
-  const urlSitio = `https://${domLimpio}/` ;
-  const resHtml  = await fetchSeguro( urlSitio , { timeoutMs: 5000 , maxBytes: 256 * 1024 } ) ;
+  const urlSitio        = `https://${domLimpio}/` ;
+  let resHtml           = await fetchSeguro( urlSitio , { timeoutMs: 5000 , maxBytes: 256 * 1024 } ) ;
+  let fueReintentoWww   = false ;
+  let consultaSitioExitosa = false ;
 
   if( !resHtml.ok ) {
     const motivo = (resHtml.status > 0) ? `http ${resHtml.status}` : (resHtml.estado || "error de red") ;
     intentos.push( { fuente: "sitio" , ok: false , motivo } ) ;
-    if( (resHtml.estado === "host privado o no resoluble") || (resHtml.estado === "ip-privada") ) {
+
+    if( resHtml.estado === "ip-privada" ) {
       return( {
-        dominio:  domLimpio ,
-        icono:    null ,
-        color:    null ,
+        dominio: domLimpio ,
+        icono:   null ,
+        color:   null ,
         intentos
       } ) ;
     }
-  } else if( resHtml.cuerpo ) {
-    const html           = resHtml.cuerpo.toString( "utf-8" ) ;
-    const urlFinal       = resHtml.urlFinal || urlSitio ;
+
+    if( (resHtml.estado === "host privado o no resoluble") && !domLimpio.startsWith( "www." ) ) {
+      const urlWww = `https://www.${domLimpio}/` ;
+      const resWww = await fetchSeguro( urlWww , { timeoutMs: 5000 , maxBytes: 256 * 1024 } ) ;
+
+      if( resWww.ok && resWww.cuerpo ) {
+        resHtml              = resWww ;
+        fueReintentoWww      = true ;
+        consultaSitioExitosa = true ;
+      } else {
+        const motivoWww = (resWww.status > 0) ? `http ${resWww.status}` : (resWww.estado || "error de red") ;
+        intentos.push( { fuente: "sitio" , ok: false , motivo: motivoWww } ) ;
+      }
+    }
+  } else {
+    consultaSitioExitosa = true ;
+  }
+
+  if( consultaSitioExitosa && resHtml.cuerpo ) {
+    const html        = resHtml.cuerpo.toString( "utf-8" ) ;
+    const urlFinal    = resHtml.urlFinal || (fueReintentoWww ? `https://www.${domLimpio}/` : urlSitio) ;
+
+    try {
+      const hostPedido = normalizarHostSinWww( domLimpio ) ;
+      const hostFinal  = normalizarHostSinWww( new URL( urlFinal ).hostname ) ;
+      if( hostFinal !== hostPedido ) {
+        redirigeA = hostFinal ;
+      }
+    } catch {
+      // Ignorar error al parsear urlFinal
+    }
+
     const iconosHtml     = extraerIconos( html , urlFinal ) ;
     const manifestUrl    = extraerManifestUrl( html , urlFinal ) ;
     let iconosManifest: CandidatoIcono[] = [] ;
@@ -149,6 +216,7 @@ export async function resolverIdentidad(
         continue ;
       }
 
+      const dimensiones = await medirImagen( resIcono.cuerpo ) ;
       const normalizado = await normalizarIcono( resIcono.cuerpo ) ;
       if( !normalizado ) {
         continue ;
@@ -156,23 +224,33 @@ export async function resolverIdentidad(
 
       if( normalizado.origenAncho >= 64 ) {
         iconoElegido = {
-          origen:  "sitio" ,
-          dataUri: normalizado.dataUri ,
-          ancho:   normalizado.ancho ,
-          alto:    normalizado.alto
+          origen:      "sitio" ,
+          dataUri:     normalizado.dataUri ,
+          ancho:       normalizado.ancho ,
+          alto:        normalizado.alto ,
+          origenAncho: dimensiones?.ancho ?? normalizado.origenAncho ,
+          origenAlto:  dimensiones?.alto ,
+          fuenteUrl:   urlIcono
         } ;
         bufferPngParaColor = Buffer.from( normalizado.dataUri.slice( "data:image/png;base64,".length ) , "base64" ) ;
-        intentos.push( { fuente: "sitio" , ok: true } ) ;
+        intentos.push( {
+          fuente: "sitio" ,
+          ok:     true ,
+          ...( fueReintentoWww ? { motivo: "reintento con www" } : {} )
+        } ) ;
         encontroApto = true ;
         break ;
       } else {
         if( !respaldoChico ) {
           respaldoChico = {
             icono: {
-              origen:  "sitio" ,
-              dataUri: normalizado.dataUri ,
-              ancho:   normalizado.ancho ,
-              alto:    normalizado.alto
+              origen:      "sitio" ,
+              dataUri:     normalizado.dataUri ,
+              ancho:       normalizado.ancho ,
+              alto:        normalizado.alto ,
+              origenAncho: dimensiones?.ancho ?? normalizado.origenAncho ,
+              origenAlto:  dimensiones?.alto ,
+              fuenteUrl:   urlIcono
             } ,
             pngBuf: Buffer.from( normalizado.dataUri.slice( "data:image/png;base64,".length ) , "base64" )
           } ;
@@ -184,7 +262,7 @@ export async function resolverIdentidad(
       const motivo = respaldoChico ? "menor a 64 px" : "ilegible" ;
       intentos.push( { fuente: "sitio" , ok: false , motivo } ) ;
     }
-  } else {
+  } else if( !fueReintentoWww && resHtml.ok ) {
     intentos.push( { fuente: "sitio" , ok: false , motivo: "ilegible" } ) ;
   }
 
@@ -192,20 +270,26 @@ export async function resolverIdentidad(
   if( !iconoElegido ) {
     const urlS2_256 = `https://www.google.com/s2/favicons?domain=${encodeURIComponent( domLimpio )}&sz=256` ;
     let resS2       = await fetchSeguro( urlS2_256 , { timeoutMs: 4000 , maxBytes: 300 * 1024 } ) ;
+    let urlS2Usada  = urlS2_256 ;
 
     if( !resS2.ok || !resS2.cuerpo ) {
       const urlS2_128 = `https://www.google.com/s2/favicons?domain=${encodeURIComponent( domLimpio )}&sz=128` ;
       resS2           = await fetchSeguro( urlS2_128 , { timeoutMs: 4000 , maxBytes: 300 * 1024 } ) ;
+      urlS2Usada      = urlS2_128 ;
     }
 
     if( resS2.ok && resS2.cuerpo ) {
+      const dimsS2 = await medirImagen( resS2.cuerpo ) ;
       const normS2 = await normalizarIcono( resS2.cuerpo ) ;
       if( normS2 ) {
         iconoElegido = {
-          origen:  "google-s2" ,
-          dataUri: normS2.dataUri ,
-          ancho:   normS2.ancho ,
-          alto:    normS2.alto
+          origen:      "google-s2" ,
+          dataUri:     normS2.dataUri ,
+          ancho:       normS2.ancho ,
+          alto:        normS2.alto ,
+          origenAncho: dimsS2?.ancho ?? normS2.origenAncho ,
+          origenAlto:  dimsS2?.alto ,
+          fuenteUrl:   urlS2Usada
         } ;
         bufferPngParaColor = Buffer.from( normS2.dataUri.slice( "data:image/png;base64,".length ) , "base64" ) ;
         intentos.push( { fuente: "google-s2" , ok: true } ) ;
@@ -230,9 +314,11 @@ export async function resolverIdentidad(
     const cid    = rawCid.trim() ;
 
     if( (cid !== "") && (cid !== "brandfetch") ) {
+      const urlCdn = `https://cdn.brandfetch.io/${domLimpio}?c=${cid}` ;
       iconoElegido = {
-        origen: "brandfetch-cdn" ,
-        url:    `https://cdn.brandfetch.io/${domLimpio}?c=${cid}`
+        origen:    "brandfetch-cdn" ,
+        url:       urlCdn ,
+        fuenteUrl: urlCdn
       } ;
       intentos.push( { fuente: "brandfetch-cdn" , ok: true } ) ;
     } else {
@@ -250,6 +336,7 @@ export async function resolverIdentidad(
     dominio: domLimpio ,
     icono:   iconoElegido ,
     color ,
-    intentos
+    intentos ,
+    ...( redirigeA ? { redirigeA } : {} )
   } ) ;
 }

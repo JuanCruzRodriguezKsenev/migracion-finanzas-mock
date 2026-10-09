@@ -120,4 +120,161 @@ describe( "colorMarca" , () => {
     const colorTransparente = await colorDominante( pngTransparente ) ;
     expect( colorTransparente ).toBeNull() ;
   } ) ;
+
+  it( "7. celeste saturado muy claro #08b8f8 (v ≈ 0.97) con contorno marino menor -> devuelve el celeste, no el marino" , async () => {
+    const totalPixeles   = 32 * 32 ;
+    const pixelesCeleste = Math.round( totalPixeles * 0.75 ) ;
+    const bufferRgba     = Buffer.alloc( totalPixeles * 4 ) ;
+
+    for( let i = 0 ; i < totalPixeles ; i++ ) {
+      const offset = i * 4 ;
+      if( i < pixelesCeleste ) {
+        // Celeste saturado Mercado Pago (#08b8f8)
+        bufferRgba[offset]     = 8 ;
+        bufferRgba[offset + 1] = 184 ;
+        bufferRgba[offset + 2] = 248 ;
+        bufferRgba[offset + 3] = 255 ;
+      } else {
+        // Contorno marino (#080888)
+        bufferRgba[offset]     = 8 ;
+        bufferRgba[offset + 1] = 8 ;
+        bufferRgba[offset + 2] = 136 ;
+        bufferRgba[offset + 3] = 255 ;
+      }
+    }
+
+    const compuesto = await sharp( bufferRgba , {
+      raw: { width: 32 , height: 32 , channels: 4 }
+    } )
+      .png()
+      .toBuffer() ;
+
+    const color = await colorDominante( compuesto ) ;
+    expect( color ).not.toBeNull() ;
+
+    const canales = extraerCanalesHex( color! ) ;
+    expect( canales.r ).toBeLessThanOrEqual( 16 ) ;
+    expect( canales.g ).toBeGreaterThan( 170 ) ;
+    expect( canales.b ).toBeGreaterThan( 230 ) ;
+  } ) ;
+
+  it( "8. naranja #ff6a13 (v = 1) junto a porción menor de violeta #480078 -> devuelve el naranja" , async () => {
+    const totalPixeles   = 32 * 32 ;
+    const pixelesNaranja = Math.round( totalPixeles * 0.75 ) ;
+    const bufferRgba     = Buffer.alloc( totalPixeles * 4 ) ;
+
+    for( let i = 0 ; i < totalPixeles ; i++ ) {
+      const offset = i * 4 ;
+      if( i < pixelesNaranja ) {
+        // Naranja X (#ff6a13)
+        bufferRgba[offset]     = 255 ;
+        bufferRgba[offset + 1] = 106 ;
+        bufferRgba[offset + 2] = 19 ;
+        bufferRgba[offset + 3] = 255 ;
+      } else {
+        // Violeta (#480078)
+        bufferRgba[offset]     = 72 ;
+        bufferRgba[offset + 1] = 0 ;
+        bufferRgba[offset + 2] = 120 ;
+        bufferRgba[offset + 3] = 255 ;
+      }
+    }
+
+    const compuesto = await sharp( bufferRgba , {
+      raw: { width: 32 , height: 32 , channels: 4 }
+    } )
+      .png()
+      .toBuffer() ;
+
+    const color = await colorDominante( compuesto ) ;
+    expect( color ).not.toBeNull() ;
+
+    const canales = extraerCanalesHex( color! ) ;
+    expect( canales.r ).toBeGreaterThan( 240 ) ;
+    expect( canales.g ).toBeGreaterThan( 90 ) ;
+    expect( canales.b ).toBeLessThan( 30 ) ;
+  } ) ;
+
+  it( "9. baldosa blanca con glifo negro de 25% -> devuelve negro (#000000), no #fefefe" , async () => {
+    const totalPixeles  = 32 * 32 ;
+    const pixelesNegros = Math.round( totalPixeles * 0.25 ) ;
+    const bufferRgba    = Buffer.alloc( totalPixeles * 4 ) ;
+
+    for( let i = 0 ; i < totalPixeles ; i++ ) {
+      const offset = i * 4 ;
+      if( i < pixelesNegros ) {
+        // Glifo negro
+        bufferRgba[offset]     = 0 ;
+        bufferRgba[offset + 1] = 0 ;
+        bufferRgba[offset + 2] = 0 ;
+        bufferRgba[offset + 3] = 255 ;
+      } else {
+        // Baldosa blanca
+        bufferRgba[offset]     = 255 ;
+        bufferRgba[offset + 1] = 255 ;
+        bufferRgba[offset + 2] = 255 ;
+        bufferRgba[offset + 3] = 255 ;
+      }
+    }
+
+    const compuesto = await sharp( bufferRgba , {
+      raw: { width: 32 , height: 32 , channels: 4 }
+    } )
+      .png()
+      .toBuffer() ;
+
+    const color = await colorDominante( compuesto ) ;
+    expect( color ).toBe( "#000000" ) ;
+  } ) ;
+
+  it( "10. imagen toda blanca -> #ffffff; imagen blanca con un único píxel gris oscuro -> ese gris, no el blanco" , async () => {
+    const pngTodaBlanca = await sharp( {
+      create: {
+        width:      32 ,
+        height:     32 ,
+        channels:   4 ,
+        background: { r: 255 , g: 255 , b: 255 , alpha: 1 }
+      }
+    } )
+      .png()
+      .toBuffer() ;
+
+    const colorBlanco = await colorDominante( pngTodaBlanca ) ;
+    expect( colorBlanco ).toBe( "#ffffff" ) ;
+
+    const totalPixeles = 32 * 32 ;
+    const bufferRgba   = Buffer.alloc( totalPixeles * 4 ) ;
+
+    for( let i = 0 ; i < totalPixeles ; i++ ) {
+      const offset = i * 4 ;
+      if( i === 0 ) {
+        // Único píxel gris oscuro (#323232)
+        bufferRgba[offset]     = 50 ;
+        bufferRgba[offset + 1] = 50 ;
+        bufferRgba[offset + 2] = 50 ;
+        bufferRgba[offset + 3] = 255 ;
+      } else {
+        // Fondo blanco
+        bufferRgba[offset]     = 255 ;
+        bufferRgba[offset + 1] = 255 ;
+        bufferRgba[offset + 2] = 255 ;
+        bufferRgba[offset + 3] = 255 ;
+      }
+    }
+
+    const compuesto = await sharp( bufferRgba , {
+      raw: { width: 32 , height: 32 , channels: 4 }
+    } )
+      .png()
+      .toBuffer() ;
+
+    const colorGris = await colorDominante( compuesto ) ;
+    expect( colorGris ).not.toBeNull() ;
+    expect( colorGris ).not.toBe( "#ffffff" ) ;
+
+    const canales = extraerCanalesHex( colorGris! ) ;
+    expect( canales.r ).toBeLessThan( 80 ) ;
+    expect( canales.g ).toBeLessThan( 80 ) ;
+    expect( canales.b ).toBeLessThan( 80 ) ;
+  } ) ;
 } ) ;
