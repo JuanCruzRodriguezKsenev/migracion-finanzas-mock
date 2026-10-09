@@ -15,8 +15,9 @@ import { EmptyState }         from "@/shared/ui/feedback/EmptyState/EmptyState" 
 import { Tabs }                from "@/shared/ui/display/Tabs/Tabs" ;
 
 // Feature: Sandbox
-import styles               from "./SandboxContainer.module.css" ;
-import { DashboardSandbox } from "./DashboardSandbox" ;
+import { LaboratorioMarcas } from "./LaboratorioMarcas" ;
+import { DashboardSandbox }  from "./DashboardSandbox" ;
+import styles                from "./SandboxContainer.module.css" ;
 
 
 interface SandboxContainerProps {
@@ -28,12 +29,13 @@ interface SandboxContainerProps {
  * Contenedor principal con navegación por pestañas para todos los sandboxes del sistema.
  */
 export function SandboxContainer( {dict , lang}: SandboxContainerProps ) {
-  const [ activeTab , setActiveTab ] = useState< "dashboard" | "cuentas" >( "dashboard" ) ;
+  const [ activeTab , setActiveTab ] = useState< "dashboard" | "cuentas" | "marcas" >( "dashboard" ) ;
   const sandboxDict = dict.sandboxPage ;
 
   const tabsList = [
     { key: "dashboard" , label: sandboxDict.tabDashboard } ,
-    { key: "cuentas"   , label: sandboxDict.tabAccounts }
+    { key: "cuentas"   , label: sandboxDict.tabAccounts } ,
+    { key: "marcas"    , label: sandboxDict.tabBrands }
   ] ;
 
   return(
@@ -50,18 +52,22 @@ export function SandboxContainer( {dict , lang}: SandboxContainerProps ) {
       <Tabs
         tabs={tabsList}
         activeTab={activeTab}
-        onChange={ ( key ) => setActiveTab( key as "dashboard" | "cuentas" ) }
+        onChange={ ( key ) => setActiveTab( key as "dashboard" | "cuentas" | "marcas" ) }
       />
 
       {/* Contenido de la Pestaña Activa */}
       <div className={styles.tabContent}>
-        {activeTab === "dashboard" ? (
+        {activeTab === "dashboard" && (
           <DashboardSandbox dict={dict} lang={lang} />
-        ) : (
+        )}
+        {activeTab === "cuentas" && (
           <EmptyState
             title={sandboxDict.accountsPlaceholderTitle}
             description={sandboxDict.accountsPlaceholderDescription}
           />
+        )}
+        {activeTab === "marcas" && (
+          <LaboratorioMarcas dict={dict} lang={lang} />
         )}
       </div>
     </div>

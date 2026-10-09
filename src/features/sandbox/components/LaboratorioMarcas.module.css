@@ -1,0 +1,401 @@
+/**
+ * @file LaboratorioMarcas.module.css
+ * Estilos para el Laboratorio de Marcas del Sandbox.
+ * Convenciones: CSS Modules, tokens de globals.css, sin CSS inline estático,
+ * sin fixed px estructurales, interacciones :hover puramente cromáticas/lumínicas.
+ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  font-family: var(--font-sans);
+  color: var(--text-main);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: clamp(1rem, 2vw, 1.5rem);
+  box-shadow: var(--shadow-sm);
+}
+
+.sectionHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sectionTitle {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.barActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 clamp(280px, 40%, 450px);
+}
+
+.inputLabel {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.input {
+  flex: 1 1 200px;
+  min-height: 2.25rem;
+  padding: 0.375rem 0.75rem;
+  font-size: var(--fs-sm);
+  font-family: var(--font-sans);
+  color: var(--text-main);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-glow);
+}
+
+.buttonPrimary {
+  min-height: 2.25rem;
+  padding: 0.375rem 1rem;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  font-family: var(--font-sans);
+  color: var(--text-on-accent);
+  background-color: var(--color-primary);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.buttonPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.buttonSecondary {
+  min-height: 2.25rem;
+  padding: 0.375rem 0.875rem;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  font-family: var(--font-sans);
+  color: var(--text-main);
+  background-color: var(--bg-inset);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.buttonSecondary:hover:not(:disabled) {
+  background-color: var(--bg-app);
+  border-color: var(--border-strong);
+}
+
+.buttonSecondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.buttonDanger {
+  min-height: 2.25rem;
+  padding: 0.375rem 0.875rem;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  font-family: var(--font-sans);
+  color: var(--color-danger-text);
+  background-color: var(--color-danger-light);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.buttonDanger:hover:not(:disabled) {
+  background-color: #fee2e2;
+}
+
+/* Grilla de tarjetas de estrategias de dominios */
+.domainsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(250px, 22vw, 300px), 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+.strategyCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background-color: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.875rem;
+}
+
+.strategyCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.strategyName {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.strategyMeta {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.candidatesList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.candidateItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+}
+
+.candidateHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.candidateDomain {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--color-primary-text);
+  word-break: break-all;
+}
+
+.candidateDetail {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.candidateActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.candidateButton {
+  padding: 0.25rem 0.5rem;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--color-primary-text);
+  background-color: var(--color-primary-light);
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.candidateButton:hover {
+  background-color: #dbeafe;
+}
+
+/* Grilla de mosaicos de íconos */
+.iconsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(200px, 18vw, 240px), 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+.iconTile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  background-color: var(--bg-inset);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 0.875rem;
+}
+
+.iconPreviewBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: clamp(80px, 10vw, 110px);
+  background-color: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.iconImage {
+  max-width: 80%;
+  max-height: 80%;
+  object-fit: contain;
+}
+
+.tileHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tileStrategyName {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.badgeSmall {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--color-warning-text);
+  background-color: var(--color-warning-light);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-xs);
+  padding: 0.125rem 0.375rem;
+}
+
+.tileMetrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.tileMetricRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.colorSwatchWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.colorSwatch {
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-card);
+  display: inline-block;
+}
+
+.tileDetails {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-top: 0.25rem;
+}
+
+.tileDetailsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.375rem;
+  padding-left: 0.75rem;
+}
+
+.tileDetailsItem {
+  word-break: break-all;
+}
+
+/* Tabla de Batería de Pruebas */
+.matrixWrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-card);
+}
+
+.matrixTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-xs);
+}
+
+.matrixTable th,
+.matrixTable td {
+  padding: 0.5rem 0.625rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
+}
+
+.matrixTable th {
+  background-color: var(--bg-inset);
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.matrixTable th:first-child,
+.matrixTable td:first-child {
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.matrixCellThumb {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.emptyText {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  text-align: center;
+  padding: 1.5rem 0;
+}
