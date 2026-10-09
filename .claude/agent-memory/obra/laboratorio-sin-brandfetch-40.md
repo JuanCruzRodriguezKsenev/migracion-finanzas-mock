@@ -8,12 +8,12 @@ metadata:
 # Plan 40: Laboratorio sin Brandfetch y batería de nombre a ícono
 
 ## Resumen de ejecución
-- **Alcance cumplido:** Retiro total de Brandfetch en sandbox y resolutor de identidad; implementación de `extraerNombreSitio` en `analisisHtml.ts`; estrategia `verificados` (candidatos + DNS + HTML title); colección `consultas.ts` (22 consultas); helpers puros en `bateriaVista.ts`; subcomponentes `CeldaIdentidad.tsx`, `CeldaFuente.tsx`, `MatrizDominios.tsx` y `MatrizNombres.tsx`; adaptación de `LaboratorioMarcas.tsx` (575 líneas); 12 tests nuevos en `LaboratorioMarcas.test.tsx`; 12 mutaciones comprobadas; batería completa verde (981 tests).
+- **Alcance cumplido:** Retiro total de Brandfetch en sandbox y resolutor de identidad; implementación de `extraerNombreSitio` en `analisisHtml.ts`; estrategia `verificados` (candidatos + DNS + HTML title); colección `consultas.ts` (22 consultas); helpers puros en `bateriaVista.ts`; subcomponentes `CeldaIdentidad.tsx`, `CeldaFuente.tsx`, `MatrizDominios.tsx` y `MatrizNombres.tsx`; adaptación de `LaboratorioMarcas.tsx`; 12 tests nuevos en `LaboratorioMarcas.test.tsx`; 12 mutaciones comprobadas; batería completa verde (1530 tests).
 
 ## Lecciones aprendidas para futuros planes y para `tanda`
 
 1. **Extracción modular del laboratorio UI:**
-   - La partición de `LaboratorioMarcas.tsx` en `MatrizDominios`, `MatrizNombres`, `CeldaIdentidad` y `CeldaFuente` permitió reducir el componente principal a 575 líneas (el plan exigía < 650).
+   - La partición de `LaboratorioMarcas.tsx` en `MatrizDominios`, `MatrizNombres`, `CeldaIdentidad` y `CeldaFuente` permitió modularizar el componente principal.
    - Compartir los estilos de `LaboratorioMarcas.module.css` entre los subcomponentes mediante props `styles` evitó duplicar definiciones o crear archivos CSS fragmentados.
 
 2. **Caché en batería de nombres:**
@@ -27,3 +27,6 @@ metadata:
 
 5. **Mutaciones seguras sin git checkout:**
    - Para verificar mutaciones destructivas en código que aún no fue commiteado, hacer copia previa a `.bak` y restaurar con `cp archivo.bak archivo` evita el riesgo de que un `git checkout` revierta el archivo al commit base perdiendo el trabajo de la tanda.
+
+6. **Conservación de tipos de fuentes en el mismo archivo:**
+   - Al podar código de una estrategia eliminada (`brandfetch-search`), tener cuidado de no borrar interfaces privadas adyacentes (`EntidadWikidataRaw`, `DetalleWikidataRaw`) usadas por otras estrategias del mismo módulo.
