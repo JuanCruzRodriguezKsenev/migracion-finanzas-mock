@@ -28,6 +28,29 @@ export interface ContextoEstrategiaDominio {
   } ;
 }
 
+interface EntidadWikidataRaw {
+  id?:          string ;
+  label?:       string ;
+  description?: string ;
+}
+
+interface ClaimItemRaw {
+  mainsnak?: {
+    datavalue?: {
+      value?: string ;
+    } ;
+  } ;
+}
+
+interface DetalleWikidataRaw {
+  entities?: Record< string , {
+    claims?: {
+      P856?: ClaimItemRaw[] ;
+      P154?: ClaimItemRaw[] ;
+    } ;
+  } > ;
+}
+
 /**
  * Genera candidatos especulativos de dominios aplicando 5 reglas heurísticas basadas en la consulta y el país.
  * Función pura sin acceso a red.

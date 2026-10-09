@@ -8,9 +8,6 @@ import { describe , it , expect } from "vitest" ;
 
 // Feature: Sandbox
 import {
-  generarCandidatosVerificables
-} from "../services/marcas/estrategiasDominio" ;
-import {
   columnaDeOrigen ,
   posicionEsperado ,
   primerCandidato ,

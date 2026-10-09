@@ -600,9 +600,9 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
                             {cand.nombre}
                           </span>
                         )}
-                        {cand.descripcion && (
+                        {cand.detalle && (
                           <span className={styles.candidateDetail}>
-                            {cand.descripcion}
+                            {cand.detalle}
                           </span>
                         )}
                       </li>
