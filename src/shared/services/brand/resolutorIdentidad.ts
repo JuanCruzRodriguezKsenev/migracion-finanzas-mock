@@ -3,6 +3,9 @@
  * Resolutor centralizado en el servidor para determinar ícono y color de un dominio de marca.
  */
 
+// Librerías externas
+import dns from "dns" ;
+
 // Shared: Brand
 import {
   extraerManifestUrl ,
@@ -37,6 +40,24 @@ export interface IdentidadMarca {
   color:      string | null ;
   intentos:   { fuente: OrigenIcono ; ok: boolean ; motivo?: string }[] ;
   redirigeA?: string ;
+}
+
+/**
+ * Evalúa si un host no resuelve en DNS (no existe o devuelve arreglo vacío).
+ *
+ * fetchSeguro no distingue «sin DNS» de «IP privada» (ambos emiten «host privado o no resoluble»).
+ * Esta consulta sólo se realiza tras un fallo inicial para decidir si reintentar con www.
+ *
+ * @param host - Host a consultar en DNS.
+ * @returns true si dns.promises.lookup lanza error o devuelve un arreglo vacío.
+ */
+async function dominioNoResuelve( host: string ): Promise< boolean > {
+  try {
+    const direcciones = await dns.promises.lookup( host , { all: true } ) ;
+    return( !direcciones || (direcciones.length === 0) ) ;
+  } catch {
+    return( true ) ;
+  }
 }
 
 /**
@@ -153,26 +174,26 @@ export async function resolverIdentidad(
     const motivo = (resHtml.status > 0) ? `http ${resHtml.status}` : (resHtml.estado || "error de red") ;
     intentos.push( { fuente: "sitio" , ok: false , motivo } ) ;
 
-    if( resHtml.estado === "ip-privada" ) {
-      return( {
-        dominio: domLimpio ,
-        icono:   null ,
-        color:   null ,
-        intentos
-      } ) ;
-    }
+    if( resHtml.estado === "host privado o no resoluble" ) {
+      if( !domLimpio.startsWith( "www." ) && (await dominioNoResuelve( domLimpio )) ) {
+        const urlWww = `https://www.${domLimpio}/` ;
+        const resWww = await fetchSeguro( urlWww , { timeoutMs: 5000 , maxBytes: 256 * 1024 } ) ;
 
-    if( (resHtml.estado === "host privado o no resoluble") && !domLimpio.startsWith( "www." ) ) {
-      const urlWww = `https://www.${domLimpio}/` ;
-      const resWww = await fetchSeguro( urlWww , { timeoutMs: 5000 , maxBytes: 256 * 1024 } ) ;
-
-      if( resWww.ok && resWww.cuerpo ) {
-        resHtml              = resWww ;
-        fueReintentoWww      = true ;
-        consultaSitioExitosa = true ;
+        if( resWww.ok && resWww.cuerpo ) {
+          resHtml              = resWww ;
+          fueReintentoWww      = true ;
+          consultaSitioExitosa = true ;
+        } else {
+          const motivoWww = (resWww.status > 0) ? `http ${resWww.status}` : (resWww.estado || "error de red") ;
+          intentos.push( { fuente: "sitio" , ok: false , motivo: motivoWww } ) ;
+        }
       } else {
-        const motivoWww = (resWww.status > 0) ? `http ${resWww.status}` : (resWww.estado || "error de red") ;
-        intentos.push( { fuente: "sitio" , ok: false , motivo: motivoWww } ) ;
+        return( {
+          dominio: domLimpio ,
+          icono:   null ,
+          color:   null ,
+          intentos
+        } ) ;
       }
     }
   } else {
@@ -316,9 +337,8 @@ export async function resolverIdentidad(
     if( (cid !== "") && (cid !== "brandfetch") ) {
       const urlCdn = `https://cdn.brandfetch.io/${domLimpio}?c=${cid}` ;
       iconoElegido = {
-        origen:    "brandfetch-cdn" ,
-        url:       urlCdn ,
-        fuenteUrl: urlCdn
+        origen: "brandfetch-cdn" ,
+        url:    urlCdn
       } ;
       intentos.push( { fuente: "brandfetch-cdn" , ok: true } ) ;
     } else {

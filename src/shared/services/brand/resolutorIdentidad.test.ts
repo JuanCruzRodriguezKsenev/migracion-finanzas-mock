@@ -219,4 +219,184 @@ describe( "resolutorIdentidad" , () => {
 
     expect( llamadasIconos.length ).toBe( 4 ) ;
   } ) ;
+
+  it( "15. sitio cuyos únicos candidatos son un ICO ilegible y un og:image >64px -> no usa og:image y cae a S2" , async () => {
+    const pngS2 = await crearPng( 128 , 128 , 229 , 9 , 20 ) ;
+
+    fetchMock.mockImplementation( async ( url: string | Request ) => {
+      const u = String( url ) ;
+      if( u === "https://ejemplo.com/" ) {
+        const html = `<html><head>
+          <link rel="icon" href="/favicon.ico">
+          <meta property="og:image" content="https://ejemplo.com/og.png">
+        </head></html>` ;
+        return( new Response( html , { status: 200 , headers: { "content-type": "text/html" } } ) ) ;
+      }
+      if( u === "https://ejemplo.com/favicon.ico" ) {
+        return( new Response( Buffer.from( "no-ico-invalido" ) , {
+          status:  200 ,
+          headers: { "content-type": "image/x-icon" }
+        } ) ) ;
+      }
+      if( u.includes( "google.com/s2/favicons" ) ) {
+        return( respuestaImagen( pngS2 ) ) ;
+      }
+      return( new Response( "" , { status: 404 } ) ) ;
+    } ) ;
+
+    const res = await resolverIdentidad( "ejemplo.com" ) ;
+    expect( res.icono?.origen ).toBe( "google-s2" ) ;
+
+    const llamadas = fetchMock.mock.calls.map( ( [ u ] ) => String( u ) ) ;
+    expect( llamadas.some( ( u ) => u.includes( "og.png" ) ) ).toBe( false ) ;
+  } ) ;
+
+  it( "16. edesur-like.com.ar: apex sin DNS y www con DNS -> reintento con www y origen sitio" , async () => {
+    const png192 = await crearPng( 192 , 192 , 0 , 150 , 255 ) ;
+
+    ( vi.spyOn( dns.promises , "lookup" ) as unknown as { mockImplementation: ( fn: ( host: string ) => Promise< unknown > ) => void } ).mockImplementation(
+      async ( host ) => {
+        if( host === "edesur-like.com.ar" ) {
+          const err = new Error( "getaddrinfo ENOTFOUND edesur-like.com.ar" ) as NodeJS.ErrnoException ;
+          err.code = "ENOTFOUND" ;
+          throw err ;
+        }
+        return( [ { address: "93.184.216.34" , family: 4 } ] ) ;
+      }
+    ) ;
+
+    fetchMock.mockImplementation( async ( url: string | Request ) => {
+      const u = String( url ) ;
+      if( u === "https://www.edesur-like.com.ar/" ) {
+        const html = `<html><head><link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png"></head></html>` ;
+        return( new Response( html , { status: 200 , headers: { "content-type": "text/html" } } ) ) ;
+      }
+      if( u === "https://www.edesur-like.com.ar/icon-192.png" ) {
+        return( respuestaImagen( png192 ) ) ;
+      }
+      return( new Response( "" , { status: 404 } ) ) ;
+    } ) ;
+
+    const res = await resolverIdentidad( "edesur-like.com.ar" ) ;
+    expect( res.icono?.origen ).toBe( "sitio" ) ;
+    expect( res.intentos ).toHaveLength( 2 ) ;
+    expect( res.intentos[0] ).toEqual( { fuente: "sitio" , ok: false , motivo: "host privado o no resoluble" } ) ;
+    expect( res.intentos[1] ).toEqual( { fuente: "sitio" , ok: true , motivo: "reintento con www" } ) ;
+  } ) ;
+
+  it( "17. apex sin DNS y www sin DNS -> reintento fallido no corta y cae a Google S2" , async () => {
+    const pngS2 = await crearPng( 128 , 128 , 100 , 200 , 50 ) ;
+
+    ( vi.spyOn( dns.promises , "lookup" ) as unknown as { mockImplementation: ( fn: ( host: string ) => Promise< unknown > ) => void } ).mockImplementation(
+      async ( host ) => {
+        if( (host === "sin-dns.test") || (host === "www.sin-dns.test") ) {
+          const err = new Error( "getaddrinfo ENOTFOUND" ) as NodeJS.ErrnoException ;
+          err.code = "ENOTFOUND" ;
+          throw err ;
+        }
+        return( [ { address: "93.184.216.34" , family: 4 } ] ) ;
+      }
+    ) ;
+
+    fetchMock.mockImplementation( async ( url: string | Request ) => {
+      const u = String( url ) ;
+      if( u.includes( "google.com/s2/favicons" ) ) {
+        return( respuestaImagen( pngS2 ) ) ;
+      }
+      return( new Response( "" , { status: 404 } ) ) ;
+    } ) ;
+
+    const res = await resolverIdentidad( "sin-dns.test" ) ;
+    expect( res.icono?.origen ).toBe( "google-s2" ) ;
+    expect( res.intentos ).toHaveLength( 3 ) ;
+    expect( res.intentos[0] ).toEqual( { fuente: "sitio" , ok: false , motivo: "host privado o no resoluble" } ) ;
+    expect( res.intentos[1] ).toEqual( { fuente: "sitio" , ok: false , motivo: "host privado o no resoluble" } ) ;
+    expect( res.intentos[2] ).toEqual( { fuente: "google-s2" , ok: true } ) ;
+  } ) ;
+
+  it( "18. privado.test resuelve a IP privada -> icono null, sin fetch a www ni S2 y lookup nunca recibe www" , async () => {
+    const res = await resolverIdentidad( "privado.test" ) ;
+    expect( res.icono ).toBeNull() ;
+    expect( res.color ).toBeNull() ;
+    expect( fetchMock ).not.toHaveBeenCalled() ;
+
+    const llamadasLookup = (dns.promises.lookup as unknown as ReturnType< typeof vi.fn >).mock.calls.map( ( [ host ] ) => host ) ;
+    expect( llamadasLookup ).not.toContain( "www.privado.test" ) ;
+  } ) ;
+
+  it( "19. dimensiones originales, fuenteUrl y deteccion de redireccion" , async () => {
+    const png180 = await crearPng( 180 , 180 , 10 , 20 , 30 ) ;
+    const pngS2  = await crearPng( 128 , 128 , 40 , 50 , 60 ) ;
+
+    // Sub-caso A: PNG de 180 px en sitio -> origenAncho/Alto: 180, ancho: 128, fuenteUrl y sin redirigeA
+    fetchMock.mockImplementation( async ( url: string | Request ) => {
+      const u = String( url ) ;
+      if( u === "https://sitio-a.com/" ) {
+        return( new Response( `<html><head><link rel="icon" href="/icon.png"></head></html>` , { status: 200 , headers: { "content-type": "text/html" } } ) ) ;
+      }
+      if( u === "https://sitio-a.com/icon.png" ) {
+        return( respuestaImagen( png180 ) ) ;
+      }
+      return( new Response( "" , { status: 404 } ) ) ;
+    } ) ;
+
+    const resSitio = await resolverIdentidad( "sitio-a.com" ) ;
+    expect( resSitio.icono?.origenAncho ).toBe( 180 ) ;
+    expect( resSitio.icono?.origenAlto ).toBe( 180 ) ;
+    expect( resSitio.icono?.ancho ).toBe( 128 ) ;
+    expect( resSitio.icono?.fuenteUrl ).toBe( "https://sitio-a.com/icon.png" ) ;
+    expect( resSitio.redirigeA ).toBeUndefined() ;
+
+    // Sub-caso B: Google S2 -> fuenteUrl contiene google.com/s2/favicons
+    fetchMock.mockImplementation( async ( url: string | Request ) => {
+      const u = String( url ) ;
+      if( u === "https://sitio-b.com/" ) {
+        return( new Response( "<html><head></head></html>" , { status: 200 , headers: { "content-type": "text/html" } } ) ) ;
+      }
+      if( u.includes( "google.com/s2/favicons" ) ) {
+        return( respuestaImagen( pngS2 ) ) ;
+      }
+      return( new Response( "" , { status: 404 } ) ) ;
+    } ) ;
+
+    const resS2 = await resolverIdentidad( "sitio-b.com" ) ;
+    expect( resS2.icono?.origen ).toBe( "google-s2" ) ;
+    expect( resS2.icono?.fuenteUrl ).toContain( "google.com/s2/favicons" ) ;
+
+    // Sub-caso C: Redirección cruzada a.com -> https://www.b.com/ -> redirigeA: "b.com"
+    fetchMock.mockImplementation( async ( url: string | Request ) => {
+      const u = String( url ) ;
+      if( u === "https://a.com/" ) {
+        return( new Response( "" , { status: 301 , headers: { location: "https://www.b.com/" } } ) ) ;
+      }
+      if( u === "https://www.b.com/" ) {
+        return( new Response( `<html><head><link rel="icon" href="/icon.png"></head></html>` , { status: 200 , headers: { "content-type": "text/html" } } ) ) ;
+      }
+      if( u === "https://www.b.com/icon.png" ) {
+        return( respuestaImagen( png180 ) ) ;
+      }
+      return( new Response( "" , { status: 404 } ) ) ;
+    } ) ;
+
+    const resRedir = await resolverIdentidad( "a.com" ) ;
+    expect( resRedir.redirigeA ).toBe( "b.com" ) ;
+
+    // Sub-caso D: Redirección propia propio.com -> www.propio.com -> no llena redirigeA
+    fetchMock.mockImplementation( async ( url: string | Request ) => {
+      const u = String( url ) ;
+      if( u === "https://propio.com/" ) {
+        return( new Response( "" , { status: 301 , headers: { location: "https://www.propio.com/" } } ) ) ;
+      }
+      if( u === "https://www.propio.com/" ) {
+        return( new Response( `<html><head><link rel="icon" href="/icon.png"></head></html>` , { status: 200 , headers: { "content-type": "text/html" } } ) ) ;
+      }
+      if( u === "https://www.propio.com/icon.png" ) {
+        return( respuestaImagen( png180 ) ) ;
+      }
+      return( new Response( "" , { status: 404 } ) ) ;
+    } ) ;
+
+    const resMismo = await resolverIdentidad( "propio.com" ) ;
+    expect( resMismo.redirigeA ).toBeUndefined() ;
+  } ) ;
 } ) ;

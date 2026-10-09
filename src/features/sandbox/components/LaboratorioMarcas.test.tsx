@@ -530,4 +530,51 @@ describe( "LaboratorioMarcas" , () => {
     const bn = mod.BATERIA.find( ( m ) => m.nombre === "Banco Nación" ) ;
     expect( bn?.dominio ).toBe( "bna.com.ar" ) ;
   } ) ;
+
+  it( "la fila muestra dimensiones originales, fuenteUrl y redireccion en el title" , async() => {
+    vi.useFakeTimers() ;
+
+    global.fetch = vi.fn().mockImplementation( async( url: string ) => {
+      if( url.includes( "fase=iconos" ) ) {
+        return( { ok: true , status: 200 , json: async() => ( { resultados: [] } ) } ) ;
+      }
+      if( url.includes( "/api/brand/identidad" ) ) {
+        return( {
+          ok:     true ,
+          status: 200 ,
+          json:   async() => ( {
+            dominio:   "galicia.ar" ,
+            icono:     {
+              origen:      "sitio" ,
+              url:         "https://galicia.ar/favicon.png" ,
+              origenAncho: 180 ,
+              origenAlto:  180 ,
+              fuenteUrl:   "https://x.test/i.png"
+            } ,
+            color:     "#ff5500" ,
+            intentos:  [ { fuente: "sitio" , ok: true } ] ,
+            redirigeA: "personal.com.ar"
+          } )
+        } ) ;
+      }
+      return( { ok: false , status: 404 } ) ;
+    } ) ;
+
+    render( <LaboratorioMarcas dict={dict} lang="es" /> ) ;
+    fireEvent.click( screen.getByText( dict.sandboxPage.brandsBattery ) ) ;
+
+    await act( async() => {
+      await vi.runAllTimersAsync() ;
+    } ) ;
+
+    const colorHexEl = screen.getAllByText( "#ff5500" )[0] ;
+    const cellEl     = colorHexEl.closest( `.${styles.resolverCellContent}` ) ;
+    const titleText  = cellEl?.getAttribute( "title" ) || "" ;
+
+    expect( titleText ).toContain( "180×180" ) ;
+    expect( titleText ).toContain( "https://x.test/i.png" ) ;
+    expect( titleText ).toContain( "→ personal.com.ar" ) ;
+
+    vi.useRealTimers() ;
+  } ) ;
 } ) ;

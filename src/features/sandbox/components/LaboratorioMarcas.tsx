@@ -25,10 +25,20 @@ interface LaboratorioMarcasProps {
 }
 
 interface IdentidadMarcaLab {
-  dominio:  string ;
-  icono:    { origen: string ; dataUri?: string ; url?: string ; ancho?: number ; alto?: number } | null ;
-  color:    string | null ;
-  intentos: { fuente: string ; ok: boolean ; motivo?: string }[] ;
+  dominio:    string ;
+  icono:      {
+    origen:       string ;
+    dataUri?:     string ;
+    url?:         string ;
+    ancho?:       number ;
+    alto?:        number ;
+    origenAncho?: number ;
+    origenAlto?:  number ;
+    fuenteUrl?:   string ;
+  } | null ;
+  color:      string | null ;
+  intentos:   { fuente: string ; ok: boolean ; motivo?: string }[] ;
+  redirigeA?: string ;
 }
 
 interface FilaBateria {
@@ -56,9 +66,22 @@ function CeldaIdentidad( { identidad }: CeldaIdentidadProps ) {
     ) ;
   }
 
-  const titleText = identidad.intentos
-    ? identidad.intentos.map( ( it ) => `${it.fuente}: ${it.ok ? "ok" : "falló"}${it.motivo ? ` (${it.motivo})` : ""}` ).join( "\n" )
-    : "" ;
+  const partesTitle: string[] = [] ;
+  if( identidad.intentos && (identidad.intentos.length > 0) ) {
+    partesTitle.push(
+      identidad.intentos.map( ( it ) => `${it.fuente}: ${it.ok ? "ok" : "falló"}${it.motivo ? ` (${it.motivo})` : ""}` ).join( "\n" )
+    ) ;
+  }
+  if( identidad.icono?.origenAncho && identidad.icono?.origenAlto ) {
+    partesTitle.push( `${identidad.icono.origenAncho}×${identidad.icono.origenAlto}` ) ;
+  }
+  if( identidad.icono?.fuenteUrl ) {
+    partesTitle.push( identidad.icono.fuenteUrl ) ;
+  }
+  if( identidad.redirigeA ) {
+    partesTitle.push( `→ ${identidad.redirigeA}` ) ;
+  }
+  const titleText = partesTitle.join( "\n" ) ;
 
   const imgSrc = identidad.icono?.dataUri || identidad.icono?.url ;
 
