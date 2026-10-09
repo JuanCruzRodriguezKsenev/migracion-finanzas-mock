@@ -38,3 +38,4 @@
 - [`suscripciones-busqueda-34.md`](suscripciones-busqueda-34.md): Plan 34 conexión de AddSubscriptionModal a buscarMarcas compartida, blindaje de directMatch sin domain, tests 15 y 16 y 5 mutaciones comprobadas.
 - [`marcas-laboratorio-36.md`](marcas-laboratorio-36.md): Plan 36 laboratorio de marcas: anti-SSRF, HTML puro con regex, sobrecargas de dns.promises.lookup en Vitest/TS, ubicación de tests de API route.
 - [`resolutor-marcas-37.md`](resolutor-marcas-37.md): Plan 37 resolutor de marcas en servidor: cascada de íconos, normalización PNG con sharp y parseo ICO, color dominante determinista, mock de next-auth y tipados de lookup.
+- [`laboratorio-identidad-38.md`](laboratorio-identidad-38.md): Plan 38 resolutor en la batería: fake timers y afterEach, mutaciones con respaldo, vi.importActual para fixtures y sanitización de dataUri.
