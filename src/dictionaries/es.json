@@ -431,7 +431,11 @@
     "brandsSmall": "chico",
     "brandsLoaded": "cargó",
     "brandsNotLoaded": "no cargó",
-    "brandsNoResults": "Sin resultados"
+    "brandsNoResults": "Sin resultados",
+    "brandsResolverCol": "Resolutor",
+    "brandsResolverRun": "Resolver identidad",
+    "brandsResolverSummary": "Resumen del resolutor",
+    "brandsResolverNoColor": "sin color"
   },
   "settingsPage": {
     "title": "Configuración",

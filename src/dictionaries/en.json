@@ -431,7 +431,11 @@
     "brandsSmall": "small",
     "brandsLoaded": "loaded",
     "brandsNotLoaded": "failed to load",
-    "brandsNoResults": "No results"
+    "brandsNoResults": "No results",
+    "brandsResolverCol": "Resolver",
+    "brandsResolverRun": "Resolve identity",
+    "brandsResolverSummary": "Resolver summary",
+    "brandsResolverNoColor": "no color"
   },
   "settingsPage": {
     "title": "Settings",

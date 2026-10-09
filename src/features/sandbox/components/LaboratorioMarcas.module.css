@@ -324,11 +324,12 @@
 }
 
 .colorSwatch {
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 1rem;
+  height: 1rem;
   border-radius: var(--radius-xs);
-  border: 1px solid var(--border-card);
+  border: 1px solid var(--border-subtle);
   display: inline-block;
+  flex-shrink: 0;
 }
 
 .tileDetails {
@@ -399,3 +400,53 @@
   text-align: center;
   padding: 1.5rem 0;
 }
+
+.resolverCell {
+  border-left: 2px solid var(--color-primary-light);
+  border-right: 2px solid var(--color-primary-light);
+  background-color: var(--bg-card);
+}
+
+.resolverCellContent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.colorHex {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--fs-xs);
+  color: var(--text-main);
+}
+
+.resolverOrigin {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.resolverSummary {
+  font-size: var(--fs-xs);
+  color: var(--text-main);
+  padding: 0.5rem 0.75rem;
+  background-color: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.individualResolverRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  background-color: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-xs);
+}
+

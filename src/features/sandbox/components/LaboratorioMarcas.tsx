@@ -14,8 +14,7 @@ import { EmptyState }         from "@/shared/ui/feedback/EmptyState/EmptyState" 
 // Feature: Sandbox
 import type {
   ResultadoDominios ,
-  ResultadoIcono ,
-  CandidatoDominio
+  ResultadoIcono
 } from "../services/marcas/tipos" ;
 import styles      from "./LaboratorioMarcas.module.css" ;
 import { BATERIA } from "./bateria" ;
@@ -25,70 +24,70 @@ interface LaboratorioMarcasProps {
   lang: string ;
 }
 
+interface IdentidadMarcaLab {
+  dominio:  string ;
+  icono:    { origen: string ; dataUri?: string ; url?: string ; ancho?: number ; alto?: number } | null ;
+  color:    string | null ;
+  intentos: { fuente: string ; ok: boolean ; motivo?: string }[] ;
+}
+
 interface FilaBateria {
-  nombre:     string ;
-  dominio:    string ;
-  resultados: ResultadoIcono[] ;
+  nombre:       string ;
+  dominio:      string ;
+  resultados:   ResultadoIcono[] ;
+  identidad?:   IdentidadMarcaLab | null ;
+  msIdentidad?: number ;
+}
+
+interface CeldaIdentidadProps {
+  identidad?: IdentidadMarcaLab | null ;
 }
 
 /**
- * Selecciona el dominio más votado entre las estrategias de dominio.
- * En caso de empate, prioriza el primero de wikidata y luego brandfetch-search.
+ * Celda que muestra el resultado de identidad: ícono, muestra de color, hex y fuente.
  */
-function resolverDominioPreferido( resultados: ResultadoDominios[] ): CandidatoDominio | null {
-  const conteo: Record< string , number > = {} ;
-  const candidatosPorDominio: Record< string , CandidatoDominio > = {} ;
-
-  for( const res of resultados ) {
-    for( const cand of res.candidatos ) {
-      const d = cand.dominio.toLowerCase() ;
-      conteo[d] = ( conteo[d] || 0 ) + 1 ;
-      if( !candidatosPorDominio[d] ) {
-        candidatosPorDominio[d] = cand ;
-      } else {
-        // Enriquecer datos con archivoLogo o icono si faltaban
-        if( cand.archivoLogo && !candidatosPorDominio[d].archivoLogo ) {
-          candidatosPorDominio[d].archivoLogo = cand.archivoLogo ;
-        }
-        if( cand.iconoBrandfetch && !candidatosPorDominio[d].iconoBrandfetch ) {
-          candidatosPorDominio[d].iconoBrandfetch = cand.iconoBrandfetch ;
-        }
-      }
-    }
+function CeldaIdentidad( { identidad }: CeldaIdentidadProps ) {
+  if( !identidad ) {
+    return(
+      <div className={styles.resolverCellContent}>
+        <span>✗</span>
+        <span className={styles.resolverOrigin}>—</span>
+      </div>
+    ) ;
   }
 
-  const entradas = Object.entries( conteo ) ;
-  if( entradas.length === 0 ) return( null ) ;
+  const titleText = identidad.intentos
+    ? identidad.intentos.map( ( it ) => `${it.fuente}: ${it.ok ? "ok" : "falló"}${it.motivo ? ` (${it.motivo})` : ""}` ).join( "\n" )
+    : "" ;
 
-  entradas.sort( ( a , b ) => b[1] - a[1] ) ;
-  const maxVotos = entradas[0][1] ;
-  const empatados = entradas.filter( ( e ) => e[1] === maxVotos ).map( ( e ) => e[0] ) ;
+  const imgSrc = identidad.icono?.dataUri || identidad.icono?.url ;
 
-  if( empatados.length === 1 ) {
-    return( candidatosPorDominio[empatados[0]] ) ;
-  }
-
-  // Desempate 1: wikidata
-  const wikiRes = resultados.find( ( r ) => r.estrategia === "wikidata" ) ;
-  if( wikiRes ) {
-    for( const c of wikiRes.candidatos ) {
-      if( empatados.includes( c.dominio.toLowerCase() ) ) {
-        return( candidatosPorDominio[c.dominio.toLowerCase()] ) ;
-      }
-    }
-  }
-
-  // Desempate 2: brandfetch-search
-  const bfRes = resultados.find( ( r ) => r.estrategia === "brandfetch-search" ) ;
-  if( bfRes ) {
-    for( const c of bfRes.candidatos ) {
-      if( empatados.includes( c.dominio.toLowerCase() ) ) {
-        return( candidatosPorDominio[c.dominio.toLowerCase()] ) ;
-      }
-    }
-  }
-
-  return( candidatosPorDominio[empatados[0]] ) ;
+  return(
+    <div className={styles.resolverCellContent} title={titleText}>
+      {imgSrc ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={imgSrc}
+          alt={identidad.icono?.origen || "resolutor"}
+          className={styles.matrixCellThumb}
+        />
+      ) : (
+        <span>✗</span>
+      )}
+      {identidad.color && (
+        <span
+          className={styles.colorSwatch}
+          style={{ backgroundColor: identidad.color }}
+        />
+      )}
+      {identidad.color && (
+        <span className={styles.colorHex}>{identidad.color}</span>
+      )}
+      <span className={styles.resolverOrigin}>
+        {identidad.icono?.origen || "—"}
+      </span>
+    </div>
+  ) ;
 }
 
 /**
@@ -104,7 +103,9 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
   const [ cargandoIconos , setCargandoIconos ]       = useState( false ) ;
   const [ resultadosDominios , setResultadosDom ]   = useState< ResultadoDominios[] >( [] ) ;
   const [ resultadosIconos , setResultadosIconos ]   = useState< ResultadoIcono[] >( [] ) ;
-  const [ dominioActual , setDominioActual ]         = useState( "" ) ;
+  const [ dominioActual , setDominioActual ]                 = useState( "" ) ;
+  const [ identidadIndividual , setIdentidadIndividual ]     = useState< IdentidadMarcaLab | null | undefined >( undefined ) ;
+  const [ cargandoIdentidad , setCargandoIdentidad ]         = useState( false ) ;
 
   // Dimensiones leídas de imágenes
   const [ dimensionesImg , setDimensionesImg ]       = useState< Record< string , { w: number ; h: number } > >( {} ) ;
@@ -190,6 +191,28 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
     }
   } ;
 
+  const resolverIdentidadIndividual = async( dominioObjetivo?: string ) => {
+    const d = ( dominioObjetivo || dominioActual || dominioManual ).trim() ;
+    if( !d ) return ;
+
+    setCargandoIdentidad( true ) ;
+    setDominioActual( d ) ;
+
+    try {
+      const res = await fetch( `/api/brand/identidad?domain=${encodeURIComponent( d )}` ) ;
+      if( res.ok ) {
+        const data = await res.json() ;
+        setIdentidadIndividual( data ) ;
+      } else {
+        setIdentidadIndividual( null ) ;
+      }
+    } catch {
+      setIdentidadIndividual( null ) ;
+    } finally {
+      setCargandoIdentidad( false ) ;
+    }
+  } ;
+
   const ejecutarBateria = async() => {
     setCorriendoBateria( true ) ;
     cancelacionBateriaRef.current = false ;
@@ -197,42 +220,54 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
 
     for( let i = 0 ; i < BATERIA.length ; i++ ) {
       if( cancelacionBateriaRef.current ) break ;
-      const nombreMarca = BATERIA[i] ;
-      setProgresoBateria( `${i + 1}/${BATERIA.length}: ${nombreMarca}` ) ;
+      const marca = BATERIA[i] ;
+      setProgresoBateria( `${i + 1}/${BATERIA.length}: ${marca.nombre}` ) ;
 
       try {
-        const resDom = await fetch( `/api/sandbox/marcas?fase=dominios&q=${encodeURIComponent( nombreMarca )}` ) ;
-        if( resDom.status === 404 ) {
-          setDisabledServer( true ) ;
-          break ;
-        }
-        if( !resDom.ok ) continue ;
-        const dataDom = await resDom.json() ;
-        const dominiosRes: ResultadoDominios[] = dataDom.resultados || [] ;
-        const mejor = resolverDominioPreferido( dominiosRes ) ;
+        const params = new URLSearchParams( {
+          fase:    "iconos" ,
+          dominio: marca.dominio ,
+          nombre:  marca.nombre
+        } ) ;
 
-        if( mejor ) {
-          const params = new URLSearchParams( {
-            fase:    "iconos" ,
-            dominio: mejor.dominio
-          } ) ;
-          if( mejor.nombre ) params.set( "nombre" , mejor.nombre ) ;
-          if( mejor.archivoLogo ) params.set( "archivoLogo" , mejor.archivoLogo ) ;
-          if( mejor.iconoBrandfetch ) params.set( "iconoBf" , mejor.iconoBrandfetch ) ;
-
-          const resIcons = await fetch( `/api/sandbox/marcas?${params.toString()}` ) ;
-          if( resIcons.ok ) {
-            const dataIcons = await resIcons.json() ;
-            setMatrizBateria( ( prev ) => [
-              ...prev ,
-              {
-                nombre:     nombreMarca ,
-                dominio:    mejor.dominio ,
-                resultados: dataIcons.resultados || []
-              }
-            ] ) ;
+        const resIcons = await fetch( `/api/sandbox/marcas?${params.toString()}` ) ;
+        if( resIcons.status === 404 ) {
+          const body = await resIcons.json().catch( () => ( {} ) ) ;
+          if( body.error === "disabled" ) {
+            setDisabledServer( true ) ;
+            break ;
           }
         }
+
+        const dataIcons = resIcons.ok ? await resIcons.json() : { resultados: [] } ;
+        const resultadosIconos: ResultadoIcono[] = dataIcons.resultados || [] ;
+
+        let identidadRes: IdentidadMarcaLab | null = null ;
+        let msIdentidad: number | undefined ;
+
+        try {
+          const tInicio = performance.now() ;
+          const resId = await fetch( `/api/brand/identidad?domain=${encodeURIComponent( marca.dominio )}` ) ;
+          msIdentidad = Math.round( performance.now() - tInicio ) ;
+          if( resId.ok ) {
+            identidadRes = await resId.json() ;
+          } else {
+            identidadRes = null ;
+          }
+        } catch {
+          identidadRes = null ;
+        }
+
+        setMatrizBateria( ( prev ) => [
+          ...prev ,
+          {
+            nombre:      marca.nombre ,
+            dominio:     marca.dominio ,
+            resultados:  resultadosIconos ,
+            identidad:   identidadRes ,
+            msIdentidad: msIdentidad
+          }
+        ] ) ;
       } catch {
         // Continuar siguiente en lote
       }
@@ -252,23 +287,37 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
     setProgresoBateria( "" ) ;
   } ;
 
+  const limpiarIdentidadParaCopia = ( id?: IdentidadMarcaLab | null ) => {
+    if( !id ) return( id ) ;
+    const copia = { ...id } ;
+    if( copia.icono ) {
+      const copiaIcono = { ...copia.icono } ;
+      delete copiaIcono.dataUri ;
+      copia.icono = copiaIcono ;
+    }
+    return( copia ) ;
+  } ;
+
   const copiarResultados = async() => {
     // Generar JSON limpio sin dataUri para no exceder portapapeles
     const payload = {
       busquedaActual: {
         query ,
         dominioActual ,
-        dominios: resultadosDominios ,
-        iconos:   resultadosIconos.map( ( r ) => {
+        dominios:  resultadosDominios ,
+        iconos:    resultadosIconos.map( ( r ) => {
           const copia = { ...r } ;
           delete copia.dataUri ;
           return( copia ) ;
-        } )
+        } ) ,
+        identidad: limpiarIdentidadParaCopia( identidadIndividual )
       } ,
       bateria: matrizBateria.map( ( f ) => ( {
-        nombre:     f.nombre ,
-        dominio:    f.dominio ,
-        resultados: f.resultados.map( ( r ) => {
+        nombre:      f.nombre ,
+        dominio:     f.dominio ,
+        identidad:   limpiarIdentidadParaCopia( f.identidad ) ,
+        msIdentidad: f.msIdentidad ,
+        resultados:  f.resultados.map( ( r ) => {
           const copia = { ...r } ;
           delete copia.dataUri ;
           return( copia ) ;
@@ -331,6 +380,14 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
                 onClick={ () => probarIconos( { dominio: dominioManual } ) }
               >
                 {sandboxDict.brandsTryIcons}
+              </button>
+              <button
+                type="button"
+                className={styles.buttonSecondary}
+                disabled={cargandoIdentidad || !(dominioManual.trim() || dominioActual)}
+                onClick={ () => resolverIdentidadIndividual( dominioManual.trim() || dominioActual ) }
+              >
+                {sandboxDict.brandsResolverRun}
               </button>
             </div>
           </div>
@@ -423,6 +480,13 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
             {sandboxDict.brandsIconsTitle} {dominioActual ? `(${dominioActual})` : ""}
           </h3>
         </div>
+
+        {identidadIndividual !== undefined && (
+          <div className={styles.individualResolverRow}>
+            <strong>{sandboxDict.brandsResolverCol}:</strong>
+            <CeldaIdentidad identidad={identidadIndividual} />
+          </div>
+        )}
 
         {resultadosIconos.length > 0 ? (
           <div className={styles.iconsGrid}>
@@ -561,6 +625,7 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
               <thead>
                 <tr>
                   <th>Marca / Dominio</th>
+                  <th>{sandboxDict.brandsResolverCol}</th>
                   <th>Sitio</th>
                   <th>Wikidata</th>
                   <th>Google S2</th>
@@ -585,12 +650,19 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
                     "brandfetch-search-icon"
                   ] ;
 
+                  const titleIntentos = fila.identidad?.intentos
+                    ? fila.identidad.intentos.map( ( it ) => `${it.fuente}: ${it.ok ? "ok" : "falló"}${it.motivo ? ` (${it.motivo})` : ""}` ).join( "\n" )
+                    : "" ;
+
                   return(
                     <tr key={fIdx}>
                       <td>
                         <strong>{fila.nombre}</strong>
                         <br />
                         <span className={styles.candidateDetail}>{fila.dominio}</span>
+                      </td>
+                      <td className={styles.resolverCell} title={titleIntentos}>
+                        <CeldaIdentidad identidad={fila.identidad} />
                       </td>
                       {estrategiasOrdenadas.map( ( est ) => {
                         const item = mapa[est] ;
@@ -620,6 +692,42 @@ export function LaboratorioMarcas( { dict }: LaboratorioMarcasProps ) {
               </tbody>
             </table>
           </div>
+
+          {/* Resumen del resolutor */}
+          {(() => {
+            let cantSitio = 0 ;
+            let cantGoogle = 0 ;
+            let cantBrandfetch = 0 ;
+            let cantSinIcono = 0 ;
+            let cantConColor = 0 ;
+
+            for( const f of matrizBateria ) {
+              const origen = f.identidad?.icono?.origen ;
+              if( origen === "sitio" ) {
+                cantSitio++ ;
+              } else if( origen === "google-s2" ) {
+                cantGoogle++ ;
+              } else if( origen === "brandfetch-cdn" ) {
+                cantBrandfetch++ ;
+              } else {
+                cantSinIcono++ ;
+              }
+
+              if( f.identidad?.color ) {
+                cantConColor++ ;
+              }
+            }
+
+            const total = matrizBateria.length ;
+            const textoResumen = `sitio ${cantSitio} · google-s2 ${cantGoogle} · brandfetch-cdn ${cantBrandfetch} · sin ícono ${cantSinIcono} · con color ${cantConColor}/${total}` ;
+
+            return(
+              <div className={styles.resolverSummary}>
+                <strong>{sandboxDict.brandsResolverSummary}:</strong>
+                <span>{textoResumen}</span>
+              </div>
+            ) ;
+          })()}
         </div>
       )}
     </div>
