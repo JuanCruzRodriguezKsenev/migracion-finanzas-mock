@@ -5,6 +5,8 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 
 ## Dónde quedó todo
 
+- [Planes 42-45 escritos: acceso abierto, avisos, «Ya pagué», Habilitaciones](avisos_y_acceso_planes_42_45.md) — worktree `-avisos`, defaults fijados por tanda, SQL en Neon bloqueado (2026-10-09).
+
 - [Plan 40b escrito: afinar verificados y resolutor](marcas_plan_40b_escrito.md) — decisiones color/resolución, qué NO entra, Edesur no reproducible (2026-10-09).
 
 - [Plan 40 verificado: laboratorio sin Brandfetch](marcas_plan_40_cerrado.md) — 1530 tests verdes, estrategia verificados, batería nombre→ícono 22 consultas, pendiente prueba de usuario §7 (2026-10-09).
