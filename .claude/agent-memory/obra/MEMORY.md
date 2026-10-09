@@ -43,3 +43,4 @@
 - [`cierre-resolutor-39b.md`](cierre-resolutor-39b.md): Plan 39b resolutor: distinción DNS vs IP privada con dominioNoResuelve, reintento www acotado, contrato de fuenteUrl sin CDN, y 8 mutaciones verificadas.
 - [`laboratorio-sin-brandfetch-40.md`](laboratorio-sin-brandfetch-40.md): Plan 40: retiro de Brandfetch, estrategia verificados, batería de nombres a ícono, subcomponentes modulares de LaboratorioMarcas y 12 mutaciones verificadas.
 - [`afinar-verificados-resolutor-40b.md`](afinar-verificados-resolutor-40b.md): Plan 40b: afinación de verificados (siglas, venta, fallback www, TLDS_PRODUCTO), umbrales del resolutor (64, 32, 16 con bajaResolucion), color extremo Y y 9 mutaciones comprobadas.
+- [`acceso-abierto-42.md`](acceso-abierto-42.md): Plan 42 acceso abierto con Google sin invitación: espacio Personal por defecto, inventario de tests en auth.test.ts, y trampa de mutación de atomicidad.
