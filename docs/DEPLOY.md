@@ -106,6 +106,22 @@ pg_dump '<cadena directa>' --format=custom --file=finanzia-$(date +%F).dump
 
 Guardar el archivo **fuera del repositorio** y probar una vez que `pg_restore --list` lo lee.
 
+## 7. Actualizar producción
+
+El proyecto está conectado a GitHub (§2): **cada push a `master` despliega automáticamente a producción**.
+
+Para evitar desalinear la aplicación con la base de datos, el orden de actualización es estricto:
+
+1. **Respaldo previo:** crear una rama temporal en Neon como red de seguridad (`neon branches create --name pre-...`).
+2. **Migrar la base antes de pushear:** aplicar las migraciones pendientes con la cadena directa como indica el §1.3 (`DATABASE_URL='<cadena directa>' pnpm db:migrate`).
+3. **Verificar paridad:** comprobar que `select count(*) from drizzle.__drizzle_migrations` coincida con la cantidad de archivos en `ls drizzle/migrations/*.sql | wc -l` (43 hoy).
+4. **Recién después, pushear:** `git push origin master`. El nuevo despliegue en Vercel encontrará las tablas y columnas ya presentes.
+5. **Limpieza:** una vez verificado el despliegue en producción, eliminar la rama temporal de respaldo de Neon.
+
+Notas operativas:
+- Las migraciones del proyecto son aditivas por convención; cualquier cambio de esquema destructivo (drop o rename) exige un plan propio de migración y transición en dos fases.
+- Si se modifica la región de funciones en Vercel (p. ej. `gru1`), el cambio aplica únicamente a los despliegues **nuevos**.
+
 ## Limitaciones conocidas
 
 - `outbox_events` se llena y nadie lo despacha en producción (`pnpm db:outbox` es manual): los eventos quedan `PENDING`.
