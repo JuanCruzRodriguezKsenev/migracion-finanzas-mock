@@ -11,6 +11,7 @@
 import React , { useState , useTransition } from "react" ;
 
 // Shared
+import { nuevaClaveDeEnvio } from "@/shared/lib/claveIdempotencia" ;
 import { FormSelect }     from "@/shared/ui/forms/Form/FormSelect" ;
 import { FormInput }      from "@/shared/ui/forms/Form/FormInput" ;
 import { FormError }      from "@/shared/ui/forms/Form/FormError" ;
@@ -83,6 +84,7 @@ export function CajaPanel( { initialData , dict }: CajaPanelProps ) {
   const [ nota , setNota ]              = useState< string >( "" ) ;
   const [ errorMonto , setErrorMonto ]  = useState< string >( "" ) ;
   const [ errorForm , setErrorForm ]    = useState< string >( "" ) ;
+  const [ claveDeEnvio , setClaveDeEnvio ] = useState( nuevaClaveDeEnvio ) ;
   const [ isPending , startTransition ] = useTransition() ;
 
   const esOwner = ( data.rol === "owner" ) ;
@@ -130,10 +132,11 @@ export function CajaPanel( { initialData , dict }: CajaPanelProps ) {
         currency:      divisa ,
         amountInCents: ( (tipo === "retiro") ? -centavos : centavos ) ,
         ...( (nota.trim() !== "") ? { note: nota.trim() } : {} ) ,
-      } ) ;
+      } , claveDeEnvio ) ;
 
       if( res.success ) {
         setTipo( null ) ;
+        setClaveDeEnvio( nuevaClaveDeEnvio() ) ;
         setError( "" ) ;
         await refrescar() ;
       } else {

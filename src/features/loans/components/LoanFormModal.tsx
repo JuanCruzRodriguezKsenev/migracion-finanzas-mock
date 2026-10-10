@@ -8,6 +8,7 @@
 // Librerías externas
 import React , { useState , useTransition } from "react" ;
 
+import { nuevaClaveDeEnvio } from "@/shared/lib/claveIdempotencia" ;
 // Shared
 import { formatCurrency }   from "@/shared/lib/currencyFormatter" ;
 import type { getDictionary } from "@/shared/lib/dictionary" ;
@@ -62,6 +63,7 @@ export function LoanFormModal( {
   const [ entityId , setEntityId ]                               = useState< string >( financialEntities[ 0 ]?.id || "" ) ;
   const [ contactId , setContactId ]                             = useState< string >( contacts[ 0 ]?.id || "" ) ;
   const [ name , setName ]                                       = useState< string >( "" ) ;
+  const [ claveDeEnvio , setClaveDeEnvio ] = useState( nuevaClaveDeEnvio ) ;
   const [ principalAmount , setPrincipalAmount ]                 = useState< string >( "" ) ;
   const [ currency , setCurrency ]                               = useState< string >( "ARS" ) ;
   const [ rateAnnual , setRateAnnual ]                           = useState< string >( "0" ) ;
@@ -148,8 +150,9 @@ export function LoanFormModal( {
     } ;
 
     startTransition( async () => {
-      const res = await createLoanAction( payload ) ;
+      const res = await createLoanAction( payload , claveDeEnvio ) ;
       if( res.success ) {
+        setClaveDeEnvio( nuevaClaveDeEnvio() ) ;
         onSuccess() ;
       } else {
         setError( res.error ) ;

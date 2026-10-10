@@ -12,7 +12,7 @@ import { crearUsuarioConMembresia } from "@/shared/db/testFixtures" ;
 import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
-import { accounts , categories , ledgerEntries } from "@/features/accounting/schema.db" ;
+import { accounts , categories , ledgerEntries , ledgerTransactions } from "@/features/accounting/schema.db" ;
 
 // Feature: Transactions
 import { createTransactionFromFormAction } from "./transactionsActions" ;
@@ -89,6 +89,30 @@ describe( "createTransactionFromFormAction — monedas" , () => {
     const asientos = await db.select().from( ledgerEntries ) ;
     expect( asientos.length ).toBe( 2 ) ;
     expect( asientos.every( ( a ) => a.currency === "ARS" ) ).toBe( true ) ;
+  } ) ;
+
+  it( "debería crear un solo movimiento si se repite el envío con la misma clave, y otro si cambia el monto" , async () => {
+    const clave = "3f2b8c1e-9d4a-4b6f-8a1c-2e7d5f0a9b31" ;
+    const datos = {
+      description:     "Envío reintentado" ,
+      type:            "expense" as const ,
+      amount:          100 ,
+      sourceAccountId: cajaArsId ,
+      occurredAt:      new Date( "2026-10-10T12:00:00.000Z" ) ,
+    } ;
+
+    const r1 = await createTransactionFromFormAction( datos , clave ) ;
+    const r2 = await createTransactionFromFormAction( datos , clave ) ;
+
+    expect( r1.success ).toBe( true ) ;
+    expect( r2.success ).toBe( true ) ;
+    expect( (await db.select().from( ledgerTransactions ).where( eq(ledgerTransactions.organizationId , orgId) )).length ).toBe( 1 ) ;
+
+    // Otro monto con la misma clave: la huella cambió, es otro envío
+    const r3 = await createTransactionFromFormAction( {...datos , amount: 250} , clave ) ;
+
+    expect( r3.success ).toBe( true ) ;
+    expect( (await db.select().from( ledgerTransactions ).where( eq(ledgerTransactions.organizationId , orgId) )).length ).toBe( 2 ) ;
   } ) ;
 
   it( "debería crear la contrapartida de gasto en la moneda de la cuenta" , async () => {

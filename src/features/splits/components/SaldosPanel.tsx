@@ -10,6 +10,7 @@
 import React , { useState , useTransition } from "react" ;
 
 // Shared
+import { nuevaClaveDeEnvio } from "@/shared/lib/claveIdempotencia" ;
 import { FormInput }      from "@/shared/ui/forms/Form/FormInput" ;
 import { FormError }      from "@/shared/ui/forms/Form/FormError" ;
 import { Button }         from "@/shared/ui/display/Button/Button" ;
@@ -73,6 +74,7 @@ export function SaldosPanel( { initialData , dict }: SaldosPanelProps ) {
   const [ monto , setMonto ]             = useState< string >( "" ) ;
   const [ errorMonto , setErrorMonto ]   = useState< string >( "" ) ;
   const [ errorPago , setErrorPago ]     = useState< string >( "" ) ;
+  const [ claveDeEnvio , setClaveDeEnvio ] = useState( nuevaClaveDeEnvio ) ;
   const [ isPending , startTransition ]  = useTransition() ;
 
   const refrescar = async (): Promise< void > => {
@@ -134,10 +136,11 @@ export function SaldosPanel( { initialData , dict }: SaldosPanelProps ) {
     }
 
     startTransition( async () => {
-      const res = await registrarPagoAction( { contraparteId , divisa , montoEnCentavos: centavos } ) ;
+      const res = await registrarPagoAction( { contraparteId , divisa , montoEnCentavos: centavos } , claveDeEnvio ) ;
 
       if( res.success ) {
         setPagando( null ) ;
+        setClaveDeEnvio( nuevaClaveDeEnvio() ) ;
         setAviso( "" ) ;
         await refrescar() ;
       } else {

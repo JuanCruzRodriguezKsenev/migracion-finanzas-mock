@@ -21,6 +21,7 @@ vi.mock( "../actions/transactionsActions" , () => ( {
 } ) ) ;
 
 import { createCategoryAction } from "@/features/accounting/actions/categoryActions" ;
+import { createTransactionFromFormAction } from "../actions/transactionsActions" ;
 
 describe( "TransactionFormModal - Selector jerárquico y creación al vuelo" , () => {
   const sampleAccounts: Account[] = [
@@ -238,5 +239,79 @@ describe( "TransactionFormModal - Selector jerárquico y creación al vuelo" , (
     await waitFor( () => {
       expect( ( categorySelect as HTMLSelectElement ).value ).toBe( "new-cat-123" ) ;
     } ) ;
+  } ) ;
+} ) ;
+
+describe( "TransactionFormModal - clave de envío (plan 46)" , () => {
+  const cuenta: Account = {
+    id:             "acc-1" ,
+    organizationId: "org-1" ,
+    code:           "1.1.01-ARS" ,
+    name:           "Caja Pesos" ,
+    type:           "asset" ,
+    balance:        50000 ,
+    currency:       "ARS" ,
+    entityId:       null ,
+    cbuCvu:         null ,
+    alias:          null ,
+    isCommonPot:    false ,
+    ownerUserId:    null ,
+    createdAt:      new Date() ,
+  } ;
+
+  const enviar = async ( veces: number ) => {
+    fireEvent.click( screen.getByRole( "button" , { name: "Guardar Transacción" } ) ) ;
+    await waitFor( () => expect( createTransactionFromFormAction ).toHaveBeenCalledTimes( veces ) ) ;
+    // Deja asentar el estado posterior a la respuesta antes del siguiente envío
+    await waitFor( () => expect( screen.getByRole( "button" , { name: "Guardar Transacción" } ) ).toBeTruthy() ) ;
+  } ;
+
+  it( "tras un error el reintento manda la misma clave; tras un éxito, otra" , async () => {
+    vi.mocked( createTransactionFromFormAction ).mockReset() ;
+    vi.mocked( createTransactionFromFormAction )
+      .mockResolvedValueOnce( { success: false , error: "Se cayó la red" } )
+      .mockResolvedValueOnce( { success: true , value: {} as never } ) ;
+
+    render(
+      <TransactionFormModal isOpen={true} onClose={vi.fn()} onSuccess={vi.fn()} accounts={[ cuenta ]} categoryTree={[]} />
+    ) ;
+
+    fireEvent.change( screen.getByLabelText( /Monto/ ) , { target: { value: "120" } } ) ;
+    fireEvent.change( screen.getByLabelText( /Descripción/ ) , { target: { value: "Súper" } } ) ;
+    fireEvent.change( screen.getByLabelText( /Cuenta de pago/ ) , { target: { value: "acc-1" } } ) ;
+
+    await enviar( 1 ) ;
+    await waitFor( () => expect( screen.getByText( "Se cayó la red" ) ).toBeTruthy() ) ;
+    await enviar( 2 ) ;
+
+    const llamadas = vi.mocked( createTransactionFromFormAction ).mock.calls ;
+
+    expect( typeof llamadas[0][1] ).toBe( "string" ) ;
+    expect( llamadas[1][1] ).toBe( llamadas[0][1] ) ;
+  } ) ;
+
+  it( "tras un éxito el formulario genera otra clave" , async () => {
+    vi.mocked( createTransactionFromFormAction ).mockReset() ;
+    vi.mocked( createTransactionFromFormAction ).mockResolvedValue( { success: true , value: {} as never } ) ;
+
+    render(
+      <TransactionFormModal isOpen={true} onClose={vi.fn()} onSuccess={vi.fn()} accounts={[ cuenta ]} categoryTree={[]} />
+    ) ;
+
+    const completar = () => {
+      fireEvent.change( screen.getByLabelText( /Monto/ ) , { target: { value: "120" } } ) ;
+      fireEvent.change( screen.getByLabelText( /Descripción/ ) , { target: { value: "Súper" } } ) ;
+      fireEvent.change( screen.getByLabelText( /Cuenta de pago/ ) , { target: { value: "acc-1" } } ) ;
+    } ;
+
+    completar() ;
+    await enviar( 1 ) ;
+    await waitFor( () => expect( ( screen.getByLabelText( /Monto/ ) as HTMLInputElement ).value ).toBe( "" ) ) ;
+    completar() ;
+    await enviar( 2 ) ;
+
+    const llamadas = vi.mocked( createTransactionFromFormAction ).mock.calls ;
+
+    expect( llamadas[1][1] ).not.toBe( llamadas[0][1] ) ;
   } ) ;
 } ) ;

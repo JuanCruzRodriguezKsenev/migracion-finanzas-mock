@@ -3,7 +3,8 @@
  * Servicio para asegurar la idempotencia en transacciones mutables críticas de FinanzIA.
  */
 // Librerías externas
-import { eq } from "drizzle-orm" ;
+import { createHash } from "node:crypto" ;
+import { eq }         from "drizzle-orm" ;
 
 // Shared
 import { Result , ok , fail } from "@/shared/lib/result" ;
@@ -155,4 +156,71 @@ export async function executeIdempotent< T >( key: string , callback: () => Prom
     
     return( fail("Error crítico interno en el manejador de idempotencia.") ) ;
   }
+}
+
+// UUID v4: es el formato que genera `nuevaClaveDeEnvio()` en el cliente.
+const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i ;
+
+const MENSAJE_EN_PROCESO = "Ese envío todavía se está procesando. Esperá unos segundos y revisá antes de reintentar." ;
+
+/**
+ * Arma la clave que se guarda en `idempotency_keys`: `<userId>:<accion>:<claveCliente>:<huella>`.
+ * La huella son los primeros 16 hex del SHA-256 de `JSON.stringify( datos )`.
+ * Devuelve `null` si no hay clave de cliente, y lanza si la clave no es un UUID.
+ *
+ * @param params - Usuario, nombre fijo de la acción, clave del cliente y datos ya validados.
+ * @returns La clave compuesta, o `null` si el cliente no mandó clave.
+ */
+export function armarClaveIdempotencia( params: {
+  userId:        string ;
+  accion:        string ;
+  claveCliente?: string ;
+  datos:         unknown ;
+} ): string | null {
+  if( !params.claveCliente ) {
+    return( null ) ;
+  }
+
+  if( !UUID_V4_REGEX.test( params.claveCliente ) ) {
+    throw new Error( "Clave de envío inválida." ) ;
+  }
+
+  const huella = createHash( "sha256" ).update( JSON.stringify( params.datos ) ).digest( "hex" ).slice( 0 , 16 ) ;
+
+  return( `${params.userId}:${params.accion}:${params.claveCliente}:${huella}` ) ;
+}
+
+/**
+ * Ejecuta `operacion` con idempotencia si hay clave, o directo si es `null`.
+ * Corrige dos trampas de `executeIdempotent`: un `fail` de la operación se convierte en
+ * `throw` adentro (así la clave se libera y no se cachea el error), y `CONFLICT_PROCESSING`
+ * sale como mensaje legible.
+ *
+ * @param clave - Clave armada con `armarClaveIdempotencia`, o `null` para ejecutar sin protección.
+ * @param operacion - Cuerpo de la acción; devuelve un `Result`.
+ * @returns El `Result` de la operación (nuevo o cacheado).
+ */
+export async function conIdempotencia< T >(
+  clave:     string | null ,
+  operacion: () => Promise< Result<T , string> >
+): Promise< Result<T , string> > {
+  if( clave === null ) {
+    return( await operacion() ) ;
+  }
+
+  const resultado = await executeIdempotent( clave , async () => {
+    const r = await operacion() ;
+
+    if( !r.success ) {
+      throw new Error( r.error ) ;
+    }
+
+    return( r.value ) ;
+  } ) ;
+
+  if( !resultado.success && (resultado.error === "CONFLICT_PROCESSING") ) {
+    return( fail( MENSAJE_EN_PROCESO ) ) ;
+  }
+
+  return( resultado ) ;
 }

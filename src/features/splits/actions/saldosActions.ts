@@ -10,6 +10,7 @@
 import { getServerSession } from "next-auth" ;
 
 // Shared
+import { armarClaveIdempotencia , conIdempotencia } from "@/shared/services/idempotencyService" ;
 import { ok , fail , Result }  from "@/shared/lib/result" ;
 import { authOptions }         from "@/shared/lib/auth" ;
 import { logger }              from "@/shared/lib/logger" ;
@@ -128,7 +129,7 @@ export async function obtenerSaldosAction(): Promise< Result< VistaSaldos , stri
  * @param datos - Contraparte (quien pagó), divisa y monto en centavos.
  * @returns Éxito, o `fail` con el motivo.
  */
-export async function registrarPagoAction( datos: RegistrarPagoInput ): Promise< Result< null , string > > {
+export async function registrarPagoAction( datos: RegistrarPagoInput , claveDeEnvio?: string ): Promise< Result< null , string > > {
   const sesion = await obtenerSesionDeEscritura() ;
 
   if( !sesion.success ) {
@@ -148,16 +149,26 @@ export async function registrarPagoAction( datos: RegistrarPagoInput ): Promise<
     return( fail( "No podés registrar un pago a vos mismo." ) ) ;
   }
 
-  try {
-    return( await db.transaction( async ( tx ) => {
-      await saldosRepository.bloquearPar( organizationId , userId , contraparteId , tx ) ;
+  let clave: string | null ;
 
-      return( await registrarPagoEnTx( { organizationId , acreedorId: userId , deudorId: contraparteId , divisa , montoEnCentavos } , tx ) ) ;
-    } ) ) ;
-  } catch( error ) {
-    logger.error( "Error en registrarPagoAction." , { organizationId , error: String( error ) } ) ;
-    return( fail( "No se pudo registrar el pago." ) ) ;
+  try {
+    clave = armarClaveIdempotencia( { userId: sesion.value.userId , accion: "registrarPago" , claveCliente: claveDeEnvio , datos: validation.data } ) ;
+  } catch {
+    return( fail( "Clave de envío inválida." ) ) ;
   }
+
+  return( await conIdempotencia( clave , async () => {
+    try {
+      return( await db.transaction( async ( tx ) => {
+        await saldosRepository.bloquearPar( organizationId , userId , contraparteId , tx ) ;
+
+        return( await registrarPagoEnTx( { organizationId , acreedorId: userId , deudorId: contraparteId , divisa , montoEnCentavos } , tx ) ) ;
+      } ) ) ;
+    } catch( error ) {
+      logger.error( "Error en registrarPagoAction." , { organizationId , error: String( error ) } ) ;
+      return( fail( "No se pudo registrar el pago." ) ) ;
+    }
+  } ) ) ;
 }
 
 /**

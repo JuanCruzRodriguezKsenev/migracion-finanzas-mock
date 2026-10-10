@@ -337,6 +337,18 @@ describe( "caja común (plan 21)" , () => {
     expect( ( await conteosDe( c.id ) ).common_pot_contributions ).toBe( 0 ) ;
   } ) ;
 
+  it( "idempotencia: repetir el aporte con la misma clave guarda un solo aporte" , async () => {
+    await activarCaja( [ cajaId ] ) ;
+
+    sesionDe( ana , orgA ) ;
+    const clave = "3f2b8c1e-9d4a-4b6f-8a1c-2e7d5f0a9b31" ;
+    const datos = { currency: "ARS" , amountInCents: 150000 } ;
+
+    expect( ( await registrarAporteCajaAction( datos , clave ) ).success ).toBe( true ) ;
+    expect( ( await registrarAporteCajaAction( datos , clave ) ).success ).toBe( true ) ;
+    expect( ( await aportesGuardados() ).length ).toBe( 1 ) ;
+  } ) ;
+
   it( "sin la caja activa, obtenerCajaAction no muestra nada" , async () => {
     sesionDe( ana , orgA ) ;
     const res = await obtenerCajaAction() ;

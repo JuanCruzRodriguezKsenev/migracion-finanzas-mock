@@ -10,6 +10,7 @@ import { revalidatePath }   from "next/cache" ;
 import { getServerSession } from "next-auth" ;
 
 // Shared
+import { armarClaveIdempotencia , conIdempotencia } from "@/shared/services/idempotencyService" ;
 import { db }                 from "@/shared/db/client" ;
 import { Result , ok , fail } from "@/shared/lib/result" ;
 import { logger }             from "@/shared/lib/logger" ;
@@ -60,7 +61,7 @@ import type { Loan , LoanConResumen }      from "../types" ;
  * @param params - Parámetros del préstamo validados por createLoanSchema.
  * @returns Result con el préstamo creado o mensaje de error.
  */
-export async function createLoanAction( params: CreateLoanInput ): Promise< Result< Loan , string > > {
+export async function createLoanAction( params: CreateLoanInput , claveDeEnvio?: string ): Promise< Result< Loan , string > > {
   const sesion = await obtenerSesionDeEscritura() ;
 
   if( !sesion.success ) {
@@ -78,157 +79,167 @@ export async function createLoanAction( params: CreateLoanInput ): Promise< Resu
 
   const data = validation.data ;
 
+  let clave: string | null ;
+
   try {
-    // 2. Validar existencia de contraparte
-    if( data.entityId ) {
-      const entity = await financialEntityRepository.findById( data.entityId , organizationId ) ;
-      if( !entity ) {
-        return( fail( "Entidad financiera no encontrada o no pertenece a la organización." ) ) ;
-      }
-    }
-
-    if( data.contactId ) {
-      const contact = await contactsRepository.findById( data.contactId , organizationId ) ;
-      if( !contact ) {
-        return( fail( "Contacto no encontrado o no pertenece a la organización." ) ) ;
-      }
-    }
-
-    // 3. Validar cuenta de desembolso si viene especificada
-    let disbursementAccount: Account | null = null ;
-    if( data.disbursementAccountId ) {
-      disbursementAccount = await accountRepository.findById( data.disbursementAccountId , organizationId ) ;
-      if( !disbursementAccount ) {
-        return( fail( "Cuenta de desembolso no encontrada o no pertenece a la organización." ) ) ;
-      }
-      if( disbursementAccount.currency !== data.currency ) {
-        return( fail( `La moneda de la cuenta de desembolso (${disbursementAccount.currency}) no coincide con la del préstamo (${data.currency}).` ) ) ;
-      }
-    }
-
-    const todasLasCuentas = await accountRepository.findAll( organizationId ) ;
-
-    // Si es sin desembolso (§5C preexistente), verificar cuenta de patrimonio neto
-    let ctaPatrimonio: Account | undefined ;
-    if( !disbursementAccount ) {
-      ctaPatrimonio = (
-        todasLasCuentas.find( ( c ) => c.code === "3.1.01.01" ) ||
-        todasLasCuentas.find( ( c ) => c.type === "equity" )
-      ) ;
-
-      if( !ctaPatrimonio ) {
-        return( fail( "No se encontró una cuenta de patrimonio neto para registrar el asiento de apertura del préstamo preexistente." ) ) ;
-      }
-    }
-
-    // 4. Crear la fila en loans
-    const loanCreado = await loansRepository.create( {
-      organizationId ,
-      name:                 data.name ,
-      direction:            data.direction ,
-      entityId:             data.entityId || null ,
-      contactId:            data.contactId || null ,
-      principalAmount:      data.principalAmount ,
-      currency:             data.currency ,
-      interestRateAnnual:   data.interestRateAnnual ,
-      totalInstallments:    data.totalInstallments ,
-      frequency:            data.frequency ,
-      intervalCount:        data.intervalCount ,
-      startDate:            data.startDate ,
-      firstInstallmentDate: data.firstInstallmentDate ,
-      resolvedThrough:      data.resolvedThrough || null
-    } ) ;
-
-    // 5. Crear cuenta espejo en el libro mayor
-    const accountType    = ( data.direction === "borrowed" ? "liability" : "asset" ) ;
-    const ancladas       = await accountRepository.findTodasEnAncla( organizationId ) ;
-    const codigoContable = getNextCode( accountType , ancladas ) ;
-
-    const cuentaEspejo = await accountRepository.create( {
-      organizationId ,
-      code:     codigoContable ,
-      name:     `Préstamo ${loanCreado.name}` ,
-      type:     accountType ,
-      balance:  0 ,
-      currency: data.currency ,
-      entityId: data.entityId || null
-    } ) ;
-
-    // 6. Vincular en loan_accounts
-    await loansRepository.addLoanAccount( {
-      loanId:    loanCreado.id ,
-      accountId: cuentaEspejo.id ,
-      currency:  data.currency
-    } ) ;
-
-    // 7. Emitir asiento contable de alta
-    let entries: { accountId: string ; debit: number ; credit: number ; currency: string }[] ;
-
-    if( disbursementAccount ) {
-      if( data.direction === "borrowed" ) {
-        // §5A borrowed con desembolso: Debe cuenta destino / Haber préstamo
-        entries = [
-          { accountId: disbursementAccount.id , debit: data.principalAmount , credit: 0                    , currency: data.currency } ,
-          { accountId: cuentaEspejo.id        , debit: 0                    , credit: data.principalAmount , currency: data.currency }
-        ] ;
-      } else {
-        // §5B lent: Debe préstamo / Haber cuenta origen
-        entries = [
-          { accountId: cuentaEspejo.id        , debit: data.principalAmount , credit: 0                    , currency: data.currency } ,
-          { accountId: disbursementAccount.id , debit: 0                    , credit: data.principalAmount , currency: data.currency }
-        ] ;
-      }
-    } else if( ctaPatrimonio ) {
-      if( data.direction === "borrowed" ) {
-        // §5C preexistente borrowed: Debe Patrimonio Neto / Haber préstamo
-        entries = [
-          { accountId: ctaPatrimonio.id , debit: data.principalAmount , credit: 0                    , currency: data.currency } ,
-          { accountId: cuentaEspejo.id  , debit: 0                    , credit: data.principalAmount , currency: data.currency }
-        ] ;
-      } else {
-        // §5C preexistente lent: Debe préstamo / Haber Patrimonio Neto
-        entries = [
-          { accountId: cuentaEspejo.id  , debit: data.principalAmount , credit: 0                    , currency: data.currency } ,
-          { accountId: ctaPatrimonio.id , debit: 0                    , credit: data.principalAmount , currency: data.currency }
-        ] ;
-      }
-    } else {
-      return( fail( "No se pudo determinar la contrapartida contable para el alta del préstamo." ) ) ;
-    }
-
-    const txResult = await createLedgerTransaction( {
-      organizationId ,
-      createdByUserId: sesion.value.userId ,
-      description: `Alta préstamo ${loanCreado.name}` ,
-      occurredAt:  data.startDate ,
-      entries
-    } ) ;
-
-    if( !txResult.success ) {
-      logger.error( `[createLoanAction] Falló asiento de alta para préstamo ${loanCreado.id}: ${txResult.error}` ) ;
-      return( fail( `El préstamo fue creado, pero falló el asiento contable de alta: ${txResult.error}` ) ) ;
-    }
-
-    logger.info( `[createLoanAction] Préstamo creado: ${loanCreado.id} con cuenta contable ${cuentaEspejo.code}` ) ;
-    revalidatePath( "/[lang]/(main)/loans" , "page" ) ;
-
-    return( ok( loanCreado ) ) ;
-  } catch( error ) {
-    const codigo = ( error as { code?: string } )?.code ;
-
-    if( codigo === "23505" ) {
-      logger.error( `[createLoanAction] Colisión de código contable: ${error}` ) ;
-      return( fail( "Conflicto al generar el código contable del préstamo. Por favor, intentá de nuevo." ) ) ;
-    }
-
-    if( codigo === "23503" ) {
-      logger.error( `[createLoanAction] Referencia inexistente: ${error}` ) ;
-      return( fail( "Tu sesión referencia una organización o entidad inexistente. Cerrá sesión y volvé a ingresar." ) ) ;
-    }
-
-    logger.error( `[createLoanAction] Error no controlado: ${error}` ) ;
-    return( fail( "Error al registrar el préstamo. Si aparece en el listado sin saldo, quedó sin cuenta contable: dala de baja y volvé a crearla." ) ) ;
+    clave = armarClaveIdempotencia( { userId: sesion.value.userId , accion: "crearPrestamo" , claveCliente: claveDeEnvio , datos: data } ) ;
+  } catch {
+    return( fail( "Clave de envío inválida." ) ) ;
   }
+
+  return( await conIdempotencia( clave , async () => {
+    try {
+      // 2. Validar existencia de contraparte
+      if( data.entityId ) {
+        const entity = await financialEntityRepository.findById( data.entityId , organizationId ) ;
+        if( !entity ) {
+          return( fail( "Entidad financiera no encontrada o no pertenece a la organización." ) ) ;
+        }
+      }
+
+      if( data.contactId ) {
+        const contact = await contactsRepository.findById( data.contactId , organizationId ) ;
+        if( !contact ) {
+          return( fail( "Contacto no encontrado o no pertenece a la organización." ) ) ;
+        }
+      }
+
+      // 3. Validar cuenta de desembolso si viene especificada
+      let disbursementAccount: Account | null = null ;
+      if( data.disbursementAccountId ) {
+        disbursementAccount = await accountRepository.findById( data.disbursementAccountId , organizationId ) ;
+        if( !disbursementAccount ) {
+          return( fail( "Cuenta de desembolso no encontrada o no pertenece a la organización." ) ) ;
+        }
+        if( disbursementAccount.currency !== data.currency ) {
+          return( fail( `La moneda de la cuenta de desembolso (${disbursementAccount.currency}) no coincide con la del préstamo (${data.currency}).` ) ) ;
+        }
+      }
+
+      const todasLasCuentas = await accountRepository.findAll( organizationId ) ;
+
+      // Si es sin desembolso (§5C preexistente), verificar cuenta de patrimonio neto
+      let ctaPatrimonio: Account | undefined ;
+      if( !disbursementAccount ) {
+        ctaPatrimonio = (
+          todasLasCuentas.find( ( c ) => c.code === "3.1.01.01" ) ||
+          todasLasCuentas.find( ( c ) => c.type === "equity" )
+        ) ;
+
+        if( !ctaPatrimonio ) {
+          return( fail( "No se encontró una cuenta de patrimonio neto para registrar el asiento de apertura del préstamo preexistente." ) ) ;
+        }
+      }
+
+      // 4. Crear la fila en loans
+      const loanCreado = await loansRepository.create( {
+        organizationId ,
+        name:                 data.name ,
+        direction:            data.direction ,
+        entityId:             data.entityId || null ,
+        contactId:            data.contactId || null ,
+        principalAmount:      data.principalAmount ,
+        currency:             data.currency ,
+        interestRateAnnual:   data.interestRateAnnual ,
+        totalInstallments:    data.totalInstallments ,
+        frequency:            data.frequency ,
+        intervalCount:        data.intervalCount ,
+        startDate:            data.startDate ,
+        firstInstallmentDate: data.firstInstallmentDate ,
+        resolvedThrough:      data.resolvedThrough || null
+      } ) ;
+
+      // 5. Crear cuenta espejo en el libro mayor
+      const accountType    = ( data.direction === "borrowed" ? "liability" : "asset" ) ;
+      const ancladas       = await accountRepository.findTodasEnAncla( organizationId ) ;
+      const codigoContable = getNextCode( accountType , ancladas ) ;
+
+      const cuentaEspejo = await accountRepository.create( {
+        organizationId ,
+        code:     codigoContable ,
+        name:     `Préstamo ${loanCreado.name}` ,
+        type:     accountType ,
+        balance:  0 ,
+        currency: data.currency ,
+        entityId: data.entityId || null
+      } ) ;
+
+      // 6. Vincular en loan_accounts
+      await loansRepository.addLoanAccount( {
+        loanId:    loanCreado.id ,
+        accountId: cuentaEspejo.id ,
+        currency:  data.currency
+      } ) ;
+
+      // 7. Emitir asiento contable de alta
+      let entries: { accountId: string ; debit: number ; credit: number ; currency: string }[] ;
+
+      if( disbursementAccount ) {
+        if( data.direction === "borrowed" ) {
+          // §5A borrowed con desembolso: Debe cuenta destino / Haber préstamo
+          entries = [
+            { accountId: disbursementAccount.id , debit: data.principalAmount , credit: 0                    , currency: data.currency } ,
+            { accountId: cuentaEspejo.id        , debit: 0                    , credit: data.principalAmount , currency: data.currency }
+          ] ;
+        } else {
+          // §5B lent: Debe préstamo / Haber cuenta origen
+          entries = [
+            { accountId: cuentaEspejo.id        , debit: data.principalAmount , credit: 0                    , currency: data.currency } ,
+            { accountId: disbursementAccount.id , debit: 0                    , credit: data.principalAmount , currency: data.currency }
+          ] ;
+        }
+      } else if( ctaPatrimonio ) {
+        if( data.direction === "borrowed" ) {
+          // §5C preexistente borrowed: Debe Patrimonio Neto / Haber préstamo
+          entries = [
+            { accountId: ctaPatrimonio.id , debit: data.principalAmount , credit: 0                    , currency: data.currency } ,
+            { accountId: cuentaEspejo.id  , debit: 0                    , credit: data.principalAmount , currency: data.currency }
+          ] ;
+        } else {
+          // §5C preexistente lent: Debe préstamo / Haber Patrimonio Neto
+          entries = [
+            { accountId: cuentaEspejo.id  , debit: data.principalAmount , credit: 0                    , currency: data.currency } ,
+            { accountId: ctaPatrimonio.id , debit: 0                    , credit: data.principalAmount , currency: data.currency }
+          ] ;
+        }
+      } else {
+        return( fail( "No se pudo determinar la contrapartida contable para el alta del préstamo." ) ) ;
+      }
+
+      const txResult = await createLedgerTransaction( {
+        organizationId ,
+        createdByUserId: sesion.value.userId ,
+        description: `Alta préstamo ${loanCreado.name}` ,
+        occurredAt:  data.startDate ,
+        entries
+      } ) ;
+
+      if( !txResult.success ) {
+        logger.error( `[createLoanAction] Falló asiento de alta para préstamo ${loanCreado.id}: ${txResult.error}` ) ;
+        return( fail( `El préstamo fue creado, pero falló el asiento contable de alta: ${txResult.error}` ) ) ;
+      }
+
+      logger.info( `[createLoanAction] Préstamo creado: ${loanCreado.id} con cuenta contable ${cuentaEspejo.code}` ) ;
+      revalidatePath( "/[lang]/(main)/loans" , "page" ) ;
+
+      return( ok( loanCreado ) ) ;
+    } catch( error ) {
+      const codigo = ( error as { code?: string } )?.code ;
+
+      if( codigo === "23505" ) {
+        logger.error( `[createLoanAction] Colisión de código contable: ${error}` ) ;
+        return( fail( "Conflicto al generar el código contable del préstamo. Por favor, intentá de nuevo." ) ) ;
+      }
+
+      if( codigo === "23503" ) {
+        logger.error( `[createLoanAction] Referencia inexistente: ${error}` ) ;
+        return( fail( "Tu sesión referencia una organización o entidad inexistente. Cerrá sesión y volvé a ingresar." ) ) ;
+      }
+
+      logger.error( `[createLoanAction] Error no controlado: ${error}` ) ;
+      return( fail( "Error al registrar el préstamo. Si aparece en el listado sin saldo, quedó sin cuenta contable: dala de baja y volvé a crearla." ) ) ;
+    }
+  } ) ) ;
 }
 
 /**

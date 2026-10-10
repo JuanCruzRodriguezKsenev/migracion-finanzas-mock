@@ -66,7 +66,7 @@ describe( "ContributeModal" , () => {
       goalId:    "11111111-1111-4111-8111-111111111111" ,
       accountId: "33333333-3333-4333-8333-333333333333" ,
       amount:    150050
-    } ) ;
+    } , expect.any( String ) ) ;
     expect( Number.isInteger( vi.mocked( contributeToGoalAction ).mock.calls[ 0 ][ 0 ].amount ) ).toBe( true ) ;
   } ) ;
 
@@ -113,7 +113,7 @@ describe( "ContributeModal" , () => {
     fireEvent.change( screen.getByLabelText( /Monto/ ) , { target: { value: "100" } } ) ;
     fireEvent.click( screen.getByRole( "button" , { name: "Retirar" } ) ) ;
     await waitFor( () => expect( onSuccess ).toHaveBeenCalled() ) ;
-    expect( withdrawFromGoalAction ).toHaveBeenCalledWith( expect.objectContaining( { accountId: "44444444-4444-4444-8444-444444444444" , amount: 10000 } ) ) ;
+    expect( withdrawFromGoalAction ).toHaveBeenCalledWith( expect.objectContaining( { accountId: "44444444-4444-4444-8444-444444444444" , amount: 10000 } ) , expect.any( String ) ) ;
   } ) ;
 
   it( "retirar sin nada apartado lo explica y deshabilita el botón" , () => {

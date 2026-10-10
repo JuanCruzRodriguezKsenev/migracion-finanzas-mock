@@ -39,6 +39,7 @@ import {
   archiveLoanAction
 } from "./loansActions" ;
 import { loansRepository } from "../repositories/loansRepository" ;
+import { loans }           from "../schema.db" ;
 
 
 vi.mock( "next-auth" , () => ( {
@@ -755,6 +756,41 @@ describe( "loansActions.ts — Server Actions de Préstamos (RFC 008)" , () => {
       if( !resList.success ) { return ; }
 
       expect( resList.value ).toHaveLength( 0 ) ;
+    } ) ;
+  } ) ;
+  describe( "Idempotencia del alta (plan 46)" , () => {
+    it( "crea un solo préstamo si se repite el envío con la misma clave" , async () => {
+      await db.insert( accounts ).values( {
+        organizationId: orgId ,
+        code:           "3.1.01.01" ,
+        name:           "Patrimonio Neto" ,
+        type:           "equity" ,
+        balance:        10000000 ,
+        currency:       "ARS"
+      } ) ;
+
+      const clave = "3f2b8c1e-9d4a-4b6f-8a1c-2e7d5f0a9b31" ;
+      const datos = {
+        name:                 "Préstamo reintentado" ,
+        direction:            "borrowed" as const ,
+        entityId:             bankEntId ,
+        principalAmount:      500000 ,
+        currency:             "ARS" ,
+        interestRateAnnual:   0 ,
+        totalInstallments:    3 ,
+        frequency:            "monthly" as const ,
+        intervalCount:        1 ,
+        startDate:            new Date( "2026-09-01T12:00:00Z" ) ,
+        firstInstallmentDate: "2026-10-10"
+      } ;
+
+      const r1 = await createLoanAction( datos , clave ) ;
+      const r2 = await createLoanAction( datos , clave ) ;
+
+      expect( r1.success ).toBe( true ) ;
+      expect( r2.success ).toBe( true ) ;
+      expect( (await db.select().from( loans ).where( eq(loans.organizationId , orgId) )).length ).toBe( 1 ) ;
+      expect( (await db.select().from( ledgerTransactions ).where( eq(ledgerTransactions.organizationId , orgId) )).length ).toBe( 1 ) ;
     } ) ;
   } ) ;
 } ) ;

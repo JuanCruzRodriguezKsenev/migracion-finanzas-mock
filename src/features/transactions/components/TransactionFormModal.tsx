@@ -26,7 +26,8 @@ import { Account , Category , EtiquetaCuenta } from "@/features/accounting/types
 import type { TitularPosible } from "@/features/auth/services/titularService" ;
 
 // Shared (formato)
-import { formatCurrency } from "@/shared/lib/currencyFormatter" ;
+import { nuevaClaveDeEnvio } from "@/shared/lib/claveIdempotencia" ;
+import { formatCurrency }   from "@/shared/lib/currencyFormatter" ;
 
 // Feature: Splits
 import type { previsualizarRepartoAction , VistaPreviaReparto } from "@/features/splits/actions/acuerdoActions" ;
@@ -133,6 +134,7 @@ export function TransactionFormModal( {
 
   // Pregunta de la deuda (RN-18, RN-19): false = "Sí, según el acuerdo", true = "No, lo absorbo yo"
   const [ absorbeElDueno , setAbsorbeElDueno ]             = useState( false ) ;
+  const [ claveDeEnvio , setClaveDeEnvio ] = useState( nuevaClaveDeEnvio ) ;
 
   // Estado para creación de categorías al vuelo (Paso 3)
   const [ isCreatingCategory , setIsCreatingCategory ]       = useState( false ) ;
@@ -238,6 +240,7 @@ export function TransactionFormModal( {
   const bloqueadoPorAcuerdo = ( pedirPrevia && !!vistaPrevia?.aplica && vistaPrevia.desactualizado ) ;
 
   const handleReset = () => {
+    setClaveDeEnvio( nuevaClaveDeEnvio() ) ;
     setDescription( "" ) ;
     setAmount( "" ) ;
     setCurrency( "ARS" ) ;
@@ -382,7 +385,7 @@ export function TransactionFormModal( {
           ? ( (duenoDeOrigen && (duenoDeOrigen !== propio?.userId)) ? duenoDeOrigen : undefined )
           : ( (holderUserId && (holderUserId !== propio?.userId)) ? holderUserId : undefined ) ,
         absorbeElDueno:       ( origenEsPropia && mostrarPreguntaDeuda ) ? absorbeElDueno : undefined ,
-      } ) ;
+      } , claveDeEnvio ) ;
 
       if( !res.success ) {
         setErrorMessage( res.error ) ;

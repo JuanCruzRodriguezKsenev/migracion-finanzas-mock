@@ -109,6 +109,19 @@ describe( "saldos, pagos y solicitudes de pago (plan 20)" , () => {
     expect( vistaBeto?.saldos.map( ( s ) => [ s.divisa , s.montoEnCentavos ] ) ).toEqual( [ [ "ARS" , -300000 ] , [ "USD" , -2000 ] ] ) ;
   } ) ;
 
+  it( "idempotencia: repetir el pago con la misma clave registra un solo pago" , async () => {
+    await deuda( orgA , ana , beto , 480000 ) ;
+
+    sesionDe( ana , orgA ) ;
+    const clave = "3f2b8c1e-9d4a-4b6f-8a1c-2e7d5f0a9b31" ;
+    const datos = { contraparteId: beto , divisa: "ARS" , montoEnCentavos: 200000 } ;
+
+    expect( ( await registrarPagoAction( datos , clave ) ).success ).toBe( true ) ;
+    expect( ( await registrarPagoAction( datos , clave ) ).success ).toBe( true ) ;
+
+    expect( ( await db.select().from( memberPayments ).where( eq( memberPayments.organizationId , orgA ) ) ).length ).toBe( 1 ) ;
+  } ) ;
+
   it( "AC-18: un pago de 2.000 deja el saldo en 2.800, avisa a Beto y no crea asientos" , async () => {
     await deuda( orgA , ana , beto , 480000 ) ;
     const antes = await contarAsientos() ;

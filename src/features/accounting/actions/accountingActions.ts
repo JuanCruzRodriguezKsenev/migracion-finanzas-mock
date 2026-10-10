@@ -8,7 +8,7 @@
 import { getServerSession } from "next-auth" ;
 
 // Shared
-import { executeIdempotent } from "@/shared/services/idempotencyService" ;
+import { armarClaveIdempotencia , executeIdempotent } from "@/shared/services/idempotencyService" ;
 import { ok , fail , Result } from "@/shared/lib/result" ;
 import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
@@ -251,9 +251,21 @@ export async function createLedgerTransactionAction(
     return( fail("Validación de esquema contable fallida.") ) ;
   }
 
+  // La clave se arma con usuario, acción y huella de los datos: nunca devuelve la respuesta de otra persona
+  // ni la de un envío con datos distintos.
+  let claveArmada: string | null ;
+
+  try {
+    claveArmada = autorUserId
+      ? armarClaveIdempotencia( { userId: autorUserId , accion: "crearMovimiento" , claveCliente: idempotencyKey , datos: validation.data } )
+      : null ;
+  } catch {
+    return( fail("Clave de envío inválida.") ) ;
+  }
+
   try {
     // 2. Ejecutar envuelto en idempotencia
-    const result = await executeIdempotent( idempotencyKey || "" , async () => {
+    const result = await executeIdempotent( claveArmada || "" , async () => {
       // El titular se valida contra la base en cada llamada, dentro de la idempotencia: una revocación
       // entre dos intentos tiene que verse en el segundo (AC-4).
       const cuentaIds = validation.data.entries.map( ( e ) => e.accountId ) ;
@@ -283,7 +295,7 @@ export async function createLedgerTransactionAction(
     } ) ;
 
     if( !result.success ){
-      return( fail(result.error === "CONFLICT_PROCESSING" ? "Transacción duplicada en proceso." : result.error) ) ;
+      return( fail(result.error === "CONFLICT_PROCESSING" ? "Ese envío todavía se está procesando. Esperá unos segundos y revisá antes de reintentar." : result.error) ) ;
     }
 
     return( ok(result.value) ) ;

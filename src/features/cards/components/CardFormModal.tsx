@@ -8,6 +8,7 @@
 // Librerías externas
 import React , { useState , useTransition } from "react" ;
 
+import { nuevaClaveDeEnvio } from "@/shared/lib/claveIdempotencia" ;
 // Shared
 import { Button } from "@/shared/ui/display/Button/Button" ;
 import { Modal }  from "@/shared/ui/feedback/Modal/Modal" ;
@@ -56,6 +57,7 @@ export function CardFormModal( {
   const [ deudaInicial , setDeudaInicial ]                   = useState( "" ) ;
 
   const [ error , setError ]             = useState< string | null >( null ) ;
+  const [ claveDeEnvio , setClaveDeEnvio ] = useState( nuevaClaveDeEnvio ) ;
   const [ isPending , startTransition ] = useTransition() ;
 
   const handleSubmit = ( e: React.FormEvent ) => {
@@ -83,13 +85,14 @@ export function CardFormModal( {
         deudaInicial:          ( (type === "credit") && deudaInicial ) ? Math.round( Number( deudaInicial ) * 100 ) : 0 ,
       } ;
 
-      const res = await createCardAction( payload ) ;
+      const res = await createCardAction( payload , claveDeEnvio ) ;
 
       if( !res.success ) {
         setError( res.error ) ;
         return ;
       }
 
+      setClaveDeEnvio( nuevaClaveDeEnvio() ) ;
       onSuccess( res.value ) ;
       onClose() ;
     } ) ;

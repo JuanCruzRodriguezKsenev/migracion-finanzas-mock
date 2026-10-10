@@ -64,9 +64,14 @@ export async function getCategoriesAction(): Promise< Result<Category[] , string
 /**
  * Crea una transacción contable a partir de los datos del formulario de UI,
  * generando automáticamente las partidas contables balanceadas (Debe = Haber).
+ *
+ * @param rawData - Datos del formulario. `occurredAt` debe viajar siempre: si faltara, cada reintento
+ * tendría otra fecha (`new Date()`), otra huella, y la idempotencia no detectaría el duplicado.
+ * @param claveDeEnvio - UUID del envío (`nuevaClaveDeEnvio()`); sin ella no hay idempotencia.
  */
 export async function createTransactionFromFormAction(
-  rawData: CreateTransactionFormData
+  rawData:        CreateTransactionFormData ,
+  claveDeEnvio?:  string
 ): Promise< Result<LedgerTransaction , string> > {
   const sesion = await obtenerSesionDeEscritura() ;
 
@@ -252,7 +257,7 @@ export async function createTransactionFromFormAction(
       holderUserId:   holderUserId || undefined ,
       absorbeElDueno: data.absorbeElDueno ,
       entries ,
-    } ) ) ;
+    } , claveDeEnvio ) ) ;
   } catch( error ) {
     logger.error( "Error en createTransactionFromFormAction" , { error: String(error) } ) ;
     return( fail("Error al registrar la transacción.") ) ;

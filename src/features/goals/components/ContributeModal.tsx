@@ -9,6 +9,7 @@
 // Librerías externas
 import React , { useState , useTransition } from "react" ;
 
+import { nuevaClaveDeEnvio } from "@/shared/lib/claveIdempotencia" ;
 // Shared
 import { FormSelect } from "@/shared/ui/forms/Form/FormSelect" ;
 import { FormInput }  from "@/shared/ui/forms/Form/FormInput" ;
@@ -54,6 +55,7 @@ export function ContributeModal( { isOpen , onClose , mode , view , cuentas , di
   const [ amountError , setAmountError ] = useState< string >( "" ) ;
   const [ accountError , setAccountError ] = useState< string >( "" ) ;
   const [ error , setError ]             = useState< string >( "" ) ;
+  const [ claveDeEnvio , setClaveDeEnvio ] = useState( nuevaClaveDeEnvio ) ;
   const [ isPending , startTransition ]  = useTransition() ;
 
   const sinOpciones = ( opciones.length === 0 ) ;
@@ -77,8 +79,9 @@ export function ContributeModal( { isOpen , onClose , mode , view , cuentas , di
 
     startTransition( async () => {
       const payload = { goalId: view.goal.id , accountId , amount: cents } ;
-      const res     = await ( esAporte ? contributeToGoalAction( payload ) : withdrawFromGoalAction( payload ) ) ;
+      const res     = await ( esAporte ? contributeToGoalAction( payload , claveDeEnvio ) : withdrawFromGoalAction( payload , claveDeEnvio ) ) ;
       if( res.success ) {
+        setClaveDeEnvio( nuevaClaveDeEnvio() ) ;
         onSuccess() ;
       } else {
         setError( res.error || dict.genericError ) ;

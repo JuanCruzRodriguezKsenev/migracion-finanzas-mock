@@ -95,7 +95,7 @@ describe( "SaldosPanel" , () => {
     fireEvent.click( screen.getByRole( "button" , { name: dict.splits.balances.paySubmit } ) ) ;
 
     await waitFor( () => expect( registrarPagoAction ).toHaveBeenCalledTimes( 1 ) ) ;
-    expect( registrarPagoAction ).toHaveBeenCalledWith( { contraparteId: "u-beto" , divisa: "ARS" , montoEnCentavos: 150050 } ) ;
+    expect( registrarPagoAction ).toHaveBeenCalledWith( { contraparteId: "u-beto" , divisa: "ARS" , montoEnCentavos: 150050 } , expect.any( String ) ) ;
     await waitFor( () => expect( screen.getByText( dict.splits.balances.empty ) ).toBeTruthy() ) ;
   } ) ;
 

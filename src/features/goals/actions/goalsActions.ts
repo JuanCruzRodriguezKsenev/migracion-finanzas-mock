@@ -9,6 +9,7 @@ import { revalidatePath }   from "next/cache" ;
 import { getServerSession } from "next-auth" ;
 
 // Shared
+import { armarClaveIdempotencia , conIdempotencia } from "@/shared/services/idempotencyService" ;
 import { Result , ok , fail } from "@/shared/lib/result" ;
 import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
@@ -152,7 +153,7 @@ export async function updateGoalAction( params: UpdateGoalInput ): Promise< Resu
  *
  * @param params - Meta, cuenta y monto en centavos.
  */
-export async function contributeToGoalAction( params: GoalMovementInput ): Promise< Result< GoalMovementOutcome , string > > {
+export async function contributeToGoalAction( params: GoalMovementInput , claveDeEnvio?: string ): Promise< Result< GoalMovementOutcome , string > > {
   const sesion = await obtenerSesionDeEscritura() ;
 
   if( !sesion.success ) {
@@ -164,17 +165,27 @@ export async function contributeToGoalAction( params: GoalMovementInput ): Promi
     return( fail( parsed.error.issues[ 0 ]?.message || "Datos de aporte inválidos." ) ) ;
   }
 
+  let clave: string | null ;
+
   try {
-    const result = await goalsService.aportar( { orgId: sesion.value.organizationId , amount: parsed.data.amount , goalId: parsed.data.goalId , accountId: parsed.data.accountId } ) ;
-    if( result.success ) {
-      revalidatePath( "/[lang]/(main)/goals" , "page" ) ;
-      revalidatePath( "/[lang]/(main)/accounts" , "page" ) ;
-    }
-    return( result ) ;
-  } catch( error ) {
-    logger.error( "Error en contributeToGoalAction." , { error: String( error ) } ) ;
-    return( fail( "Error al aportar a la meta en el servidor." ) ) ;
+    clave = armarClaveIdempotencia( { userId: sesion.value.userId , accion: "aportarAMeta" , claveCliente: claveDeEnvio , datos: parsed.data } ) ;
+  } catch {
+    return( fail( "Clave de envío inválida." ) ) ;
   }
+
+  return( await conIdempotencia( clave , async () => {
+    try {
+      const result = await goalsService.aportar( { orgId: sesion.value.organizationId , amount: parsed.data.amount , goalId: parsed.data.goalId , accountId: parsed.data.accountId } ) ;
+      if( result.success ) {
+        revalidatePath( "/[lang]/(main)/goals" , "page" ) ;
+        revalidatePath( "/[lang]/(main)/accounts" , "page" ) ;
+      }
+      return( result ) ;
+    } catch( error ) {
+      logger.error( "Error en contributeToGoalAction." , { error: String( error ) } ) ;
+      return( fail( "Error al aportar a la meta en el servidor." ) ) ;
+    }
+  } ) ) ;
 }
 
 /**
@@ -182,7 +193,7 @@ export async function contributeToGoalAction( params: GoalMovementInput ): Promi
  *
  * @param params - Meta, cuenta y monto en centavos.
  */
-export async function withdrawFromGoalAction( params: GoalMovementInput ): Promise< Result< GoalMovementOutcome , string > > {
+export async function withdrawFromGoalAction( params: GoalMovementInput , claveDeEnvio?: string ): Promise< Result< GoalMovementOutcome , string > > {
   const sesion = await obtenerSesionDeEscritura() ;
 
   if( !sesion.success ) {
@@ -194,17 +205,27 @@ export async function withdrawFromGoalAction( params: GoalMovementInput ): Promi
     return( fail( parsed.error.issues[ 0 ]?.message || "Datos de retiro inválidos." ) ) ;
   }
 
+  let clave: string | null ;
+
   try {
-    const result = await goalsService.retirar( { orgId: sesion.value.organizationId , amount: parsed.data.amount , goalId: parsed.data.goalId , accountId: parsed.data.accountId } ) ;
-    if( result.success ) {
-      revalidatePath( "/[lang]/(main)/goals" , "page" ) ;
-      revalidatePath( "/[lang]/(main)/accounts" , "page" ) ;
-    }
-    return( result ) ;
-  } catch( error ) {
-    logger.error( "Error en withdrawFromGoalAction." , { error: String( error ) } ) ;
-    return( fail( "Error al retirar de la meta en el servidor." ) ) ;
+    clave = armarClaveIdempotencia( { userId: sesion.value.userId , accion: "retirarDeMeta" , claveCliente: claveDeEnvio , datos: parsed.data } ) ;
+  } catch {
+    return( fail( "Clave de envío inválida." ) ) ;
   }
+
+  return( await conIdempotencia( clave , async () => {
+    try {
+      const result = await goalsService.retirar( { orgId: sesion.value.organizationId , amount: parsed.data.amount , goalId: parsed.data.goalId , accountId: parsed.data.accountId } ) ;
+      if( result.success ) {
+        revalidatePath( "/[lang]/(main)/goals" , "page" ) ;
+        revalidatePath( "/[lang]/(main)/accounts" , "page" ) ;
+      }
+      return( result ) ;
+    } catch( error ) {
+      logger.error( "Error en withdrawFromGoalAction." , { error: String( error ) } ) ;
+      return( fail( "Error al retirar de la meta en el servidor." ) ) ;
+    }
+  } ) ) ;
 }
 
 /**

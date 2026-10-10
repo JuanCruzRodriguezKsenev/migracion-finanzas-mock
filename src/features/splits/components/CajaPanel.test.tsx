@@ -106,7 +106,7 @@ describe( "CajaPanel" , () => {
     fireEvent.click( screen.getByRole( "button" , { name: dict.splits.pot.submit } ) ) ;
 
     await waitFor( () => expect( registrarAporteCajaAction ).toHaveBeenCalledTimes( 1 ) ) ;
-    expect( registrarAporteCajaAction ).toHaveBeenCalledWith( { userId: "u-beto" , currency: "ARS" , amountInCents: 150050 , note: "Súper" } ) ;
+    expect( registrarAporteCajaAction ).toHaveBeenCalledWith( { userId: "u-beto" , currency: "ARS" , amountInCents: 150050 , note: "Súper" } , expect.any( String ) ) ;
     await waitFor( () => expect( screen.getByText( dict.splits.pot.empty ) ).toBeTruthy() ) ;
   } ) ;
 
@@ -120,7 +120,7 @@ describe( "CajaPanel" , () => {
     fireEvent.click( screen.getByRole( "button" , { name: dict.splits.pot.submit } ) ) ;
 
     await waitFor( () => expect( registrarAporteCajaAction ).toHaveBeenCalledTimes( 1 ) ) ;
-    expect( registrarAporteCajaAction ).toHaveBeenCalledWith( { userId: "u-ana" , currency: "ARS" , amountInCents: -150050 } ) ;
+    expect( registrarAporteCajaAction ).toHaveBeenCalledWith( { userId: "u-ana" , currency: "ARS" , amountInCents: -150050 } , expect.any( String ) ) ;
   } ) ;
 
   it( "un member no ve el selector de miembro y no envía userId" , async () => {
@@ -135,7 +135,7 @@ describe( "CajaPanel" , () => {
     fireEvent.change( montoDe() , { target: { value: "10" } } ) ;
     fireEvent.click( screen.getByRole( "button" , { name: dict.splits.pot.submit } ) ) ;
 
-    await waitFor( () => expect( registrarAporteCajaAction ).toHaveBeenCalledWith( { currency: "ARS" , amountInCents: 1000 } ) ) ;
+    await waitFor( () => expect( registrarAporteCajaAction ).toHaveBeenCalledWith( { currency: "ARS" , amountInCents: 1000 } , expect.any( String ) ) ) ;
   } ) ;
 
   it( "un monto inválido muestra el error de campo y no llama a la acción" , () => {

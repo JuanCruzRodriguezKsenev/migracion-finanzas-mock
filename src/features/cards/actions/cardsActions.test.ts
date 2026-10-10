@@ -20,7 +20,7 @@ import { organizations }                                 from "@/features/auth/s
 
 // Feature: Cards
 import { createCardAction } from "./cardsActions" ;
-import { cardAccounts }     from "../schema.db" ;
+import { cards , cardAccounts } from "../schema.db" ;
 
 
 vi.mock( "next-auth" , () => ( {
@@ -208,6 +208,40 @@ describe( "cardsActions.ts — Server Actions de Tarjetas" , () => {
       // Pero sí existe cuenta de pasivo vinculada
       const cardAccRows = await db.select().from( cardAccounts ) ;
       expect( cardAccRows.length ).toBe( 1 ) ;
+    } ) ;
+  } ) ;
+  describe( "Idempotencia del alta (plan 46)" , () => {
+    it( "crea una sola tarjeta si se repite el envío con la misma clave" , async () => {
+      const [ ctaBanco ] = await db
+        .insert( accounts )
+        .values( {
+          organizationId: orgId ,
+          code:           "1.1.01.01" ,
+          name:           "Caja de Ahorro" ,
+          type:           "asset" ,
+          balance:        0 ,
+          currency:       "ARS" ,
+        } )
+        .returning() ;
+
+      const clave = "3f2b8c1e-9d4a-4b6f-8a1c-2e7d5f0a9b31" ;
+      const datos = {
+        label:           "Débito reintentado" ,
+        type:            "debit" as const ,
+        network:         "visa" as const ,
+        linkedAccountId: ctaBanco.id ,
+        lastFour:        "4321" ,
+        expiryMonth:     10 ,
+        expiryYear:      2029 ,
+        currency:        "ARS" ,
+      } ;
+
+      const r1 = await createCardAction( datos , clave ) ;
+      const r2 = await createCardAction( datos , clave ) ;
+
+      expect( r1.success ).toBe( true ) ;
+      expect( r2.success ).toBe( true ) ;
+      expect( (await db.select().from( cards ).where( eq(cards.organizationId , orgId) )).length ).toBe( 1 ) ;
     } ) ;
   } ) ;
 } ) ;

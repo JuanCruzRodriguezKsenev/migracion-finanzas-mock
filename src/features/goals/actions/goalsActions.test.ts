@@ -5,6 +5,7 @@
 // Librerías externas
 import { describe , it , expect , vi , beforeEach } from "vitest" ;
 import { getServerSession }                          from "next-auth" ;
+import { eq }                                        from "drizzle-orm" ;
 import type { Session }                              from "next-auth" ;
 
 // Shared
@@ -17,6 +18,9 @@ import { organizations } from "@/features/auth/schema.db" ;
 
 // Feature: Accounting
 import { accounts } from "@/features/accounting/schema.db" ;
+
+// Feature: Goals (schema)
+import { goalMovements } from "../schema.db" ;
 
 // Feature: Goals
 import {
@@ -104,5 +108,20 @@ describe( "goalsActions - sesión y validación" , () => {
     await loguear( orgId ) ;
     expect( ( await withdrawFromGoalAction( { goalId , accountId: cuenta , amount: 200000 } ) ).success ).toBe( true ) ;
     expect( ( await abandonGoalAction( { goalId } ) ).success ).toBe( true ) ;
+  } ) ;
+  it( "aporte y retiro con la misma clave: cada envío repetido crea un solo movimiento de meta" , async () => {
+    await loguear( orgId ) ;
+    const creada = await createGoalAction( { name: "Auto" , currency: "ARS" , targetAmount: 500000 } ) ;
+    const goalId = creada.value!.id ;
+    const clave  = "3f2b8c1e-9d4a-4b6f-8a1c-2e7d5f0a9b31" ;
+    const datos  = { goalId , accountId: cuenta , amount: 200000 } ;
+
+    expect( ( await contributeToGoalAction( datos , clave ) ).success ).toBe( true ) ;
+    expect( ( await contributeToGoalAction( datos , clave ) ).success ).toBe( true ) ;
+    expect( ( await db.select().from( goalMovements ).where( eq(goalMovements.goalId , goalId) ) ).length ).toBe( 1 ) ;
+
+    expect( ( await withdrawFromGoalAction( datos , clave ) ).success ).toBe( true ) ;
+    expect( ( await withdrawFromGoalAction( datos , clave ) ).success ).toBe( true ) ;
+    expect( ( await db.select().from( goalMovements ).where( eq(goalMovements.goalId , goalId) ) ).length ).toBe( 2 ) ;
   } ) ;
 } ) ;

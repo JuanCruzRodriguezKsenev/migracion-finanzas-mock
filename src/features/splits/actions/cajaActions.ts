@@ -11,6 +11,7 @@
 import { getServerSession } from "next-auth" ;
 
 // Shared
+import { armarClaveIdempotencia , conIdempotencia } from "@/shared/services/idempotencyService" ;
 import { ok , fail , Result } from "@/shared/lib/result" ;
 import { authOptions }        from "@/shared/lib/auth" ;
 import { logger }             from "@/shared/lib/logger" ;
@@ -170,7 +171,7 @@ export async function obtenerCajaAction(): Promise< Result< VistaCaja , string >
  * @param datos - Miembro (opcional: por defecto, quien llama), divisa, monto con signo en centavos y nota.
  * @returns Éxito, o `fail` con el motivo.
  */
-export async function registrarAporteCajaAction( datos: RegistrarAporteCajaInput ): Promise< Result< null , string > > {
+export async function registrarAporteCajaAction( datos: RegistrarAporteCajaInput , claveDeEnvio?: string ): Promise< Result< null , string > > {
   const sesion = await obtenerSesionDeEscritura() ;
 
   if( !sesion.success ) {
@@ -187,55 +188,65 @@ export async function registrarAporteCajaAction( datos: RegistrarAporteCajaInput
   const { currency , amountInCents , note } = validation.data ;
   const objetivoId                          = ( validation.data.userId ?? userId ) ;
 
+  let clave: string | null ;
+
   try {
-    return( await db.transaction( async ( tx ) => {
-      await cajaRepository.bloquear( organizationId , tx ) ;
-
-      // El rol se revalida dentro de la transacción: quien llama pudo perderlo mientras esperaba el candado
-      const actor = await membershipRepository.findMembership( userId , organizationId , tx ) ;
-
-      if( !actor || (actor.role === "viewer") ) {
-        return( fail( "No autorizado." ) ) ;
-      }
-
-      if( (actor.role !== "owner") && (objetivoId !== userId) ) {
-        return( fail( "No autorizado." ) ) ;
-      }
-
-      const objetivo = ( (objetivoId === userId) ? actor : await membershipRepository.findMembership( objetivoId , organizationId , tx ) ) ;
-
-      if( !objetivo || (objetivo.role === "viewer") ) {
-        return( fail( "La persona elegida no es un miembro que pueda aportar a la caja." ) ) ;
-      }
-
-      const acuerdo = await acuerdoRepository.obtener( organizationId , tx ) ;
-      const cuentas = await cajaRepository.cuentasDeCaja( organizationId , tx ) ;
-
-      if( !(acuerdo?.usesCommonPot) || !cuentas.some( ( c ) => (c.currency === currency) ) ) {
-        return( fail( "Ninguna cuenta de la caja común usa esa divisa." ) ) ;
-      }
-
-      if( amountInCents < 0 ) {
-        const neto = await cajaRepository.netoDe( organizationId , objetivoId , currency , tx ) ;
-
-        if( (neto + amountInCents) < 0 ) {
-          return( fail( "No podés retirar más de lo que aportaste." ) ) ;
-        }
-      }
-
-      await cajaRepository.insertar( {
-        organizationId ,
-        userId:             objetivoId ,
-        amountInCents ,
-        currency ,
-        note:               ( note?.trim() || null ) ,
-        registeredByUserId: userId ,
-      } , tx ) ;
-
-      return( ok( null ) ) ;
-    } ) ) ;
-  } catch( error ) {
-    logger.error( "Error en registrarAporteCajaAction." , { organizationId , error: String( error ) } ) ;
-    return( fail( "No se pudo registrar el movimiento de la caja." ) ) ;
+    clave = armarClaveIdempotencia( { userId: sesion.value.userId , accion: "registrarAporteCaja" , claveCliente: claveDeEnvio , datos: validation.data } ) ;
+  } catch {
+    return( fail( "Clave de envío inválida." ) ) ;
   }
+
+  return( await conIdempotencia( clave , async () => {
+    try {
+      return( await db.transaction( async ( tx ) => {
+        await cajaRepository.bloquear( organizationId , tx ) ;
+
+        // El rol se revalida dentro de la transacción: quien llama pudo perderlo mientras esperaba el candado
+        const actor = await membershipRepository.findMembership( userId , organizationId , tx ) ;
+
+        if( !actor || (actor.role === "viewer") ) {
+          return( fail( "No autorizado." ) ) ;
+        }
+
+        if( (actor.role !== "owner") && (objetivoId !== userId) ) {
+          return( fail( "No autorizado." ) ) ;
+        }
+
+        const objetivo = ( (objetivoId === userId) ? actor : await membershipRepository.findMembership( objetivoId , organizationId , tx ) ) ;
+
+        if( !objetivo || (objetivo.role === "viewer") ) {
+          return( fail( "La persona elegida no es un miembro que pueda aportar a la caja." ) ) ;
+        }
+
+        const acuerdo = await acuerdoRepository.obtener( organizationId , tx ) ;
+        const cuentas = await cajaRepository.cuentasDeCaja( organizationId , tx ) ;
+
+        if( !(acuerdo?.usesCommonPot) || !cuentas.some( ( c ) => (c.currency === currency) ) ) {
+          return( fail( "Ninguna cuenta de la caja común usa esa divisa." ) ) ;
+        }
+
+        if( amountInCents < 0 ) {
+          const neto = await cajaRepository.netoDe( organizationId , objetivoId , currency , tx ) ;
+
+          if( (neto + amountInCents) < 0 ) {
+            return( fail( "No podés retirar más de lo que aportaste." ) ) ;
+          }
+        }
+
+        await cajaRepository.insertar( {
+          organizationId ,
+          userId:             objetivoId ,
+          amountInCents ,
+          currency ,
+          note:               ( note?.trim() || null ) ,
+          registeredByUserId: userId ,
+        } , tx ) ;
+
+        return( ok( null ) ) ;
+      } ) ) ;
+    } catch( error ) {
+      logger.error( "Error en registrarAporteCajaAction." , { organizationId , error: String( error ) } ) ;
+      return( fail( "No se pudo registrar el movimiento de la caja." ) ) ;
+    }
+  } ) ) ;
 }
