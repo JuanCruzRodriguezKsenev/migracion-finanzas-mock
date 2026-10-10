@@ -16,8 +16,6 @@ describe( "env validation (obtenerEnv)" , () => {
       DATABASE_URL: "postgresql://postgres:pwd@localhost:5432/finanzas_db" ,
       NEXTAUTH_SECRET: "super-secret-key-12345" ,
       NEXTAUTH_URL: "http://localhost:3000" ,
-      BRANDFETCH_API_KEY: "test-api-key" ,
-      NEXT_PUBLIC_BRANDFETCH_CLIENT_ID: "custom-client"
     } ;
 
     const env = obtenerEnv( validConfig ) ;
@@ -25,7 +23,6 @@ describe( "env validation (obtenerEnv)" , () => {
     expect( env.DATABASE_URL ).toBe( "postgresql://postgres:pwd@localhost:5432/finanzas_db" ) ;
     expect( env.NEXTAUTH_SECRET ).toBe( "super-secret-key-12345" ) ;
     expect( env.NEXTAUTH_URL ).toBe( "http://localhost:3000" ) ;
-    expect( env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID ).toBe( "custom-client" ) ;
   } ) ;
 
   it( "debería asignar valores por defecto a campos opcionales" , () => {
@@ -35,7 +32,6 @@ describe( "env validation (obtenerEnv)" , () => {
 
     const env = obtenerEnv( minimalConfig ) ;
     expect( env.NODE_ENV ).toBe( "development" ) ;
-    expect( env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID ).toBe( "brandfetch" ) ;
     expect( env.NEXTAUTH_SECRET ).toBeUndefined() ;
   } ) ;
 

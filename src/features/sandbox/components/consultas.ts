@@ -17,7 +17,7 @@ export interface ConsultaBateria {
  */
 export const CONSULTAS: ConsultaBateria[] = [
   { consulta: "bbva" ,            esperados: [ "bbva.com" , "bbva.com.ar" ] } ,
-  { consulta: "galicia" ,         esperados: [ "galicia.ar" , "bancogalicia.com" , "bancogalicia.com.ar" ] } ,
+  { consulta: "galicia" ,         esperados: [ "galicia.com.ar" , "galicia.ar" , "bancogalicia.com" , "bancogalicia.com.ar" ] } ,
   { consulta: "santander" ,       esperados: [ "santander.com.ar" , "santander.com" ] } ,
   { consulta: "baxar" ,           esperados: [ "baxar.com.ar" ] } ,
   { consulta: "coto" ,            esperados: [ "coto.com.ar" ] } ,
@@ -26,7 +26,7 @@ export const CONSULTAS: ConsultaBateria[] = [
   { consulta: "banco nacion" ,    esperados: [ "bna.com.ar" ] } ,
   { consulta: "brubank" ,         esperados: [ "brubank.com" , "brubank.com.ar" ] } ,
   { consulta: "uala" ,            esperados: [ "uala.com.ar" ] } ,
-  { consulta: "belo" ,            esperados: [ "belo.app" ] } ,
+  { consulta: "belo" ,            esperados: [ "belo.ar" , "belo.app" ] } ,
   { consulta: "banco provincia" , esperados: [ "bancoprovincia.com.ar" ] } ,
   { consulta: "netflix" ,         esperados: [ "netflix.com" , "netflix.com.ar" ] } ,
   { consulta: "spotify" ,         esperados: [ "spotify.com" , "spotify.com.ar" ] } ,

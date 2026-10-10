@@ -19,6 +19,7 @@ import type {
   FilaBateriaNombres ,
   IdentidadMarcaLab
 } from "./bateriaVista" ;
+import { CONSULTAS } from "./consultas" ;
 
 describe( "bateriaVista" , () => {
   it( "1. dominioBase normaliza protocolo, www, mayúsculas y rutas" , () => {
@@ -258,5 +259,15 @@ describe( "bateriaVista" , () => {
       { dominio: "edesur.com.ar" , resuelve: true }
     ] ;
     expect( posicionEsperado( listaConPrevioInvalido , esperados ) ).toBe( 0 ) ;
+  } ) ;
+
+  it( "8. CONSULTAS incluye galicia.com.ar al inicio de galicia y belo.ar en belo" , () => {
+    const galicia = CONSULTAS.find( ( c ) => c.consulta === "galicia" ) ;
+    expect( galicia ).toBeDefined() ;
+    expect( galicia!.esperados[0] ).toBe( "galicia.com.ar" ) ;
+
+    const belo = CONSULTAS.find( ( c ) => c.consulta === "belo" ) ;
+    expect( belo ).toBeDefined() ;
+    expect( belo!.esperados ).toContain( "belo.ar" ) ;
   } ) ;
 } ) ;

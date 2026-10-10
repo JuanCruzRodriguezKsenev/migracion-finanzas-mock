@@ -13,8 +13,6 @@ export const envSchema = z.object( {
   ) ,
   NEXTAUTH_SECRET: z.string().optional() ,
   NEXTAUTH_URL: z.string().url( "NEXTAUTH_URL debe ser una URL válida" ).optional() ,
-  BRANDFETCH_API_KEY: z.string().optional() ,
-  NEXT_PUBLIC_BRANDFETCH_CLIENT_ID: z.string().default( "brandfetch" ) ,
   GOOGLE_CLIENT_ID: z.string().optional() ,
   GOOGLE_CLIENT_SECRET: z.string().optional() ,
 } ).refine(

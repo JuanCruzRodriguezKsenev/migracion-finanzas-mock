@@ -44,104 +44,70 @@ describe( "brandSearch — búsqueda y utilidades de marcas" , () => {
     expect( construirConsultas( "galicia" ) ).toEqual( [ "galicia" ] ) ;
   } ) ;
 
-  it( "2. buscarMarcas consulta con URL esperada y lee NEXT_PUBLIC_BRANDFETCH_CLIENT_ID al consultar" , async () => {
+  it( "2. buscarMarcas consulta /api/brand?q=... y propaga pais cuando paisPrioritario está presente" , async () => {
     await buscarMarcas( "banco galicia" ) ;
-    expect( fetchMock ).toHaveBeenCalledWith( "https://api.brandfetch.io/v2/search/banco%20galicia?c=brandfetch" ) ;
+    expect( fetchMock ).toHaveBeenCalledWith( "/api/brand?q=banco+galicia" ) ;
 
     fetchMock.mockClear() ;
-    vi.stubEnv( "NEXT_PUBLIC_BRANDFETCH_CLIENT_ID" , "abc" ) ;
 
-    await buscarMarcas( "santander" ) ;
-    expect( fetchMock ).toHaveBeenCalledWith( "https://api.brandfetch.io/v2/search/santander?c=abc" ) ;
+    await buscarMarcas( "santander" , { paisPrioritario: "ar" } ) ;
+    expect( fetchMock ).toHaveBeenCalledWith( "/api/brand?q=santander&pais=ar" ) ;
   } ) ;
 
-  it( "3. une sin repetir dominio ignorando mayúsculas conservando la primera grafía" , async () => {
-    fetchMock.mockImplementation( async ( input: RequestInfo | URL ) => {
-      const url = String( input ) ;
-      if( url.includes( "search/galicia%3F" ) || url.includes( "search/galicia?" ) ) {
-        return( {
-          ok:   true ,
-          json: async () => [
-            { name: "Banco Galicia" , domain: "Galicia.com.ar" , icon: "https://cdn.example.com/g1.png" }
-          ]
-        } ) ;
-      }
+  it( "3. buscarMarcas procesa y devuelve los resultados de /api/brand" , async () => {
+    fetchMock.mockImplementation( async () => {
       return( {
         ok:   true ,
         json: async () => [
-          { name: "galicia ar" , domain: "galicia.com.ar" , icon: "https://cdn.example.com/g2.png" }
+          { name: "Banco Galicia" , domain: "galicia.com.ar" , icon: "https://google.com/s2/favicons?domain=galicia.com.ar" , coincide: true , confianzaAlta: true }
         ]
       } ) ;
     } ) ;
 
-    const res = await buscarMarcas( "galicia" , { sufijos: [ ".com.ar" ] } ) ;
+    const res = await buscarMarcas( "galicia" ) ;
 
     expect( res ).toHaveLength( 1 ) ;
     expect( res[0] ).toEqual( {
-      name:   "Banco Galicia" ,
-      domain: "Galicia.com.ar" ,
-      icon:   "https://cdn.example.com/g1.png"
+      name:          "Banco Galicia" ,
+      domain:        "galicia.com.ar" ,
+      icon:          "https://google.com/s2/favicons?domain=galicia.com.ar" ,
+      coincide:      true ,
+      confianzaAlta: true
     } ) ;
   } ) ;
 
-  it( "4. name cae al dominio si falta; descarta ítems sin domain; ignora respuesta que no es arreglo" , async () => {
-    fetchMock.mockImplementation( async ( input: RequestInfo | URL ) => {
-      const url = String( input ) ;
-      if( url.includes( "search/test?" ) ) {
-        return( {
-          ok:   true ,
-          json: async () => [
-            { domain: "solo-dominio.com" } ,
-            { name: "Sin Dominio" } ,
-            null ,
-            "invalido"
-          ]
-        } ) ;
-      }
+  it( "4. ignora respuesta si json no es arreglo o si el texto es vacío" , async () => {
+    fetchMock.mockImplementation( async () => {
       return( {
         ok:   true ,
         json: async () => ( { error: "not an array" } )
       } ) ;
     } ) ;
 
-    const res = await buscarMarcas( "test" , { sufijos: [ ".com" ] } ) ;
+    const resInvalido = await buscarMarcas( "test" ) ;
+    expect( resInvalido ).toEqual( [] ) ;
 
-    expect( res ).toEqual( [
-      {
-        name:   "solo-dominio.com" ,
-        domain: "solo-dominio.com"
-      }
-    ] ) ;
+    const resVacio = await buscarMarcas( "   " ) ;
+    expect( resVacio ).toEqual( [] ) ;
   } ) ;
 
-  it( "5. !ok y rechazo de fetch retornan arreglo vacío sin lanzar y las otras variantes siguen aportando" , async () => {
-    fetchMock.mockImplementation( async ( input: RequestInfo | URL ) => {
-      const url = String( input ) ;
-      if( url.includes( "search/variante1?" ) ) {
-        return( {
-          ok:   false ,
-          json: async () => ( { error: "bad request" } )
-        } ) ;
-      }
-      if( url.includes( "search/variante2?" ) ) {
-        throw new Error( "network failure" ) ;
-      }
+  it( "5. !ok y rechazo de fetch retornan arreglo vacío sin lanzar error" , async () => {
+    fetchMock.mockImplementation( async () => {
       return( {
-        ok:   true ,
-        json: async () => [
-          { name: "Variante 3" , domain: "v3.com" }
-        ]
+        ok:   false ,
+        json: async () => ( { error: "bad request" } )
       } ) ;
     } ) ;
 
-    const res = await buscarMarcas( "variante1" , { sufijos: [ "variante2" , "variante3" ] } ) ;
+    const resFallo = await buscarMarcas( "errorHttp" ) ;
+    expect( resFallo ).toEqual( [] ) ;
 
-    expect( res ).toEqual( [
-      {
-        name:   "Variante 3" ,
-        domain: "v3.com"
-      }
-    ] ) ;
+    fetchMock.mockImplementation( async () => {
+      throw new Error( "network failure" ) ;
+    } ) ;
+
+    const resRed = await buscarMarcas( "caidaRed" ) ;
+    expect( resRed ).toEqual( [] ) ;
   } ) ;
 
   it( "6. paisPrioritario: ar prioriza dominios .ar y .ar. manteniendo orden estable; sin país preserva orden de llegada" , async () => {

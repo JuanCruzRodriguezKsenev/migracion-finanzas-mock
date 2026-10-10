@@ -129,11 +129,11 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
 
     // Obtener color corporativo oficial en segundo plano consultando nuestra API interna
     try {
-      const res = await fetch( `/api/brand?domain=${encodeURIComponent( sugg.domain )}` ) ;
+      const res = await fetch( `/api/brand/identidad?domain=${encodeURIComponent( sugg.domain )}` ) ;
       if( res.ok ) {
-        const brandData = await res.json() ;
-        if( brandData.primaryColor ) {
-          setColor( brandData.primaryColor ) ;
+        const identidad = await res.json() ;
+        if( identidad.color ) {
+          setColor( identidad.color ) ;
         } else {
           setNotice( dict.brandColorFetchError ) ;
         }
@@ -174,7 +174,7 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
     label:    sugg.name ,
     sublabel: sugg.domain ,
     icon:     sugg.icon
-      // eslint-disable-next-line @next/next/no-img-element -- Icono externo de CDN/Brandfetch sin dimensiones fijas conocidas
+      // eslint-disable-next-line @next/next/no-img-element -- Icono de marca sin dimensiones fijas conocidas
       ? <img src={sugg.icon} alt={sugg.name} />
       : <span>🌐</span> ,
     trailing: <span>{ banderaDeDominio( sugg.domain ) }</span>

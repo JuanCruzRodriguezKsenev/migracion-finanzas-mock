@@ -44,14 +44,7 @@ describe( "AddSubscriptionModal — buscador de marcas y modal de suscripción" 
     storageMap.clear() ;
     vi.stubGlobal( "localStorage" , localStorageMock ) ;
 
-    fetchMock = vi.fn().mockImplementation( async ( input: RequestInfo | URL ) => {
-      const url = String( input ) ;
-      if( url.includes( "api.brandfetch.io" ) ) {
-        return( {
-          ok:   true ,
-          json: async () => [] ,
-        } ) ;
-      }
+    fetchMock = vi.fn().mockImplementation( async () => {
       return( {
         ok:     false ,
         status: 404 ,
@@ -125,14 +118,18 @@ describe( "AddSubscriptionModal — buscador de marcas y modal de suscripción" 
     const onAdd = vi.fn() ;
     fetchMock.mockImplementation( async ( input ) => {
       const url = String( input ) ;
-      if( url.includes( "/api/brand?domain=netflix.com" ) ) {
+      if( url.includes( "/api/brand/identidad?domain=netflix.com" ) ) {
         return( {
           ok:   true ,
           json: async () => ( {
-            name:         "Netflix" ,
-            domain:       "netflix.com" ,
-            logoUrl:      "https://x/n.png" ,
-            primaryColor: "#E50914" ,
+            nombre:  "Netflix" ,
+            dominio: "netflix.com" ,
+            color:   "#E50914" ,
+            icono:   {
+              dataUri: "data:image/png;base64,mockLogoBase64" ,
+              ancho:   32 ,
+              alto:    32 ,
+            } ,
           } ) ,
         } ) ;
       }
@@ -149,7 +146,7 @@ describe( "AddSubscriptionModal — buscador de marcas y modal de suscripción" 
       fireEvent.click( netflixOption ) ;
     } ) ;
 
-    expect( fetchMock ).toHaveBeenCalledWith( "/api/brand?domain=netflix.com" ) ;
+    expect( fetchMock ).toHaveBeenCalledWith( "/api/brand/identidad?domain=netflix.com" ) ;
     expect( screen.getByText( dict.previewLabel ) ).toBeInTheDocument() ;
 
     fireEvent.change( screen.getByLabelText( dict.priceLabel , { exact: false } ) , { target: { value: "15.99" } } ) ;
@@ -161,27 +158,24 @@ describe( "AddSubscriptionModal — buscador de marcas y modal de suscripción" 
 
     expect( onAdd ).toHaveBeenCalledWith( expect.objectContaining( {
       name:    "Netflix" ,
-      logoKey: "https://x/n.png" ,
+      logoKey: "data:image/png;base64,mockLogoBase64" ,
       color:   "#E50914" ,
       amount:  1599 ,
     } ) ) ;
   } ) ;
 
-  it( "5. logos claro y oscuro combinan ambas URL separadas por pleca" , async () => {
+  it( "5. respuesta de identidad sin icono preserva el logo predefinido de la marca y actualiza el color" , async () => {
     const onAdd = vi.fn() ;
     fetchMock.mockImplementation( async ( input ) => {
       const url = String( input ) ;
-      if( url.includes( "/api/brand?domain=netflix.com" ) ) {
+      if( url.includes( "/api/brand/identidad?domain=netflix.com" ) ) {
         return( {
           ok:   true ,
           json: async () => ( {
-            name:         "Netflix" ,
-            domain:       "netflix.com" ,
-            logos:        [
-              { theme: "light" , src: "https://x/light.png" } ,
-              { theme: "dark"  , src: "https://x/dark.png" } ,
-            ] ,
-            primaryColor: "#E50914" ,
+            nombre:  "Netflix" ,
+            dominio: "netflix.com" ,
+            color:   "#FF2222" ,
+            icono:   null ,
           } ) ,
         } ) ;
       }
@@ -205,7 +199,8 @@ describe( "AddSubscriptionModal — buscador de marcas y modal de suscripción" 
     } ) ;
 
     expect( onAdd ).toHaveBeenCalledWith( expect.objectContaining( {
-      logoKey: "https://x/light.png|https://x/dark.png" ,
+      logoKey: "https://logo.clearbit.com/netflix.com" ,
+      color:   "#FF2222" ,
     } ) ) ;
   } ) ;
 
@@ -235,21 +230,10 @@ describe( "AddSubscriptionModal — buscador de marcas y modal de suscripción" 
     } ) ) ;
   } ) ;
 
-  it( "7. buscar en la web consulta Brandfetch y /api/brand priorizando coincidencia directa y ccTLD" , async () => {
+  it( "7. buscar en la web consulta marcas mediante /api/brand y muestra sugerencias online" , async () => {
     fetchMock.mockImplementation( async ( input ) => {
       const url = String( input ) ;
-      if( url.includes( "/api/brand?domain=bbva" ) ) {
-        return( {
-          ok:   true ,
-          json: async () => ( {
-            name:         "BBVA" ,
-            domain:       "bbva.com" ,
-            logoUrl:      "https://cdn.bbva.com/logo.png" ,
-            primaryColor: "#004481" ,
-          } ) ,
-        } ) ;
-      }
-      if( url.includes( "api.brandfetch.io/v2/search/" ) ) {
+      if( url.includes( "/api/brand?q=bbva" ) ) {
         return( {
           ok:   true ,
           json: async () => [
@@ -271,22 +255,20 @@ describe( "AddSubscriptionModal — buscador de marcas y modal de suscripción" 
     } ) ;
 
     const urls = fetchMock.mock.calls.map( ( [ url ] ) => String( url ) ) ;
-    expect( urls.some( ( u ) => u.includes( "search/bbva?" ) || u.includes( "search/bbva%3F" ) ) ).toBe( true ) ;
-    expect( urls.some( ( u ) => u.includes( "search/bbva.com?" ) || u.includes( "search/bbva.com%3F" ) ) ).toBe( true ) ;
-    expect( urls.some( ( u ) => u.includes( "search/bbva.com.ar?" ) || u.includes( "search/bbva.com.ar%3F" ) ) ).toBe( true ) ;
-    expect( urls.some( ( u ) => u.includes( "/api/brand?domain=bbva" ) ) ).toBe( true ) ;
+    expect( urls.some( ( u ) => u.includes( "/api/brand?q=bbva" ) ) ).toBe( true ) ;
+    expect( urls.some( ( u ) => u.includes( "brandfetch" ) ) ).toBe( false ) ;
 
     const opciones = within( screen.getByRole( "listbox" ) ).getAllByRole( "option" ) ;
-    expect( opciones[0] ).toHaveTextContent( "BBVA" ) ;
-    expect( opciones[1] ).toHaveTextContent( "BBVA Francés" ) ;
+    expect( opciones[0] ).toHaveTextContent( "BBVA Francés" ) ;
+    expect( opciones[1] ).toHaveTextContent( "BBVA Global" ) ;
     expect( opciones[2] ).toHaveTextContent( `${dict.customOptionPrefix} "bbva"` ) ;
     expect( opciones ).toHaveLength( 3 ) ;
   } ) ;
 
-  it( "8. texto con espacios no consulta la API directa de marcas" , async () => {
+  it( "8. texto con espacios consulta /api/brand con query codificada sin consultar Brandfetch" , async () => {
     fetchMock.mockImplementation( async ( input ) => {
       const url = String( input ) ;
-      if( url.includes( "api.brandfetch.io/v2/search/" ) ) {
+      if( url.includes( "/api/brand?q=" ) ) {
         return( {
           ok:   true ,
           json: async () => [ { name: "Mercado Pago" , domain: "mercadopago.com" } ] ,
@@ -305,14 +287,14 @@ describe( "AddSubscriptionModal — buscador de marcas y modal de suscripción" 
     } ) ;
 
     const urls = fetchMock.mock.calls.map( ( [ url ] ) => String( url ) ) ;
-    expect( urls.some( ( u ) => u.startsWith( "/api/brand" ) ) ).toBe( false ) ;
-    expect( urls.some( ( u ) => u.includes( "api.brandfetch.io" ) ) ).toBe( true ) ;
+    expect( urls.some( ( u ) => u.includes( "/api/brand?q=mercado" ) ) ).toBe( true ) ;
+    expect( urls.some( ( u ) => u.includes( "brandfetch" ) ) ).toBe( false ) ;
   } ) ;
 
-  it( "9. texto con punto produce una sola consulta a Brandfetch" , async () => {
+  it( "9. texto con dominio consulta /api/brand con el dominio exacto" , async () => {
     fetchMock.mockImplementation( async ( input ) => {
       const url = String( input ) ;
-      if( url.includes( "api.brandfetch.io/v2/search/" ) ) {
+      if( url.includes( "/api/brand?q=" ) ) {
         return( {
           ok:   true ,
           json: async () => [ { name: "BBVA" , domain: "bbva.com" } ] ,
@@ -330,12 +312,12 @@ describe( "AddSubscriptionModal — buscador de marcas y modal de suscripción" 
       fireEvent.click( searchOnlineBtn ) ;
     } ) ;
 
-    const brandfetchCalls = fetchMock.mock.calls
+    const calls = fetchMock.mock.calls
       .map( ( [ url ] ) => String( url ) )
-      .filter( ( u ) => u.includes( "api.brandfetch.io" ) ) ;
+      .filter( ( u ) => u.includes( "/api/brand?q=" ) ) ;
 
-    expect( brandfetchCalls ).toHaveLength( 1 ) ;
-    expect( brandfetchCalls[0] ).toContain( "search/bbva.com" ) ;
+    expect( calls ).toHaveLength( 1 ) ;
+    expect( calls[0] ).toContain( "q=bbva.com" ) ;
   } ) ;
 
   it( "10. sin resultados en la web cae directo a opción personalizada con el nombre buscado" , async () => {
@@ -379,10 +361,10 @@ describe( "AddSubscriptionModal — buscador de marcas y modal de suscripción" 
     } ) ) ;
   } ) ;
 
-  it( "12. cambiar de país persiste en almacenamiento y altera la búsqueda; lee país inicial guardado" , async () => {
+  it( "12. cambiar de país persiste en almacenamiento y altera la búsqueda con parámetro de país" , async () => {
     fetchMock.mockImplementation( async ( input ) => {
       const url = String( input ) ;
-      if( url.includes( "api.brandfetch.io" ) ) {
+      if( url.includes( "/api/brand" ) ) {
         return( {
           ok:   true ,
           json: async () => [ { name: "Renfe" , domain: "renfe.es" } ] ,
@@ -406,7 +388,7 @@ describe( "AddSubscriptionModal — buscador de marcas y modal de suscripción" 
     } ) ;
 
     const urls = fetchMock.mock.calls.map( ( [ url ] ) => String( url ) ) ;
-    expect( urls.some( ( u ) => u.includes( "search/renfe.es" ) ) ).toBe( true ) ;
+    expect( urls.some( ( u ) => u.includes( "/api/brand" ) && ( u.includes( "pais=es" ) || u.includes( "pais=ES" ) ) ) ).toBe( true ) ;
 
     unmount() ;
 
@@ -440,12 +422,7 @@ describe( "AddSubscriptionModal — buscador de marcas y modal de suscripción" 
     expect( onAdd ).not.toHaveBeenCalled() ;
   } ) ;
 
-  it( "14. montar en edición con logo remoto consulta metadatos de la marca; con icono local no consulta" , async () => {
-    fetchMock.mockImplementation( async () => ( {
-      ok:   true ,
-      json: async () => ( { name: "Netflix" , domain: "netflix.com" } ) ,
-    } ) ) ;
-
+  it( "14. montar en edición no dispara consultas de red innecesarias" , async () => {
     const editingRemoto = {
       id:          "sub-1" ,
       name:        "Netflix" ,
@@ -459,44 +436,30 @@ describe( "AddSubscriptionModal — buscador de marcas y modal de suscripción" 
       yearlyCost:  19188 ,
     } as unknown as SubscriptionWithStats ;
 
-    const { unmount } = await renderModal( { editingData: editingRemoto } ) ;
-
-    await waitFor( () => {
-      expect( fetchMock ).toHaveBeenCalledWith( "/api/brand?domain=netflix.com" ) ;
-    } ) ;
-
-    unmount() ;
-    fetchMock.mockClear() ;
-
-    const editingLocal = {
-      ...editingRemoto ,
-      logoKey: "gym" ,
-    } ;
-
-    await renderModal( { editingData: editingLocal } ) ;
+    await renderModal( { editingData: editingRemoto } ) ;
     expect( fetchMock ).not.toHaveBeenCalled() ;
   } ) ;
 
-  it( "15. respuesta directa sin domain: se ignora la coincidencia directa y se muestran los resultados de Brandfetch con opción personalizada" , async () => {
+  it( "15. seleccionar marca encontrada en búsqueda online consulta /api/brand/identidad" , async () => {
     fetchMock.mockImplementation( async ( input ) => {
       const url = String( input ) ;
-      if( url.includes( "/api/brand?domain=bbva" ) ) {
-        return( {
-          ok:   true ,
-          json: async () => ( { name: "BBVA" } ) ,
-        } ) ;
-      }
-      if( url.includes( "api.brandfetch.io/v2/search/" ) ) {
+      if( url.includes( "/api/brand?q=bbva" ) ) {
         return( {
           ok:   true ,
           json: async () => [
-            { name: "BBVA Francés"  , domain: "bbva.com.ar" , icon: "https://cdn.bbva.com/frances.png" } ,
-            { name: "BBVA Global"   , domain: "bbva.com"    , icon: "https://cdn.bbva.com/global.png" } ,
-            { name: "BBVA Bancomer" , domain: "bbva.mx"     , icon: "https://cdn.bbva.com/bancomer.png" } ,
-            { name: "BBVA Perú"     , domain: "bbva.pe"     , icon: "https://cdn.bbva.com/peru.png" } ,
-            { name: "BBVA Colombia" , domain: "bbva.co"     , icon: "https://cdn.bbva.com/colombia.png" } ,
-            { name: "BBVA España"   , domain: "bbva.es"     , icon: "https://cdn.bbva.com/espana.png" } ,
+            { name: "BBVA" , domain: "bbva.com" , icon: "https://cdn.bbva.com/logo.png" } ,
           ] ,
+        } ) ;
+      }
+      if( url.includes( "/api/brand/identidad?domain=bbva.com" ) ) {
+        return( {
+          ok:   true ,
+          json: async () => ( {
+            nombre:  "BBVA" ,
+            dominio: "bbva.com" ,
+            color:   "#004481" ,
+            icono:   { dataUri: "data:image/png;base64,bbvaIcon" } ,
+          } ) ,
         } ) ;
       }
       return( { ok: false , json: async () => ( {} ) } ) ;
@@ -511,49 +474,12 @@ describe( "AddSubscriptionModal — buscador de marcas y modal de suscripción" 
       fireEvent.click( searchOnlineBtn ) ;
     } ) ;
 
-    const opciones = within( screen.getByRole( "listbox" ) ).getAllByRole( "option" ) ;
-    expect( opciones ).toHaveLength( 7 ) ;
-    expect( opciones[0] ).toHaveTextContent( "BBVA Francés" ) ;
-    expect( opciones[1] ).toHaveTextContent( "BBVA Global" ) ;
-    expect( opciones[2] ).toHaveTextContent( "BBVA Bancomer" ) ;
-    expect( opciones[3] ).toHaveTextContent( "BBVA Perú" ) ;
-    expect( opciones[4] ).toHaveTextContent( "BBVA Colombia" ) ;
-    expect( opciones[5] ).toHaveTextContent( "BBVA España" ) ;
-    expect( opciones[6] ).toHaveTextContent( `${dict.customOptionPrefix} "bbva"` ) ;
-  } ) ;
-
-  it( "16. respuesta directa sin name: no entra primero y el dominio sale una sola vez desde Brandfetch" , async () => {
-    fetchMock.mockImplementation( async ( input ) => {
-      const url = String( input ) ;
-      if( url.includes( "/api/brand?domain=bbva" ) ) {
-        return( {
-          ok:   true ,
-          json: async () => ( { domain: "bbva.com" } ) ,
-        } ) ;
-      }
-      if( url.includes( "api.brandfetch.io/v2/search/" ) ) {
-        return( {
-          ok:   true ,
-          json: async () => [
-            { name: "BBVA Global" , domain: "bbva.com" , icon: "https://cdn.bbva.com/global.png" } ,
-          ] ,
-        } ) ;
-      }
-      return( { ok: false , json: async () => ( {} ) } ) ;
-    } ) ;
-
-    await renderModal() ;
-
-    fireEvent.change( screen.getByPlaceholderText( dict.searchPlaceholder ) , { target: { value: "bbva" } } ) ;
-
-    const searchOnlineBtn = within( screen.getByRole( "listbox" ) ).getAllByRole( "option" )[0] ;
+    const bbvaOption = within( screen.getByRole( "listbox" ) ).getAllByRole( "option" )[0] ;
     await act( async () => {
-      fireEvent.click( searchOnlineBtn ) ;
+      fireEvent.click( bbvaOption ) ;
     } ) ;
 
-    const opciones = within( screen.getByRole( "listbox" ) ).getAllByRole( "option" ) ;
-    expect( opciones ).toHaveLength( 2 ) ;
-    expect( opciones[0] ).toHaveTextContent( "BBVA Global" ) ;
-    expect( opciones[1] ).toHaveTextContent( `${dict.customOptionPrefix} "bbva"` ) ;
+    expect( fetchMock ).toHaveBeenCalledWith( "/api/brand/identidad?domain=bbva.com" ) ;
+    expect( screen.getByLabelText( dict.nameLabel , { exact: false } ) ).toHaveValue( "BBVA" ) ;
   } ) ;
 } ) ;

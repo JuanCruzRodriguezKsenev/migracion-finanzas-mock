@@ -35,7 +35,8 @@ export default defineConfig( {
       "src/shared/services/**/*.test.ts" ,
       "src/shared/ui/**/*.test.tsx" ,
       "src/features/**/*.test.ts" ,
-      "src/features/**/*.test.tsx"
+      "src/features/**/*.test.tsx" ,
+      "src/app/**/*.test.ts"
     ]
   } ,
   resolve: {

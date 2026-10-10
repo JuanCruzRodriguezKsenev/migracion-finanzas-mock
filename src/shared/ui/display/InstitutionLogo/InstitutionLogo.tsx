@@ -1,8 +1,7 @@
 /**
  * @file InstitutionLogo.tsx
  * Componente genérico reutilizable para obtener y renderizar logotipos de marcas.
- * Realiza búsquedas asíncronas dinámicas mediante la Brand Search API de Brandfetch en tiempo real,
- * cacheando resultados en memoria para evitar redundancias de red.
+ * Consulta la identidad de marcas en tiempo real y cachea resultados en memoria.
  */
 "use client" ;
 
@@ -106,28 +105,34 @@ export function InstitutionLogo( {
     let isMounted = true ;
     const fetchLogo = async () => {
       try {
-        const clientId = process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || "brandfetch" ;
-        const url = `https://api.brandfetch.io/v2/search/${encodeURIComponent( institution )}?c=${clientId}` ;
+        if( brandDomain ) {
+          const url = `/api/brand/identidad?domain=${encodeURIComponent( brandDomain )}` ;
+          const res = await fetch( url ) ;
+          if( !res.ok ) {
+            throw new Error( "Identidad API failed" ) ;
+          }
 
-        const res = await fetch( url ) ;
-        if( !res.ok ) {
-          throw new Error( "Search API failed" ) ;
+          const data = await res.json() ;
+          if( isMounted ) {
+            const dataUri = data?.icono?.dataUri || null ;
+            logoCache[brandDomain] = dataUri ;
+            if( dataUri ) {
+              setAsyncState( { url: dataUri , loading: false , error: false } ) ;
+            } else {
+              setAsyncState( { url: null , loading: false , error: true } ) ;
+            }
+          }
+          return ;
         }
 
-        const data = await res.json() ;
         if( isMounted ) {
-          if( data && ( data.length > 0 ) && data[0].icon ) {
-            const iconUrl = data[0].icon ;
-            logoCache[institution] = iconUrl ;
-            setAsyncState( { url: iconUrl , loading: false , error: false } ) ;
-          } else {
-            logoCache[institution] = null ;
-            setAsyncState( { url: null , loading: false , error: true } ) ;
-          }
+          setAsyncState( { url: null , loading: false , error: true } ) ;
         }
       } catch {
         if( isMounted ) {
-          logoCache[institution] = null ;
+          if( brandDomain ) {
+            logoCache[brandDomain] = null ;
+          }
           setAsyncState( { url: null , loading: false , error: true } ) ;
         }
       }
@@ -135,7 +140,7 @@ export function InstitutionLogo( {
 
     fetchLogo() ;
     return( () => { isMounted = false ; } ) ;
-  } , [ institution , direct ] ) ;
+  } , [ institution , brandDomain , direct ] ) ;
 
   const sizeStyle = {
     width:  `${size}px` ,

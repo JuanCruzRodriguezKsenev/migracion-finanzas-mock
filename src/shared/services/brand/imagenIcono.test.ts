@@ -9,6 +9,7 @@ import sharp                       from "sharp" ;
 
 // Shared
 import {
+  extraerImagenDeIco ,
   normalizarIcono ,
   extraerPngDeIco ,
   medirImagen
@@ -115,5 +116,97 @@ describe( "imagenIcono" , () => {
     expect( meta.width ).toBe( 128 ) ;
     expect( meta.height ).toBe( 128 ) ;
     expect( meta.format ).toBe( "png" ) ;
+  } ) ;
+
+  it( "4. extraerImagenDeIco decodifica entrada BMP 32bpp y la convierte a PNG" , async () => {
+    const ancho  = 32 ;
+    const alto   = 32 ;
+    const biSize = 40 ;
+    const pixelBytes = ancho * alto * 4 ;
+    const andMaskRowStride = Math.floor( ( ancho + 31 ) / 32 ) * 4 ;
+    const andMaskBytes = andMaskRowStride * alto ;
+    const bmpBuf = Buffer.alloc( biSize + pixelBytes + andMaskBytes ) ;
+
+    bmpBuf.writeUInt32LE( biSize , 0 ) ;
+    bmpBuf.writeInt32LE( ancho , 4 ) ;
+    bmpBuf.writeInt32LE( alto * 2 , 8 ) ;
+    bmpBuf.writeUInt16LE( 1 , 12 ) ;
+    bmpBuf.writeUInt16LE( 32 , 14 ) ;
+    bmpBuf.writeUInt32LE( 0 , 16 ) ;
+
+    for( let i = 0 ; i < ancho * alto ; i++ ) {
+      const offset = biSize + ( i * 4 ) ;
+      bmpBuf[offset]     = 200 ; // B
+      bmpBuf[offset + 1] = 100 ; // G
+      bmpBuf[offset + 2] = 50 ;  // R
+      bmpBuf[offset + 3] = 255 ; // A
+    }
+
+    const icoConBmp = armarIco( [ { ancho: 32 , alto: 32 , buf: bmpBuf } ] ) ;
+
+    // extraerPngDeIco síncrono retorna null para BMP
+    expect( extraerPngDeIco( icoConBmp ) ).toBeNull() ;
+
+    // extraerImagenDeIco asíncrono lo decodifica a PNG
+    const extraido = await extraerImagenDeIco( icoConBmp ) ;
+    expect( extraido ).not.toBeNull() ;
+
+    const meta = await sharp( extraido! ).metadata() ;
+    expect( meta.width ).toBe( 32 ) ;
+    expect( meta.height ).toBe( 32 ) ;
+    expect( meta.format ).toBe( "png" ) ;
+  } ) ;
+
+  it( "5. extraerImagenDeIco y medirImagen manejan cabeceras BMP corruptas sin lanzar errores" , async () => {
+    // Cabecera menor a 40 bytes
+    const bmpTruncado = armarIco( [ { ancho: 16 , alto: 16 , buf: Buffer.alloc( 20 , 0 ) } ] ) ;
+    expect( await extraerImagenDeIco( bmpTruncado ) ).toBeNull() ;
+    expect( await medirImagen( bmpTruncado ) ).toBeNull() ;
+
+    // biSize !== 40
+    const bmpCabeceraInvalida = Buffer.alloc( 60 , 0 ) ;
+    bmpCabeceraInvalida.writeUInt32LE( 20 , 0 ) ; // biSize incorrecto
+    const icoInvalido = armarIco( [ { ancho: 16 , alto: 16 , buf: bmpCabeceraInvalida } ] ) ;
+    expect( await extraerImagenDeIco( icoInvalido ) ).toBeNull() ;
+    expect( await medirImagen( icoInvalido ) ).toBeNull() ;
+  } ) ;
+
+  it( "6. normalizarIcono produce data URI de 128x128 a partir de un ICO con BMP de 32bpp" , async () => {
+    const ancho  = 32 ;
+    const alto   = 32 ;
+    const biSize = 40 ;
+    const pixelBytes = ancho * alto * 4 ;
+    const andMaskRowStride = Math.floor( ( ancho + 31 ) / 32 ) * 4 ;
+    const andMaskBytes = andMaskRowStride * alto ;
+    const bmpBuf = Buffer.alloc( biSize + pixelBytes + andMaskBytes ) ;
+
+    bmpBuf.writeUInt32LE( biSize , 0 ) ;
+    bmpBuf.writeInt32LE( ancho , 4 ) ;
+    bmpBuf.writeInt32LE( alto * 2 , 8 ) ;
+    bmpBuf.writeUInt16LE( 1 , 12 ) ;
+    bmpBuf.writeUInt16LE( 32 , 14 ) ;
+    bmpBuf.writeUInt32LE( 0 , 16 ) ;
+
+    for( let i = 0 ; i < ancho * alto ; i++ ) {
+      const offset = biSize + ( i * 4 ) ;
+      bmpBuf[offset]     = 10 ;
+      bmpBuf[offset + 1] = 20 ;
+      bmpBuf[offset + 2] = 200 ;
+      bmpBuf[offset + 3] = 255 ;
+    }
+
+    const icoConBmp   = armarIco( [ { ancho: 32 , alto: 32 , buf: bmpBuf } ] ) ;
+    const normalizado = await normalizarIcono( icoConBmp ) ;
+
+    expect( normalizado ).not.toBeNull() ;
+    expect( normalizado!.ancho ).toBe( 128 ) ;
+    expect( normalizado!.alto ).toBe( 128 ) ;
+    expect( normalizado!.origenAncho ).toBe( 32 ) ;
+    expect( normalizado!.dataUri.startsWith( "data:image/png;base64," ) ).toBe( true ) ;
+
+    const b64  = normalizado!.dataUri.replace( "data:image/png;base64," , "" ) ;
+    const meta = await sharp( Buffer.from( b64 , "base64" ) ).metadata() ;
+    expect( meta.width ).toBe( 128 ) ;
+    expect( meta.height ).toBe( 128 ) ;
   } ) ;
 } ) ;

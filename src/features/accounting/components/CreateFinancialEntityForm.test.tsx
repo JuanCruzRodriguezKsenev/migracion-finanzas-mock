@@ -34,17 +34,17 @@ describe( "CreateFinancialEntityForm — buscador de marcas y alta de entidad" ,
     fetchMock = vi.fn().mockImplementation( async ( input: RequestInfo | URL ) => {
       const url = String( input ) ;
 
-      if( url.includes( "api.brandfetch.io/v2/search/" ) ) {
+      if( url.includes( "/api/brand/identidad" ) ) {
         return( {
           ok:   true ,
-          json: async () => [] ,
+          json: async () => ( { color: "#123456" } ) ,
         } ) ;
       }
 
       if( url.startsWith( "/api/brand" ) ) {
         return( {
           ok:   true ,
-          json: async () => ( { primaryColor: "#123456" } ) ,
+          json: async () => [] ,
         } ) ;
       }
 
@@ -102,7 +102,7 @@ describe( "CreateFinancialEntityForm — buscador de marcas y alta de entidad" ,
     expect( llamadas.every( ( url ) => url.includes( "galicia" ) ) ).toBe( true ) ;
   } ) ;
 
-  it( "4. con país ar y texto sin punto produce exactamente 4 variantes en orden con ?c=brandfetch" , async () => {
+  it( "4. con país ar y texto consulta /api/brand con parámetro q y pais" , async () => {
     render( <CreateFinancialEntityForm dict={dict.accountsPage} /> ) ;
     fireEvent.change( selectorPais() , { target: { value: "ar" } } ) ;
 
@@ -111,15 +111,10 @@ describe( "CreateFinancialEntityForm — buscador de marcas y alta de entidad" ,
       await vi.advanceTimersByTimeAsync( 500 ) ;
     } ) ;
 
-    expect( fetchMock ).toHaveBeenCalledTimes( 4 ) ;
-    const urls = fetchMock.mock.calls.map( ( [ url ] ) => String( url ) ) ;
-    expect( urls[0] ).toBe( "https://api.brandfetch.io/v2/search/galicia?c=brandfetch" ) ;
-    expect( urls[1] ).toBe( "https://api.brandfetch.io/v2/search/galicia.com?c=brandfetch" ) ;
-    expect( urls[2] ).toBe( "https://api.brandfetch.io/v2/search/galicia.com.ar?c=brandfetch" ) ;
-    expect( urls[3] ).toBe( "https://api.brandfetch.io/v2/search/galicia.ar?c=brandfetch" ) ;
+    expect( fetchMock ).toHaveBeenCalledWith( "/api/brand?q=galicia&pais=ar" ) ;
   } ) ;
 
-  it( "5. una sola consulta directa si el texto contiene punto" , async () => {
+  it( "5. consulta directa con dominio que contiene punto" , async () => {
     render( <CreateFinancialEntityForm dict={dict.accountsPage} /> ) ;
     fireEvent.change( selectorPais() , { target: { value: "ar" } } ) ;
 
@@ -128,11 +123,10 @@ describe( "CreateFinancialEntityForm — buscador de marcas y alta de entidad" ,
       await vi.advanceTimersByTimeAsync( 500 ) ;
     } ) ;
 
-    expect( fetchMock ).toHaveBeenCalledTimes( 1 ) ;
-    expect( fetchMock ).toHaveBeenCalledWith( "https://api.brandfetch.io/v2/search/galicia.com.ar?c=brandfetch" ) ;
+    expect( fetchMock ).toHaveBeenCalledWith( "/api/brand?q=galicia.com.ar&pais=ar" ) ;
   } ) ;
 
-  it( "6. sin país (Global / Todos) produce 2 consultas: literal y .com" , async () => {
+  it( "6. sin país (Global / Todos) consulta /api/brand sin parámetro pais" , async () => {
     render( <CreateFinancialEntityForm dict={dict.accountsPage} /> ) ;
     fireEvent.change( selectorPais() , { target: { value: "" } } ) ;
 
@@ -141,16 +135,13 @@ describe( "CreateFinancialEntityForm — buscador de marcas y alta de entidad" ,
       await vi.advanceTimersByTimeAsync( 500 ) ;
     } ) ;
 
-    expect( fetchMock ).toHaveBeenCalledTimes( 2 ) ;
-    const urls = fetchMock.mock.calls.map( ( [ url ] ) => String( url ) ) ;
-    expect( urls[0] ).toBe( "https://api.brandfetch.io/v2/search/galicia?c=brandfetch" ) ;
-    expect( urls[1] ).toBe( "https://api.brandfetch.io/v2/search/galicia.com?c=brandfetch" ) ;
+    expect( fetchMock ).toHaveBeenCalledWith( "/api/brand?q=galicia" ) ;
   } ) ;
 
   it( "7. prioridad del país y tope de 5 opciones" , async () => {
     fetchMock.mockImplementation( async ( input ) => {
       const url = String( input ) ;
-      if( url.includes( "api.brandfetch.io" ) ) {
+      if( url.startsWith( "/api/brand" ) ) {
         return( {
           ok:   true ,
           json: async () => [
@@ -187,7 +178,7 @@ describe( "CreateFinancialEntityForm — buscador de marcas y alta de entidad" ,
   it( "8. sin duplicados: el mismo dominio retornado por distintas consultas aparece una sola vez" , async () => {
     fetchMock.mockImplementation( async ( input ) => {
       const url = String( input ) ;
-      if( url.includes( "api.brandfetch.io" ) ) {
+      if( url.startsWith( "/api/brand" ) ) {
         return( {
           ok:   true ,
           json: async () => [
@@ -214,7 +205,7 @@ describe( "CreateFinancialEntityForm — buscador de marcas y alta de entidad" ,
   it( "9. muestra nombre, dominio como subtexto, icono o 🌐 y bandera de país o 🌐" , async () => {
     fetchMock.mockImplementation( async ( input ) => {
       const url = String( input ) ;
-      if( url.includes( "api.brandfetch.io" ) ) {
+      if( url.startsWith( "/api/brand" ) ) {
         return( {
           ok:   true ,
           json: async () => [
@@ -285,16 +276,16 @@ describe( "CreateFinancialEntityForm — buscador de marcas y alta de entidad" ,
   it( "12. elegir una marca consulta /api/brand, muestra banner y oculta el buscador" , async () => {
     fetchMock.mockImplementation( async ( input ) => {
       const url = String( input ) ;
-      if( url.includes( "api.brandfetch.io" ) ) {
+      if( url.includes( "/api/brand/identidad" ) ) {
         return( {
           ok:   true ,
-          json: async () => [ { name: "Galicia" , domain: "galicia.com.ar" } ] ,
+          json: async () => ( { color: "#FF5500" } ) ,
         } ) ;
       }
       if( url.startsWith( "/api/brand" ) ) {
         return( {
           ok:   true ,
-          json: async () => ( { primaryColor: "#FF5500" } ) ,
+          json: async () => [ { name: "Galicia" , domain: "galicia.com.ar" } ] ,
         } ) ;
       }
       return( { ok: false , json: async () => ( {} ) } ) ;
@@ -314,7 +305,7 @@ describe( "CreateFinancialEntityForm — buscador de marcas y alta de entidad" ,
       await vi.runAllTimersAsync() ;
     } ) ;
 
-    expect( fetchMock ).toHaveBeenCalledWith( "/api/brand?domain=galicia.com.ar" ) ;
+    expect( fetchMock ).toHaveBeenCalledWith( "/api/brand/identidad?domain=galicia.com.ar" ) ;
     expect( screen.getByText( /✨ Marca vinculada:/ ) ).toBeInTheDocument() ;
     expect( screen.getByText( "Galicia" ) ).toBeInTheDocument() ;
     expect( screen.getByText( "(galicia.com.ar)" ) ).toBeInTheDocument() ;
@@ -324,16 +315,16 @@ describe( "CreateFinancialEntityForm — buscador de marcas y alta de entidad" ,
   it( "13. enviar con marca vinculada llama a createFinancialEntityAction con logo bank, brandDomain y color oficial" , async () => {
     fetchMock.mockImplementation( async ( input ) => {
       const url = String( input ) ;
-      if( url.includes( "api.brandfetch.io" ) ) {
+      if( url.includes( "/api/brand/identidad" ) ) {
         return( {
           ok:   true ,
-          json: async () => [ { name: "Galicia" , domain: "galicia.com.ar" } ] ,
+          json: async () => ( { color: "#FF5500" } ) ,
         } ) ;
       }
       if( url.startsWith( "/api/brand" ) ) {
         return( {
           ok:   true ,
-          json: async () => ( { primaryColor: "#FF5500" } ) ,
+          json: async () => [ { name: "Galicia" , domain: "galicia.com.ar" } ] ,
         } ) ;
       }
       return( { ok: false , json: async () => ( {} ) } ) ;
@@ -368,16 +359,16 @@ describe( "CreateFinancialEntityForm — buscador de marcas y alta de entidad" ,
   it( "14. sin color oficial: /api/brand !ok o sin primaryColor muestra aviso y envía color por defecto #6366f1" , async () => {
     fetchMock.mockImplementation( async ( input ) => {
       const url = String( input ) ;
-      if( url.includes( "api.brandfetch.io" ) ) {
+      if( url.includes( "/api/brand/identidad" ) ) {
         return( {
-          ok:   true ,
-          json: async () => [ { name: "Galicia" , domain: "galicia.com.ar" } ] ,
+          ok:   false ,
+          json: async () => ( {} ) ,
         } ) ;
       }
       if( url.startsWith( "/api/brand" ) ) {
         return( {
-          ok:   false ,
-          json: async () => ( {} ) ,
+          ok:   true ,
+          json: async () => [ { name: "Galicia" , domain: "galicia.com.ar" } ] ,
         } ) ;
       }
       return( { ok: false , json: async () => ( {} ) } ) ;
@@ -414,16 +405,16 @@ describe( "CreateFinancialEntityForm — buscador de marcas y alta de entidad" ,
   it( "15. botón Cambiar desvincula la marca y reabre el buscador vacío" , async () => {
     fetchMock.mockImplementation( async ( input ) => {
       const url = String( input ) ;
-      if( url.includes( "api.brandfetch.io" ) ) {
+      if( url.includes( "/api/brand/identidad" ) ) {
         return( {
           ok:   true ,
-          json: async () => [ { name: "Galicia" , domain: "galicia.com.ar" } ] ,
+          json: async () => ( { color: "#FF5500" } ) ,
         } ) ;
       }
       if( url.startsWith( "/api/brand" ) ) {
         return( {
           ok:   true ,
-          json: async () => ( { primaryColor: "#FF5500" } ) ,
+          json: async () => [ { name: "Galicia" , domain: "galicia.com.ar" } ] ,
         } ) ;
       }
       return( { ok: false , json: async () => ( {} ) } ) ;

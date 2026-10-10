@@ -20,9 +20,10 @@ export interface CandidatoDominio {
   nombre?:      string ;
   detalle?:     string ;
   archivoLogo?: string ;
-  resuelve?:    boolean ;
-  titulo?:      string ;
-  coincide?:    boolean ;
+  resuelve?:      boolean ;
+  titulo?:        string ;
+  coincide?:      boolean ;
+  confianzaAlta?: boolean ;
 }
 
 /**

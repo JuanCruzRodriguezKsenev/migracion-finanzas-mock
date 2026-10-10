@@ -13,12 +13,11 @@ import React , { useState , useMemo , useEffect } from "react" ;
 // Shared
 import { Autocomplete , AutocompleteOption } from "@/shared/ui/forms/Autocomplete/Autocomplete" ;
 import { buscarMarcas }                      from "@/shared/services/brand/brandSearch" ;
-import type { BrandMetadata }                from "@/shared/services/brand/brandService" ;
-import { FormSelect }                        from "@/shared/ui/forms/Form/FormSelect" ;
 import { readStorage , writeStorage }        from "@/shared/lib/safeStorage" ;
+import { FormSelect }                        from "@/shared/ui/forms/Form/FormSelect" ;
 import { FormInput }                         from "@/shared/ui/forms/Form/FormInput" ;
-import { Button }                            from "@/shared/ui/display/Button/Button" ;
 import type { getDictionary }                from "@/shared/lib/dictionary" ;
+import { Button }                            from "@/shared/ui/display/Button/Button" ;
 import { Modal }                             from "@/shared/ui/feedback/Modal/Modal" ;
 
 // Feature: Accounting
@@ -102,15 +101,6 @@ const POPULAR_BRANDS: BrandSuggestion[] = [
   { kind: "brand" , name: "Canva"                , domain: "canva.com"      , color: "#00C4CC" , logoKey: "https://logo.clearbit.com/canva.com"      , categoryCode: "5.1.09.03" } ,
 ] ;
 
-const SOCIAL_ICONS: Record< string , string > = {
-  youtube:   "📺" ,
-  twitter:   "🐦" ,
-  instagram: "📸" ,
-  linkedin:  "💼" ,
-  facebook:  "👥" ,
-  github:    "🐙" ,
-} ;
-
 /**
  * Resuelve el país inicial del buscador: preferencia guardada → zona horaria → Argentina.
  * Solo corre en cliente (el modal se carga con ssr: false).
@@ -153,22 +143,6 @@ function resolveInitialCountry(): Country {
   }
 
   return( countries[0] ) ;
-}
-
-/**
- * Extrae el dominio de un logoKey remoto para reconsultar los metadatos de la marca.
- */
-function extractDomain( logoKey: string , fallbackName: string ): string {
-  const cleanKey = logoKey.includes( "|" ) ? logoKey.split( "|" )[0] : logoKey ;
-
-  try {
-    if( cleanKey.includes( "logo.clearbit.com/" ) ){
-      return( cleanKey.split( "logo.clearbit.com/" )[1] ) ;
-    }
-    return( new URL( cleanKey ).hostname ) ;
-  } catch {
-    return( `${fallbackName.toLowerCase().replace( /\s+/g , "" )}.com` ) ;
-  }
 }
 
 /**
@@ -225,41 +199,19 @@ export function AddSubscriptionModal( {
     isEditing && editingData ? String( editingData.amount / 100 ) : ""
   ) ) ;
 
-  const [ errors , setErrors ]                     = useState< Partial< Record<"name" | "price" , string> > >( {} ) ;
-  const [ searchTerm , setSearchTerm ]             = useState( "" ) ;
-  const [ showSuggestions , setShowSuggestions ]   = useState( false ) ;
-  const [ isSearching , setIsSearching ]           = useState( false ) ;
-  const [ isOnlineResults , setIsOnlineResults ]   = useState( false ) ;
+  const [ errors , setErrors ]                       = useState< Partial< Record<"name" | "price" , string> > >( {} ) ;
+  const [ searchTerm , setSearchTerm ]               = useState( "" ) ;
+  const [ showSuggestions , setShowSuggestions ]     = useState( false ) ;
+  const [ isSearching , setIsSearching ]             = useState( false ) ;
+  const [ isOnlineResults , setIsOnlineResults ]     = useState( false ) ;
   const [ onlineSuggestions , setOnlineSuggestions ] = useState< Suggestion[] >( [] ) ;
-  const [ brandDetails , setBrandDetails ]         = useState< BrandMetadata | null >( null ) ;
-  const [ activeBrandTab , setActiveBrandTab ]     = useState< "info" | "colors" | "context" | "products" >( "info" ) ;
-  const [ selectedCountry , setSelectedCountry ]   = useState< Country >( resolveInitialCountry ) ;
+  const [ selectedCountry , setSelectedCountry ]     = useState< Country >( resolveInitialCountry ) ;
 
   const countries = countriesData as Country[] ;
 
   const isBrand        = ( form.logoKey.startsWith( "http://" ) || form.logoKey.startsWith( "https://" ) ) ;
   const activeColor    = ( form.color || "#6B7280" ) ;
   const selectedConfig = getLogoConfig( form.logoKey ) ;
-
-  // Cargar detalles de marca al montar cuando se edita una suscripción con logo remoto
-  useEffect( () => {
-    if( isEditing && editingData ){
-      const isBrandLogo = ( editingData.logoKey.startsWith( "http://" ) || editingData.logoKey.startsWith( "https://" ) ) ;
-
-      if( isBrandLogo ){
-        const domain = extractDomain( editingData.logoKey , editingData.name ) ;
-
-        fetch( `/api/brand?domain=${encodeURIComponent( domain )}` )
-          .then( ( res ) => ( res.ok ? res.json() : null ) )
-          .then( ( data: BrandMetadata | null ) => {
-            if( data ){ setBrandDetails( data ) ; }
-          } )
-          .catch( () => {
-            // Sin detalles de marca: el formulario sigue siendo editable
-          } ) ;
-      }
-    }
-  } , [ isEditing , editingData ] ) ;
 
   // Sugerencias visibles: resultados online (si los hay) o filtro local + acciones
   const suggestions = useMemo< Suggestion[] >( () => {
@@ -304,7 +256,7 @@ export function AddSubscriptionModal( {
   ) , [ suggestions , dict.searchOnlinePrefix , dict.customOptionPrefix ] ) ;
 
   /**
-   * Aplica una marca seleccionada consultando sus metadatos completos en /api/brand.
+   * Aplica una marca seleccionada consultando su identidad visual en /api/brand/identidad.
    */
   async function selectBrand( brand: BrandSuggestion ) {
     setIsSearching( true ) ;
@@ -312,115 +264,76 @@ export function AddSubscriptionModal( {
     setSearchTerm( "" ) ;
     setIsOnlineResults( false ) ;
 
-    try {
-      const res  = await fetch( `/api/brand?domain=${encodeURIComponent( brand.domain || brand.name )}` ) ;
-      const data: BrandMetadata | null = ( res.ok ? await res.json() : null ) ;
-
-      let matchedCategoryId: string | null = null ;
-      if( brand.categoryCode ){
-        for( const parent of categoryTree ){
-          if( parent.accountCode === brand.categoryCode ){
-            matchedCategoryId = parent.id ;
-            break ;
-          }
-          const found = parent.children.find( ( c: Category ) => c.accountCode === brand.categoryCode ) ;
-          if( found ){
-            matchedCategoryId = found.id ;
-            break ;
-          }
+    let matchedCategoryId: string | null = null ;
+    if( brand.categoryCode ){
+      for( const parent of categoryTree ){
+        if( parent.accountCode === brand.categoryCode ){
+          matchedCategoryId = parent.id ;
+          break ;
+        }
+        const found = parent.children.find( ( c: Category ) => c.accountCode === brand.categoryCode ) ;
+        if( found ){
+          matchedCategoryId = found.id ;
+          break ;
         }
       }
+    }
 
-      if( data ){
-        const lightLogo = data.logos?.find( ( l ) => l.theme === "light" ) ;
-        const darkLogo  = data.logos?.find( ( l ) => l.theme === "dark" ) ;
+    try {
+      const res = await fetch( `/api/brand/identidad?domain=${encodeURIComponent( brand.domain || brand.name )}` ) ;
+      const identidad = ( res.ok ? await res.json() : null ) ;
 
-        const defaultLogoKey = ( lightLogo && darkLogo )
-          ? `${lightLogo.src}|${darkLogo.src}`
-          : data.logoUrl ;
+      const logo  = ( identidad?.icono?.dataUri || brand.logoKey || "default" ) ;
+      const color = ( identidad?.color || brand.color || CUSTOM_COLORS[0] ) ;
+      const name  = ( identidad?.nombre || brand.name ) ;
 
-        setForm( ( f ) => ( {
-          ...f ,
-          name:       data.name ,
-          logoKey:    defaultLogoKey ,
-          color:      data.primaryColor ,
-          categoryId: ( matchedCategoryId || f.categoryId ) ,
-        } ) ) ;
-        setBrandDetails( data ) ;
-      } else {
-        setForm( ( f ) => ( {
-          ...f ,
-          name:       brand.name ,
-          logoKey:    brand.logoKey || "default" ,
-          color:      brand.color || CUSTOM_COLORS[0] ,
-          categoryId: ( matchedCategoryId || f.categoryId ) ,
-        } ) ) ;
-        setBrandDetails( null ) ;
-      }
+      setForm( ( f ) => ( {
+        ...f ,
+        name ,
+        logoKey:    logo ,
+        color ,
+        categoryId: ( matchedCategoryId || f.categoryId ) ,
+      } ) ) ;
     } catch {
-      setBrandDetails( null ) ;
+      setForm( ( f ) => ( {
+        ...f ,
+        name:       brand.name ,
+        logoKey:    brand.logoKey || "default" ,
+        color:      brand.color || CUSTOM_COLORS[0] ,
+        categoryId: ( matchedCategoryId || f.categoryId ) ,
+      } ) ) ;
     } finally {
       setIsSearching( false ) ;
     }
   }
 
   /**
-   * Busca marcas en la web (Brandfetch Search API) priorizando el ccTLD del país elegido.
+   * Busca marcas en la web priorizando el ccTLD del país elegido.
    */
   async function selectSearchOnline( query: string ) {
     setIsSearching( true ) ;
 
     try {
       const cleanQuery = query.trim() ;
-      const hasSpaces  = cleanQuery.includes( " " ) ;
 
       const sufijos = ( selectedCountry.tld && (selectedCountry.tld !== ".com") )
         ? [ ".com" , selectedCountry.tld ]
         : [ ".com" ] ;
 
-      const [ marcasEncontradas , directMatch ] = await Promise.all( [
-        buscarMarcas( cleanQuery , { sufijos } ) ,
-        hasSpaces
-          ? Promise.resolve( null )
-          : fetch( `/api/brand?domain=${encodeURIComponent( cleanQuery )}` )
-              .then( ( r ) => ( r.ok ? r.json() as Promise< BrandMetadata > : null ) )
-              .catch( () => null ) ,
-      ] ) ;
+      const marcasEncontradas = await buscarMarcas( cleanQuery , {
+        sufijos ,
+        paisPrioritario: selectedCountry.code.toLowerCase() ,
+      } ) ;
 
       const next: Suggestion[] = [] ;
-      const tieneDirecto       = Boolean(
-        directMatch &&
-        ( typeof directMatch.name === "string" ) &&
-        ( directMatch.name.trim() !== "" ) &&
-        ( typeof directMatch.domain === "string" ) &&
-        ( directMatch.domain.trim() !== "" )
-      ) ;
-
-      // 1. Coincidencia directa de dominio primero (ej: "bbva" → bbva.com)
-      if( tieneDirecto && directMatch ){
-        next.push( {
-          kind:    "brand" ,
-          name:    directMatch.name ,
-          domain:  directMatch.domain ,
-          logoKey: directMatch.logoUrl ,
-          color:   directMatch.primaryColor ,
-        } ) ;
-      }
-
-      // 2. Resultados de búsqueda compartida, excluyendo el dominio directo si existió
-      const dominioDirecto = ( tieneDirecto && directMatch?.domain )
-        ? directMatch.domain.toLowerCase()
-        : null ;
 
       for( const marca of marcasEncontradas ){
-        if( !dominioDirecto || (marca.domain.toLowerCase() !== dominioDirecto) ){
-          next.push( {
-            kind:    "brand" ,
-            name:    marca.name ,
-            domain:  marca.domain ,
-            logoKey: marca.icon ,
-          } ) ;
-        }
+        next.push( {
+          kind:    "brand" ,
+          name:    marca.name ,
+          domain:  marca.domain ,
+          logoKey: marca.icon ,
+        } ) ;
       }
 
       if( next.length > 0 ){
@@ -448,7 +361,6 @@ export function AddSubscriptionModal( {
       logoKey: "gym" ,
       color:   CUSTOM_COLORS[0] ,
     } ) ) ;
-    setBrandDetails( null ) ;
     setSearchTerm( "" ) ;
     setShowSuggestions( false ) ;
     setIsOnlineResults( false ) ;
@@ -629,326 +541,6 @@ export function AddSubscriptionModal( {
               </div>
             </div>
           </div>
-
-          {/* Detalles enriquecidos de la marca (Brandfetch) */}
-          {brandDetails && (
-            <div className={styles.brandDetailsBox}>
-              <div className={styles.brandTabs}>
-                <button
-                  type="button"
-                  className={ `${styles.brandTabBtn} ${activeBrandTab === "info" ? styles.brandTabBtnActive : ""}` }
-                  onClick={ () => setActiveBrandTab( "info" ) }
-                >
-                  { dict.tabInfo }
-                </button>
-                <button
-                  type="button"
-                  className={ `${styles.brandTabBtn} ${activeBrandTab === "colors" ? styles.brandTabBtnActive : ""}` }
-                  onClick={ () => setActiveBrandTab( "colors" ) }
-                >
-                  { dict.tabColors }
-                </button>
-                <button
-                  type="button"
-                  className={ `${styles.brandTabBtn} ${activeBrandTab === "context" ? styles.brandTabBtnActive : ""}` }
-                  onClick={ () => setActiveBrandTab( "context" ) }
-                >
-                  { dict.tabContext }
-                </button>
-                <button
-                  type="button"
-                  className={ `${styles.brandTabBtn} ${activeBrandTab === "products" ? styles.brandTabBtnActive : ""}` }
-                  onClick={ () => setActiveBrandTab( "products" ) }
-                >
-                  { dict.tabProducts }
-                </button>
-              </div>
-
-              {activeBrandTab === "info" && (
-                <div className={styles.brandTabContent}>
-                  {brandDetails.tagline && (
-                    <p className={styles.detailTagline}>“{ brandDetails.tagline }”</p>
-                  )}
-                  {brandDetails.description && (
-                    <p className={styles.detailDesc}>{ brandDetails.description }</p>
-                  )}
-                  {brandDetails.longDescription && (brandDetails.longDescription !== brandDetails.description) && (
-                    <p className={ `${styles.detailDesc} ${styles.brandDetailsOpacity}` }>{ brandDetails.longDescription }</p>
-                  )}
-
-                  <div className={styles.detailsGrid}>
-                    {brandDetails.industry && (
-                      <div className={styles.detailGridItem}>
-                        <span className={styles.detailItemLabel}>{ dict.industryLabel }</span>
-                        <span className={styles.detailItemValue}>{ brandDetails.industry }</span>
-                      </div>
-                    )}
-                    {brandDetails.location && (
-                      <div className={styles.detailGridItem}>
-                        <span className={styles.detailItemLabel}>{ dict.hqLabel }</span>
-                        <span className={styles.detailItemValue}>{ brandDetails.location }</span>
-                      </div>
-                    )}
-                    {brandDetails.foundedYear && (
-                      <div className={styles.detailGridItem}>
-                        <span className={styles.detailItemLabel}>{ dict.foundedLabel }</span>
-                        <span className={styles.detailItemValue}>{ brandDetails.foundedYear }</span>
-                      </div>
-                    )}
-                    {brandDetails.companySize && (
-                      <div className={styles.detailGridItem}>
-                        <span className={styles.detailItemLabel}>{ dict.sizeLabel }</span>
-                        <span className={styles.detailItemValue}>{ brandDetails.companySize }</span>
-                      </div>
-                    )}
-                    {brandDetails.qualityScore !== undefined && (
-                      <div className={ `${styles.detailGridItem} ${styles.qualityDetailsContainer}` }>
-                        <div className={styles.qualityRowHeader}>
-                          <span className={styles.detailItemLabel}>{ dict.qualityLabel }</span>
-                          <span className={styles.detailItemValue}>{ brandDetails.qualityScore }%</span>
-                        </div>
-                        <div className={styles.qualityBarContainer}>
-                          <div className={styles.qualityBar} style={ {width: `${brandDetails.qualityScore}%`} } />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {activeBrandTab === "colors" && (
-                <div className={styles.brandTabContent}>
-                  <p className={ `${styles.detailDesc} ${styles.boldHeading}` }>
-                    { dict.paletteTitle }
-                  </p>
-                  <p className={ `${styles.detailDesc} ${styles.opacityMuted}` }>
-                    { dict.paletteHint }
-                  </p>
-                  <div className={styles.colorSwatchGrid}>
-                    {brandDetails.colors?.map( ( c ) => {
-                      const isActive = ( form.color === c.hex ) ;
-                      return(
-                        <button
-                          key={ `${c.hex}-${c.name}` }
-                          type="button"
-                          className={ `${styles.colorSwatchCard} ${isActive ? styles.colorSwatchCardActive : ""}` }
-                          onClick={ () => setForm( ( f ) => ( {...f , color: c.hex} ) ) }
-                        >
-                          <div className={styles.colorSwatchBox} style={ {backgroundColor: c.hex} } />
-                          <div className={styles.colorSwatchInfo}>
-                            <span className={styles.colorSwatchName}>{ c.name || "brand" }</span>
-                            <span className={styles.colorSwatchHex}>{ c.hex }</span>
-                          </div>
-                        </button>
-                      ) ;
-                    } )}
-                  </div>
-
-                  {/* Selector de logotipos oficiales + icono genérico */}
-                  {brandDetails.logos && (brandDetails.logos.length > 0) && (
-                    <div className={styles.logoPickerSection}>
-                      <p className={ `${styles.detailDesc} ${styles.boldHeading}` }>
-                        { dict.logoPickerTitle }
-                      </p>
-                      <div className={styles.logoPickerGrid}>
-                        {( () => {
-                          const lightLogo = brandDetails.logos.find( ( l ) => l.theme === "light" ) ;
-                          const darkLogo  = brandDetails.logos.find( ( l ) => l.theme === "dark" ) ;
-
-                          if( lightLogo && darkLogo && (brandDetails.logos.length > 1) ){
-                            const combinedKey = `${lightLogo.src}|${darkLogo.src}` ;
-                            const isSelected  = ( form.logoKey === combinedKey ) ;
-                            return(
-                              <button
-                                type="button"
-                                className={ `${styles.logoPickerBtn} ${isSelected ? styles.logoPickerBtnActive : ""}` }
-                                onClick={ () => setForm( ( f ) => ( {...f , logoKey: combinedKey} ) ) }
-                                title={dict.logoAutoTitle}
-                              >
-                                <div className={styles.logoPickerIconWrapper}>
-                                  <span className={styles.logoPickerEmoji}>🌓</span>
-                                  <span className={styles.logoPickerCaption}>{ dict.logoAutoLabel }</span>
-                                </div>
-                              </button>
-                            ) ;
-                          }
-                          return( null ) ;
-                        } )()}
-
-                        {brandDetails.logos.map( ( logo , index ) => {
-                          const isSelected = ( form.logoKey === logo.src ) ;
-                          return(
-                            <button
-                              key={index}
-                              type="button"
-                              className={ `${styles.logoPickerBtn} ${isSelected ? styles.logoPickerBtnActive : ""}` }
-                              onClick={ () => setForm( ( f ) => ( {...f , logoKey: logo.src} ) ) }
-                              title={ `${logo.type} (${logo.theme})` }
-                            >
-                              {/* eslint-disable-next-line @next/next/no-img-element -- Logo externo dinámico de marca obtenido de API externa */}
-                              <img
-                                src={logo.src}
-                                alt=""
-                                width={24}
-                                height={24}
-                                className={styles.logoPickerImg}
-                                onError={ ( e ) => {
-                                  ( e.target as HTMLElement ).style.display = "none" ;
-                                } }
-                              />
-                              <span className={styles.logoPickerBadge}>
-                                { logo.theme === "dark" ? "🌙" : "☀️" }
-                              </span>
-                            </button>
-                          ) ;
-                        } )}
-
-                        {( () => {
-                          const isSelected = ( form.logoKey === "default" ) ;
-                          return(
-                            <button
-                              type="button"
-                              className={ `${styles.logoPickerBtn} ${isSelected ? styles.logoPickerBtnActive : ""}` }
-                              onClick={ () => setForm( ( f ) => ( {...f , logoKey: "default"} ) ) }
-                              title={dict.logoGenericTitle}
-                            >
-                              <div className={styles.logoPickerIconWrapper}>
-                                <span className={styles.logoPickerEmoji}>🌐</span>
-                                <span className={styles.logoPickerCaption}>{ dict.logoGenericLabel }</span>
-                              </div>
-                            </button>
-                          ) ;
-                        } )()}
-                      </div>
-                    </div>
-                  )}
-
-                  {(brandDetails.brandVoice?.attributes || brandDetails.brandStyle?.attributes) && (
-                    <div className={ `${styles.voiceStyleGrid} ${styles.voiceStyleGridDetails}` }>
-                      {brandDetails.brandVoice?.attributes && (
-                        <div>
-                          <span className={styles.detailItemLabel}>{ dict.voiceLabel }</span>
-                          <div className={ `${styles.tagGroup} ${styles.tagGroupDetails}` }>
-                            {brandDetails.brandVoice.attributes.map( ( a ) => (
-                              <span key={a} className={styles.attributeTag}>{ a }</span>
-                            ) )}
-                            {brandDetails.brandVoice.avoid && (
-                              <span className={ `${styles.attributeTag} ${styles.attributeTagAvoid}` } title={dict.avoidLabel}>
-                                🚫 { dict.avoidLabel }: { brandDetails.brandVoice.avoid }
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {brandDetails.brandStyle?.attributes && (
-                        <div className={styles.tagGroupDetails}>
-                          <span className={styles.detailItemLabel}>{ dict.styleLabel }</span>
-                          <div className={ `${styles.tagGroup} ${styles.tagGroupDetails}` }>
-                            {brandDetails.brandStyle.attributes.map( ( a ) => (
-                              <span key={a} className={ `${styles.attributeTag} ${styles.visualStyleTag}` }>{ a }</span>
-                            ) )}
-                          </div>
-                          {brandDetails.brandStyle.description && (
-                            <p className={ `${styles.detailDesc} ${styles.styleDescText}` }>
-                              { brandDetails.brandStyle.description }
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeBrandTab === "context" && (
-                <div className={styles.brandTabContent}>
-                  {brandDetails.mission && (
-                    <div className={styles.missionValPropText}>
-                      <span className={styles.detailItemLabel}>{ dict.missionLabel }</span>
-                      <p className={ `${styles.detailDesc} ${styles.missionValPropBox}` }>
-                        { brandDetails.mission }
-                      </p>
-                    </div>
-                  )}
-                  {brandDetails.valueProposition && (
-                    <div className={styles.missionValPropText}>
-                      <span className={styles.detailItemLabel}>{ dict.valuePropLabel }</span>
-                      <p className={ `${styles.detailDesc} ${styles.missionValPropBox}` }>
-                        { brandDetails.valueProposition }
-                      </p>
-                    </div>
-                  )}
-                  {brandDetails.targetAudience && (brandDetails.targetAudience.length > 0) && (
-                    <div className={styles.missionValPropText}>
-                      <span className={styles.detailItemLabel}>{ dict.audienceLabel }</span>
-                      <div className={styles.audienceList}>
-                        {brandDetails.targetAudience.map( ( ta , i ) => (
-                          <div key={i} className={styles.audienceItem}>
-                            <span className={styles.audienceSegment}>{ ta.segment }</span>
-                            <span className={styles.audienceFocus}>{ ta.focus }</span>
-                          </div>
-                        ) )}
-                      </div>
-                    </div>
-                  )}
-                  {!brandDetails.mission && !brandDetails.valueProposition && !brandDetails.targetAudience && (
-                    <p className={ `${styles.detailDesc} ${styles.italicMutedCenter}` }>
-                      { dict.noContext }
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {activeBrandTab === "products" && (
-                <div className={styles.brandTabContent}>
-                  {brandDetails.products && (brandDetails.products.length > 0) && (
-                    <div className={styles.missionValPropText}>
-                      <span className={styles.detailItemLabel}>{ dict.productsLabel }</span>
-                      <div className={styles.productGrid}>
-                        {brandDetails.products.map( ( p , i ) => (
-                          <div key={i} className={styles.productCard}>
-                            <div className={styles.productHeader}>
-                              <span className={styles.productName}>{ p.name }</span>
-                              {p.type && <span className={styles.productType}>{ p.type }</span>}
-                            </div>
-                            <span className={styles.productDesc}>{ p.description }</span>
-                          </div>
-                        ) )}
-                      </div>
-                    </div>
-                  )}
-
-                  {brandDetails.socialLinks && (brandDetails.socialLinks.length > 0) && (
-                    <div className={styles.socialGridDetails}>
-                      <span className={styles.detailItemLabel}>{ dict.socialLabel }</span>
-                      <div className={styles.socialGrid}>
-                        {brandDetails.socialLinks.map( ( s ) => (
-                          <a
-                            key={s.type}
-                            href={s.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.socialBtn}
-                          >
-                            <span>{ SOCIAL_ICONS[s.type] || "🔗" }</span>
-                            <span>{ s.type.toUpperCase() }</span>
-                            {s.handle && <span className={styles.opacityMutedText}>({ s.handle })</span>}
-                          </a>
-                        ) )}
-                      </div>
-                    </div>
-                  )}
-
-                  {!brandDetails.products && (!brandDetails.socialLinks || (brandDetails.socialLinks.length === 0)) && (
-                    <p className={ `${styles.detailDesc} ${styles.italicMutedCenter}` }>
-                      { dict.noProducts }
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* COLUMNA DERECHA: campos del formulario */}

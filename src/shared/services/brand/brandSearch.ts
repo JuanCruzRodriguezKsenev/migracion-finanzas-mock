@@ -6,9 +6,11 @@
 
 /** Resultado de marca devuelto por la búsqueda compartida. */
 export interface MarcaEncontrada {
-  name:    string ;
-  domain:  string ;
-  icon?:   string ;
+  name:           string ;
+  domain:         string ;
+  icon?:          string ;
+  coincide?:      boolean ;
+  confianzaAlta?: boolean ;
 }
 
 /** Opciones de configuración para la búsqueda de marcas. */
@@ -22,7 +24,7 @@ export interface OpcionesBusquedaMarcas {
 }
 
 /**
- * Construye la lista de variantes de consulta a buscar en Brandfetch.
+ * Construye la lista de variantes de consulta a buscar.
  * Si el texto ya contiene un punto, no se expanden sufijos adicionales.
  */
 export function construirConsultas( texto: string , sufijos: string[] = [] ): string[] {
@@ -36,54 +38,38 @@ export function construirConsultas( texto: string , sufijos: string[] = [] ): st
 }
 
 /**
- * Consulta la API de Brandfetch en paralelo para todas las variantes construidas,
- * unifica los resultados eliminando duplicados de dominio (case-insensitive),
- * prioriza dominios asociados al país configurado y aplica el límite solicitado.
+ * Consulta el endpoint interno /api/brand con la consulta y el país configurado,
+ * prioriza dominios asociados al país prioritario y aplica el límite solicitado.
  */
 export async function buscarMarcas( texto: string , opciones: OpcionesBusquedaMarcas = {} ): Promise< MarcaEncontrada[] > {
-  const limpio    = texto.trim() ;
-  const clientId  = process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || "brandfetch" ;
-  const consultas = construirConsultas( limpio , opciones.sufijos || [] ) ;
+  const limpio = texto.trim() ;
+  if( !limpio ) {
+    return( [] ) ;
+  }
 
-  const respuestas = await Promise.all(
-    consultas.map( async ( q ) => {
-      try {
-        const res = await fetch( `https://api.brandfetch.io/v2/search/${encodeURIComponent( q )}?c=${clientId}` ) ;
-        if( !res.ok ) {
-          return( [] ) ;
-        }
-        const datos = await res.json() ;
-        return( Array.isArray( datos ) ? datos : [] ) ;
-      } catch {
-        return( [] ) ;
-      }
-    } )
-  ) ;
+  const params = new URLSearchParams() ;
+  params.set( "q" , limpio ) ;
+  if( opciones.paisPrioritario ) {
+    params.set( "pais" , opciones.paisPrioritario ) ;
+  }
 
-  const resultado      : MarcaEncontrada[] = [] ;
-  const dominiosVistos : Set< string >     = new Set() ;
-
-  for( const res of respuestas ) {
-    if( Array.isArray( res ) ) {
-      for( const item of res ) {
-        if( item && ( typeof item === "object" ) && ( typeof item.domain === "string" ) && ( item.domain.length > 0 ) ) {
-          const clave = item.domain.toLowerCase() ;
-          if( !dominiosVistos.has( clave ) ) {
-            dominiosVistos.add( clave ) ;
-            resultado.push( {
-              name:   ( item.name && ( typeof item.name === "string" ) && ( item.name.length > 0 ) ) ? item.name : item.domain ,
-              domain: item.domain ,
-              ...( ( item.icon && ( typeof item.icon === "string" ) ) ? { icon: item.icon } : {} )
-            } ) ;
-          }
-        }
+  let marcas: MarcaEncontrada[] = [] ;
+  try {
+    const res = await fetch( `/api/brand?${params.toString()}` ) ;
+    if( res.ok ) {
+      const datos = await res.json() ;
+      if( Array.isArray( datos ) ) {
+        marcas = datos ;
       }
     }
+  } catch {
+    return( [] ) ;
   }
 
   const pais = opciones.paisPrioritario?.trim().toLowerCase() ;
+  const ordenadas = [ ...marcas ] ;
   if( pais ) {
-    resultado.sort( ( a , b ) => {
+    ordenadas.sort( ( a , b ) => {
       const aDom   = a.domain.toLowerCase() ;
       const bDom   = b.domain.toLowerCase() ;
       const aLocal = aDom.endsWith( `.${pais}` ) || aDom.includes( `.${pais}.` ) ;
@@ -95,10 +81,10 @@ export async function buscarMarcas( texto: string , opciones: OpcionesBusquedaMa
   }
 
   if( ( typeof opciones.limite === "number" ) && ( opciones.limite >= 0 ) ) {
-    return( resultado.slice( 0 , opciones.limite ) ) ;
+    return( ordenadas.slice( 0 , opciones.limite ) ) ;
   }
 
-  return( resultado ) ;
+  return( ordenadas ) ;
 }
 
 /**
