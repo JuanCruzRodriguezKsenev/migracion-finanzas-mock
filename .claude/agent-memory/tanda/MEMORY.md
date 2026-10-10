@@ -5,7 +5,7 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 
 ## Dónde quedó todo
 
-- [Plan 41 escrito: integración en producción sin Brandfetch](marcas_plan_41_escrito.md) — ICO BMP, verificados compartido con umbral de confianza, formularios desacoplados de Brandfetch y retiro de panel de detalles (2026-10-10).
+- [Plan 41: integración en producción sin Brandfetch](marcas_plan_41_escrito.md) — ejecutado (Gemini, `c471929`) y verificado 2026-10-10: 171 suites/1562 tests, eslint 0, tsc 0, build OK. Falta §6 [USUARIO] e integrar `marcas-39b`; hallazgos en Deuda §32.
 - [Planes 42-45: acceso abierto, avisos, «Ya pagué», Habilitaciones](avisos_y_acceso_planes_42_45.md) — 42 a 45 ejecutados y verificados (1539 tests verdes); serie completa detenida antes de pasos [USUARIO] (2026-10-10).
 - [Plan 40b escrito: afinar verificados y resolutor](marcas_plan_40b_escrito.md) — decisiones color/resolución, qué NO entra, Edesur no reproducible (2026-10-09).
 
@@ -64,3 +64,5 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 - [Cargar movimientos por otra persona, con autoría](idea_cargar_por_otro.md) — idea del 2026-10-06, Deuda §16; pide spec nueva, depende de la autoría por movimiento.
 
 - [Página de proyecciones](idea_pagina_proyecciones.md) — por tendencia sobre recurrencias reales, ajustable por inflación. Sin discutir; idea del 2026-09-09.
+
+- RFC 029 (`docs/proposals/029-external-service-ports.md`, DRAFT, 2026-10-10): hexagonal sólo para servicios externos; hexagonal completo descartado (Postgres es contrato). Resend/QStash/Redis **no están** en el repo; `circuitBreaker.ts` no lo usa nadie.
