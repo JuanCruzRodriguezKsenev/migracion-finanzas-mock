@@ -120,4 +120,64 @@ describe( "GET /api/brand" , () => {
       logoUrl:      "data:image/png;base64,mock"
     } ) ;
   } ) ;
+
+  it( "5. con ?q=nubank&pais=br llama a estrategiaVerificados con el contexto de brasil" , async () => {
+    vi.spyOn( nextAuth , "getServerSession" ).mockResolvedValue( {
+      user: { id: "usuario_1" }
+    } as unknown as nextAuth.Session ) ;
+
+    const spy = vi.spyOn( verificadosModulo , "estrategiaVerificados" ).mockResolvedValue( {
+      estrategia: "verificados" ,
+      ok:         true ,
+      ms:         50 ,
+      estado:     "200" ,
+      candidatos: []
+    } ) ;
+
+    const req = new NextRequest( "http://localhost:3000/api/brand?q=nubank&pais=br" ) ;
+    const res = await GET( req ) ;
+
+    expect( res.status ).toBe( 200 ) ;
+    expect( spy ).toHaveBeenCalledWith( "nubank" , {
+      pais: { sufijo: ".com.br" , nombre: "brasil" }
+    } ) ;
+  } ) ;
+
+  it( "6. con ?q=netflix sin país llama a estrategiaVerificados con { pais: null }" , async () => {
+    vi.spyOn( nextAuth , "getServerSession" ).mockResolvedValue( {
+      user: { id: "usuario_1" }
+    } as unknown as nextAuth.Session ) ;
+
+    const spy = vi.spyOn( verificadosModulo , "estrategiaVerificados" ).mockResolvedValue( {
+      estrategia: "verificados" ,
+      ok:         true ,
+      ms:         50 ,
+      estado:     "200" ,
+      candidatos: []
+    } ) ;
+
+    const req = new NextRequest( "http://localhost:3000/api/brand?q=netflix" ) ;
+    const res = await GET( req ) ;
+
+    expect( res.status ).toBe( 200 ) ;
+    expect( spy ).toHaveBeenCalledWith( "netflix" , {
+      pais: null
+    } ) ;
+  } ) ;
+
+  it( "7. con ?q=netflix&pais=a.b retorna 400 y no llama a estrategiaVerificados" , async () => {
+    vi.spyOn( nextAuth , "getServerSession" ).mockResolvedValue( {
+      user: { id: "usuario_1" }
+    } as unknown as nextAuth.Session ) ;
+
+    const spy = vi.spyOn( verificadosModulo , "estrategiaVerificados" ) ;
+
+    const req = new NextRequest( "http://localhost:3000/api/brand?q=netflix&pais=a.b" ) ;
+    const res = await GET( req ) ;
+
+    expect( res.status ).toBe( 400 ) ;
+    expect( await res.json() ).toEqual( { error: "Invalid pais" } ) ;
+    expect( spy ).not.toHaveBeenCalled() ;
+  } ) ;
 } ) ;
+

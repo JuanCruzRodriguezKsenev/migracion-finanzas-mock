@@ -27,7 +27,7 @@ import { iconoDeCategoria }             from "@/features/accounting/utils/catego
 
 // Feature: Subscriptions
 import { SubscriptionFormData , SubscriptionFrequency , SubscriptionWithStats } from "../types" ;
-import countriesData                                                            from "../data/countries.json" ;
+import countriesData                                                            from "@/shared/data/countries.json" ;
 import { SubscriptionIcon }                                                     from "./SubscriptionIcon" ;
 import { getLogoConfig }                                                        from "../utils/logoMap" ;
 import styles                                                                   from "./AddSubscriptionModal.module.css" ;
@@ -316,12 +316,7 @@ export function AddSubscriptionModal( {
     try {
       const cleanQuery = query.trim() ;
 
-      const sufijos = ( selectedCountry.tld && (selectedCountry.tld !== ".com") )
-        ? [ ".com" , selectedCountry.tld ]
-        : [ ".com" ] ;
-
       const marcasEncontradas = await buscarMarcas( cleanQuery , {
-        sufijos ,
         paisPrioritario: selectedCountry.code.toLowerCase() ,
       } ) ;
 

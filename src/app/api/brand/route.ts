@@ -13,8 +13,9 @@ import { authOptions } from "@/shared/lib/auth" ;
 import { logger }      from "@/shared/lib/logger" ;
 
 // Shared: Brand
-import { resolverIdentidad }    from "@/shared/services/brand/resolutorIdentidad" ;
-import { estrategiaVerificados } from "@/shared/services/brand/verificados" ;
+import { contextoPaisDeBusqueda } from "@/shared/services/brand/paisBusqueda" ;
+import { resolverIdentidad }      from "@/shared/services/brand/resolutorIdentidad" ;
+import { estrategiaVerificados }  from "@/shared/services/brand/verificados" ;
 
 /**
  * Representa una marca encontrada en el endpoint de búsqueda.
@@ -50,13 +51,13 @@ export async function GET( request: NextRequest ): Promise< NextResponse > {
 
   try {
     if( q ) {
-      const paisParam = searchParams.get( "pais" ) || "ar" ;
-      const contextoPais = ( paisParam === "ar" )
-        ? { sufijo: ".com.ar" , nombre: "argentina" }
-        : { sufijo: `.${paisParam}` , nombre: paisParam } ;
+      const paisParam = ( searchParams.get( "pais" ) || "" ).trim() ;
+      if( paisParam && !/^[A-Za-z]{2}$/.test( paisParam ) ) {
+        return( NextResponse.json( { error: "Invalid pais" } , { status: 400 } ) ) ;
+      }
 
       const resultado = await estrategiaVerificados( q , {
-        pais: contextoPais
+        pais: contextoPaisDeBusqueda( paisParam )
       } ) ;
 
       const marcas: MarcaEncontrada[] = resultado.candidatos

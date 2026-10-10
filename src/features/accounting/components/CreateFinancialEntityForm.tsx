@@ -44,24 +44,14 @@ const COUNTRIES = [
 ] ;
 
 /**
- * Detecta dinámicamente el país del usuario mediante navigator y zona horaria.
+ * Detecta dinámicamente el país del usuario priorizando la zona horaria (ubicación física),
+ * luego el idioma del navegador si figura en las opciones disponibles (COUNTRIES), y
+ * finalmente "ar" por defecto.
  */
 function detectUserCountry(): string {
   if( typeof navigator === "undefined" ) { return( "ar" ) ; }
 
-  // 1. Intentar obtener de navigator.languages
-  const langs = navigator.languages || [ navigator.language ] ;
-  for( const l of langs ) {
-    const parts = l.split( "-" ) ;
-    if( parts.length > 1 ) {
-      const code = parts[1].toLowerCase() ;
-      if( ( code.length === 2 ) && isNaN( Number( code ) ) ) {
-        return( code ) ;
-      }
-    }
-  }
-
-  // 2. Intentar obtener de Zona Horaria
+  // 1. Intentar obtener de Zona Horaria
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "" ;
     const tzLower = tz.toLowerCase() ;
@@ -74,6 +64,18 @@ function detectUserCountry(): string {
     if( tzLower.includes( "sao_paulo" ) || tzLower.includes( "brazil" ) ) { return( "br" ) ; }
     if( tzLower.includes( "madrid" ) ) { return( "es" ) ; }
   } catch {}
+
+  // 2. Intentar obtener de navigator.languages (sólo si el código resultante está en COUNTRIES)
+  const langs = navigator.languages || [ navigator.language ] ;
+  for( const l of langs ) {
+    const parts = l.split( "-" ) ;
+    if( parts.length > 1 ) {
+      const code = parts[1].toLowerCase() ;
+      if( ( code.length === 2 ) && isNaN( Number( code ) ) && COUNTRIES.some( ( c ) => c.code === code ) ) {
+        return( code ) ;
+      }
+    }
+  }
 
   return( "ar" ) ;
 }
@@ -104,8 +106,7 @@ export function CreateFinancialEntityForm( { dict , onSuccess }: CreateFinancial
     const delayDebounceFn = setTimeout( () => {
       const searchBrand = async () => {
         try {
-          const sufijos     = ( selectedCountry ? [ ".com" , `.com.${selectedCountry}` , `.${selectedCountry}` ] : [ ".com" ] ) ;
-          const encontradas = await buscarMarcas( name , { sufijos , paisPrioritario: selectedCountry , limite: 5 } ) ;
+          const encontradas = await buscarMarcas( name , { paisPrioritario: selectedCountry , limite: 5 } ) ;
 
           setSuggestions( encontradas ) ;
           setShowDropdown( encontradas.length > 0 ) ;

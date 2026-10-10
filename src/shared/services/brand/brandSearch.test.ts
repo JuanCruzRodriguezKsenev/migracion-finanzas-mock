@@ -7,7 +7,7 @@
 import { describe , it , expect , vi , beforeEach , afterEach } from "vitest" ;
 
 // Shared
-import { construirConsultas , buscarMarcas , banderaDeDominio } from "./brandSearch" ;
+import { buscarMarcas , banderaDeDominio } from "./brandSearch" ;
 
 
 describe( "brandSearch — búsqueda y utilidades de marcas" , () => {
@@ -27,21 +27,6 @@ describe( "brandSearch — búsqueda y utilidades de marcas" , () => {
     vi.unstubAllGlobals() ;
     vi.unstubAllEnvs() ;
     vi.clearAllMocks() ;
-  } ) ;
-
-  it( "1. construirConsultas: con punto retorna una sola; sin punto genera variantes ordenadas; recorta texto" , () => {
-    expect( construirConsultas( "  galicia.com.ar  " , [ ".com" , ".com.ar" , ".ar" ] ) ).toEqual( [
-      "galicia.com.ar"
-    ] ) ;
-
-    expect( construirConsultas( "  galicia  " , [ ".com" , ".com.ar" , ".ar" ] ) ).toEqual( [
-      "galicia" ,
-      "galicia.com" ,
-      "galicia.com.ar" ,
-      "galicia.ar"
-    ] ) ;
-
-    expect( construirConsultas( "galicia" ) ).toEqual( [ "galicia" ] ) ;
   } ) ;
 
   it( "2. buscarMarcas consulta /api/brand?q=... y propaga pais cuando paisPrioritario está presente" , async () => {

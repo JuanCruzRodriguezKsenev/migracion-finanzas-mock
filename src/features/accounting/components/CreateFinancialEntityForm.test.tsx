@@ -260,17 +260,61 @@ describe( "CreateFinancialEntityForm — buscador de marcas y alta de entidad" ,
     expect( screen.queryByRole( "alert" ) ).not.toBeInTheDocument() ;
   } ) ;
 
-  it( "11. país inicial detectado desde el navegador" , () => {
-    const spyMx = vi.spyOn( navigator , "languages" , "get" ).mockReturnValue( [ "es-MX" ] ) ;
-    const { unmount } = render( <CreateFinancialEntityForm dict={dict.accountsPage} /> ) ;
-    expect( selectorPais().value ).toBe( "mx" ) ;
-    unmount() ;
-    spyMx.mockRestore() ;
+  it( "11. país inicial detectado desde el navegador" , async () => {
+    const baseOptions = new Intl.DateTimeFormat().resolvedOptions() ;
 
-    const spyUs = vi.spyOn( navigator , "languages" , "get" ).mockReturnValue( [ "en-US" ] ) ;
-    render( <CreateFinancialEntityForm dict={dict.accountsPage} /> ) ;
+    // Caso 1: timeZone America/Argentina/Buenos_Aires + languages [ "en-US" ] -> "ar"
+    const spyTzAr   = vi.spyOn( Intl , "DateTimeFormat" ).mockImplementation( () => ( {
+      resolvedOptions: () => ( {
+        ...baseOptions ,
+        timeZone: "America/Argentina/Buenos_Aires"
+      } )
+    } as unknown as Intl.DateTimeFormat ) ) ;
+    const spyLangAr = vi.spyOn( navigator , "languages" , "get" ).mockReturnValue( [ "en-US" ] ) ;
+    const vistaAr   = render( <CreateFinancialEntityForm dict={dict.accountsPage} /> ) ;
+    expect( selectorPais().value ).toBe( "ar" ) ;
+    vistaAr.unmount() ;
+    spyTzAr.mockRestore() ;
+    spyLangAr.mockRestore() ;
+
+    // Caso 2: timeZone America/Mexico_City + languages [ "en-US" ] -> "mx"
+    const spyTzMx   = vi.spyOn( Intl , "DateTimeFormat" ).mockImplementation( () => ( {
+      resolvedOptions: () => ( {
+        ...baseOptions ,
+        timeZone: "America/Mexico_City"
+      } )
+    } as unknown as Intl.DateTimeFormat ) ) ;
+    const spyLangMx = vi.spyOn( navigator , "languages" , "get" ).mockReturnValue( [ "en-US" ] ) ;
+    const vistaMx   = render( <CreateFinancialEntityForm dict={dict.accountsPage} /> ) ;
+    expect( selectorPais().value ).toBe( "mx" ) ;
+    vistaMx.unmount() ;
+    spyTzMx.mockRestore() ;
+    spyLangMx.mockRestore() ;
+
+    // Caso 3: timeZone UTC + languages [ "en-US" ] -> "us"; timeZone UTC + languages [ "de-DE" ] -> "ar"
+    const spyTzUtc  = vi.spyOn( Intl , "DateTimeFormat" ).mockImplementation( () => ( {
+      resolvedOptions: () => ( {
+        ...baseOptions ,
+        timeZone: "UTC"
+      } )
+    } as unknown as Intl.DateTimeFormat ) ) ;
+    const spyLangUs = vi.spyOn( navigator , "languages" , "get" ).mockReturnValue( [ "en-US" ] ) ;
+    const vistaUs   = render( <CreateFinancialEntityForm dict={dict.accountsPage} /> ) ;
     expect( selectorPais().value ).toBe( "us" ) ;
-    spyUs.mockRestore() ;
+    vistaUs.unmount() ;
+    spyLangUs.mockRestore() ;
+
+    const spyLangDe = vi.spyOn( navigator , "languages" , "get" ).mockReturnValue( [ "de-DE" ] ) ;
+    const vistaDe   = render( <CreateFinancialEntityForm dict={dict.accountsPage} /> ) ;
+    expect( selectorPais().value ).toBe( "ar" ) ;
+    fireEvent.change( inputNombre() , { target: { value: "galicia" } } ) ;
+    await act( async () => {
+      await vi.advanceTimersByTimeAsync( 500 ) ;
+    } ) ;
+    expect( fetchMock ).toHaveBeenCalledWith( expect.stringContaining( "pais=ar" ) ) ;
+    vistaDe.unmount() ;
+    spyLangDe.mockRestore() ;
+    spyTzUtc.mockRestore() ;
   } ) ;
 
   it( "12. elegir una marca consulta /api/brand, muestra banner y oculta el buscador" , async () => {

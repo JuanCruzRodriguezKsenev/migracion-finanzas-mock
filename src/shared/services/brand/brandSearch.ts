@@ -1,7 +1,7 @@
 /**
  * @file brandSearch.ts
- * Búsqueda de marcas compartida contra la API de Brandfetch con resolución
- * de consultas por sufijos, ordenación por país prioritario y bandera por TLD.
+ * Búsqueda de marcas compartida contra /api/brand con ordenación por país prioritario
+ * y bandera por TLD.
  */
 
 /** Resultado de marca devuelto por la búsqueda compartida. */
@@ -15,26 +15,10 @@ export interface MarcaEncontrada {
 
 /** Opciones de configuración para la búsqueda de marcas. */
 export interface OpcionesBusquedaMarcas {
-  /** Sufijos que se agregan al texto cuando éste no tiene punto: [ ".com" , ".com.ar" , ".ar" ]. */
-  sufijos?:         string[] ;
   /** ccTLD en minúscula ("ar"): sus dominios van primero. Vacío o ausente: no ordena. */
   paisPrioritario?: string ;
   /** Tope de resultados. Ausente: sin tope. */
   limite?:          number ;
-}
-
-/**
- * Construye la lista de variantes de consulta a buscar.
- * Si el texto ya contiene un punto, no se expanden sufijos adicionales.
- */
-export function construirConsultas( texto: string , sufijos: string[] = [] ): string[] {
-  const limpio = texto.trim() ;
-
-  if( limpio.includes( "." ) ) {
-    return( [ limpio ] ) ;
-  }
-
-  return( [ limpio , ...sufijos.map( ( s ) => limpio + s ) ] ) ;
 }
 
 /**
