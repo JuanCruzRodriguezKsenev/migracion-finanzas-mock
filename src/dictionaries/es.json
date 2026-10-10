@@ -772,6 +772,7 @@
   "habilitaciones": {
     "title": "Quién puede cargar por mí",
     "subtitle": "Las personas habilitadas pueden registrar movimientos a tu nombre en esta organización. Podés quitarles el permiso cuando quieras.",
+    "ownersNote": "Los propietarios de la organización no necesitan habilitación: ya pueden cargar movimientos a nombre de cualquier miembro.",
     "toggleLabel": "Permitir que {nombre} cargue movimientos a mi nombre",
     "emptyCandidates": "No hay otros miembros para habilitar.",
     "receivedTitle": "Podés cargar a nombre de",

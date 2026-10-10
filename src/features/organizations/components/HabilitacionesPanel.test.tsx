@@ -137,4 +137,17 @@ describe( "HabilitacionesPanel" , () => {
     expect( screen.getByText( dict.habilitaciones.emptyCandidates ) ).toBeTruthy() ;
     expect( screen.getByText( dict.habilitaciones.receivedEmpty ) ).toBeTruthy() ;
   } ) ;
+
+  it( "muestra la nota sobre propietarios cuando hay candidatos" , () => {
+    render( <HabilitacionesPanel initialData={inicial} dict={dict.habilitaciones} /> ) ;
+
+    expect( screen.getByText( dict.habilitaciones.ownersNote ) ).toBeTruthy() ;
+  } ) ;
+
+  it( "muestra la nota sobre propietarios con cero candidatos junto con el texto vacío" , () => {
+    render( <HabilitacionesPanel initialData={ { otorgadas: [] , candidatos: [] , recibidas: [] } } dict={dict.habilitaciones} /> ) ;
+
+    expect( screen.getByText( dict.habilitaciones.emptyCandidates ) ).toBeTruthy() ;
+    expect( screen.getByText( dict.habilitaciones.ownersNote ) ).toBeTruthy() ;
+  } ) ;
 } ) ;

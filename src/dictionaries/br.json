@@ -772,6 +772,7 @@
   "habilitaciones": {
     "title": "Quem pode lançar por mim",
     "subtitle": "As pessoas autorizadas podem registrar movimentos em seu nome nesta organização. Você pode retirar a permissão quando quiser.",
+    "ownersNote": "Os proprietários da organização não precisam de permissão: já podem lançar movimentos em nome de qualquer membro.",
     "toggleLabel": "Permitir que {nombre} lance movimentos em meu nome",
     "emptyCandidates": "Não há outros membros para autorizar.",
     "receivedTitle": "Você pode lançar em nome de",

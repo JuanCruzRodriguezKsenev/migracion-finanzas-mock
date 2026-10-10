@@ -27,6 +27,7 @@ export interface HabilitacionesPanelProps {
   dict: {
     title:           string ;
     subtitle:        string ;
+    ownersNote:      string ;
     toggleLabel:     string ;
     emptyCandidates: string ;
     receivedTitle:   string ;
@@ -90,6 +91,7 @@ export function HabilitacionesPanel( { initialData , dict }: HabilitacionesPanel
       <div>
         <h2 className={styles.title}>{dict.title}</h2>
         <p className={styles.subtitle}>{dict.subtitle}</p>
+        <p className={styles.note}>{dict.ownersNote}</p>
       </div>
 
       <FormError error={error} />

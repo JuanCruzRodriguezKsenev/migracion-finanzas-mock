@@ -772,6 +772,7 @@
   "habilitaciones": {
     "title": "Who can enter entries for me",
     "subtitle": "People you allow can record transactions on your behalf in this organization. You can withdraw the permission at any time.",
+    "ownersNote": "Organization owners don't need permission: they can already enter transactions on behalf of any member.",
     "toggleLabel": "Allow {nombre} to enter transactions on my behalf",
     "emptyCandidates": "There are no other members to allow.",
     "receivedTitle": "You can enter entries on behalf of",
