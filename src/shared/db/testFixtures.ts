@@ -37,7 +37,7 @@ import { goals , goalMovements } from "@/features/goals/schema.db" ;
 import { notifications } from "@/features/notifications/schema.db" ;
 
 // Feature: Splits
-import { organizationAgreements , agreementPercentages , monthlyContributions , expenseSplits , memberPayments , paymentRequests , commonPotContributions } from "@/features/splits/schema.db" ;
+import { organizationAgreements , agreementPercentages , monthlyContributions , expenseSplits , memberPayments , paymentRequests , commonPotContributions , paymentClaims } from "@/features/splits/schema.db" ;
 
 
 export interface OpcionesCrearUsuarioConMembresia {
@@ -252,9 +252,10 @@ export async function crearOrganizacionRica( organizationId: string , tx: DBOrTx
   await tx.insert( monthlyContributions ).values( { organizationId , userId: otorgante.id , year: 2030 , month: 1 , amountInCents: 100 } ) ;
   await tx.insert( expenseSplits ).values( { organizationId , transactionId: transaccion.id , debtorUserId: habilitado.id , amountInCents: 500 , currency: "ARS" } ) ;
 
-  // Pago y solicitud de pago entre los mismos dos usuarios sueltos
+  // Pago, solicitud de pago y reclamo de pago entre los mismos dos usuarios sueltos
   await tx.insert( memberPayments ).values( { organizationId , fromUserId: habilitado.id , toUserId: otorgante.id , amountInCents: 200 , currency: "ARS" , registeredByUserId: otorgante.id } ) ;
   await tx.insert( paymentRequests ).values( { organizationId , fromUserId: otorgante.id , toUserId: habilitado.id , currency: "ARS" , dayKey: "2030-01-01" } ) ;
+  await tx.insert( paymentClaims ).values( { organizationId , fromUserId: habilitado.id , toUserId: otorgante.id , amountInCents: 200 , currency: "ARS" , status: "pending" } ) ;
 
   // Aporte a la caja común
   await tx.insert( commonPotContributions ).values( { organizationId , userId: otorgante.id , amountInCents: 300 , currency: "ARS" , registeredByUserId: otorgante.id } ) ;
@@ -267,6 +268,7 @@ const CONSULTAS: Record< string , ( id: string ) => ReturnType< typeof sql > > =
   agreement_percentages:    ( id ) => sql`select count(*) from agreement_percentages where organization_id = ${id}` ,
   expense_splits:           ( id ) => sql`select count(*) from expense_splits where organization_id = ${id}` ,
   member_payments:          ( id ) => sql`select count(*) from member_payments where organization_id = ${id}` ,
+  payment_claims:           ( id ) => sql`select count(*) from payment_claims where organization_id = ${id}` ,
   payment_requests:         ( id ) => sql`select count(*) from payment_requests where organization_id = ${id}` ,
   monthly_contributions:    ( id ) => sql`select count(*) from monthly_contributions where organization_id = ${id}` ,
   organization_agreements:  ( id ) => sql`select count(*) from organization_agreements where organization_id = ${id}` ,

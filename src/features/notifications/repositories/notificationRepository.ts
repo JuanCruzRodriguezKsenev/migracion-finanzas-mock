@@ -25,6 +25,14 @@ import { notifications }                          from "../schema.db" ;
 /** Fila a insertar: una por destinatario. */
 export type NuevoAviso = typeof notifications.$inferInsert ;
 
+/** Fila cruda retornada por listarRecientes con los campos para deducir acciones. */
+export interface FilaAvisoReciente extends AvisoVista {
+  claimId:      string | null ;
+  holderUserId: string | null ;
+  actorUserId:  string | null ;
+  rol:          string ;
+}
+
 /**
  * Repositorio de Avisos.
  */
@@ -53,7 +61,7 @@ export const notificationRepository = {
    * @param tx - Instancia de transacción opcional.
    * @returns Avisos de más nuevo a más viejo.
    */
-  async listarRecientes( userId: string , limite: number , filtroOrganizacionId?: string , tx: DBOrTx = db ): Promise< AvisoVista[] > {
+  async listarRecientes( userId: string , limite: number , filtroOrganizacionId?: string , tx: DBOrTx = db ): Promise< FilaAvisoReciente[] > {
     const actor   = alias( users , "actor" ) ;
     const titular = alias( users , "titular" ) ;
 
@@ -69,12 +77,14 @@ export const notificationRepository = {
       .select( {
         aviso:                       notifications ,
         descripcion:                 ledgerTransactions.description ,
+        holderUserId:                ledgerTransactions.holderUserId ,
         actorName:                   actor.name ,
         actorEmail:                  actor.email ,
         titularName:                 titular.name ,
         titularEmail:                titular.email ,
         organizationName:            organizations.name ,
         organizationPersonalOwnerId: organizations.personalOwnerUserId ,
+        rol:                         memberships.role ,
       } )
       .from( notifications )
       .innerJoin(
@@ -106,6 +116,10 @@ export const notificationRepository = {
         organizacionId:         f.aviso.organizationId ,
         organizacionNombre:     ( f.organizationName ?? "" ) ,
         organizacionEsPersonal: f.organizationPersonalOwnerId !== null ,
+        claimId:                f.aviso.claimId ,
+        holderUserId:           f.holderUserId ,
+        actorUserId:            f.aviso.actorUserId ,
+        rol:                    f.rol ,
       } ) )
     ) ;
   } ,

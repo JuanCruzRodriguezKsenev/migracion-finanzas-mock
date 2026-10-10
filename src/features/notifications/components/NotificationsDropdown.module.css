@@ -125,3 +125,119 @@
   color:       var(--text-muted) ;
 }
 
+/* ── Acciones de aviso (Plan 44) ─────────────── */
+.actionsRow {
+  display:     flex ;
+  align-items: center ;
+  flex-wrap:   wrap ;
+  gap:         0.375rem ;
+  margin-top:  0.25rem ;
+}
+
+.actionBtn {
+  font-size:        var(--fs-xs) ;
+  font-weight:      500 ;
+  padding:          0.25rem 0.5rem ;
+  border-radius:    var(--radius-sm) ;
+  border:           1px solid var(--border-card) ;
+  background-color: var(--bg-card-glass) ;
+  color:            var(--text-main) ;
+  cursor:           pointer ;
+  transition:       var(--transition-smooth) ;
+}
+
+.actionBtn:hover:not(:disabled) {
+  border-color:     var(--border-strong) ;
+  background-color: var(--bg-card-hover) ;
+}
+
+.actionBtn:disabled {
+  opacity: 0.5 ;
+  cursor:  not-allowed ;
+}
+
+.actionBtnPrimary {
+  font-size:        var(--fs-xs) ;
+  font-weight:      600 ;
+  padding:          0.25rem 0.5rem ;
+  border-radius:    var(--radius-sm) ;
+  border:           1px solid var(--color-primary) ;
+  background-color: var(--color-primary) ;
+  color:            var(--text-on-primary, #ffffff) ;
+  cursor:           pointer ;
+  transition:       var(--transition-smooth) ;
+}
+
+.actionBtnPrimary:hover:not(:disabled) {
+  opacity: 0.9 ;
+}
+
+.actionBtnPrimary:disabled {
+  opacity: 0.5 ;
+  cursor:  not-allowed ;
+}
+
+.actionBtnDanger {
+  font-size:        var(--fs-xs) ;
+  font-weight:      500 ;
+  padding:          0.25rem 0.5rem ;
+  border-radius:    var(--radius-sm) ;
+  border:           1px solid var(--color-danger) ;
+  background-color: transparent ;
+  color:            var(--color-danger) ;
+  cursor:           pointer ;
+  transition:       var(--transition-smooth) ;
+}
+
+.actionBtnDanger:hover:not(:disabled) {
+  background-color: var(--color-danger-light) ;
+}
+
+.actionBtnDanger:disabled {
+  opacity: 0.5 ;
+  cursor:  not-allowed ;
+}
+
+.inlineForm {
+  display:        flex ;
+  flex-direction: column ;
+  gap:            0.375rem ;
+  width:          100% ;
+  margin-top:     0.25rem ;
+}
+
+.formRow {
+  display:     flex ;
+  align-items: center ;
+  gap:         0.375rem ;
+}
+
+.inlineInput {
+  flex:             1 ;
+  min-width:        0 ;
+  font-size:        var(--fs-xs) ;
+  padding:          0.25rem 0.5rem ;
+  border-radius:    var(--radius-sm) ;
+  border:           1px solid var(--border-card) ;
+  background-color: var(--bg-card) ;
+  color:            var(--text-main) ;
+  outline:          none ;
+  transition:       var(--transition-smooth) ;
+}
+
+.inlineInput:focus {
+  border-color: var(--color-primary) ;
+}
+
+.actionStatus {
+  font-size:   var(--fs-xs) ;
+  color:       var(--text-muted) ;
+  font-weight: 500 ;
+}
+
+.actionError {
+  font-size:   var(--fs-xs) ;
+  color:       var(--color-danger) ;
+  line-height: 1.3 ;
+}
+

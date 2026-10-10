@@ -55,6 +55,7 @@ export interface EmitirAviso {
   actorId?:       string | null ;
   /** Ausente en los avisos que no cuelgan de un movimiento (`agreement_changed`). */
   transactionId?: string | null ;
+  claimId?:       string | null ;
   monto?:         number | null ;
   divisa?:        string | null ;
   destinatarios:  string[] ;
@@ -68,7 +69,7 @@ export interface EmitirAviso {
  * @param tx - Transacción activa.
  */
 export async function notificar( datos: EmitirAviso , tx: DBOrTx ): Promise< void > {
-  const { organizationId , tipo , actorId , transactionId , monto , divisa , destinatarios } = datos ;
+  const { organizationId , tipo , actorId , transactionId , claimId , monto , divisa , destinatarios } = datos ;
 
   await notificationRepository.insertar(
     destinatarios.map( ( recipientUserId ) => ( {
@@ -77,6 +78,7 @@ export async function notificar( datos: EmitirAviso , tx: DBOrTx ): Promise< voi
       type:          tipo ,
       actorUserId:   actorId ?? null ,
       transactionId: transactionId ?? null ,
+      claimId:       claimId ?? null ,
       amountInCents: monto ?? null ,
       currency:      divisa ?? null ,
     } ) ) ,

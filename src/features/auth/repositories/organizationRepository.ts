@@ -39,6 +39,7 @@ import {
   expenseSplits ,
   memberPayments ,
   paymentRequests ,
+  paymentClaims ,
   commonPotContributions
 } from "@/shared/db/schema" ;
 
@@ -78,6 +79,7 @@ export const TABLAS_CON_ORGANIZACION = [
   "notifications" ,
   "organization_agreements" ,
   "outbox_events" ,
+  "payment_claims" ,
   "payment_requests" ,
   "subscriptions" ,
 ] as const ;
@@ -179,6 +181,7 @@ export const organizationRepository = {
 
     // 1b. Avisos (cuelgan de transacciones, usuarios y organización: antes que ledger_transactions)
     await tx.delete( notifications ).where( eq( notifications.organizationId , organizationId ) ) ;
+    await tx.delete( paymentClaims ).where( eq( paymentClaims.organizationId , organizationId ) ) ;
 
     // 1c. Reparto: las deudas cuelgan de transacciones (antes que ledger_transactions); el acuerdo, los porcentajes
     //     y los aportes cuelgan de usuarios y organización (antes que memberships)

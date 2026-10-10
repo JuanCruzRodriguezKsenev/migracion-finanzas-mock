@@ -9,6 +9,9 @@ import { pgTable , uuid , varchar , bigint , timestamp , index } from "drizzle-o
 // Feature: Accounting
 import { ledgerTransactions } from "@/features/accounting/schema.db" ;
 
+// Feature: Splits
+import { paymentClaims } from "@/features/splits/schema.db" ;
+
 // Feature: Auth
 import { organizations , users } from "@/features/auth/schema.db" ;
 
@@ -22,9 +25,10 @@ export const notifications = pgTable( "notifications" , {
   id:              uuid( "id" ).primaryKey().defaultRandom() ,
   organizationId:  uuid( "organization_id"   ).references( () => organizations.id       , {onDelete: "cascade"} ).notNull() ,
   recipientUserId: uuid( "recipient_user_id" ).references( () => users.id               , {onDelete: "cascade"} ).notNull() ,
-  type:            varchar( "type" , {length: 40} ).notNull() , // 'charged_to_holder' | 'transaction_reversed' | 'debt_created' | 'agreement_changed' | 'payment_requested' | 'payment_received'
+  type:            varchar( "type" , {length: 40} ).notNull() , // 'charged_to_holder' | 'transaction_reversed' | 'debt_created' | 'agreement_changed' | 'payment_requested' | 'payment_received' | 'payment_claimed' | 'payment_claim_rejected'
   actorUserId:     uuid( "actor_user_id"     ).references( () => users.id               , {onDelete: "set null"} ) ,
   transactionId:   uuid( "transaction_id"    ).references( () => ledgerTransactions.id  , {onDelete: "cascade"} ) , // Nulo en los avisos que no cuelgan de un movimiento (cambió el acuerdo)
+  claimId:         uuid( "claim_id"          ).references( () => paymentClaims.id       , {onDelete: "cascade"} ) ,
   amountInCents:   bigint( "amount_in_cents" , {mode: "number"} ) , // Foto del monto en centavos
   currency:        varchar( "currency" , {length: 10} ) ,
   readAt:          timestamp( "read_at"    , {withTimezone: true} ) ,

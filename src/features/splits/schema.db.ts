@@ -131,3 +131,27 @@ export const commonPotContributions = pgTable( "common_pot_contributions" , {
   amountCheck:     check( "common_pot_contributions_amount_check" , sql`${table.amountInCents} <> 0` ) ,
   orgCurrencyIdx:  index( "common_pot_contributions_org_currency_idx" ).on( table.organizationId , table.currency ) ,
 } ) ; } ) ;
+
+/**
+ * Reclamo de pago («Ya pagué», RN-37). `from_user_id` es el deudor que reclama y `to_user_id` el acreedor.
+ * El índice único parcial asegura a lo sumo un reclamo pendiente por organización, deudor, acreedor y divisa.
+ */
+export const paymentClaims = pgTable( "payment_claims" , {
+  id:             uuid( "id"              ).primaryKey().defaultRandom() ,
+  organizationId: uuid( "organization_id" ).references( () => organizations.id , {onDelete: "cascade"} ).notNull() ,
+  fromUserId:     uuid( "from_user_id"    ).references( () => users.id         , {onDelete: "set null"} ) ,
+  toUserId:       uuid( "to_user_id"      ).references( () => users.id         , {onDelete: "set null"} ) ,
+  amountInCents:  bigint( "amount_in_cents" , {mode: "number"} ).notNull() ,
+  currency:       varchar( "currency" , {length: 10} ).notNull() ,
+  status:         varchar( "status"   , {length: 12} ).default( "pending" ).notNull() ,
+  createdAt:      timestamp( "created_at"  , {withTimezone: true} ).defaultNow().notNull() ,
+  resolvedAt:     timestamp( "resolved_at" , {withTimezone: true} ) ,
+} , ( table ) => { return( {
+  amountCheck:   check( "payment_claims_amount_check" , sql`${table.amountInCents} > 0` ) ,
+  statusCheck:   check( "payment_claims_status_check" , sql`${table.status} IN ('pending','confirmed','rejected','cancelled')` ) ,
+  uniquePending: uniqueIndex( "payment_claims_pending_unique" )
+    .on( table.organizationId , table.fromUserId , table.toUserId , table.currency )
+    .where( sql`${table.status} = 'pending'` ) ,
+  toStatusIdx:   index( "payment_claims_org_to_status_idx" ).on( table.organizationId , table.toUserId , table.status ) ,
+} ) ; } ) ;
+

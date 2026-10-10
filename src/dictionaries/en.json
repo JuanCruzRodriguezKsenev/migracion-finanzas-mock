@@ -337,7 +337,21 @@
     "paymentReceived": "{actor} recorded a payment of {monto}",
     "filterLabel": "Organization",
     "filterAll": "All",
-    "personal": "Personal"
+    "personal": "Personal",
+    "paymentClaimed": "{actor} says they paid you {monto}",
+    "paymentClaimRejected": "{actor} didn't confirm your payment of {monto}",
+    "paidButton": "I already paid",
+    "send": "Send",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "reject": "Reject",
+    "waiting": "Waiting for confirmation",
+    "amountLabel": "Amount",
+    "statusConfirmed": "Confirmed",
+    "statusRejected": "Rejected",
+    "statusCancelled": "Cancelled",
+    "amountInvalid": "Invalid amount",
+    "genericError": "An unexpected error occurred."
   },
   "subscriptionsPage": {
     "title": "Subscriptions",

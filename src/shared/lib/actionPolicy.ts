@@ -128,6 +128,12 @@ export const POLITICA_DE_ACCIONES: Record< string , Record< string , PoliticaDeA
     obtenerCajaAction:          "lectura" ,
     registrarAporteCajaAction:  "escritura" ,
   } ,
+  "splits/actions/reclamosActions": {
+    reclamarPagoAction:     { exenta: "RN-40: la organización sale del aviso y revalida rol ≠ viewer en DB (plan 44)" } ,
+    confirmarReclamoAction: { exenta: "RN-40: la organización sale del reclamo y revalida rol ≠ viewer en DB (plan 44)" } ,
+    rechazarReclamoAction:  { exenta: "RN-40: la organización sale del reclamo y revalida rol ≠ viewer en DB (plan 44)" } ,
+    cancelarReclamoAction:  { exenta: "RN-39: la organización sale del reclamo y cancela su propio reclamo (plan 44)" } ,
+  } ,
   "splits/actions/saldosActions": {
     obtenerSaldosAction:  "lectura" ,
     registrarPagoAction:  "escritura" ,

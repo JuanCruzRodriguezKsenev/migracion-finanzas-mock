@@ -13,7 +13,7 @@ import { getServerSession } from "next-auth" ;
 import { ok , fail , Result }  from "@/shared/lib/result" ;
 import { authOptions }         from "@/shared/lib/auth" ;
 import { logger }              from "@/shared/lib/logger" ;
-import { db , DBOrTx }         from "@/shared/db/client" ;
+import { db }                   from "@/shared/db/client" ;
 import { claveDeDia }          from "@/shared/lib/monthKey" ;
 
 // Feature: Auth
@@ -31,6 +31,7 @@ import { notificar } from "@/features/notifications/services/notificationService
 
 // Feature: Splits
 import { registrarPagoSchema , solicitarPagoSchema , RegistrarPagoInput , SolicitarPagoInput } from "../schemas/saldos.schema" ;
+import { registrarPagoEnTx , saldoCon }                                                         from "../services/pagosService" ;
 import { saldosRepository }                                                                    from "../repositories/saldosRepository" ;
 import { acuerdoRepository }                                                                   from "../repositories/acuerdoRepository" ;
 import { calcularSaldos }                                                                      from "../utils/saldos" ;
@@ -77,17 +78,6 @@ async function contextoDeSesion(): Promise< Contexto | null > {
   return( membresia ? { userId , organizationId , rol: membresia.role } : null ) ;
 }
 
-/** Saldo con signo de `userId` con `contraparteId` en `divisa` (`+`: la contraparte le debe a `userId`). */
-async function saldoCon( organizationId: string , userId: string , contraparteId: string , divisa: string , tx: DBOrTx ): Promise< number > {
-  const [ deudas , pagos ] = await Promise.all( [
-    saldosRepository.deudasDe( organizationId , userId , tx ) ,
-    saldosRepository.pagosDe( organizationId , userId , tx ) ,
-  ] ) ;
-
-  const saldo = calcularSaldos( userId , deudas , pagos ).find( ( s ) => (s.contraparteId === contraparteId) && (s.divisa === divisa) ) ;
-
-  return( saldo?.montoEnCentavos ?? 0 ) ;
-}
 
 /**
  * Lee los saldos de quien llama con cada otro miembro, por divisa y sin compensar entre divisas. Todos los roles.
@@ -162,29 +152,7 @@ export async function registrarPagoAction( datos: RegistrarPagoInput ): Promise<
     return( await db.transaction( async ( tx ) => {
       await saldosRepository.bloquearPar( organizationId , userId , contraparteId , tx ) ;
 
-      // El rol se revalida dentro de la transacción, y la contraparte debe seguir siendo miembro
-      const actor       = await membershipRepository.findMembership( userId , organizationId , tx ) ;
-      const contraparte = await membershipRepository.findMembership( contraparteId , organizationId , tx ) ;
-
-      if( !actor || (actor.role === "viewer") ) {
-        return( fail( "No autorizado." ) ) ;
-      }
-
-      if( !contraparte ) {
-        return( fail( "La persona elegida no es miembro de la organización." ) ) ;
-      }
-
-      const saldo = await saldoCon( organizationId , userId , contraparteId , divisa , tx ) ;
-
-      if( saldo <= 0 ) {
-        return( fail( "Sólo quien es acreedor puede registrar un pago: esa persona no te debe nada en esa divisa." ) ) ;
-      }
-
-      await saldosRepository.insertarPago( { organizationId , fromUserId: contraparteId , toUserId: userId , amountInCents: montoEnCentavos , currency: divisa , registeredByUserId: userId } , tx ) ;
-
-      await notificar( { organizationId , tipo: "payment_received" , actorId: userId , monto: montoEnCentavos , divisa , destinatarios: [ contraparteId ] } , tx ) ;
-
-      return( ok( null ) ) ;
+      return( await registrarPagoEnTx( { organizationId , acreedorId: userId , deudorId: contraparteId , divisa , montoEnCentavos } , tx ) ) ;
     } ) ) ;
   } catch( error ) {
     logger.error( "Error en registrarPagoAction." , { organizationId , error: String( error ) } ) ;

@@ -19,6 +19,7 @@ interface NotificationsContextType {
   notifications:  AvisoVista[] ;
   unreadCount:    number ;
   marcarLeidas:   () => Promise< void > ;
+  refrescar:      () => Promise< void > ;
   filtro:         string | null ;
   setFiltro:      ( organizacionId: string | null ) => void ;
   organizaciones: OrganizacionDeAvisos[] ;
@@ -122,16 +123,32 @@ export function NotificationsProvider( {children , listar , marcarLeidas: marcar
     } catch { /* se reintenta en la próxima apertura si el contador vuelve a cargarse */ }
   } , [ marcarLeidasAccion , unreadCount ] ) ;
 
+  const refrescar = useCallback( async () => {
+    const consultar = listarRef.current ;
+    if( !consultar ) {
+      return ;
+    }
+    try {
+      const res = await consultar( filtro ? { organizacionId: filtro } : undefined ) ;
+      if( res.success ) {
+        setNotifications( res.value.items ) ;
+        setUnreadCount( res.value.noLeidas ) ;
+        setOrganizaciones( res.value.organizaciones ) ;
+      }
+    } catch { /* se ignora fallo de red al refrescar */ }
+  } , [ filtro ] ) ;
+
   const contextValue = useMemo(
     () => ( {
       notifications ,
       unreadCount ,
       marcarLeidas ,
+      refrescar ,
       filtro ,
       setFiltro ,
       organizaciones ,
     } ) ,
-    [ notifications , unreadCount , marcarLeidas , filtro , setFiltro , organizaciones ]
+    [ notifications , unreadCount , marcarLeidas , refrescar , filtro , setFiltro , organizaciones ]
   ) ;
 
   return(

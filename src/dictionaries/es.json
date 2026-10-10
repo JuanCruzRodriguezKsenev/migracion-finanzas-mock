@@ -337,7 +337,21 @@
     "paymentReceived": "{actor} registró un pago de {monto}",
     "filterLabel": "Organización",
     "filterAll": "Todas",
-    "personal": "Personal"
+    "personal": "Personal",
+    "paymentClaimed": "{actor} dice que te pagó {monto}",
+    "paymentClaimRejected": "{actor} no confirmó tu pago de {monto}",
+    "paidButton": "Ya pagué",
+    "send": "Enviar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "reject": "Rechazar",
+    "waiting": "Esperando confirmación",
+    "amountLabel": "Monto",
+    "statusConfirmed": "Confirmado",
+    "statusRejected": "Rechazado",
+    "statusCancelled": "Cancelado",
+    "amountInvalid": "Monto inválido",
+    "genericError": "Ocurrió un error inesperado."
   },
   "subscriptionsPage": {
     "title": "Suscripciones",
