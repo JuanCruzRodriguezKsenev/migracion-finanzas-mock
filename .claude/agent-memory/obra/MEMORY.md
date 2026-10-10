@@ -49,5 +49,6 @@
 - [`habilitaciones-propietarios-45.md`](habilitaciones-propietarios-45.md): Plan 45 aviso en Habilitaciones sobre propietarios: texto neutro incondicional, tipo dict y paridad de diccionarios.
 - [`integracion-marcas-produccion-41.md`](integracion-marcas-produccion-41.md): Plan 41 integración de marcas en producción sin Brandfetch: aislamiento cliente/servidor en brandService, tipado Route Handlers y mutaciones.
 - [`paises-marcas-41b.md`](paises-marcas-41b.md): Plan 41b resolución de países en búsqueda de marcas: país compartido con countries.json, mock de Intl.DateTimeFormat en Node 26/jsdom y mutaciones.
+- [`idempotencia-46-precondiciones.md`](idempotencia-46-precondiciones.md): Plan 46 idempotencia: detención por precondiciones no cumplidas (rama marcas-39b vs idempotencia unificada con pagosService.ts).
 
 
