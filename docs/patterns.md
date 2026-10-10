@@ -1,6 +1,6 @@
 # Patrones Arquitectónicos de FinanzIA
 
-Este documento describe los cuatro patrones centrales de diseño implementados en el núcleo contable y la infraestructura de FinanzIA, con referencias explícitas al código fuente y a las tablas relacionales.
+Este documento describe los patrones de diseño de FinanzIA, con referencias explícitas al código fuente y a las tablas relacionales. Algunos llevan una nota **«Estado al …»** al principio: es lo que hace el código hoy, contrastado con `grep`, y manda sobre la descripción que le sigue.
 
 ---
 
@@ -55,6 +55,8 @@ El libro diario es inmutable: una transacción equivocada no se edita ni se borr
 
 ## 2. Transactional Outbox Pattern
 
+> **Estado al 2026-10-10: se escribe, no se consume.** Los cuatro eventos se guardan en la misma transacción que el asiento, pero **no hay ningún handler registrado** (`registerEventHandler` no tiene llamadores fuera de los tests) y el despachador **sólo corre a mano** (`pnpm db:outbox`): no hay cron ni ruta. Los eventos quedan en `PENDING` y, como la purga vive dentro del despachador, la tabla crece sin límite (574 filas en la base local). Si se decide activarlo o dejar de escribirlo, actualizar esta nota.
+
 Para garantizar consistencia eventual con servicios externos (webhooks, notificaciones, sincronizaciones bancarias) sin requerir transacciones distribuidas (2PC), FinanzIA utiliza el patrón Outbox.
 
 ### Tabla involucrada
@@ -86,6 +88,8 @@ Para procesar los eventos sin retener bloqueos de base de datos durante operacio
 
 ## 3. Control de Idempotencia (Idempotency Key)
 
+> **Estado al 2026-10-10: implementado, nunca activo.** Sólo `createLedgerTransactionAction` acepta una clave ([`accountingActions.ts`](../src/features/accounting/actions/accountingActions.ts), parámetro `idempotencyKey`), y **ningún llamador se la pasa**. Sin clave, `executeIdempotent` ejecuta el callback sin protección ([`idempotencyService.ts`](../src/shared/services/idempotencyService.ts), primer `if`). Las otras acciones que crean asientos (`transactionsActions`, `loansActions`, `cardsActions`, `installmentPlansActions`, `resolveSubscriptionAction`) no pasan por acá. Hoy el doble envío lo frena sólo la interfaz, donde la hay (`TransactionFormModal` deshabilita el botón mientras guarda). Lo que sigue describe el protocolo tal como está construido.
+
 Las operaciones de mutación contable (creación de asientos y cobros) requieren protección contra peticiones duplicadas originadas por reintentos de red, doble clic en la interfaz o fallas de transporte.
 
 ### Tabla involucrada
@@ -107,7 +111,9 @@ El servicio [`idempotencyService.ts`](../src/shared/services/idempotencyService.
 
 ## 4. Circuit Breaker (Disyuntor de Red)
 
-Para proteger la disponibilidad del sistema frente a degradaciones o caídas en servicios de terceros (como la Brandfetch API para logotipos de instituciones), se implementa un Disyuntor en [`circuitBreaker.ts`](../src/shared/lib/circuitBreaker.ts).
+> **Estado al 2026-10-10: sin uso.** [`circuitBreaker.ts`](../src/shared/lib/circuitBreaker.ts) sólo lo importa su test; nunca se conectó a una llamada real (`git log -S circuitBreaker` no encuentra otro uso desde su commit `0986ea8`, 2026-09-06). Brandfetch, el servicio que este apartado decía proteger, salió del código con el plan 41. El plan 35 (cotizaciones) decidió no reusarlo. **Cuándo un disyuntor sí rinde:** una dependencia **única y compartida** (un proveedor, no «el sitio de cada marca»), llamada con frecuencia, con un respaldo útil y timeouts caros; el caso más claro a la vista es la sincronización bancaria en lote del RFC 026. Si se aprueba el RFC 029, el disyuntor se compone **dentro del adaptador** de ese proveedor. Lo que sigue describe la clase tal como está.
+
+Para proteger la disponibilidad del sistema frente a degradaciones o caídas en servicios de terceros, se implementó un Disyuntor en [`circuitBreaker.ts`](../src/shared/lib/circuitBreaker.ts).
 
 ### Estados del Circuito
 ```
@@ -133,30 +139,45 @@ Para proteger la disponibilidad del sistema frente a degradaciones o caídas en 
 
 ## 5. Gestión de Activos y Logos de Marcas Externas (External Brand Assets)
 
-Para la representación visual de entidades financieras, pasarelas de pago y proveedores de suscripciones, FinanzIA consume logotipos de fuentes externas dinámicas (como Brandfetch API, dominios ingresados por el usuario o CDNs de terceros).
+Para la representación visual de entidades financieras, pasarelas de pago y proveedores de suscripciones, FinanzIA muestra logotipos de marcas a partir de su **dominio web**. Desde el plan 41 (2026-10-10) **no hay proveedor de pago**: todo sale de un motor propio y de un servicio público de favicons.
+
+### De dónde sale cada cosa (vigente)
+
+| Necesidad | Quién la resuelve | Dónde |
+| :-- | :-- | :-- |
+| Nombre → dominios posibles | Generación de candidatos + DNS público + título HTML (estrategia `verificados`) | [`verificados.ts`](../src/shared/services/brand/verificados.ts), expuesto en `GET /api/brand?q=` (array plano de `MarcaEncontrada`) |
+| Dominio → ícono y color de calidad | Favicon del propio sitio (≥ 64 px, con ICO PNG o BMP) → Google S2 → `null`; color dominante del ícono | [`resolutorIdentidad.ts`](../src/shared/services/brand/resolutorIdentidad.ts), expuesto en `GET /api/brand/identidad?domain=` |
+| Dominio → URL de logo para un `<img>` | Google S2 (`https://www.google.com/s2/favicons?domain=…&sz=128`) | [`getBrandLogoUrl`](../src/shared/services/brand/brandService.ts) |
+
+**Regla de capas:** las fuentes que necesitan Node (`dns`, `sharp`) se usan sólo del lado del servidor, detrás de las rutas de arriba. `brandService.ts` lo consumen componentes cliente y **no importa** `resolutorIdentidad.ts`. Todo pedido a `fetch` hacia un sitio arbitrario pasa por [`fetchSeguro.ts`](../src/shared/services/brand/fetchSeguro.ts) (anti-SSRF: resolución DNS previa y rechazo de IP privadas).
+
+**Pendiente conocido:** el armado de la URL de Google S2 está repetido en `brandService.ts` y en `src/app/api/brand/route.ts`, y `AddSubscriptionModal.tsx` y `seed.ts` todavía usan URLs de `logo.clearbit.com`. El RFC 029 (`DRAFT`) propone concentrar cada proveedor en su adaptador.
 
 ### Rationale: `<img>` nativo vs `next/image`
 El componente `<Image />` de Next.js está optimizado para recursos estáticos o de orígenes restringidos cuyo conjunto de dominios y dimensiones se conoce en tiempo de compilación (`remotePatterns` en `next.config.js`). En nuestro caso:
-1. **Dominios arbitrarios e impredecibles:** Los logotipos pueden provenir de cualquier TLD o subdominio según la entidad financiera ingresada por el usuario o indexada por Brandfetch.
+1. **Orígenes variables:** el logo puede ser un data URI generado por el resolutor, una URL de Google S2 o una URL histórica guardada en la fila.
 2. **Dimensiones intrínsecas variables:** Los iconos de marcas remotas no cuentan con una relación de aspecto o resolución fija previa.
 3. **Mecanismo de degradación elegante (*graceful fallback*):** Se requiere interceptar de forma inmediata el evento nativo `onError` del elemento HTML para conmutar el estado del componente hacia un SVG temático local o las iniciales del servicio, sin depender del servidor de optimización de Next.js.
 
 ### Convención en Código
 Cada utilización de `<img>` para activos dinámicos externos debe incluir una justificación explícita de lint en línea:
 ```tsx
-{/* eslint-disable-next-line @next/next/no-img-element -- Logo de marca dinámico externo con fallback onError */}
+{/* eslint-disable-next-line @next/next/no-img-element -- Logo de marca dinámico con fallback onError */}
 <img src={logoUrl} alt={name} onError={() => setHasError(true)} />
 ```
-Los archivos que implementan este patrón son:
+Los archivos de producción que implementan este patrón son:
 *   [`InstitutionLogo.tsx`](../src/shared/ui/display/InstitutionLogo/InstitutionLogo.tsx)
-*   [`SubscriptionIcon.tsx`](../src/features/subscriptions/components/SubscriptionIcon.tsx)
+*   [`SubscriptionIcon.tsx`](../src/shared/ui/display/SubscriptionIcon/SubscriptionIcon.tsx) (compartido) y [`SubscriptionIcon.tsx`](../src/features/subscriptions/components/SubscriptionIcon.tsx) (de la feature)
 *   [`AddSubscriptionModal.tsx`](../src/features/subscriptions/components/AddSubscriptionModal.tsx)
 *   [`CreateFinancialEntityForm.tsx`](../src/features/accounting/components/CreateFinancialEntityForm.tsx)
 
+El laboratorio (`src/features/sandbox/components/`) también usa `<img>` con la misma justificación; no es código de producción.
+
 ### Separación de Marca y Dominio Web (`brandDomain`)
 Siguiendo el precedente establecido en `ledger_transactions` (`merchantName` / `merchantDomain`), las entidades que consumen logotipos externos separan explícitamente el nombre visible del dominio web:
-*   `financial_entities` almacena `name` (nombre de la institución), `brand_domain` (dominio web para Brandfetch) y `logo` (icono local de respaldo: `bank`, `wallet`, `cash`, `credit-card`).
-*   [`InstitutionLogo`](../src/shared/ui/display/InstitutionLogo/InstitutionLogo.tsx) recibe la propiedad opcional `brandDomain` para resolver sincrónicamente la CDN de Brandfetch sin depender de inspección heurística de cadenas (`includes( "." )`), manteniendo la deducción heurística únicamente como fallback de compatibilidad para registros previos.
+*   `financial_entities` almacena `name` (nombre de la institución), `brand_domain` (dominio web de la marca) y `logo` (icono local de respaldo: `bank`, `wallet`, `cash`, `credit-card`).
+*   [`InstitutionLogo`](../src/shared/ui/display/InstitutionLogo/InstitutionLogo.tsx) recibe la propiedad opcional `brandDomain` y, si viene, arma sincrónicamente la URL de Google S2 con `getBrandLogoUrl`, sin inspeccionar el texto. La deducción heurística (`includes( "." )` sobre `institution` o `logoUrl`) queda sólo como compatibilidad para registros previos.
+*   **Sin `brandDomain` ni un nombre con punto, no hay logo remoto:** se muestra el respaldo local. Ya no se busca la marca por nombre (eso lo hacía Brandfetch).
 
 ---
 
@@ -361,3 +382,29 @@ Para evitar falsos positivos y componentes que fallan en producción por falta d
 
 ### Ejemplo de Referencia
 La suite de [`CategoriesSettingsContainer.test.tsx`](../src/features/accounting/components/CategoriesSettings/CategoriesSettingsContainer.test.tsx) implementa este patrón íntegro: carga `getDictionary( "es" )` en `beforeAll`, envuelve el render con el `<NotificationsProvider>` real (que gracias a `safeStorage` monta de forma tolerante sin requerir dobles ni polyfills de storage en el harness) y delega en el `routerMock` hoisted del harness global.
+
+---
+
+## 13. Resultado Tipado en las Acciones (`Result`)
+
+Las Server Actions no lanzan excepciones hacia la interfaz: **siempre devuelven un `Result`**. El tipo y sus constructores están en [`result.ts`](../src/shared/lib/result.ts):
+
+```ts
+type Result< T , E = string > =
+  | { success: true  ; value: T ; error?: never }
+  | { success: false ; error: E ; value?: never } ;
+
+ok( valor )   // éxito
+fail( error ) // falla de negocio, normalmente un string legible
+```
+
+### Reglas e Invariantes
+1.  **Toda exportación de `features/*/actions/*.ts` devuelve `Promise< Result< T , string > >`.** Al 2026-10-10 lo cumplen los 21 archivos de acciones.
+2.  **El llamador mira `success` antes de leer `value`.** Ejemplo: [`MyAccountsPanel.tsx`](../src/features/accounting/components/MyAccountsPanel.tsx) (`if( misCuentas.success )`).
+3.  **Los servicios pueden lanzar o devolver `Result`; la acción decide.** Hoy conviven las dos formas (9 de 27 servicios usan `Result`; [`accountingService.ts`](../src/features/accounting/services/accountingService.ts) lanza dentro de la transacción para forzar el rollback). Un `throw` dentro de una transacción o de `executeIdempotent` es válido **sólo si la acción lo atrapa y lo convierte en `fail`** antes de devolver.
+4.  **Los errores de validación o permiso son `fail`, no `throw`.** Sin sesión, sin permiso o con datos inválidos, la acción devuelve `fail( "…" )`.
+5.  **Lo que va dentro de `value` tiene que poder viajar al cliente:** es lo que Next.js serializa desde una Server Action. Datos planos sí; instancias de clases propias y funciones no.
+
+### Lo que no es
+*   **No es para las rutas HTTP** (`src/app/api/**`): ahí la falla es un código de estado (`401`, `400`, `500`) con cuerpo JSON.
+*   **No reemplaza las excepciones de infraestructura:** una base caída sigue siendo una excepción. Lo deseable es que la acción la atrape y responda un `fail` genérico sin filtrar el detalle; **no se auditó** que las 21 lo hagan.
