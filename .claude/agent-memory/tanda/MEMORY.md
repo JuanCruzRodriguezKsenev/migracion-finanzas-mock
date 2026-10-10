@@ -5,8 +5,8 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 
 ## Dónde quedó todo
 
-- [Planes 42-45: acceso abierto, avisos, «Ya pagué», Habilitaciones](avisos_y_acceso_planes_42_45.md) — 42 y 43 verificados (1516 tests verdes); plan 44 siguiente (2026-10-09).
-
+- [Plan 41 escrito: integración en producción sin Brandfetch](marcas_plan_41_escrito.md) — ICO BMP, verificados compartido con umbral de confianza, formularios desacoplados de Brandfetch y retiro de panel de detalles (2026-10-10).
+- [Planes 42-45: acceso abierto, avisos, «Ya pagué», Habilitaciones](avisos_y_acceso_planes_42_45.md) — 42 a 45 ejecutados y verificados (1539 tests verdes); serie completa detenida antes de pasos [USUARIO] (2026-10-10).
 - [Plan 40b escrito: afinar verificados y resolutor](marcas_plan_40b_escrito.md) — decisiones color/resolución, qué NO entra, Edesur no reproducible (2026-10-09).
 
 - [Plan 40 verificado: laboratorio sin Brandfetch](marcas_plan_40_cerrado.md) — 1530 tests verdes, estrategia verificados, batería nombre→ícono 22 consultas, pendiente prueba de usuario §7 (2026-10-09).

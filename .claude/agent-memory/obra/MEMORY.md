@@ -44,3 +44,6 @@
 - [`laboratorio-sin-brandfetch-40.md`](laboratorio-sin-brandfetch-40.md): Plan 40: retiro de Brandfetch, estrategia verificados, batería de nombres a ícono, subcomponentes modulares de LaboratorioMarcas y 12 mutaciones verificadas.
 - [`afinar-verificados-resolutor-40b.md`](afinar-verificados-resolutor-40b.md): Plan 40b: afinación de verificados (siglas, venta, fallback www, TLDS_PRODUCTO), umbrales del resolutor (64, 32, 16 con bajaResolucion), color extremo Y y 9 mutaciones comprobadas.
 - [`acceso-abierto-42.md`](acceso-abierto-42.md): Plan 42 acceso abierto con Google sin invitación: espacio Personal por defecto, inventario de tests en auth.test.ts, y trampa de mutación de atomicidad.
+- [`avisos-persona-43.md`](avisos-persona-43.md): Plan 43 avisos de la persona con filtro por organización: discrepancia de tests de visibilidad previa (notificacionesAutoria.test.ts), storage en jsdom y mutaciones.
+- [`reclamos-pago-44.md`](reclamos-pago-44.md): Plan 44 «Ya pagué» desde aviso y confirmación del acreedor: actionPolicy fail-closed, advisory lock vs índice parcial y for("update").
+- [`habilitaciones-propietarios-45.md`](habilitaciones-propietarios-45.md): Plan 45 aviso en Habilitaciones sobre propietarios: texto neutro incondicional, tipo dict y paridad de diccionarios.
