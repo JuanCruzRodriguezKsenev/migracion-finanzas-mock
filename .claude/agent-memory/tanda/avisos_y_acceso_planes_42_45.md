@@ -11,7 +11,11 @@ Planes en la bóveda (`Planes/42..45`), commit bóveda `bc116d8`. Rama `feat/avi
 - **Los supuestos de ambas revisiones los fijé yo con la recomendación por defecto** porque el usuario dijo «arma todos los planes»; el usuario no los leyó. Sólo cerró con él: color extremo→null y resolución 32/16 px (plan 40b), y «Ya pagué»+confirmación del acreedor.
 - Pendiente del usuario: M-3 (consola de Google en modo Testing), correr el SQL de los 9 avisos `debt_created`, el §7 del 40b (JSON de las baterías → plan 41 de producción de marcas, sin escribir).
 
+- **Plan 42 verificado y cerrado (2026-10-09):** commit `ce07afb`, suite verde (167 suites, 1500 tests, lint 0, tsc 0, build ok). Hallazgo de `auth.test.ts:345` adaptado para AC-35/AC-39; riesgo de registro abierto a `Deuda.md` §31.
+- Siguiente a ejecutar: [[43 - Avisos de la persona con filtro por organización]] en el worktree `~/Dev/finanzas/migracion-finanzas-mock-avisos` sobre la misma rama `feat/avisos-y-acceso`.
+
 **Why:** el usuario prioriza velocidad («la forma más rápida ahora»); propuso borrar la base y se le dio un INSERT de 9 filas en su lugar.
-**How to apply:** cuando pida «arma todos los planes», usar defaults recomendados, dejarlos nombrados en la spec como «fijados por tanda» y decirlo en el traspaso. Para datos de producción: Neon se lee con `npx neonctl connection-string --org-id org-snowy-feather-32472443 --project-id wispy-glitter-17581739` (cadena sólo a un archivo temporal, se borra), pero **el clasificador de permisos bloquea escribir en producción**: el usuario corre el SQL en la consola.
+**How to apply:** cuando pida «arma todos los planes», usar defaults recomendados, dejarlos nombrados en la spec como «fijados por tanda» y decirlo en el traspaso. Para datos de producción: Neon se lee con `npx neonctl connection-string --org-id org-snowy-feather-32472443 --project-id wispy-glitter-17581739` (cadena sólo a un archivo temporal, se borra), pero **el clasificador de permisos bloquea escribir en producción**: el usuario corre el SQL en la consola. Planes que alteren reglas de denegación/aprobación de login deben incluir `src/shared/lib/auth.test.ts` en el inventario.
 
 **Lección (tiempos):** `to_char`/`::timestamp` + postgres-js en una máquina con TZ -03 corre las horas 3 h; me hizo diagnosticar mal («gastos posteriores al acuerdo»). Pedir siempre `to_char( col at time zone 'UTC' , … )` y comparar las dos columnas con el mismo formato antes de concluir.
+
