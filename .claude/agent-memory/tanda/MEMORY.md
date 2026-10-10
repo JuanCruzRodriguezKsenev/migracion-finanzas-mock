@@ -66,3 +66,4 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 - [Página de proyecciones](idea_pagina_proyecciones.md) — por tendencia sobre recurrencias reales, ajustable por inflación. Sin discutir; idea del 2026-09-09.
 
 - RFC 029 (`docs/proposals/029-external-service-ports.md`, DRAFT, 2026-10-10): hexagonal sólo para servicios externos; hexagonal completo descartado (Postgres es contrato). Resend/QStash/Redis **no están** en el repo; `circuitBreaker.ts` no lo usa nadie.
+- Auditoría de patrones (2026-10-10, `docs/patterns.md` notas «Estado al…»): outbox sin consumidor (se deja, decisión del usuario), idempotencia apagada → plan 46 (espera integrar marcas-39b + avisos), disyuntor sin uso, §13 Result nuevo. `executeIdempotent` cachea un `fail` devuelto: siempre convertir a `throw` adentro.
