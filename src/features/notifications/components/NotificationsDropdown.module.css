@@ -94,3 +94,34 @@
   font-size: var(--fs-xs) ;
   color:     var(--text-light) ;
 }
+
+/* ── Filtro y metadatos de organización (Plan 43) ── */
+.filterSelect {
+  font-size:        var(--fs-xs) ;
+  color:            var(--text-main) ;
+  background-color: var(--bg-card) ;
+  border:           1px solid var(--border-card) ;
+  border-radius:    var(--radius-sm) ;
+  padding:          0.25rem 0.5rem ;
+  outline:          none ;
+  cursor:           pointer ;
+  transition:       var(--transition-smooth) ;
+}
+
+.filterSelect:focus {
+  border-color: var(--color-primary) ;
+}
+
+.cardMeta {
+  display:         flex ;
+  justify-content: space-between ;
+  align-items:     center ;
+  gap:             0.5rem ;
+}
+
+.cardOrg {
+  font-size:   var(--fs-xs) ;
+  font-weight: 500 ;
+  color:       var(--text-muted) ;
+}
+

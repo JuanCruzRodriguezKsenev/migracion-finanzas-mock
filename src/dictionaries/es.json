@@ -334,7 +334,10 @@
     "debtCreated": "{actor} cargó {descripcion}: te toca {monto}",
     "agreementChanged": "{actor} cambió el acuerdo de la organización",
     "paymentRequested": "{actor} te solicitó un pago de {monto}",
-    "paymentReceived": "{actor} registró un pago de {monto}"
+    "paymentReceived": "{actor} registró un pago de {monto}",
+    "filterLabel": "Organización",
+    "filterAll": "Todas",
+    "personal": "Personal"
   },
   "subscriptionsPage": {
     "title": "Suscripciones",

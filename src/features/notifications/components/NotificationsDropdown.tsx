@@ -2,6 +2,7 @@
  * @file NotificationsDropdown.tsx
  * Lista desplegable de avisos de la campana. Al abrirse los marca como leídos; no tiene botones
  * de leer ni de descartar. El texto se arma desde el tipo del aviso y el diccionario (NFR-4).
+ * Incluye filtro por organización cuando el usuario pertenece a más de una.
  */
 "use client" ;
 
@@ -54,9 +55,9 @@ function renderizarPlantilla( plantilla: string , valores: Record< string , stri
 }
 
 export function NotificationsDropdown( {dict}: NotificationsDropdownProps ) {
-  const { notifications , marcarLeidas } = useNotifications() ;
-  const { profile }                      = useProfileContext() ;
-  const locale                           = ( profile?.numberFormat || "es-AR" ) ;
+  const { notifications , marcarLeidas , filtro , setFiltro , organizaciones } = useNotifications() ;
+  const { profile }                                                            = useProfileContext() ;
+  const locale                                                                 = ( profile?.numberFormat || "es-AR" ) ;
 
   // Los que estaban sin leer al abrir quedan resaltados mientras el desplegable siga abierto.
   const [ sinLeerAlAbrir ] = useState< Set< string > >( () => new Set( notifications.filter( ( n ) => !n.leida ).map( ( n ) => n.id ) ) ) ;
@@ -84,10 +85,31 @@ export function NotificationsDropdown( {dict}: NotificationsDropdownProps ) {
     return( renderizarPlantilla( plantilla , { actor: ( n.actor ?? "" ) , descripcion: n.descripcion , monto } ) ) ;
   } ;
 
+  const hayMasDeUnaOrg     = organizaciones.length > 1 ;
+  const mostrarOrganizacion = (filtro === null) && hayMasDeUnaOrg ;
+
   return(
     <div className={styles.dropdownWrap}>
       <div className={styles.header}>
         <span className={styles.title}>{dict.title}</span>
+        {hayMasDeUnaOrg && (
+          <select
+            className={styles.filterSelect}
+            aria-label={dict.filterLabel}
+            value={filtro ?? ""}
+            onChange={( e ) => {
+              const valor = e.target.value ;
+              setFiltro( valor === "" ? null : valor ) ;
+            }}
+          >
+            <option value="">{dict.filterAll}</option>
+            {organizaciones.map( ( org ) => (
+              <option key={org.id} value={org.id}>
+                {org.esPersonal ? dict.personal : org.nombre}
+              </option>
+            ) )}
+          </select>
+        )}
       </div>
 
       {notifications.length === 0 ? (
@@ -114,9 +136,16 @@ export function NotificationsDropdown( {dict}: NotificationsDropdownProps ) {
                   <span className={styles.unreadDot} role="img" aria-label={dict.unreadAria} />
                 )}
                 <span className={styles.cardBody}>{texto}</span>
-                <time className={styles.cardDate} dateTime={n.creadaEn}>
-                  {new Date( n.creadaEn ).toLocaleDateString( locale )}
-                </time>
+                <div className={styles.cardMeta}>
+                  {mostrarOrganizacion && (
+                    <span className={styles.cardOrg}>
+                      {n.organizacionEsPersonal ? dict.personal : n.organizacionNombre}
+                    </span>
+                  )}
+                  <time className={styles.cardDate} dateTime={n.creadaEn}>
+                    {new Date( n.creadaEn ).toLocaleDateString( locale )}
+                  </time>
+                </div>
               </li>
             ) ;
           } )}

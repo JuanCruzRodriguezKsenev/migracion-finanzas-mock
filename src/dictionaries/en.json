@@ -334,7 +334,10 @@
     "debtCreated": "{actor} entered {descripcion}: your share is {monto}",
     "agreementChanged": "{actor} changed the organization agreement",
     "paymentRequested": "{actor} requested a payment of {monto}",
-    "paymentReceived": "{actor} recorded a payment of {monto}"
+    "paymentReceived": "{actor} recorded a payment of {monto}",
+    "filterLabel": "Organization",
+    "filterAll": "All",
+    "personal": "Personal"
   },
   "subscriptionsPage": {
     "title": "Subscriptions",

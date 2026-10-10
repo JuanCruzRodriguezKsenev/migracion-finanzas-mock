@@ -278,10 +278,12 @@ describe( "avisos de autoría (plan 18)" , () => {
     await marcarLeidasAction() ;
     expect( ( await avisosDe( ana ) )[0].readAt ).toBeNull() ;
 
-    // Ni siquiera con el mismo usuario: Ana mirando otra organización no ve los de A
+    // Plan 43 (AC-31 / AC-32): Ana ve sus avisos de todas sus organizaciones sin filtro; al filtrar por orgB no ve los de orgA
     await crearUsuarioConMembresiaEnB( ana ) ;
     sesionDe( ana , orgB ) ;
-    const deOtra = await listarNotificacionesAction() ;
+    const deTodas = await listarNotificacionesAction() ;
+    expect( deTodas.success && deTodas.value.items ).toHaveLength( 1 ) ;
+    const deOtra = await listarNotificacionesAction( { organizacionId: orgB } ) ;
     expect( deOtra.success && deOtra.value.items ).toHaveLength( 0 ) ;
   } ) ;
 

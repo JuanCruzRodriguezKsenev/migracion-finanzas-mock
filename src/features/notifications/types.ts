@@ -11,22 +11,35 @@
 export type TipoAviso = "charged_to_holder" | "transaction_reversed" | "debt_created" | "agreement_changed" | "payment_requested" | "payment_received" ;
 
 /**
+ * Organización en la que el usuario participa, para el selector de la campana.
+ */
+export interface OrganizacionDeAvisos {
+  id:         string ;
+  nombre:     string ;
+  esPersonal: boolean ;
+}
+
+/**
  * Aviso listo para mostrar. La interfaz arma el texto desde `tipo` y estos campos con el diccionario (NFR-4).
  */
 export interface AvisoVista {
-  id:              string ;
-  tipo:            string ;
-  actor:           string | null ;
-  titular:         string | null ;
-  descripcion:     string ;
-  montoEnCentavos: number | null ;
-  divisa:          string | null ;
-  leida:           boolean ;
-  creadaEn:        string ;
+  id:                     string ;
+  tipo:                   string ;
+  actor:                  string | null ;
+  titular:                string | null ;
+  descripcion:            string ;
+  montoEnCentavos:        number | null ;
+  divisa:                 string | null ;
+  leida:                  boolean ;
+  creadaEn:               string ;
+  organizacionId:         string ;
+  organizacionNombre:     string ;
+  organizacionEsPersonal: boolean ;
 }
 
-/** Respuesta de la campana: los avisos recientes y el total de no leídas. */
+/** Respuesta de la campana: los avisos recientes, el total de no leídas y las organizaciones del usuario. */
 export interface ListadoAvisos {
-  items:    AvisoVista[] ;
-  noLeidas: number ;
+  items:          AvisoVista[] ;
+  noLeidas:       number ;
+  organizaciones: OrganizacionDeAvisos[] ;
 }

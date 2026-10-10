@@ -18,8 +18,8 @@ import { ProfileProvider } from "@/features/profile/context/ProfileContext" ;
 import type { ProfileData } from "@/features/profile/types" ;
 
 // Feature: Notifications
-import { NotificationsProvider } from "./NotificationsContext" ;
-import type { AvisoVista }       from "../types" ;
+import type { AvisoVista , OrganizacionDeAvisos } from "../types" ;
+import { NotificationsProvider }                 from "./NotificationsContext" ;
 
 
 vi.mock( "next/navigation" , () => ( {
@@ -37,17 +37,34 @@ const mockProfile: ProfileData = {
 
 let dict: Awaited< ReturnType< typeof getDictionary > > ;
 
+const storageMock = (() => {
+  let store: Record< string , string > = {} ;
+  return( {
+    getItem:    vi.fn( ( key: string ) => store[key] ?? null ) ,
+    setItem:    vi.fn( ( key: string , val: string ) => { store[key] = val ; } ) ,
+    removeItem: vi.fn( ( key: string ) => { delete store[key] ; } ) ,
+    clear:      vi.fn( () => { store = {} ; } ) ,
+  } ) ;
+})() ;
+
 beforeAll( async () => {
   dict = await getDictionary( "es" ) ;
+  vi.stubGlobal( "localStorage" , storageMock ) ;
 } ) ;
 
 beforeEach( () => {
   vi.clearAllMocks() ;
+  storageMock.clear() ;
 } ) ;
 
 const avisos: AvisoVista[] = [
-  { id: "1" , tipo: "charged_to_holder"    , actor: "Beto" , titular: "Ana" , descripcion: "Súper"    , montoEnCentavos: 120000 , divisa: "ARS" , leida: false , creadaEn: "2026-10-01T12:00:00.000Z" } ,
-  { id: "2" , tipo: "transaction_reversed" , actor: "Carla" , titular: "Ana" , descripcion: "Farmacia" , montoEnCentavos: 50000  , divisa: "ARS" , leida: false , creadaEn: "2026-10-02T12:00:00.000Z" } ,
+  { id: "1" , tipo: "charged_to_holder"    , actor: "Beto"  , titular: "Ana" , descripcion: "Súper"    , montoEnCentavos: 120000 , divisa: "ARS" , leida: false , creadaEn: "2026-10-01T12:00:00.000Z" , organizacionId: "org-1" , organizacionNombre: "Casa" , organizacionEsPersonal: false } ,
+  { id: "2" , tipo: "transaction_reversed" , actor: "Carla" , titular: "Ana" , descripcion: "Farmacia" , montoEnCentavos: 50000  , divisa: "ARS" , leida: false , creadaEn: "2026-10-02T12:00:00.000Z" , organizacionId: "org-1" , organizacionNombre: "Casa" , organizacionEsPersonal: false } ,
+] ;
+
+const orgsDemo: OrganizacionDeAvisos[] = [
+  { id: "org-p" , nombre: "Personal" , esPersonal: true  } ,
+  { id: "org-1" , nombre: "Casa"     , esPersonal: false } ,
 ] ;
 
 function renderCampana( props: Omit< React.ComponentProps< typeof NotificationsProvider > , "children" > ) {
@@ -62,7 +79,7 @@ function renderCampana( props: Omit< React.ComponentProps< typeof NotificationsP
 
 describe( "campana de avisos" , () => {
   it( "con listar inyectado muestra el contador 2 y, al abrir, los textos y marca como leídos" , async () => {
-    const listar       = vi.fn().mockResolvedValue( { success: true , value: { items: avisos , noLeidas: 2 } } ) ;
+    const listar       = vi.fn().mockResolvedValue( { success: true , value: { items: avisos , noLeidas: 2 , organizaciones: [ { id: "org-1" , nombre: "Casa" , esPersonal: false } ] } } ) ;
     const marcarLeidas = vi.fn().mockResolvedValue( { success: true , value: true } ) ;
     renderCampana( { listar , marcarLeidas } ) ;
 
@@ -85,10 +102,10 @@ describe( "campana de avisos" , () => {
 
   it( "los avisos de deuda y de cambio de acuerdo se muestran con sus plantillas" , async () => {
     const nuevos: AvisoVista[] = [
-      { id: "3" , tipo: "debt_created"      , actor: "Ana" , titular: "Ana" , descripcion: "Súper" , montoEnCentavos: 5000 , divisa: "ARS" , leida: false , creadaEn: "2026-10-03T12:00:00.000Z" } ,
-      { id: "4" , tipo: "agreement_changed" , actor: "Ana" , titular: null  , descripcion: ""      , montoEnCentavos: null , divisa: null  , leida: false , creadaEn: "2026-10-04T12:00:00.000Z" } ,
+      { id: "3" , tipo: "debt_created"      , actor: "Ana" , titular: "Ana" , descripcion: "Súper" , montoEnCentavos: 5000 , divisa: "ARS" , leida: false , creadaEn: "2026-10-03T12:00:00.000Z" , organizacionId: "org-1" , organizacionNombre: "Casa" , organizacionEsPersonal: false } ,
+      { id: "4" , tipo: "agreement_changed" , actor: "Ana" , titular: null  , descripcion: ""      , montoEnCentavos: null , divisa: null  , leida: false , creadaEn: "2026-10-04T12:00:00.000Z" , organizacionId: "org-1" , organizacionNombre: "Casa" , organizacionEsPersonal: false } ,
     ] ;
-    const listar = vi.fn().mockResolvedValue( { success: true , value: { items: nuevos , noLeidas: 2 } } ) ;
+    const listar = vi.fn().mockResolvedValue( { success: true , value: { items: nuevos , noLeidas: 2 , organizaciones: [ { id: "org-1" , nombre: "Casa" , esPersonal: false } ] } } ) ;
     renderCampana( { listar , marcarLeidas: vi.fn().mockResolvedValue( { success: true , value: true } ) } ) ;
 
     fireEvent.click( await screen.findByRole( "button" , { name: dict.notifications.title } ) ) ;
@@ -100,11 +117,11 @@ describe( "campana de avisos" , () => {
 
   it( "los avisos de solicitud y de pago registrado muestran actor y monto; un tipo desconocido no se muestra" , async () => {
     const nuevos: AvisoVista[] = [
-      { id: "5" , tipo: "payment_requested" , actor: "Ana"  , titular: null , descripcion: "" , montoEnCentavos: 480000 , divisa: "ARS" , leida: false , creadaEn: "2026-10-05T12:00:00.000Z" } ,
-      { id: "6" , tipo: "payment_received"  , actor: "Carla" , titular: null , descripcion: "" , montoEnCentavos: 20000  , divisa: "ARS" , leida: false , creadaEn: "2026-10-06T12:00:00.000Z" } ,
-      { id: "7" , tipo: "tipo_inventado"    , actor: "Zeta"  , titular: null , descripcion: "" , montoEnCentavos: null   , divisa: null  , leida: false , creadaEn: "2026-10-07T12:00:00.000Z" } ,
+      { id: "5" , tipo: "payment_requested" , actor: "Ana"   , titular: null , descripcion: "" , montoEnCentavos: 480000 , divisa: "ARS" , leida: false , creadaEn: "2026-10-05T12:00:00.000Z" , organizacionId: "org-1" , organizacionNombre: "Casa" , organizacionEsPersonal: false } ,
+      { id: "6" , tipo: "payment_received"  , actor: "Carla" , titular: null , descripcion: "" , montoEnCentavos: 20000  , divisa: "ARS" , leida: false , creadaEn: "2026-10-06T12:00:00.000Z" , organizacionId: "org-1" , organizacionNombre: "Casa" , organizacionEsPersonal: false } ,
+      { id: "7" , tipo: "tipo_inventado"    , actor: "Zeta"  , titular: null , descripcion: "" , montoEnCentavos: null   , divisa: null  , leida: false , creadaEn: "2026-10-07T12:00:00.000Z" , organizacionId: "org-1" , organizacionNombre: "Casa" , organizacionEsPersonal: false } ,
     ] ;
-    const listar = vi.fn().mockResolvedValue( { success: true , value: { items: nuevos , noLeidas: 3 } } ) ;
+    const listar = vi.fn().mockResolvedValue( { success: true , value: { items: nuevos , noLeidas: 3 , organizaciones: [ { id: "org-1" , nombre: "Casa" , esPersonal: false } ] } } ) ;
     renderCampana( { listar , marcarLeidas: vi.fn().mockResolvedValue( { success: true , value: true } ) } ) ;
 
     fireEvent.click( await screen.findByRole( "button" , { name: dict.notifications.title } ) ) ;
@@ -139,7 +156,7 @@ describe( "campana de avisos" , () => {
   } ) ;
 
   it( "abrir sin avisos no pide marcar leídos" , async () => {
-    const listar       = vi.fn().mockResolvedValue( { success: true , value: { items: [] , noLeidas: 0 } } ) ;
+    const listar       = vi.fn().mockResolvedValue( { success: true , value: { items: [] , noLeidas: 0 , organizaciones: [] } } ) ;
     const marcarLeidas = vi.fn() ;
     renderCampana( { listar , marcarLeidas } ) ;
 
@@ -151,7 +168,7 @@ describe( "campana de avisos" , () => {
   } ) ;
 
   it( "un re-render con otra referencia de listar no vuelve a consultar (regresión del bucle de server actions)" , async () => {
-    const respuesta = { success: true , value: { items: avisos , noLeidas: 2 } } ;
+    const respuesta = { success: true , value: { items: avisos , noLeidas: 2 , organizaciones: [ { id: "org-1" , nombre: "Casa" , esPersonal: false } ] } } ;
     const primera   = vi.fn().mockResolvedValue( respuesta ) ;
     const segunda   = vi.fn().mockResolvedValue( respuesta ) ;
 
@@ -169,5 +186,167 @@ describe( "campana de avisos" , () => {
 
     expect( primera ).toHaveBeenCalledTimes( 1 ) ;
     expect( segunda ).not.toHaveBeenCalled() ;
+  } ) ;
+
+  it( "el select de organizaciones no aparece con una sola organización" , async () => {
+    const listar = vi.fn().mockResolvedValue( {
+      success: true ,
+      value:   { items: avisos , noLeidas: 2 , organizaciones: [ { id: "org-1" , nombre: "Casa" , esPersonal: false } ] } ,
+    } ) ;
+    renderCampana( { listar } ) ;
+
+    fireEvent.click( await screen.findByRole( "button" , { name: dict.notifications.title } ) ) ;
+
+    expect( screen.queryByRole( "combobox" , { name: dict.notifications.filterLabel } ) ).toBeNull() ;
+  } ) ;
+
+  it( "con dos organizaciones cambiar el filtro llama a listar con organizacionId una sola vez" , async () => {
+    const avisoPersonal: AvisoVista = {
+      id: "p1" , tipo: "charged_to_holder" , actor: "Ana" , titular: "Ana" , descripcion: "Farmacia" ,
+      montoEnCentavos: 3000 , divisa: "ARS" , leida: false , creadaEn: "2026-10-08T12:00:00.000Z" ,
+      organizacionId: "org-p" , organizacionNombre: "Personal" , organizacionEsPersonal: true ,
+    } ;
+
+    const listar = vi.fn().mockImplementation( ( filtro?: { organizacionId?: string } ) => {
+      const items = ( filtro?.organizacionId === "org-1" )
+        ? avisos
+        : ( filtro?.organizacionId === "org-p" ? [ avisoPersonal ] : [ ...avisos , avisoPersonal ] ) ;
+      return( Promise.resolve( {
+        success: true ,
+        value:   { items , noLeidas: 3 , organizaciones: orgsDemo } ,
+      } ) ) ;
+    } ) ;
+
+    renderCampana( { listar } ) ;
+
+    fireEvent.click( await screen.findByRole( "button" , { name: dict.notifications.title } ) ) ;
+
+    const select = await screen.findByRole( "combobox" , { name: dict.notifications.filterLabel } ) ;
+    expect( select ).toBeDefined() ;
+    expect( listar ).toHaveBeenCalledTimes( 1 ) ;
+    expect( listar ).toHaveBeenLastCalledWith( undefined ) ;
+
+    fireEvent.change( select , { target: { value: "org-1" } } ) ;
+
+    await waitFor( () => expect( listar ).toHaveBeenCalledTimes( 2 ) ) ;
+    expect( listar ).toHaveBeenLastCalledWith( { organizacionId: "org-1" } ) ;
+  } ) ;
+
+  it( "el filtro se guarda en localStorage y se restaura al remontar" , async () => {
+    const listar = vi.fn().mockResolvedValue( {
+      success: true ,
+      value:   { items: avisos , noLeidas: 2 , organizaciones: orgsDemo } ,
+    } ) ;
+
+    const primera = renderCampana( { listar } ) ;
+    fireEvent.click( await screen.findByRole( "button" , { name: dict.notifications.title } ) ) ;
+    const select = await screen.findByRole( "combobox" , { name: dict.notifications.filterLabel } ) ;
+
+    fireEvent.change( select , { target: { value: "org-1" } } ) ;
+    expect( storageMock.getItem( "finanzia.avisos.filtroOrg" ) ).toBe( "org-1" ) ;
+
+    primera.unmount() ;
+
+    const listarRemonte = vi.fn().mockResolvedValue( {
+      success: true ,
+      value:   { items: avisos , noLeidas: 2 , organizaciones: orgsDemo } ,
+    } ) ;
+
+    renderCampana( { listar: listarRemonte } ) ;
+
+    await waitFor( () => expect( listarRemonte ).toHaveBeenCalledWith( { organizacionId: "org-1" } ) ) ;
+  } ) ;
+
+  it( "si el id guardado en localStorage no existe entre las organizaciones vuelve a Todas" , async () => {
+    storageMock.setItem( "finanzia.avisos.filtroOrg" , "org-abandonada" ) ;
+
+    const listar = vi.fn().mockImplementation( ( filtro?: { organizacionId?: string } ) => {
+      if( filtro?.organizacionId === "org-abandonada" ) {
+        return( Promise.resolve( { success: false , error: "Organización inválida." } ) ) ;
+      }
+      return( Promise.resolve( {
+        success: true ,
+        value:   { items: avisos , noLeidas: 2 , organizaciones: orgsDemo } ,
+      } ) ) ;
+    } ) ;
+
+    renderCampana( { listar } ) ;
+
+    await waitFor( () => expect( storageMock.getItem( "finanzia.avisos.filtroOrg" ) ).toBeNull() ) ;
+    await waitFor( () => expect( listar ).toHaveBeenCalledWith( undefined ) ) ;
+  } ) ;
+
+  it( "localStorage que lanza no rompe el render" , async () => {
+    storageMock.getItem.mockImplementationOnce( () => {
+      throw( new Error( "SecurityError" ) ) ;
+    } ) ;
+
+    const listar = vi.fn().mockResolvedValue( {
+      success: true ,
+      value:   { items: avisos , noLeidas: 2 , organizaciones: orgsDemo } ,
+    } ) ;
+
+    renderCampana( { listar } ) ;
+
+    const boton = await screen.findByRole( "button" , { name: dict.notifications.title } ) ;
+    expect( boton ).toBeDefined() ;
+  } ) ;
+
+  it( "el nombre de la organización aparece en cada aviso sólo en Todas" , async () => {
+    const avisoPersonal: AvisoVista = {
+      id: "p1" , tipo: "charged_to_holder" , actor: "Ana" , titular: "Ana" , descripcion: "Farmacia" ,
+      montoEnCentavos: 3000 , divisa: "ARS" , leida: false , creadaEn: "2026-10-08T12:00:00.000Z" ,
+      organizacionId: "org-p" , organizacionNombre: "Personal" , organizacionEsPersonal: true ,
+    } ;
+
+    const listar = vi.fn().mockImplementation( ( filtro?: { organizacionId?: string } ) => {
+      const items = ( filtro?.organizacionId === "org-1" )
+        ? avisos
+        : [ ...avisos , avisoPersonal ] ;
+      return( Promise.resolve( {
+        success: true ,
+        value:   { items , noLeidas: 3 , organizaciones: orgsDemo } ,
+      } ) ) ;
+    } ) ;
+
+    renderCampana( { listar } ) ;
+
+    fireEvent.click( await screen.findByRole( "button" , { name: dict.notifications.title } ) ) ;
+
+    const tagsAntes = ( await screen.findAllByRole( "listitem" ) ).map( ( c ) => c.querySelector( "[class*='cardOrg']" )?.textContent ) ;
+    expect( tagsAntes ).toContain( "Personal" ) ;
+    expect( tagsAntes ).toContain( "Casa" ) ;
+
+    const select = screen.getByRole( "combobox" , { name: dict.notifications.filterLabel } ) ;
+    fireEvent.change( select , { target: { value: "org-1" } } ) ;
+
+    await waitFor( () => {
+      const cards = screen.getAllByRole( "listitem" ) ;
+      expect( cards ).toHaveLength( 2 ) ;
+      cards.forEach( ( card ) => {
+        expect( card.querySelector( "[class*='cardOrg']" ) ).toBeNull() ;
+      } ) ;
+    } ) ;
+  } ) ;
+
+  it( "RN-36: ningún aviso es clicable y la organización activa no cambia" , async () => {
+    const listar = vi.fn().mockResolvedValue( {
+      success: true ,
+      value:   { items: avisos , noLeidas: 2 , organizaciones: orgsDemo } ,
+    } ) ;
+
+    renderCampana( { listar } ) ;
+
+    fireEvent.click( await screen.findByRole( "button" , { name: dict.notifications.title } ) ) ;
+
+    const items = await screen.findAllByRole( "listitem" ) ;
+    expect( items.length ).toBeGreaterThan( 0 ) ;
+
+    items.forEach( ( item ) => {
+      expect( item.tagName.toLowerCase() ).toBe( "li" ) ;
+      expect( item.getAttribute( "role" ) ).toBeNull() ;
+      expect( item.querySelector( "a" ) ).toBeNull() ;
+      expect( item.querySelector( "button" ) ).toBeNull() ;
+    } ) ;
   } ) ;
 } ) ;

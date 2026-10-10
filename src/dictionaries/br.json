@@ -334,7 +334,10 @@
     "debtCreated": "{actor} lançou {descripcion}: sua parte é {monto}",
     "agreementChanged": "{actor} alterou o acordo da organização",
     "paymentRequested": "{actor} solicitou um pagamento de {monto}",
-    "paymentReceived": "{actor} registrou um pagamento de {monto}"
+    "paymentReceived": "{actor} registrou um pagamento de {monto}",
+    "filterLabel": "Organização",
+    "filterAll": "Todas",
+    "personal": "Pessoal"
   },
   "subscriptionsPage": {
     "title": "Assinaturas",
