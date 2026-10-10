@@ -47,3 +47,5 @@
 - [`avisos-persona-43.md`](avisos-persona-43.md): Plan 43 avisos de la persona con filtro por organización: discrepancia de tests de visibilidad previa (notificacionesAutoria.test.ts), storage en jsdom y mutaciones.
 - [`reclamos-pago-44.md`](reclamos-pago-44.md): Plan 44 «Ya pagué» desde aviso y confirmación del acreedor: actionPolicy fail-closed, advisory lock vs índice parcial y for("update").
 - [`habilitaciones-propietarios-45.md`](habilitaciones-propietarios-45.md): Plan 45 aviso en Habilitaciones sobre propietarios: texto neutro incondicional, tipo dict y paridad de diccionarios.
+- [`integracion-marcas-produccion-41.md`](integracion-marcas-produccion-41.md): Plan 41 integración de marcas en producción sin Brandfetch: aislamiento cliente/servidor en brandService, tipado Route Handlers y mutaciones.
+
