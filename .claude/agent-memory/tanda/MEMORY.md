@@ -5,6 +5,7 @@ cerrar cada ronda. El detalle vive en los archivos enlazados, no acá.
 
 ## Dónde quedó todo
 
+- [Plan 46 cerrado + ramas integradas](plan_46_cerrado.md) — verificado 2026-10-10 (1629 tests); falta §6 [USUARIO], integrar `idempotencia` y push.
 - [Plan 41: integración en producción sin Brandfetch](marcas_plan_41_escrito.md) — ejecutado (Gemini, `c471929`) y verificado 2026-10-10: 171 suites/1562 tests, eslint 0, tsc 0, build OK. Falta §6 [USUARIO] e integrar `marcas-39b`; hallazgos en Deuda §32.
 - [Planes 42-45: acceso abierto, avisos, «Ya pagué», Habilitaciones](avisos_y_acceso_planes_42_45.md) — 42 a 45 ejecutados y verificados (1539 tests verdes); serie completa detenida antes de pasos [USUARIO] (2026-10-10).
 - [Plan 40b escrito: afinar verificados y resolutor](marcas_plan_40b_escrito.md) — decisiones color/resolución, qué NO entra, Edesur no reproducible (2026-10-09).

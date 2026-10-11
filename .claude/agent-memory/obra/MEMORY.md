@@ -52,3 +52,4 @@
 - [`idempotencia-46-precondiciones.md`](idempotencia-46-precondiciones.md): Plan 46 idempotencia: detención por precondiciones no cumplidas (rama marcas-39b vs idempotencia unificada con pagosService.ts).
 
 
+- [`idempotencia-46-ejecucion.md`](idempotencia-46-ejecucion.md): Plan 46 ejecutado: script de envoltorio, 6 tests de formulario ajustados, mutación 5 exigió escribir tests del submit.
